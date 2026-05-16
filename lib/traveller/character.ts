@@ -961,6 +961,7 @@ export class Character {
         musterOutRolls?: {
           perTerm?: number;
           rankBands?: { ranks: number[]; additionalRolls: number }[];
+          rankExtraRolls?: { rankMin: number; rankMax: number; additionalRolls: number }[];
         };
       }
     ).musterOutRolls;
@@ -972,8 +973,19 @@ export class Character {
       this.terms - this.shortTermsCount - acgPartial - anagathicsTerms,
     );
     let r = perTerm * qualifyingTerms;
-    const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
-    if (band) r += band.additionalRolls;
+    // PM p. 17: rank extra rolls are cumulative — rank 5-6 gets +3,
+    // rank 3-4 gets +2, rank 1-2 gets +1. Prefer rankExtraRolls (the
+    // canonical form) when present; otherwise fall through to the legacy
+    // rankBands flat-additional form.
+    if (rules?.rankExtraRolls?.length) {
+      const band = rules.rankExtraRolls.find(
+        (b) => this.rank >= b.rankMin && this.rank <= b.rankMax,
+      );
+      if (band) r += band.additionalRolls;
+    } else {
+      const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
+      if (band) r += band.additionalRolls;
+    }
     // ACG court-martial outcomes reduce mustering-out rolls (DD = -3,
     // death sentence zeros benefits via a very negative penalty).
     if (this.useAcg && this.acgState?.musterRollPenalty) {
@@ -1032,20 +1044,34 @@ export class Character {
   musterOutPay() {
     // Court-martial DD or death-sentence forfeits pension (PM p. 47).
     const pensionForfeit = !!(this.useAcg && this.acgState?.pensionForfeit);
-    if (!pensionForfeit && this.terms >= 5 &&
-        this.service !== "scouts" && this.service !== "other") {
-      switch (this.terms) {
-        case 5: this.retirementPay = 4000; break;
-        case 6: this.retirementPay = 6000; break;
-        case 7: this.retirementPay = 8000; break;
-        case 8: this.retirementPay = 10000; break;
-        case 9: this.retirementPay = 12000; break;
-        default: this.retirementPay = (this.terms - 9) * 2000 + 12000;
+    const retirement = (
+      getEdition(this.editionId).data.rules as {
+        retirement?: {
+          eligibleAfterCompletedTerm?: number;
+          basePensionCredits?: number;
+          pensionCreditsPerTerm?: number;
+          excludedServices?: string[];
+          anagathicTermsExcluded?: boolean;
+        };
       }
+    ).retirement;
+    const eligibleAfter = retirement?.eligibleAfterCompletedTerm ?? 5;
+    const basePension = retirement?.basePensionCredits ?? 4000;
+    const perTerm = retirement?.pensionCreditsPerTerm ?? 2000;
+    const excluded = new Set(
+      retirement?.excludedServices ?? ["scouts", "other"],
+    );
+    const anagathicsExcluded = retirement?.anagathicTermsExcluded ?? false;
+    const qualifyingTerms = anagathicsExcluded
+      ? this.terms - (this.anagathicsBenefitForfeitedTerms ?? 0)
+      : this.terms;
+    if (!pensionForfeit && qualifyingTerms >= eligibleAfter &&
+        !excluded.has(this.service as string)) {
+      this.retirementPay = basePension + (qualifyingTerms - eligibleAfter) * perTerm;
       this.benefits.push(
         `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
       );
-    } else if (pensionForfeit && this.terms >= 5) {
+    } else if (pensionForfeit && this.terms >= eligibleAfter) {
       this.history.push("Pension forfeit due to dishonorable discharge or death sentence.");
     }
     // ACG Merchant Free Trader Owner/Captain auto-benefit.

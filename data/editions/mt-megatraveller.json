@@ -319,28 +319,16 @@
     },
     "musterOutRolls": {
       "perTerm": 2,
+      "maxCashTableRolls": 3,
       "rankBands": [
-        {
-          "ranks": [
-            1,
-            2
-          ],
-          "additionalRolls": 1
-        },
-        {
-          "ranks": [
-            3,
-            4
-          ],
-          "additionalRolls": 1
-        },
-        {
-          "ranks": [
-            5,
-            6
-          ],
-          "additionalRolls": 1
-        }
+        { "ranks": [1, 2], "additionalRolls": 1 },
+        { "ranks": [3, 4], "additionalRolls": 1 },
+        { "ranks": [5, 6], "additionalRolls": 1 }
+      ],
+      "rankExtraRolls": [
+        { "rankMin": 1, "rankMax": 2, "additionalRolls": 1 },
+        { "rankMin": 3, "rankMax": 4, "additionalRolls": 2 },
+        { "rankMin": 5, "rankMax": 6, "additionalRolls": 3 }
       ],
       "benefitTableDm": {
         "rankAtLeast": 5,
@@ -368,6 +356,13 @@
           ]
         }
       ]
+    },
+    "retirement": {
+      "eligibleAfterCompletedTerm": 5,
+      "basePensionCredits": 4000,
+      "pensionCreditsPerTerm": 2000,
+      "excludedServices": ["barbarians", "pirates", "rogues", "scouts"],
+      "anagathicTermsExcluded": true
     }
   },
   "cascadeSkills": {

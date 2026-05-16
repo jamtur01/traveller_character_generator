@@ -190,11 +190,11 @@ describe("musterOutRolls reads rules.musterOutRolls per edition", () => {
     expect(c.musterOutRolls()).toBe(4);
   });
 
-  it("MT rank-6, 5 terms → 5 × 2 + 1 = 11", () => {
+  it("MT rank-6, 5 terms → 5 × 2 + 3 = 13 (rank 5-6 cumulative bonus per PM)", () => {
     const c = freshChar("mt-megatraveller", "navy");
     c.terms = 5;
     c.rank = 6;
-    expect(c.musterOutRolls()).toBe(11);
+    expect(c.musterOutRolls()).toBe(13);
   });
 });
 
