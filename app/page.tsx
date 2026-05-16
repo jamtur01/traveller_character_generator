@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Character, cloneCharacter } from "@/lib/traveller/character";
-import { benefitDmFor, cashDmFor } from "@/lib/traveller/engine/musterDm";
+import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
 import { DEFAULT_EDITION_ID, listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
@@ -27,7 +27,6 @@ type Phase =
   | "muster_no_cash"
   | "end";
 
-const MAX_CASH_ROLLS = 3;
 
 function pickSkillPhase(c: Character): Phase {
   return c.attributes.education >= 8 ? "skill_adv" : "skill_basic";
@@ -327,7 +326,7 @@ export default function Home() {
       c.musterOutPay();
       c.history.push("======= End Generation =======");
       commit(c, "end");
-    } else if (c.musterCashUsed >= MAX_CASH_ROLLS) {
+    } else if (c.musterCashUsed >= maxCashRolls(c)) {
       commit(c, "muster_no_cash");
     } else {
       commit(c, "muster");
@@ -1398,20 +1397,21 @@ function MusterPhase({
   phase: "muster" | "muster_no_cash";
   onChoose: (kind: "cash" | "benefit") => void;
 }) {
-  const cashLeft = MAX_CASH_ROLLS - character.musterCashUsed;
+  const cashCap = maxCashRolls(character);
+  const cashLeft = cashCap - character.musterCashUsed;
   const cashDM = cashDmFor(character);
   const benefitDM = benefitDmFor(character);
 
   return (
     <PhaseCard
       title={`Muster out — ${character.musterRolls} roll${character.musterRolls === 1 ? "" : "s"} left`}
-      subtitle={`Spend each remaining roll on either cash (max ${MAX_CASH_ROLLS} cash rolls) or a non-cash benefit. Gambling skill adds +1 DM on cash rolls; rank 5+ adds +1 DM on benefit rolls.`}
+      subtitle={`Spend each remaining roll on either cash (max ${cashCap} cash rolls) or a non-cash benefit. Gambling skill adds +1 DM on cash rolls; rank 5+ adds +1 DM on benefit rolls.`}
     >
       <dl className="grid grid-cols-3 gap-2">
         <Stat label="Rolls left" value={String(character.musterRolls)} />
         <Stat
           label="Cash rolls left"
-          value={`${cashLeft} / ${MAX_CASH_ROLLS}`}
+          value={`${cashLeft} / ${cashCap}`}
           hint={cashDM ? "+1 DM (Gambling)" : undefined}
         />
         <Stat
