@@ -4,6 +4,12 @@
 
 import type { Character } from "./character";
 
+/**
+ * Union of every service key across every edition. CT uses 18 of these;
+ * MT uses 17 (no "other", adds "lawenforcers"). Each edition's services
+ * object is a Partial<Record<ServiceKey, ServiceData>> — code that
+ * iterates services must use Object.keys(svcMap) rather than this union.
+ */
 export type ServiceKey =
   | "navy"
   | "marines"
@@ -22,7 +28,8 @@ export type ServiceKey =
   | "rogues"
   | "scientists"
   | "hunters"
-  | "nobles";
+  | "nobles"
+  | "lawenforcers";
 
 export type AttributeKey =
   | "strength"

@@ -148,9 +148,9 @@
   ],
   "cascadeSkills": {
     "aircraft": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter"],
-    "bladeCombat": ["Dagger", "Blade", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"],
+    "bladeCombat": ["Dagger", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"],
     "gunCombat": ["Body Pistol", "Auto Pistol", "Revolver", "Carbine", "Rifle", "Auto Rifle", "Shotgun", "SMG", "Laser Carbine", "Laser Rifle"],
-    "vehicle": ["Aircraft", "Grav Vehicle", "Tracked Vehicle", "Watercraft", "Wheeled Vehicle"],
+    "vehicle": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter", "Grav Vehicle", "Tracked Vehicle", "Wheeled Vehicle", "Large Watercraft", "Small Watercraft", "Hovercraft", "Submersible"],
     "watercraft": ["Large Watercraft", "Small Watercraft", "Hovercraft", "Submersible"],
     "bowCombat": ["Sling", "Short Bow", "Long Bow", "Sporting Crossbow", "Military Crossbow", "Repeating Crossbow"]
   },

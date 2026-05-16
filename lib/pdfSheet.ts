@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import {
-  BLADES, Character, formatBenefit, GUNS, numCommaSep, s,
+  BLADES, Character, formatBenefit, GUNS, numCommaSep,
 } from "./traveller";
 
 // Pistols are the prefix of the GUNS pool; deriving from the shared constant
@@ -150,7 +150,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 160, y, 160, r3H);
   fieldLabel(doc, X0 + 164, y + 10, "5. Military Rank");
-  const rankText = s[c.service].ranks[c.rank] || "";
+  const rankText = c.serviceDef().ranks[c.rank] || "";
   fieldValue(doc, X0 + 166, y + 26, rankText, 152);
 
   doc.rect(X0 + 320, y, 220, r3H);
@@ -180,7 +180,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // Row: Service | Branch | Dischargeworld
   doc.rect(X0, y, 180, r3H);
   fieldLabel(doc, X0 + 4, y + 10, "9. Service");
-  fieldValue(doc, X0 + 6, y + 26, s[c.service].serviceName, 172);
+  fieldValue(doc, X0 + 6, y + 26, c.serviceDef().serviceName, 172);
 
   doc.rect(X0 + 180, y, 140, r3H);
   fieldLabel(doc, X0 + 184, y + 10, "10. Branch");

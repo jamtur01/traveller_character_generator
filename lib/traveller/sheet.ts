@@ -3,7 +3,6 @@
 // renderer, and the React UI.
 
 import { numCommaSep } from "./formatting";
-import { s } from "./services";
 import type { Character } from "./character";
 
 const SHEET_WIDTH = 60;
@@ -61,7 +60,7 @@ export function aggregateBenefits(ch: Character): string[] {
 
 /** The TTB-style canonical character sheet text (no service history). */
 export function formatCharacterSheet(ch: Character): string {
-  const def = s[ch.service];
+  const def = ch.serviceDef();
   const memberPrefix = ch.service === "other" ? "" : def.memberName + " ";
   const rankPrefix = def.ranks[ch.rank] ? def.ranks[ch.rank] + " " : "";
   const titlePrefix = ch.attributes.social > 10 ? `${ch.getNobleTitle()} ` : "";
