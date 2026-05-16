@@ -100,10 +100,11 @@ export function mercenaryEnlist(
   if (elig) {
     const allowedByService = elig[service] ?? null;
     if (combatArm === "Commando") {
-      const honorsMilitaryAcademy =
-        ch.acgState!.schoolsAttended.includes("militaryAcademy") &&
-        !!ch.acgState!.preCareerCommission;
-      if (!honorsMilitaryAcademy) {
+      // Commando entry requires Military Academy *honors* graduation (PM
+      // p. 50). Pre-career commission alone (without honors) does not
+      // qualify; track via acgState.honorsGraduations.
+      const honors = ch.acgState!.honorsGraduations ?? [];
+      if (!honors.includes("militaryAcademy")) {
         throw new Error(
           "Commando combat arm requires Military Academy honors graduate (PM p. 50).",
         );
