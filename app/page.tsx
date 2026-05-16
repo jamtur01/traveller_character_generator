@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Character,
+  benefitDmFor,
+  cashDmFor,
   cloneCharacter,
   DEFAULT_EDITION_ID,
   ENLISTABLE_SERVICES,
   aggregateBenefits,
+  editionHasAcg,
   extendedHex,
   intToOrdinal,
+  listAcgPathways,
   listEditions,
   numCommaSep,
   roll,
@@ -41,6 +45,8 @@ export default function Home() {
   const [verbose, setVerbose] = useState(false);
   const [interactiveMode, setInteractiveMode] = useState(false);
   const [edition, setEdition] = useState<string>(DEFAULT_EDITION_ID);
+  const [useAcg, setUseAcg] = useState(false);
+  const [acgPathway, setAcgPathway] = useState<string>("");
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -72,6 +78,13 @@ export default function Home() {
     c.choiceMode = (interactiveMode && editionMeta?.supportsInteractive)
       ? "interactive"
       : "auto";
+    // ACG is only available on editions that declare it, and only when
+    // the user picks a pathway. Double-guard: ignore the flag if either
+    // condition fails.
+    if (useAcg && editionHasAcg(edition) && acgPathway) {
+      c.useAcg = true;
+      c.acgPathway = acgPathway;
+    }
     commit(c, "career");
   };
 
@@ -208,8 +221,11 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     const c = cloneCharacter(prev);
-    const cashDM = c.checkSkill("Gambling") >= 0 ? 1 : 0;
-    const benefitsDM = c.rank >= 5 ? 1 : 0;
+    // Compute DMs from the active edition's rules.musterOutRolls block —
+    // CT and MT differ on which conditions apply (MT adds Retired and
+    // Prospecting-1 for select services).
+    const cashDM = cashDmFor(c);
+    const benefitsDM = benefitDmFor(c);
 
     if (kind === "cash") {
       c.musterOutCash(cashDM);
@@ -289,6 +305,10 @@ export default function Home() {
               setInteractiveMode={setInteractiveMode}
               edition={edition}
               setEdition={setEdition}
+              useAcg={useAcg}
+              setUseAcg={setUseAcg}
+              acgPathway={acgPathway}
+              setAcgPathway={setAcgPathway}
             />
           )}
 
@@ -626,16 +646,26 @@ function StartPhase({
   setInteractiveMode,
   edition,
   setEdition,
+  useAcg,
+  setUseAcg,
+  acgPathway,
+  setAcgPathway,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
   setInteractiveMode: (v: boolean) => void;
   edition: string;
   setEdition: (v: string) => void;
+  useAcg: boolean;
+  setUseAcg: (v: boolean) => void;
+  acgPathway: string;
+  setAcgPathway: (v: string) => void;
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
   const dataOnly = selected?.status === "data-only";
+  const hasAcg = editionHasAcg(edition);
+  const acgPathways = hasAcg ? listAcgPathways(edition) : [];
 
   return (
     <PhaseCard
@@ -716,7 +746,62 @@ function StartPhase({
           </span>
         </span>
       </label>
-      <PrimaryButton onClick={onStart}>
+
+      {hasAcg && (
+        <div className="rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={useAcg}
+              onChange={(e) => {
+                setUseAcg(e.target.checked);
+                if (e.target.checked && !acgPathway && acgPathways[0]) {
+                  setAcgPathway(acgPathways[0]);
+                }
+              }}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                Use Advanced Character Generation
+              </span>
+              <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                MT&apos;s ACG produces an enhanced character record with
+                pathway, branch, brownie points, and decorations. Current
+                implementation reuses the basic per-term flow and overlays
+                ACG state — full branch / specialist school / MOS rolls
+                are future work.
+              </span>
+            </span>
+          </label>
+          {useAcg && (
+            <label className="mt-3 flex flex-col gap-1 text-sm">
+              <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                ACG pathway
+              </span>
+              <select
+                value={acgPathway}
+                onChange={(e) => setAcgPathway(e.target.value)}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="" disabled>
+                  Select a pathway…
+                </option>
+                {acgPathways.map((p) => (
+                  <option key={p} value={p}>
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+
+      <PrimaryButton
+        onClick={onStart}
+        disabled={useAcg && hasAcg && !acgPathway}
+      >
         Roll attributes &amp; begin →
       </PrimaryButton>
     </PhaseCard>
@@ -1008,8 +1093,8 @@ function MusterPhase({
   onChoose: (kind: "cash" | "benefit") => void;
 }) {
   const cashLeft = MAX_CASH_ROLLS - character.musterCashUsed;
-  const cashDM = character.checkSkill("Gambling") >= 0 ? 1 : 0;
-  const benefitDM = character.rank >= 5 ? 1 : 0;
+  const cashDM = cashDmFor(character);
+  const benefitDM = benefitDmFor(character);
 
   return (
     <PhaseCard
@@ -1118,17 +1203,24 @@ function PrimaryButton({
   children,
   onClick,
   variant = "emerald",
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   variant?: "emerald" | "indigo-dark";
+  disabled?: boolean;
 }) {
   const cls =
     variant === "indigo-dark"
       ? "bg-indigo-800 text-white hover:bg-indigo-700 focus:ring-indigo-500"
       : "bg-emerald-700 text-white hover:bg-emerald-600 focus:ring-emerald-500";
   return (
-    <button type="button" onClick={onClick} className={`${BUTTON_BASE} ${cls}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`${BUTTON_BASE} ${cls}`}
+    >
       {children}
     </button>
   );
