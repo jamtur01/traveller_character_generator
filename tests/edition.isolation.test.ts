@@ -247,14 +247,14 @@ describe("MT data wiring (post-PDF swap)", () => {
     expect(c.deceased).toBe(false);
   });
 
-  it("MT musterOutRolls applies rank-band bonus", () => {
+  it("MT musterOutRolls applies cumulative rank-extra bonus (PM p. 17)", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.service = "navy";
     c.terms = 4;
     c.rank = 5;
-    // MT: 2 per term × 4 terms + rank-band [5,6] +1 = 9
-    expect(c.musterOutRolls()).toBe(9);
+    // MT: 2 per term × 4 terms + rank 5-6 cumulative +3 = 11
+    expect(c.musterOutRolls()).toBe(11);
   });
 
   it("CT musterOutRolls still uses rank-band scaling (TTB)", () => {
