@@ -173,7 +173,7 @@ for (const ed of EDITIONS) {
 // ---------------------------------------------------------------------------
 
 const KNOWN_STEPS = new Set([
-  "allocateSkills", "survival", "commission", "promotion", "specialDuty",
+  "allocateSkills", "autoSkillTerm", "survival", "commission", "promotion", "specialDuty",
 ]);
 
 for (const ed of EDITIONS) {

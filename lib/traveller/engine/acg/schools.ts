@@ -1,12 +1,11 @@
 // Specialist school / special-assignment resolution. Each special
 // assignment that lands a character at a school or specialty programme
-// runs through this module to apply the school's specific skill awards
-// per the MT manual (pp. 50–51 for Mercenary; pp. 54–55 for Navy; pp.
-// 56–59 for Scout; pp. 60–63 for Merchant Prince).
+// runs through this module to apply the school's specific effects per
+// MT Players' Manual pp. 50-51 (Mercenary), 54-55 (Navy), 56-59 (Scout).
 //
-// Pattern: most schools list a set of skills, each rolled on 1D against
-// a per-school target. Some grant fixed awards. OCS/officer promotions
-// are handled as rank advancements rather than skill awards.
+// All per-school skill batches, target numbers, and effects live in the
+// edition JSON under `advancedCharacterGeneration.<pathway>.specialAssignmentDetails`.
+// This module dispatches the effect objects against the character.
 
 import type { Character } from "../../character";
 import { getEdition } from "../../editions";
@@ -14,157 +13,206 @@ import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
 import { applyAcgSkillCell } from "./pathways/mercenary";
 
-interface SkillBatch {
-  /** Target on 1D to gain the listed skill at level 1. */
-  target: number;
-  skills: string[];
+type Effect = Record<string, unknown> & { type: string };
+
+interface SchoolSpec {
+  summary?: string;
+  effects: Effect[];
+  ageLimit?: number;
 }
 
-/** Apply Mercenary special-assignment school awards. Called by
- *  mercenarySpecialAssignment after picking the assignment label. */
-export function applyMercenarySchool(ch: Character, assignment: string): void {
-  if (!ch.acgState) return;
-  ch.acgState.schoolsAttended.push(assignment);
-  // Brownie point for the assignment itself (per manual p. 46).
-  awardBrownie(ch, 1, `Special Assignment: ${assignment}`);
+interface PathwayData {
+  specialAssignmentDetails?: Record<string, SchoolSpec>;
+  combatArms?: string[];
+  branches?: string[];
+  mos?: { rows: Array<Record<string, unknown>> };
+  specialistSchool?: { rows: Array<Record<string, unknown>>; notes?: string[] };
+  serviceSkills?: { rows: Array<Record<string, unknown>> };
+  branchSkills?: { rows: Array<Record<string, unknown>> };
+  ranks?: { officer: Array<unknown[]> };
+}
 
+function pathwayData(ch: Character, pathway: string): PathwayData | null {
   const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
     Record<string, unknown> | undefined;
-  if (!acg) return;
-  const merc = acg.mercenary as Record<string, unknown> | undefined;
-  if (!merc) return;
+  if (!acg) return null;
+  return (acg[pathway] as PathwayData | undefined) ?? null;
+}
 
-  switch (assignment) {
-    case "Cross-Training": {
-      // Pick any non-Commando arm; roll on MOS table for new arm.
-      const arms = (merc.combatArms as string[]).filter((a) => a !== "Commando");
+/** Run a special-assignment / school by name for the given pathway. */
+export function applySpecialAssignment(
+  ch: Character,
+  pathway: "mercenary" | "navy",
+  assignment: string,
+): void {
+  if (!ch.acgState) return;
+  ch.acgState.schoolsAttended.push(assignment);
+  awardBrownie(ch, 1, `Special Assignment: ${assignment}`);
+
+  const data = pathwayData(ch, pathway);
+  const spec = data?.specialAssignmentDetails?.[assignment];
+  if (!spec) {
+    ch.history.push(`Special Assignment "${assignment}" (no JSON detail)`);
+    return;
+  }
+  if (spec.ageLimit !== undefined && ch.age > spec.ageLimit) {
+    ch.history.push(`${assignment} waiver required for age > ${spec.ageLimit}`);
+    return;
+  }
+
+  for (const effect of spec.effects) {
+    runEffect(ch, pathway, assignment, effect, data!);
+  }
+}
+
+/** Back-compat shim — many call sites still use the mercenary-specific entry. */
+export function applyMercenarySchool(ch: Character, assignment: string): void {
+  applySpecialAssignment(ch, "mercenary", assignment);
+}
+
+function runEffect(
+  ch: Character,
+  pathway: "mercenary" | "navy",
+  schoolName: string,
+  effect: Effect,
+  data: PathwayData,
+): void {
+  if (!ch.acgState) return;
+  switch (effect.type) {
+    case "setCombatArm":
+      ch.acgState.combatArm = String(effect.value);
+      return;
+    case "crossTrainCombatArm": {
+      const excl = Array.isArray(effect.exclude) ? (effect.exclude as string[]) : [];
+      const arms = (data.combatArms ?? []).filter((a) => !excl.includes(a));
+      if (arms.length === 0) return;
       const newArm = arnd(arms);
-      const armKey = newArm.toLowerCase();
-      const mos = merc.mos as { rows: Array<Record<string, unknown>> };
-      const r = roll(1);
-      const row = mos.rows.find((row) => row.die === r);
-      const skill = row?.[armKey];
-      if (typeof skill === "string") {
-        ch.history.push(`Cross-Training in ${newArm}: ${skill}-1`);
-        applyAcgSkillCell(ch, skill);
+      ch.acgState.combatArm = newArm;
+      ch.acgState.crossTrainedArms = ch.acgState.crossTrainedArms ?? [];
+      if (!ch.acgState.crossTrainedArms.includes(newArm)) {
+        ch.acgState.crossTrainedArms.push(newArm);
       }
+      ch.history.push(`Cross-trained in ${newArm}`);
       return;
     }
-    case "Specialist School": {
-      const spec = merc.specialistSchool as {
-        rows: Array<Record<string, unknown>>;
-        notes?: string[];
-      };
-      const r = roll(1);
-      const row = spec.rows.find((row) => row.die === r);
-      if (!row) return;
-      // Note: schooling column used when Int + Edu > 16.
-      const useSchooling =
-        (ch.attributes.intelligence + ch.attributes.education) > 16;
-      const col = useSchooling ? "schooling" : "training";
-      const skill = row[col];
-      if (typeof skill === "string") {
-        ch.history.push(`Specialist School (${col}): ${skill}-1`);
-        applyAcgSkillCell(ch, skill);
-      }
+    case "crossTrainBranch": {
+      const branches = data.branches ?? [];
+      if (branches.length === 0) return;
+      const current = ch.acgState.branch ?? branches[0]!;
+      const opts = branches.filter((b) => b !== current);
+      if (opts.length === 0) return;
+      ch.acgState.branch = arnd(opts);
+      ch.history.push(`Cross-trained in ${ch.acgState.branch}`);
       return;
     }
-    case "Commando School": {
-      // Cross-training in Commandos; throw 5+ for each of:
-      ch.acgState.combatArm = "Commando";
-      rollSkillBatch(ch, "Commando School", {
-        target: 5,
-        skills: ["Brawling", "Gun Combat", "Demolitions", "Intrusion",
-          "Stealth", "Survival", "Recon", "Vacc Suit", "Blade Combat",
-          "Instruction"],
-      });
+    case "rollOnMosTable": {
+      const rolls = (effect.rolls as number) ?? 1;
+      for (let i = 0; i < rolls; i++) rollOnMos(ch, data);
       return;
     }
-    case "Protected Forces": {
-      rollSkillBatch(ch, "Protected Forces", {
-        target: 3,
-        skills: ["Vacc Suit", "High-G Environ", "Zero-G Environ"],
-      });
+    case "rollOnBranchSkillsTable": {
+      const rolls = (effect.rolls as number) ?? 1;
+      for (let i = 0; i < rolls; i++) rollOnBranchSkills(ch, data);
       return;
     }
-    case "Recruiting Duty":
-      ch.addSkill("Recruiting", 1);
-      ch.history.push("Recruiting Duty: Recruiting-1");
+    case "rollOnSpecialistSchoolTable":
+      rollOnSpecialistSchool(ch, data, schoolName);
       return;
-    case "OCS": {
-      // Enlisted advance to O1 (E7 → O2). Two rolls on Service Skills +
-      // one on MOS. E8/E9 → O3, no skills. Prohibited over age 38.
-      if (ch.age > 38) {
-        ch.history.push("OCS waiver required for age > 38");
-        return;
-      }
-      const rankNum = parseInt(ch.acgState.rankCode.replace("E", ""), 10) || 0;
-      if (rankNum === 7) {
-        ch.acgState.isOfficer = true;
-        ch.acgState.rankCode = "O2";
-      } else if (rankNum >= 8) {
-        ch.acgState.isOfficer = true;
-        ch.acgState.rankCode = "O3";
-        ch.history.push("OCS: promoted to O3 (no skills due to senior rank)");
-        return;
-      } else {
-        ch.acgState.isOfficer = true;
-        ch.acgState.rankCode = "O1";
-      }
-      ch.history.push(`OCS graduation: rank ${ch.acgState.rankCode}`);
-      // Two rolls on Service Skills + one on MOS.
-      rollMercenaryServiceSkill(ch);
-      rollMercenaryServiceSkill(ch);
-      rollMercenaryMosSkill(ch);
+    case "rollOnServiceSkillsTable": {
+      const rolls = (effect.rolls as number) ?? 1;
+      for (let i = 0; i < rolls; i++) rollOnServiceSkills(ch, data);
       return;
     }
-    case "Intelligence School":
-      rollSkillBatch(ch, "Intelligence School", {
-        target: 4,
-        skills: ["Forgery", "Bribery", "Streetwise", "Interrogation", "Vice"],
-      });
-      return;
-    case "Command College":
-      rollSkillBatch(ch, "Command College", {
-        target: 4,
-        skills: ["Tactics", "Leader", "Recon"],
-      });
-      return;
-    case "Staff College":
-      rollSkillBatch(ch, "Staff College", {
-        target: 4,
-        skills: ["Admin", "Combat Engineering", "Computer", "Robot Ops"],
-      });
-      return;
-    case "Attache/Aide": {
-      // 1D: 1-4 attache (rank + Social +1); 5-6 aide (Social +1)
-      const r = roll(1);
-      if (r <= 4) {
-        promoteOfficer(ch);
-        ch.improveAttribute("social", 1);
-        ch.history.push("Military Attache: promotion + 1 Social");
-      } else {
-        ch.improveAttribute("social", 1);
-        ch.history.push("Aide to a general: + 1 Social");
-      }
+    case "rollSkillBatch": {
+      const target = effect.throwTarget as number;
+      const skills = effect.skills as string[];
+      runSkillBatch(ch, schoolName, target, skills);
       return;
     }
+    case "fixedSkill": {
+      const skill = String(effect.skill);
+      const levels = (effect.levels as number) ?? 1;
+      ch.addSkill(skill, levels);
+      ch.history.push(`${schoolName}: ${skill}-${levels}`);
+      return;
+    }
+    case "ocsCommission":
+      ocsCommission(ch);
+      return;
+    case "attacheOrAide":
+      attacheOrAide(ch, pathway, data);
+      return;
     default:
-      // Unknown assignment label — at least record it.
+      // Unknown effect type — record and move on rather than crashing.
+      ch.history.push(`${schoolName}: unhandled effect ${effect.type}`);
       return;
   }
 }
 
-/** Roll one skill on Mercenary's serviceSkills table, using the column
- *  appropriate for the character's rank/branch/duty. */
-function rollMercenaryServiceSkill(ch: Character): void {
-  if (!ch.acgState) return;
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown>;
-  const merc = acg.mercenary as Record<string, unknown>;
-  const svc = merc.serviceSkills as { rows: Array<Record<string, unknown>> };
+function runSkillBatch(
+  ch: Character,
+  schoolName: string,
+  target: number,
+  skills: string[],
+): void {
+  const awarded: string[] = [];
+  for (const skill of skills) {
+    if (roll(1) >= target) {
+      ch.addSkill(skill, 1);
+      awarded.push(skill);
+    }
+  }
+  if (awarded.length > 0) {
+    ch.history.push(`${schoolName}: ${awarded.join(", ")}`);
+  } else {
+    ch.history.push(`${schoolName}: no skills rolled (all 1D < ${target}+)`);
+  }
+}
+
+function rollOnMos(ch: Character, data: PathwayData): void {
+  if (!ch.acgState || !data.mos) return;
+  const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
   const r = roll(1);
-  const row = svc.rows.find((row) => row.die === r);
+  const row = data.mos.rows.find((row) => row.die === r);
+  const skill = row?.[armKey];
+  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+}
+
+function rollOnBranchSkills(ch: Character, data: PathwayData): void {
+  if (!ch.acgState || !data.branchSkills) return;
+  const branchKey = (ch.acgState.branch ?? "Line").toLowerCase();
+  const r = roll(1);
+  const row = data.branchSkills.rows.find((row) => row.die === r);
+  if (!row) return;
+  const candidates = [branchKey, branchKey === "line" ? "lineCrew" : branchKey,
+    branchKey === "crew" ? "lineCrew" : branchKey];
+  for (const c of candidates) {
+    const v = row[c];
+    if (typeof v === "string") { applyAcgSkillCell(ch, v); return; }
+  }
+}
+
+function rollOnSpecialistSchool(
+  ch: Character, data: PathwayData, schoolName: string,
+): void {
+  if (!ch.acgState || !data.specialistSchool) return;
+  const r = roll(1);
+  const row = data.specialistSchool.rows.find((row) => row.die === r);
+  if (!row) return;
+  const useSchooling =
+    (ch.attributes.intelligence + ch.attributes.education) > 16;
+  const col = useSchooling ? "schooling" : "training";
+  const skill = row[col];
+  if (typeof skill === "string") {
+    ch.history.push(`${schoolName} (${col}): ${skill}-1`);
+    applyAcgSkillCell(ch, skill);
+  }
+}
+
+function rollOnServiceSkills(ch: Character, data: PathwayData): void {
+  if (!ch.acgState || !data.serviceSkills) return;
+  const r = roll(1);
+  const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   let col: string;
   const rankNum = parseInt(ch.acgState.rankCode.replace(/[^\d]/g, ""), 10) || 0;
@@ -179,26 +227,44 @@ function rollMercenaryServiceSkill(ch: Character): void {
   if (typeof skill === "string") applyAcgSkillCell(ch, skill);
 }
 
-function rollMercenaryMosSkill(ch: Character): void {
+function ocsCommission(ch: Character): void {
   if (!ch.acgState) return;
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown>;
-  const merc = acg.mercenary as Record<string, unknown>;
-  const mos = merc.mos as { rows: Array<Record<string, unknown>> };
-  const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
-  const r = roll(1);
-  const row = mos.rows.find((row) => row.die === r);
-  if (!row) return;
-  const skill = row[armKey];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+  const rankNum = parseInt(ch.acgState.rankCode.replace("E", ""), 10) || 0;
+  if (rankNum === 7) {
+    ch.acgState.isOfficer = true;
+    ch.acgState.rankCode = "O2";
+  } else if (rankNum >= 8) {
+    ch.acgState.isOfficer = true;
+    ch.acgState.rankCode = "O3";
+    ch.history.push("OCS: promoted to O3 (no skills due to senior rank)");
+  } else {
+    ch.acgState.isOfficer = true;
+    ch.acgState.rankCode = "O1";
+  }
+  ch.history.push(`OCS graduation: rank ${ch.acgState.rankCode}`);
 }
 
-function promoteOfficer(ch: Character): void {
+function attacheOrAide(
+  ch: Character,
+  pathway: "mercenary" | "navy",
+  data: PathwayData,
+): void {
   if (!ch.acgState) return;
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown>;
-  const merc = acg.mercenary as { ranks: { officer: unknown[][] } };
-  const codes = merc.ranks.officer.map((r) => r[0] as string);
+  const r = roll(1);
+  if (r <= 4) {
+    promoteOfficer(ch, data);
+    ch.improveAttribute("social", 1);
+    ch.history.push(`${pathway === "navy" ? "Naval" : "Military"} Attache: promotion + 1 Social`);
+  } else {
+    ch.improveAttribute("social", 1);
+    const role = pathway === "navy" ? "an admiral" : "a general";
+    ch.history.push(`Aide to ${role}: + 1 Social`);
+  }
+}
+
+function promoteOfficer(ch: Character, data: PathwayData): void {
+  if (!ch.acgState || !data.ranks?.officer) return;
+  const codes = data.ranks.officer.map((r) => r[0] as string);
   const idx = codes.indexOf(ch.acgState.rankCode);
   if (idx >= 0 && idx < codes.length - 1) {
     ch.acgState.rankCode = codes[idx + 1]!;
@@ -208,8 +274,44 @@ function promoteOfficer(ch: Character): void {
 /** Apply Scout school awards. The Scout school assignment table picks
  *  one of six schools; each school then uses 1D on the schools table to
  *  determine the awarded skill. */
+/** Scout schools that grant 2 skills per attendance (manual p. 57:
+ *  "Certain schools confer two skills, while others confer only one"). */
+const TWO_ROLL_SCOUT_SCHOOLS = new Set(["Ship School", "Intelligence School"]);
+
+/** Administrator School: may only be attended once per character; only
+ *  characters in the Bureaucracy may attend. A subsequent assignment to
+ *  Administrator School calls for a reroll (manual p. 57). */
+function scoutCanAttendAdminSchool(ch: Character): boolean {
+  if (!ch.acgState) return false;
+  if (ch.acgState.division !== "bureaucracy") return false;
+  if (ch.acgState.schoolsAttended.includes("Administrator School")) return false;
+  return true;
+}
+
 export function applyScoutSchool(ch: Character, school: string): void {
   if (!ch.acgState) return;
+
+  // Administrator School constraints. Caller is expected to pre-roll the
+  // school name; if it lands on Administrator and the character is barred,
+  // we no-op here — the caller (scoutResolveAssignment) is responsible for
+  // rolling again. We still record the attempt for visibility.
+  if (school === "Administrator School") {
+    if (!scoutCanAttendAdminSchool(ch)) {
+      ch.verboseHistory("Scout Administrator School denied (already taken or not in Bureaucracy)");
+      return;
+    }
+    ch.acgState.schoolsAttended.push(school);
+    awardBrownie(ch, 1, `Scout school: ${school}`);
+    // Administrator School promotes ordinary rank holders into the
+    // administrator ladder at rank IS-10 (manual p. 57).
+    ch.acgState.isOfficer = true;
+    if (!ch.acgState.rankCode.match(/^IS-1\d$/)) {
+      ch.acgState.rankCode = "IS-10";
+      ch.history.push("Promoted to administrator rank IS-10 after Administrator School.");
+    }
+    return;
+  }
+
   ch.acgState.schoolsAttended.push(school);
   awardBrownie(ch, 1, `Scout school: ${school}`);
 
@@ -230,30 +332,12 @@ export function applyScoutSchool(ch: Character, school: string): void {
   };
   const col = colMap[school];
   if (!col) return;
-  const r = roll(1);
-  const row = schools.rows.find((row) => row.die === r);
-  if (!row) return;
-  const skill = row[col];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
-  // Schools with 2 skills: ship/intelligence (per manual). For now we
-  // award one; a second roll gates on a future "honors" rule we don't
-  // yet model.
-}
-
-/** Helper: for each skill in a batch, roll 1D and award the skill if the
- *  roll meets the target. Used by mercenary special-assignment schools. */
-function rollSkillBatch(ch: Character, schoolName: string, batch: SkillBatch): void {
-  const awarded: string[] = [];
-  for (const skill of batch.skills) {
+  const rolls = TWO_ROLL_SCOUT_SCHOOLS.has(school) ? 2 : 1;
+  for (let i = 0; i < rolls; i++) {
     const r = roll(1);
-    if (r >= batch.target) {
-      ch.addSkill(skill, 1);
-      awarded.push(skill);
-    }
-  }
-  if (awarded.length > 0) {
-    ch.history.push(`${schoolName}: ${awarded.join(", ")}`);
-  } else {
-    ch.history.push(`${schoolName}: no skills rolled (all 1D < ${batch.target}+)`);
+    const row = schools.rows.find((row) => row.die === r);
+    if (!row) continue;
+    const skill = row[col];
+    if (typeof skill === "string") applyAcgSkillCell(ch, skill);
   }
 }

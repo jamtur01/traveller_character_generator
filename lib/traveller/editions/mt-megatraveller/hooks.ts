@@ -1,10 +1,17 @@
-// MegaTraveller edition hooks. The data file is extracted but the engine
-// does not yet handle MT-specific mechanics (Special Duty roll, skillsPerTerm
-// override, term-1 bonus skill, expanded cascade vocabulary, term-3 Belter
-// Zero-G auto-skill, mandatory reenlist on exact 12, double-bonus rolls
-// on commission/promotion/special-duty overshoot). When you wire those up,
-// the corresponding named hooks live here.
+// MegaTraveller edition hooks. ACG pathway factories are registered here;
+// the runner looks them up by name rather than importing them statically.
 
 import type { EditionHooks } from "../types";
+import { getMercenaryPathway } from "../../engine/acg/pathways/mercenary";
+import { getNavyPathway } from "../../engine/acg/pathways/navy";
+import { getScoutPathway } from "../../engine/acg/pathways/scout";
+import { getMerchantPrincePathway } from "../../engine/acg/pathways/merchantPrince";
 
-export const mtMegatravellerHooks: EditionHooks = {};
+export const mtMegatravellerHooks: EditionHooks = {
+  acgPathways: {
+    mercenary: getMercenaryPathway,
+    navy: getNavyPathway,
+    scout: getScoutPathway,
+    merchantPrince: getMerchantPrincePathway,
+  },
+};

@@ -141,6 +141,9 @@
         }
       },
       {
+        "id": "autoSkillTerm"
+      },
+      {
         "id": "survival"
       },
       {
@@ -282,6 +285,10 @@
       "skillTableRoll": "1d6",
       "musterOutRoll": "1d6",
       "agingSave": "2d6"
+    },
+    "survival": {
+      "onFailure": "musterOut",
+      "optionalDeathRule": "Referee or player may decide that failure of the survival throw results in death and that a new character must be generated."
     },
     "reenlistment": {
       "mandatoryOnExactRoll": 12,
@@ -3679,6 +3686,30 @@
         }
       },
       "courtMartial": {
+        "trigger": {
+          "rule": "Decoration roll fails by 6 or more (e.g., rolls a 4 when 10+ is required)."
+        },
+        "guilt": {
+          "enlisted": "Automatically guilty.",
+          "officer": {
+            "avoidTarget": 10,
+            "die": "2D",
+            "dms": [
+              { "type": "skillLevel", "skill": "Admin", "dm": 1 }
+            ],
+            "browniePointsAllowed": true
+          }
+        },
+        "resultRoll": {
+          "die": "1D",
+          "dms": [
+            { "condition": "rank E7 to E9", "dm": 1 },
+            { "condition": "combat assignment", "dm": 2 },
+            { "condition": "training assignment", "dm": -2 },
+            { "condition": "rank O7+", "dm": -1 },
+            { "condition": "command duty", "dm": 2 }
+          ]
+        },
         "dieResults": [
           {
             "roll": -1,
@@ -3875,6 +3906,13 @@
         "Support",
         "Commando"
       ],
+      "combatArmResolution": {
+        "Infantry": "infantryCavalryArtillery",
+        "Cavalry": "infantryCavalryArtillery",
+        "Artillery": "infantryCavalryArtillery",
+        "Support": "support",
+        "Commando": "commando"
+      },
       "initialTraining": [
         "Gun Combat",
         "One skill from selected combat arm on MOS table"
@@ -4234,10 +4272,147 @@
           }
         ],
         "dms": [
-          "Marine enlisted DM +1 if Edu 7+",
-          "Army enlisted DM +1 if End 7+"
+          { "enlisted": true, "service": "marines", "attribute": "education", "min": 7, "dm": 1 },
+          { "enlisted": true, "service": "army", "attribute": "endurance", "min": 7, "dm": 1 }
         ],
         "notes": []
+      },
+      "specialAssignmentDetails": {
+        "Cross-Training": {
+          "summary": "Select any combat arm (not Commandos) for cross-training. Roll for one skill on the MOS table.",
+          "effects": [
+            { "type": "crossTrainCombatArm", "exclude": ["Commando"] },
+            { "type": "rollOnMosTable", "rolls": 1 }
+          ]
+        },
+        "Specialist School": {
+          "summary": "Throw 1D on the Specialist School table.",
+          "effects": [
+            { "type": "rollOnSpecialistSchoolTable" }
+          ]
+        },
+        "Commando School": {
+          "summary": "Cross-training in Commandos. Throw 5+ (1D) for each listed skill.",
+          "effects": [
+            { "type": "setCombatArm", "value": "Commando" },
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 5,
+              "die": "1D",
+              "skills": [
+                "Brawling",
+                "Gun Combat",
+                "Demolitions",
+                "Intrusion",
+                "Stealth",
+                "Survival",
+                "Recon",
+                "Vacc Suit",
+                "Blade Combat",
+                "Instruction"
+              ]
+            }
+          ]
+        },
+        "Protected Forces": {
+          "summary": "Throw 3+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 3,
+              "die": "1D",
+              "skills": [
+                "Vacc Suit",
+                "High-G Environ",
+                "Zero-G Environ"
+              ]
+            }
+          ]
+        },
+        "Recruiting Duty": {
+          "summary": "Receive Recruiting skill.",
+          "effects": [
+            { "type": "fixedSkill", "skill": "Recruiting", "levels": 1 }
+          ]
+        },
+        "OCS": {
+          "summary": "Advance to rank O1 (E7 advances to O2) in current or cross-trained branch. Roll twice on Service Skills and once on MOS. E8/E9 commissioned to O3 with no skills.",
+          "ageLimit": 38,
+          "effects": [
+            { "type": "ocsCommission" },
+            { "type": "rollOnServiceSkillsTable", "rolls": 2, "condition": "rank below E8" },
+            { "type": "rollOnMosTable", "rolls": 1, "condition": "rank below E8" }
+          ]
+        },
+        "Intelligence School": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Forgery",
+                "Bribery",
+                "Streetwise",
+                "Interrogation",
+                "Vice"
+              ]
+            }
+          ]
+        },
+        "Command College": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Tactics",
+                "Leader",
+                "Recon"
+              ]
+            }
+          ]
+        },
+        "Staff College": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Admin",
+                "Combat Engineering",
+                "Computer",
+                "Robot Ops"
+              ]
+            }
+          ]
+        },
+        "Attache/Aide": {
+          "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Attache/Aide).",
+          "effects": [
+            { "type": "attacheOrAide" }
+          ]
+        }
+      },
+      "combatAssignments": [
+        "Police Action",
+        "Counterinsurgency",
+        "Raid",
+        "Ship's Troops"
+      ],
+      "assignmentReroutes": {
+        "marines": {
+          "fromAssignments": [
+            "Counterinsurgency",
+            "Internal Security"
+          ],
+          "toAssignment": "Ship's Troops"
+        }
       },
       "specialistSchool": {
         "columns": [
@@ -4695,9 +4870,9 @@
           }
         ],
         "dms": [
-          "DM +2 if Edu 9+",
-          "DM +2 if Int 10+",
-          "DM -2 if Imperial Navy"
+          { "attribute": "education", "min": 9, "dm": 2 },
+          { "attribute": "intelligence", "min": 10, "dm": 2 },
+          { "fleet": "imperialNavy", "dm": -2 }
         ],
         "notes": [
           "Automatic Medical for Medical School graduates or unsuccessful Medical School; automatic Flight for Flight School graduates; Social Standing 9+ may choose."
@@ -4707,6 +4882,23 @@
         "enlisted": "Two Branch Skills",
         "officer": "Two Branch Skills or Officer Staff Skills"
       },
+      "branchResolution": {
+        "Flight": "flight",
+        "Gunnery": "gunnery",
+        "Engineering": "engineering",
+        "Medical": "technicalMedical",
+        "Technical": "technicalMedical",
+        "Line": "lineCrew",
+        "Crew": "lineCrew"
+      },
+      "branches": [
+        "Line",
+        "Flight",
+        "Gunnery",
+        "Engineering",
+        "Medical",
+        "Technical"
+      ],
       "commandDuty": {
         "columns": [
           "branch",
@@ -4739,10 +4931,10 @@
           }
         ],
         "dms": [
-          "DM -2 if rank O2-",
-          "DM -1 if rank O4-",
-          "DM -1 if Int 7-",
-          "DM -1 if Edu 7-"
+          { "rankAtMost": "O2", "dm": -2 },
+          { "rankAtMost": "O4", "dm": -1 },
+          { "attribute": "intelligence", "max": 7, "dm": -1 },
+          { "attribute": "education", "max": 7, "dm": -1 }
         ],
         "notes": []
       },
@@ -5119,9 +5311,137 @@
           }
         ],
         "dms": [
-          "DM +1 if Edu 8+"
+          { "attribute": "education", "min": 8, "dm": 1 }
         ],
         "notes": []
+      },
+      "specialAssignmentDetails": {
+        "Cross-Training": {
+          "summary": "Select any branch; the individual is now cross-trained in it. Roll for one skill on that branch table.",
+          "effects": [
+            { "type": "crossTrainBranch" },
+            { "type": "rollOnBranchSkillsTable", "rolls": 1 }
+          ]
+        },
+        "Specialist School": {
+          "summary": "Throw 1D on the Specialist School table.",
+          "effects": [
+            { "type": "rollOnSpecialistSchoolTable" }
+          ]
+        },
+        "Recruiting": {
+          "summary": "Receive Recruiting skill.",
+          "effects": [
+            { "type": "fixedSkill", "skill": "Recruiting", "levels": 1 }
+          ]
+        },
+        "Gunnery School": {
+          "summary": "Make four throws (1D); on each 5+ receive Gunnery.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 5,
+              "die": "1D",
+              "skills": [
+                "Gunnery",
+                "Gunnery",
+                "Gunnery",
+                "Gunnery"
+              ]
+            }
+          ]
+        },
+        "Engineer School": {
+          "summary": "Throw 5+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 5,
+              "die": "1D",
+              "skills": [
+                "Mechanical",
+                "Electronics",
+                "Gravitics",
+                "Engineering"
+              ]
+            }
+          ]
+        },
+        "OCS": {
+          "summary": "Advance to O1 (E7 advances to O2) in current or any cross-trained branch. Roll twice on Service Skills and once on Branch Skills. E8/E9 receive direct commission to O3 with no new skills.",
+          "ageLimit": 38,
+          "effects": [
+            { "type": "ocsCommission" },
+            { "type": "rollOnServiceSkillsTable", "rolls": 2, "condition": "rank below E8" },
+            { "type": "rollOnBranchSkillsTable", "rolls": 1, "condition": "rank below E8" }
+          ]
+        },
+        "Intelligence School": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Forgery",
+                "Gun Combat",
+                "Bribery",
+                "Streetwise",
+                "Interrogation"
+              ]
+            }
+          ]
+        },
+        "Naval Attache": {
+          "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Naval Attache/Aide).",
+          "effects": [
+            { "type": "attacheOrAide" }
+          ]
+        },
+        "Command College": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Ship Tactics",
+                "Fleet Tactics",
+                "Leader",
+                "Admin"
+              ]
+            }
+          ]
+        },
+        "Staff College": {
+          "summary": "Throw 4+ (1D) for each listed skill.",
+          "effects": [
+            {
+              "type": "rollSkillBatch",
+              "throwTarget": 4,
+              "die": "1D",
+              "skills": [
+                "Fleet Tactics",
+                "Admin",
+                "Liaison",
+                "Computer",
+                "Robot Ops"
+              ]
+            }
+          ]
+        }
+      },
+      "combatAssignments": [
+        "Battle",
+        "Siege",
+        "Strike"
+      ],
+      "rankCaps": {
+        "imperialNavy": 10,
+        "reserveFleet": 8,
+        "systemSquadron": 7
       },
       "specialistSchool": {
         "columns": [
@@ -5459,11 +5779,30 @@
         ]
       },
       "reenlistment": {
-        "target": 6,
-        "dms": [
-          "+1 if rank E4+ or O1+"
-        ],
-        "branchChange": "May reenlist into a different branch only if cross-trained in it."
+        "perFleet": {
+          "imperialNavy": {
+            "target": 6,
+            "dms": [
+              { "condition": "rankE4orAbove", "dm": 1 },
+              { "condition": "officer", "dm": 1 }
+            ]
+          },
+          "reserveFleet": {
+            "target": 6,
+            "dms": [
+              { "condition": "rankE4orAbove", "dm": 2 },
+              { "condition": "officer", "dm": 2 }
+            ]
+          },
+          "systemSquadron": {
+            "target": 5,
+            "dms": [
+              { "condition": "officer", "dm": 2 }
+            ]
+          }
+        },
+        "branchChange": "May reenlist into a different branch only if cross-trained in it.",
+        "fleetChange": "Cannot transfer between System Squadron, Reserve Fleet, and Imperial Navy."
       }
     },
     "scout": {

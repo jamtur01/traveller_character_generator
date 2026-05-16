@@ -26,8 +26,9 @@ import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
-  applyDmRules, labelToColumnKey, lookupResolution, parseResolutionTarget,
-  rollVsTarget,
+  applyDmRules, applyStructuredDms, labelToColumnKey, lookupResolution,
+  parseResolutionTarget, rollVsTarget,
+  type StructuredDm,
 } from "../tables";
 import { awardDecoration, runCourtMartial } from "../awards";
 import { tryMitigate } from "../browniePoints";
@@ -38,6 +39,7 @@ const PATHWAY = "mercenary";
 
 interface MercenaryData {
   combatArms: string[];
+  combatArmResolution?: Record<string, string>;
   initialTraining: string[];
   enlistment: {
     army: { target: number; dms: Array<{ attribute: string; min: number; dm: number }>; startingRank: string };
@@ -52,7 +54,12 @@ interface MercenaryData {
     dms?: string[];
     notes?: string[];
   }>;
-  specialAssignments: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: string[] };
+  specialAssignments: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
+  specialAssignmentDetails?: Record<string, unknown>;
+  combatAssignments?: string[];
+  assignmentReroutes?: {
+    marines?: { fromAssignments: string[]; toAssignment: string };
+  };
   specialistSchool?: Record<string, unknown>;
   serviceSkills: { columns: string[]; rows: Array<Record<string, unknown>> };
   mos: { columns: string[]; rows: Array<Record<string, unknown>> };
@@ -78,6 +85,15 @@ export function mercenaryEnlist(
   const data = dataFor(ch);
   ch.acgState!.combatArm = combatArm;
   ch.acgState!.branch = service === "army" ? "Army" : "Marines";
+
+  // Academy/OTC graduates skip the enlistment roll — they are automatically
+  // enlisted at the rank set by pre-career (O1 for Military Academy or OTC).
+  if (ch.acgState!.preCareerCommission) {
+    ch.history.push(
+      `Auto-enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}) as ${ch.acgState!.rankCode} (academy/OTC).`,
+    );
+    return;
+  }
 
   const enlistSpec = data.enlistment[service];
   let dm = 0;
@@ -113,16 +129,24 @@ export function mercenaryEnlist(
   ch.acgState!.isOfficer = false; // drafted = enlisted; no OCS first term
 }
 
-/** Initial training: first year of term 1. Gun Combat-1, plus one skill
- *  from the MOS table for the combat arm. */
+/** Initial training: first year of term 1. The first entry in
+ *  data.initialTraining names a fixed skill awarded at level 1; the
+ *  remaining entries trigger one roll on the MOS table for the chosen
+ *  combat arm. Per manual p. 51: homeworld Avg Stellar+ grants DM +1
+ *  on the MOS roll (better tech base → better-trained troopers). */
 export function mercenaryInitialTraining(ch: Character): void {
   const data = dataFor(ch);
-  ch.history.push("Initial Training: Gun Combat-1");
-  ch.addSkill("Gun Combat", 1);
+  const fixed = data.initialTraining[0];
+  if (fixed) {
+    ch.history.push(`Initial Training: ${fixed}-1`);
+    ch.addSkill(fixed, 1);
+  }
 
-  // Roll on MOS table for the combat arm.
   const armKey = labelToColumnKey(ch.acgState!.combatArm!);
-  const r = roll(1);
+  let dm = 0;
+  const hwTech = ch.homeworld?.tech;
+  if (hwTech === "Avg Stellar" || hwTech === "High Stellar") dm += 1;
+  const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.mos.rows.find((row) => row.die === r);
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
   const mosSkill = row[armKey] as string | undefined;
@@ -186,11 +210,12 @@ export function mercenaryRollAssignment(ch: Character): string {
   if (!assignment) {
     throw new Error(`Mercenary assignment column "${armKey}" missing for combat arm`);
   }
-  // Manual: Marines never serve on Counterinsurgency or Internal Security;
-  // if rolled, they're assigned to Ship's Troops instead.
-  if (ch.acgState!.branch === "Marines" &&
-      (assignment === "Ctrlns" || assignment === "Counterinsurgency" || assignment === "Internal Security")) {
-    assignment = "Ship's Troops";
+  // Apply per-service reroutes from JSON (Marines: counterinsurgency/internal
+  // security become Ship's Troops, per manual p. 48).
+  const branchKey = ch.acgState!.branch === "Marines" ? "marines" : null;
+  const reroute = branchKey ? data.assignmentReroutes?.[branchKey] : undefined;
+  if (reroute && reroute.fromAssignments.includes(assignment)) {
+    assignment = reroute.toAssignment;
   }
   return assignment;
 }
@@ -199,15 +224,8 @@ export function mercenaryRollAssignment(ch: Character): string {
  *  Updates Character state in place. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  // Pick which resolution sub-table applies.
-  let resKey: string;
-  if (["Infantry", "Cavalry", "Artillery"].includes(ch.acgState!.combatArm!)) {
-    resKey = "infantryCavalryArtillery";
-  } else if (ch.acgState!.combatArm === "Support") {
-    resKey = "support";
-  } else {
-    resKey = "commando";
-  }
+  const arm = ch.acgState!.combatArm ?? "Infantry";
+  const resKey = data.combatArmResolution?.[arm] ?? "commando";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
 
@@ -225,7 +243,14 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   const res = lookupResolution(resTable, assignment);
 
   // Decoration DM strategy: player may take negative survival DM in
-  // exchange for positive decoration DM. The reverse is also legal.
+  // exchange for positive decoration DM. Interactive mode exposes the
+  // choice before the assignment is resolved.
+  if (ch.choiceMode === "interactive" &&
+      res.decoration !== "none" &&
+      typeof res.survival === "number" &&
+      typeof res.decoration === "number") {
+    promptDecorationDmTradeoff(ch);
+  }
   const decStrategy = ch.acgState!.decorationDmStrategy;
   const survivalDmFromStrategy = -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
   // ^ negative strategy (e.g., -2) means apply -2 to survival and +2 to deco.
@@ -257,9 +282,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     }
     // Survived via brownie point spending.
   }
+  const combatAssignments = data.combatAssignments ?? [];
   if (sv.margin === 0 && typeof res.survival === "number") {
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
-    if (["Police Action", "Counterinsurgency", "Raid", "Ctrlns"].includes(assignment)) {
+    if (combatAssignments.includes(assignment)) {
       ch.acgState!.decorations.push("Purple Heart");
       ch.history.push(`Wounded in ${assignment}; awarded Purple Heart.`);
       ch.acgState!.injuredThisYear = true;
@@ -275,16 +301,20 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     if (dec.margin >= 6) awardDecoration(ch, "SEH");
     else if (dec.margin >= 3) awardDecoration(ch, "MCG");
     else if (dec.margin >= 0) awardDecoration(ch, "MCUF");
-    else if (dec.margin <= -6) runCourtMartial(ch);
+    else if (dec.margin <= -6) runCourtMartial(ch, assignment);
   }
 
   // --- Promotion ---
   if (res.promotion !== "none" &&
       !(ch.acgState!.isOfficer && res.promotionOfficersBarred) &&
       !(ch.acgState!.isOfficer && ch.acgState!.promotedThisTerm)) {
-    const pr = rollVsTarget(res.promotion, promoDm);
+    const penalty = ch.acgState!.nextPromotionPenalty ?? 0;
+    const effectiveDm = promoDm + penalty;
+    if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0; // consumed
+    const pr = rollVsTarget(res.promotion, effectiveDm);
     ch.verboseHistory(
-      `Mercenary ${assignment} promotion: ${pr.roll}${promoDm ? ` + ${promoDm}` : ""} vs ${res.promotion}`,
+      `Mercenary ${assignment} promotion: ${pr.roll}${effectiveDm ? ` + ${effectiveDm}` : ""} vs ${res.promotion}` +
+      (penalty ? ` (reprimand penalty ${penalty})` : ""),
     );
     if (pr.success) promoteMercenary(ch);
   }
@@ -298,8 +328,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     if (sk.success) rollMercenarySkill(ch);
   }
 
-  // Combat ribbon
-  if (["Police Action", "Counterinsurgency", "Raid", "Ctrlns"].includes(assignment)) {
+  if (combatAssignments.includes(assignment)) {
     ch.acgState!.combatRibbons += 1;
     if (ch.acgState!.inCommand && ch.acgState!.isOfficer) {
       ch.acgState!.commandClusters += 1;
@@ -309,23 +338,83 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   ch.acgState!.assignmentHistory.push(assignment);
 }
 
-/** Roll one skill from a column appropriate for current rank/duty. */
+function promptDecorationDmTradeoff(ch: Character): void {
+  ch.pickOrDefer({
+    kind: "decorationDmTradeoff",
+    label:
+      "Take a -N DM on survival in exchange for +N on decoration? " +
+      "(Negative survival ↔ positive decoration; pick 0 to keep things straight.)",
+    options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
+      "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
+    onResolve: (c, choice) => {
+      if (choice.startsWith("-2")) c.acgState!.decorationDmStrategy = -2;
+      else if (choice.startsWith("-1")) c.acgState!.decorationDmStrategy = -1;
+      else if (choice.startsWith("+1")) c.acgState!.decorationDmStrategy = 1;
+      else if (choice.startsWith("+2")) c.acgState!.decorationDmStrategy = 2;
+      else c.acgState!.decorationDmStrategy = 0;
+    },
+  });
+}
+
+/** Roll one skill from a column appropriate for current rank/duty.
+ *  Column selection per manual p. 51:
+ *    E1-E2: armyLife/marineLife
+ *    E3-E9 enlisted: ncoSkills
+ *    O1+ with command duty: commandSkills
+ *    O1+ without command duty: staffSkills
+ *    Marines currently on Ship's Troops: shipboard
+ *  In interactive mode the player may pick across all rank-eligible
+ *  columns (e.g. an NCO may always elect armyLife instead of ncoSkills). */
 function rollMercenarySkill(ch: Character): void {
-  const data = dataFor(ch);
-  // Column selection per manual:
-  //   E1-E2: armyLife/marineLife
-  //   E3-E9 enlisted: ncoSkills
-  //   O1+ with command duty: commandSkills
-  //   O1+ without command duty: staffSkills
-  //   Marines on Ship's Troops: shipboard
-  let col: string;
-  if (ch.acgState!.isOfficer) {
-    col = ch.acgState!.inCommand ? "commandSkills" : "staffSkills";
-  } else if (ch.acgState!.rankCode === "E1" || ch.acgState!.rankCode === "E2") {
-    col = ch.acgState!.branch === "Marines" ? "marineLife" : "armyLife";
-  } else {
-    col = "ncoSkills";
+  // Ship's Troops takes precedence for Marines (manual: ship-troops column
+  // is available to Marines on Ship's Troops assignment regardless of rank).
+  if (ch.acgState!.branch === "Marines" &&
+      ch.acgState!.currentAssignment === "Ship's Troops") {
+    rollMercenarySkillFromColumn(ch, "shipboard");
+    return;
   }
+  if (ch.choiceMode === "interactive") {
+    const options = mercenaryAvailableSkillColumns(ch);
+    if (options.length > 1) {
+      ch.pickOrDefer({
+        kind: "skillTable",
+        label: "Choose a service-skills column to roll on",
+        options,
+        onResolve: (c, col) => rollMercenarySkillFromColumn(c, col),
+      });
+      return;
+    }
+  }
+  const col = mercenaryDefaultSkillColumn(ch);
+  rollMercenarySkillFromColumn(ch, col);
+}
+
+function mercenaryDefaultSkillColumn(ch: Character): string {
+  if (ch.acgState!.isOfficer) {
+    return ch.acgState!.inCommand ? "commandSkills" : "staffSkills";
+  }
+  if (ch.acgState!.rankCode === "E1" || ch.acgState!.rankCode === "E2") {
+    return ch.acgState!.branch === "Marines" ? "marineLife" : "armyLife";
+  }
+  return "ncoSkills";
+}
+
+function mercenaryAvailableSkillColumns(ch: Character): string[] {
+  const cols: string[] = [];
+  const lifeCol = ch.acgState!.branch === "Marines" ? "marineLife" : "armyLife";
+  cols.push(lifeCol);
+  const rankNum = parseInt(ch.acgState!.rankCode.replace(/[^\d]/g, ""), 10) || 0;
+  if (!ch.acgState!.isOfficer && rankNum >= 3) cols.push("ncoSkills");
+  if (ch.acgState!.isOfficer) {
+    if (ch.acgState!.inCommand) cols.push("commandSkills");
+    else cols.push("staffSkills");
+  }
+  if (ch.acgState!.branch === "Marines") cols.push("shipboard");
+  return cols;
+}
+
+function rollMercenarySkillFromColumn(ch: Character, col: string): void {
+  const data = dataFor(ch);
   const r = roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
@@ -381,12 +470,7 @@ function promoteMercenary(ch: Character): void {
 export function mercenarySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
-  // Per manual p. 50: Marine enlisted DM +1 if Edu 7+; Army enlisted DM +1 if End 7+.
-  let dm = 0;
-  if (!ch.acgState!.isOfficer) {
-    if (ch.acgState!.branch === "Marines" && ch.attributes.education >= 7) dm += 1;
-    if (ch.acgState!.branch === "Army" && ch.attributes.endurance >= 7) dm += 1;
-  }
+  const dm = applyStructuredDms(data.specialAssignments.dms, ch);
   const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.specialAssignments.rows.find((row) => row.die === r);
   if (!row) return;
@@ -413,20 +497,30 @@ export function mercenaryRetention(ch: Character, assignment: string): void {
   }
 }
 
-/** Reenlistment per service. Returns true if continuing. */
+/** Reenlistment per service. Returns true if continuing.
+ *  Manual p. 51 DMs:
+ *    Army: +2 if rank E9 or less
+ *    Marines: +1 if cross-trained in Artillery or Cavalry AND reenlisting
+ *             into either of those arms */
 export function mercenaryReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   const svc = ch.acgState!.branch === "Marines" ? "marines" : "army";
   const spec = data.reenlistment[svc];
-  // Parse "+2 if rank E9 or less" etc. — simplified: apply +2 for army
-  // E-rank, +1 for marines if cross-trained (we don't track cross-train).
   let dm = 0;
   for (const ruleStr of spec.dms) {
-    const m = ruleStr.match(/^\s*\+\s*(\d+)/);
+    const lc = ruleStr.toLowerCase();
+    const m = ruleStr.match(/[+\-]\s*(\d+)/);
     if (!m) continue;
-    if (ruleStr.toLowerCase().includes("rank e9 or less") &&
-        ch.acgState!.rankCode.startsWith("E")) {
-      dm += parseInt(m[1]!, 10);
+    const mag = parseInt(m[1]!, 10);
+    if (lc.includes("rank e9 or less") && ch.acgState!.rankCode.startsWith("E")) {
+      dm += mag;
+    }
+    if (lc.includes("cross-trained in artillery or cavalry")) {
+      const xtrain = ch.acgState!.crossTrainedArms ?? [];
+      const eligibleArms = ["Artillery", "Cavalry"];
+      const hasXTrain = xtrain.some((a) => eligibleArms.includes(a));
+      const inEligibleArm = eligibleArms.includes(ch.acgState!.combatArm ?? "");
+      if (hasXTrain && inEligibleArm) dm += mag;
     }
   }
   const r = roll(2);
@@ -438,10 +532,18 @@ export function mercenaryReenlist(ch: Character): boolean {
   return r + dm >= spec.target;
 }
 
-/** Hook called by the runner before per-year processing. Resets per-term
- *  flags (officer promotion cap, etc.) at start of each term. */
-export function mercenaryStartOfTerm(_ch: Character): void {
-  // No-op for now — handled by the shared runner.
+/** Hook called by the runner before per-term processing.
+ *  Resets per-term Mercenary-specific flags:
+ *    - injuredThisYear (per-year, but cleared here as a safety net)
+ *    - decorationDmStrategy (player's tradeoff applies for one assignment;
+ *      reset between terms so a stale value doesn't leak forward).
+ *    - examDm and effectiveRankCode are merchant-only but harmless to clear.
+ *  The shared runner clears year/promotedThisTerm before each term; this
+ *  hook adds the Mercenary-specific bookkeeping. */
+export function mercenaryStartOfTerm(ch: Character): void {
+  if (!ch.acgState) return;
+  ch.acgState.injuredThisYear = false;
+  ch.acgState.decorationDmStrategy = 0;
 }
 
 export function getMercenaryPathway() {

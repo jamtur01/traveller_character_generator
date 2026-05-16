@@ -4,6 +4,7 @@
 
 import { roll } from "../../random";
 import type { Character } from "../../character";
+import { getEdition } from "../../editions";
 import type {
   AssignmentResolution, AssignmentTable, ResolutionTarget,
 } from "./types";
@@ -86,18 +87,22 @@ export function lookupResolution(
       `Assignment "${assignment}" (column key "${colKey}") not found in resolution table columns: ${resolution.columns.join(", ")}`,
     );
   }
-  const rowFor = (resultName: string) => {
-    const r = resolution.rows.find(
+  // Scout / Merchant resolution tables omit Decoration and/or Promotion
+  // rows (the manual doesn't define those mechanics for those pathways).
+  // A missing row means the result type is not applicable and returns "none".
+  const rowFor = (resultName: string) =>
+    resolution.rows.find(
       (r) => String(r.result).toLowerCase() === resultName.toLowerCase(),
     );
-    if (!r) throw new Error(`Resolution row "${resultName}" missing`);
-    return r;
+  const cellOr = (resultName: string): unknown => {
+    const r = rowFor(resultName);
+    return r ? r[colKey] : null;
   };
 
-  const survival = parseResolutionTarget(rowFor("Survival")[colKey]);
-  const decoration = parseResolutionTarget(rowFor("Decoration")[colKey]);
-  const promotion = parseResolutionTarget(rowFor("Promotion")[colKey]);
-  const skills = parseResolutionTarget(rowFor("Skills")[colKey]);
+  const survival = parseResolutionTarget(cellOr("Survival"));
+  const decoration = parseResolutionTarget(cellOr("Decoration"));
+  const promotion = parseResolutionTarget(cellOr("Promotion"));
+  const skills = parseResolutionTarget(cellOr("Skills"));
 
   return {
     survival: survival.target,
@@ -159,33 +164,112 @@ export function parseDmRule(rule: string, ch: Character): number {
     return 0;
   }
 
-  // Skill-level condition? "if any MOS skill 2+" / "if Steward-2+" /
-  // "if Pilot-2+" / "if any department skill 2+"
+  // "if any MOS skill 2+": evaluate against the character's recorded
+  // MOS plus the per-arm MOS column for their combat arm (read from the
+  // pathway's mos table). Returns DM if any of those skills is at least
+  // the listed level.
+  const anyMosMatch = rule.match(/if\s+any\s+MOS\s+skill\s+(\d+)\s*\+/i);
+  if (anyMosMatch) {
+    const level = parseInt(anyMosMatch[1]!, 10);
+    if (anyMosSkillAtLeast(ch, level)) return mag;
+    return 0;
+  }
+
+  // "if any department skill 2+": evaluate against the Merchant Prince
+  // department skill column for the character's department.
+  const anyDeptMatch = rule.match(/if\s+any\s+department\s+skill\s+(\d+)\s*\+/i);
+  if (anyDeptMatch) {
+    const level = parseInt(anyDeptMatch[1]!, 10);
+    if (anyDepartmentSkillAtLeast(ch, level)) return mag;
+    return 0;
+  }
+
+  // Specific skill condition: "if Steward-2+" / "if Pilot 2+" etc.
   const skillMatch = rule.match(
-    /if\s+(?:any\s+(?:MOS|department)\s+skill|([A-Z][\w' -]*?))(?:-|\s+)(\d+)\s*\+/i,
+    /if\s+([A-Z][\w' -]*?)(?:-|\s+)(\d+)\s*\+/i,
   );
   if (skillMatch) {
-    if (skillMatch[1]) {
-      // Specific skill name
-      const skill = skillMatch[1]!.trim();
-      const level = parseInt(skillMatch[2]!, 10);
-      if (ch.checkSkillLevel(skill, level)) return mag;
-      return 0;
-    }
-    // "any MOS skill" or "any department skill" — without per-character
-    // MOS/department skill tracking we can't evaluate; treat as no-DM.
+    const skill = skillMatch[1]!.trim();
+    const level = parseInt(skillMatch[2]!, 10);
+    if (ch.checkSkillLevel(skill, level)) return mag;
     return 0;
   }
 
   // Rank-based condition? "if rank E4+ or rank O1+"
-  const rankMatch = rule.match(/if\s+rank\s+(E|O|IS-)(\d+)\s*\+/i);
+  const rankMatch = rule.match(/if\s+rank\s+([A-Za-z-]+)(\d+)\s*\+/i);
   if (rankMatch) {
-    // Without acgState available here, we can't check rank; caller should
-    // handle rank-conditional DMs explicitly via getCommandDutyDm etc.
+    const letter = rankMatch[1]!.toUpperCase().replace(/-$/, "");
+    const want = parseInt(rankMatch[2]!, 10);
+    const code = ch.acgState?.rankCode ?? "";
+    const codeMatch = code.match(/^([A-Z-]+?)(\d+)$/);
+    if (codeMatch && codeMatch[1]!.toUpperCase().replace(/-$/, "") === letter) {
+      if (parseInt(codeMatch[2]!, 10) >= want) return mag;
+    }
     return 0;
   }
 
   return 0;
+}
+
+function anyMosSkillAtLeast(ch: Character, level: number): boolean {
+  // Direct MOS field (from initial training).
+  const mos = ch.acgState?.mos;
+  if (mos) {
+    for (const [n, l] of ch.skills) if (n === mos && l >= level) return true;
+  }
+  // Cross-reference against the mercenary MOS column for the combat arm.
+  const skills = mercenaryArmSkillSet(ch);
+  for (const skill of skills) {
+    for (const [n, l] of ch.skills) if (n === skill && l >= level) return true;
+  }
+  return false;
+}
+
+function anyDepartmentSkillAtLeast(ch: Character, level: number): boolean {
+  const skills = merchantDepartmentSkillSet(ch);
+  for (const skill of skills) {
+    for (const [n, l] of ch.skills) if (n === skill && l >= level) return true;
+  }
+  return false;
+}
+
+function mercenaryArmSkillSet(ch: Character): Set<string> {
+  const out = new Set<string>();
+  const acg = ch.acgState;
+  if (!acg) return out;
+  const editionAcg = getEdition(ch.editionId).data
+    .advancedCharacterGeneration as { mercenary?: {
+      mos?: { columns: string[]; rows: Array<Record<string, unknown>> };
+    } } | undefined;
+  const mos = editionAcg?.mercenary?.mos;
+  if (!mos) return out;
+  const arm = acg.combatArm ?? "";
+  const col = arm.charAt(0).toLowerCase() + arm.slice(1);
+  for (const row of mos.rows) {
+    const v = row[col];
+    if (typeof v === "string") out.add(v);
+  }
+  return out;
+}
+
+function merchantDepartmentSkillSet(ch: Character): Set<string> {
+  const out = new Set<string>();
+  const acg = ch.acgState;
+  if (!acg?.department) return out;
+  const editionAcg = getEdition(ch.editionId).data
+    .advancedCharacterGeneration as { merchantPrince?: {
+      skillTables?: { department?: {
+        columns: string[]; rows: Array<Record<string, unknown>>;
+      } };
+    } } | undefined;
+  const dept = editionAcg?.merchantPrince?.skillTables?.department;
+  if (!dept) return out;
+  const col = acg.department.charAt(0).toLowerCase() + acg.department.slice(1);
+  for (const row of dept.rows) {
+    const v = row[col];
+    if (typeof v === "string") out.add(v);
+  }
+  return out;
 }
 
 function normalizeAttr(
@@ -198,6 +282,91 @@ function normalizeAttr(
   if (lc.startsWith("int")) return "intelligence";
   if (lc.startsWith("edu")) return "education";
   return "social";
+}
+
+/** Structured DM rule shape used by branchAssignment, commandDuty,
+ *  specialAssignments, and similar JSON blocks. Each entry contributes its
+ *  `dm` if its condition holds. Conditions:
+ *    - { attribute, min, dm }       — character's attribute ≥ min
+ *    - { attribute, max, dm }       — character's attribute ≤ max
+ *    - { rankAtLeast: "Ox"/"Ex", dm } — rank number ≥ N for that band
+ *    - { rankAtMost:  "Ox"/"Ex", dm } — rank number ≤ N for that band
+ *    - { officer: true, dm }
+ *    - { enlisted: true, dm }
+ *    - { inCommand: true, dm }
+ *    - { service: "name", dm } / { service: ["a","b"], dm }
+ *    - { fleet: "name", dm }
+ *    - { skillAtLeast: { skill, level }, dm }                        */
+export interface StructuredDm {
+  attribute?: string;
+  min?: number;
+  max?: number;
+  rankAtLeast?: string;
+  rankAtMost?: string;
+  officer?: boolean;
+  enlisted?: boolean;
+  inCommand?: boolean;
+  service?: string | string[];
+  fleet?: string;
+  skillAtLeast?: { skill: string; level: number };
+  dm: number;
+}
+
+export function applyStructuredDms(
+  rules: StructuredDm[] | undefined,
+  ch: Character,
+): number {
+  if (!rules) return 0;
+  let total = 0;
+  for (const r of rules) {
+    if (matchesStructuredDm(r, ch)) total += r.dm;
+  }
+  return total;
+}
+
+function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
+  if (r.attribute) {
+    const k = normalizeAttr(r.attribute);
+    const v = ch.attributes[k];
+    if (r.min !== undefined && v < r.min) return false;
+    if (r.max !== undefined && v > r.max) return false;
+    if (r.min === undefined && r.max === undefined) return false;
+  }
+  const code = ch.acgState?.rankCode ?? "";
+  if (r.rankAtLeast) {
+    const want = parseRankLetter(r.rankAtLeast);
+    const have = parseRankLetter(code);
+    if (!want || !have || want.letter !== have.letter) return false;
+    if (have.n < want.n) return false;
+  }
+  if (r.rankAtMost) {
+    const want = parseRankLetter(r.rankAtMost);
+    const have = parseRankLetter(code);
+    if (!want || !have || want.letter !== have.letter) return false;
+    if (have.n > want.n) return false;
+  }
+  if (r.officer === true && !ch.acgState?.isOfficer) return false;
+  if (r.enlisted === true && ch.acgState?.isOfficer) return false;
+  if (r.inCommand === true && !ch.acgState?.inCommand) return false;
+  if (r.service !== undefined) {
+    const services = Array.isArray(r.service) ? r.service : [r.service];
+    if (!services.includes(ch.service)) return false;
+  }
+  if (r.fleet !== undefined) {
+    if (ch.acgState?.fleet !== r.fleet) return false;
+  }
+  if (r.skillAtLeast) {
+    let lvl = 0;
+    for (const [n, l] of ch.skills) if (n === r.skillAtLeast.skill) lvl = l;
+    if (lvl < r.skillAtLeast.level) return false;
+  }
+  return true;
+}
+
+function parseRankLetter(code: string): { letter: string; n: number } | null {
+  const m = code.match(/^([A-Za-z]+)(\d+)$/);
+  if (!m) return null;
+  return { letter: m[1]!, n: parseInt(m[2]!, 10) };
 }
 
 /** Resolve a roll target into a 2d6 outcome: returns {success, margin, roll}.
