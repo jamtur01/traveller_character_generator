@@ -25,6 +25,7 @@ import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 
 type Phase =
   | "start"
+  | "pre_career"
   | "career"
   | "term"
   | "skill_basic"
@@ -95,8 +96,44 @@ export default function Home() {
     if (useAcg && editionHasAcg(edition) && acgPathway) {
       c.useAcg = true;
       c.acgPathway = acgPathway;
+      // ACG characters get a pre-career phase first (college / academy /
+      // medical / flight school) before enlistment. Honors graduates can
+      // chain; academy graduates auto-route into their pathway.
+      commit(c, "pre_career");
+      return;
     }
     commit(c, "career");
+  };
+
+  /** Apply a pre-career option. Honors a chained-academic-progression: an
+   *  honors college grad may chain into medical/flight school; an academy
+   *  honors grad may try medical/flight. After the option completes, route
+   *  the player to either another pre-career attempt or to enlistment. */
+  const applyPreCareer = (opt:
+    | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
+    | "medicalSchool" | "flightSchool"
+    | "skip"
+  ) => {
+    const prev = characterRef.current;
+    if (!prev) return;
+    const c = cloneCharacter(prev);
+    if (opt === "skip") {
+      commit(c, "career");
+      return;
+    }
+    const r = c.doPreCareer(opt);
+    // Academy graduates with autoEnlistPathway should jump straight to the
+    // pathway's ACG enlistment phase. Otherwise stay in pre_career so the
+    // player can chain (honors → medical/flight) or skip to enlistment.
+    if (r.autoEnlistPathway) {
+      c.acgPathway = r.autoEnlistPathway;
+      setAcgPathway(r.autoEnlistPathway);
+      // Best-effort pathway routing for auto-enlistment: the user can still
+      // override sub-options on the career screen.
+      commit(c, "career");
+      return;
+    }
+    commit(c, "pre_career");
   };
 
   const resolvePending = (choiceId: string, optionIdx: number) => {
@@ -366,6 +403,13 @@ export default function Home() {
               setAcgDivision={setAcgDivision}
               acgLineType={acgLineType}
               setAcgLineType={setAcgLineType}
+            />
+          )}
+
+          {phase === "pre_career" && character && (
+            <PreCareerPhase
+              character={character}
+              onApply={applyPreCareer}
             />
           )}
 
@@ -1012,6 +1056,104 @@ function PendingChoicesPanel({
         </p>
       )}
     </PhaseCard>
+  );
+}
+
+type PreCareerOption =
+  | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
+  | "medicalSchool" | "flightSchool";
+
+function PreCareerPhase({
+  character,
+  onApply,
+}: {
+  character: Character;
+  onApply: (opt: PreCareerOption | "skip") => void;
+}) {
+  const attended = character.acgState?.schoolsAttended ?? [];
+  const has = (k: string) => attended.includes(k);
+  const collegeGraduated = has("college");
+  const navalAcademyGraduated = has("navalAcademy");
+  // Medical School (PM p. 47): available to college honors graduates (or to
+  // Naval Academy honors graduates per the manual's chained chain). We
+  // detect "graduated" via schoolsAttended; "honors" is held only on the
+  // returned result, but the manual permits the attempt after any of those
+  // schools — gate by graduation alone for the UI prompt.
+  const medAvailable = !has("medicalSchool") &&
+    (collegeGraduated || navalAcademyGraduated || has("militaryAcademy"));
+  const flightAvailable = !has("flightSchool") && navalAcademyGraduated;
+  return (
+    <PhaseCard
+      title="Pre-career education (optional)"
+      subtitle="College, service academies, medical, and flight school. Each option ages you and may grant skills, attributes, brownie points, or auto-enlist. Academy honors graduates may chain into Medical or Flight School. Skip to proceed straight to enlistment."
+    >
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {!has("college") && (
+          <PreCareerButton
+            label="College"
+            sub="2D6 admit 9+ (Edu 9+: +2 DM); 4 years; honors gates Medical."
+            onClick={() => onApply("college")}
+          />
+        )}
+        {!has("navalAcademy") && (
+          <PreCareerButton
+            label="Naval Academy"
+            sub="Soc 6+ to apply. Graduates auto-enlist as O1 Imperial Navy."
+            onClick={() => onApply("navalAcademy")}
+          />
+        )}
+        {!has("militaryAcademy") && (
+          <PreCareerButton
+            label="Military Academy"
+            sub="Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines."
+            onClick={() => onApply("militaryAcademy")}
+          />
+        )}
+        {!has("merchantAcademy") && (
+          <PreCareerButton
+            label="Merchant Academy"
+            sub="Open to characters already in Megacorp / Sector-wide line. Auto O1 commission."
+            onClick={() => onApply("merchantAcademy")}
+          />
+        )}
+        {medAvailable && (
+          <PreCareerButton
+            label="Medical School"
+            sub="Honors of college / academy gates entry. Graduates receive Medical-3, Admin, +1 Edu."
+            onClick={() => onApply("medicalSchool")}
+          />
+        )}
+        {flightAvailable && (
+          <PreCareerButton
+            label="Flight School"
+            sub="Naval Academy honors. Ship's Boat, Navigation, 1D-3 (min 1) Pilot."
+            onClick={() => onApply("flightSchool")}
+          />
+        )}
+      </div>
+      <PrimaryButton onClick={() => onApply("skip")}>
+        Skip pre-career → enlistment
+      </PrimaryButton>
+      {attended.length > 0 && (
+        <div className="text-xs text-zinc-600 dark:text-zinc-400">
+          Already attended: {attended.join(", ")}
+        </div>
+      )}
+    </PhaseCard>
+  );
+}
+
+function PreCareerButton({
+  label, sub, onClick,
+}: { label: string; sub: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-md border border-zinc-300 bg-white p-3 text-left text-sm shadow-sm hover:border-emerald-500 hover:bg-emerald-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-emerald-500 dark:hover:bg-zinc-800"
+    >
+      <div className="font-semibold text-zinc-900 dark:text-zinc-50">{label}</div>
+      <div className="text-xs text-zinc-600 dark:text-zinc-400">{sub}</div>
+    </button>
   );
 }
 
