@@ -27,6 +27,7 @@ import {
   applyDmRules, labelToColumnKey, parseResolutionTarget, rollVsTarget,
 } from "../tables";
 import { awardBrownie } from "../awards";
+import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 
 const PATHWAY = "merchantPrince";
@@ -174,9 +175,19 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     const sv = rollVsTarget(target, survDm);
     ch.verboseHistory(`Merchant ${assignment} survival: ${sv.roll} + ${survDm} vs ${target}`);
     if (!sv.success) {
-      ch.history.push("Failed survival; mustered out of merchant service.");
-      ch.activeDuty = false;
-      return;
+      const mit = tryMitigate(ch, {
+        rollName: "survival",
+        rollValue: sv.roll,
+        dm: survDm,
+        target: typeof target === "number" ? target : 0,
+        margin: sv.margin,
+        consequence: "Mustered out of merchant service",
+      });
+      if (mit.newMargin < 0) {
+        ch.history.push("Failed survival; mustered out of merchant service.");
+        ch.activeDuty = false;
+        return;
+      }
     }
   }
   if (skillRow) {

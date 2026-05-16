@@ -12,6 +12,9 @@ import {
   generateAndApplyHomeworld, type Homeworld,
 } from "./engine/homeworld";
 import { mercenaryEnlist } from "./engine/acg/pathways/mercenary";
+import {
+  applyPreCareerResult, attemptPreCareer, type PreCareerOption,
+} from "./engine/acg/preCareer";
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
 import { merchantEnlist } from "./engine/acg/pathways/merchantPrince";
@@ -246,6 +249,48 @@ export class Character {
   generateHomeworld(): void {
     if (!editionHasHomeworld(this.editionId)) return;
     generateAndApplyHomeworld(this);
+  }
+
+  /**
+   * Attempt a pre-career option (College, Naval/Military/Merchant
+   * Academy, Medical or Flight school). Returns the structured result
+   * including any auto-enlistment pathway (OTC → mercenary; NOTC → navy;
+   * academy graduation → that academy's career).
+   *
+   * Mutates Character state (skills, attributes, age, brownie points).
+   * Callers should check result.autoEnlistPathway and route to beginAcg
+   * with the appropriate options, OR call this multiple times for
+   * Medical/Flight school after honors.
+   */
+  doPreCareer(option: PreCareerOption): {
+    autoEnlistPathway: "mercenary" | "navy" | "scout" | "merchantPrince" | null;
+    honors: boolean;
+    graduated: boolean;
+    commissioned: boolean;
+  } {
+    if (!this.useAcg) {
+      throw new Error("doPreCareer is only valid in ACG mode");
+    }
+    if (!this.acgState) {
+      // Lazy-init acgState so pre-career can run before pathway is chosen.
+      this.acgState = {
+        pathway: "mercenary", rankCode: "E1", isOfficer: false,
+        year: 1, currentAssignment: null, inCommand: false,
+        justRetained: false, retainedAssignment: null,
+        promotedThisTerm: false, injuredThisYear: false,
+        assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+        schoolsAttended: [], decorations: [], browniePoints: 0,
+        browniePointsSpent: 0, decorationDmStrategy: 0,
+      };
+    }
+    const result = attemptPreCareer(this, option);
+    applyPreCareerResult(this, option, result);
+    return {
+      autoEnlistPathway: result.autoEnlistPathway,
+      honors: result.honors,
+      graduated: result.graduated,
+      commissioned: result.commissioned,
+    };
   }
 
   /**

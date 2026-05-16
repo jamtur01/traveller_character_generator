@@ -22,6 +22,7 @@ import { roll } from "../../../random";
 import {
   applyDmRules, labelToColumnKey, lookupResolution, rollVsTarget,
 } from "../tables";
+import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 
 const PATHWAY = "scout";
@@ -164,9 +165,19 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const sv = rollVsTarget(res.survival, survDm);
   ch.verboseHistory(`Scout ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`);
   if (!sv.success) {
-    ch.history.push("Failed survival; invalided out of Scout service.");
-    ch.activeDuty = false;
-    return;
+    const mit = tryMitigate(ch, {
+      rollName: "survival",
+      rollValue: sv.roll,
+      dm: survDm,
+      target: typeof res.survival === "number" ? res.survival : 0,
+      margin: sv.margin,
+      consequence: "Invalided out of Scout service",
+    });
+    if (mit.newMargin < 0) {
+      ch.history.push("Failed survival; invalided out of Scout service.");
+      ch.activeDuty = false;
+      return;
+    }
   }
 
   // Bureaucracy → administrator rank ladder is climbed via promotion
