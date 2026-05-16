@@ -3147,27 +3147,27 @@
     },
     "dmsByColumn": {
       "atmosphere": [
-        { "condition": "size = Asteroid", "dm": -9 },
-        { "condition": "size = Small", "dm": -2 },
-        { "condition": "size = Large", "dm": 2 }
+        { "when": { "column": "size", "equals": "Asteroid" }, "dm": -9 },
+        { "when": { "column": "size", "equals": "Small" }, "dm": -2 },
+        { "when": { "column": "size", "equals": "Large" }, "dm": 2 }
       ],
       "hydrosphere": [
-        { "condition": "size = Small", "dm": -2 },
-        { "condition": "size = Large", "dm": 2 }
+        { "when": { "column": "size", "equals": "Small" }, "dm": -2 },
+        { "when": { "column": "size", "equals": "Large" }, "dm": 2 }
       ],
       "law": [
-        { "condition": "population = Low Pop", "dm": -1 },
-        { "condition": "population = High Pop", "dm": 1 }
+        { "when": { "column": "population", "equals": "Low Pop" }, "dm": -1 },
+        { "when": { "column": "population", "equals": "High Pop" }, "dm": 1 }
       ],
       "tech": [
-        { "condition": "starport = A", "dm": 3 },
-        { "condition": "starport = B", "dm": 2 },
-        { "condition": "starport = C", "dm": 1 },
-        { "condition": "starport = X", "dm": -2 },
-        { "condition": "size = Asteroid", "dm": 1 },
-        { "condition": "hydrosphere = Water World", "dm": 1 },
-        { "condition": "population = Low Pop", "dm": 1 },
-        { "condition": "population = High Pop", "dm": 2 }
+        { "when": { "column": "starport", "equals": "A" }, "dm": 3 },
+        { "when": { "column": "starport", "equals": "B" }, "dm": 2 },
+        { "when": { "column": "starport", "equals": "C" }, "dm": 1 },
+        { "when": { "column": "starport", "equals": "X" }, "dm": -2 },
+        { "when": { "column": "size", "equals": "Asteroid" }, "dm": 1 },
+        { "when": { "column": "hydrosphere", "equals": "Water World" }, "dm": 1 },
+        { "when": { "column": "population", "equals": "Low Pop" }, "dm": 1 },
+        { "when": { "column": "population", "equals": "High Pop" }, "dm": 2 }
       ]
     },
     "defaultSkills": [
