@@ -3759,13 +3759,6 @@
             "roll": 10,
             "result": "Death; escape, killing 1D guards; KCr100 reward"
           }
-        ],
-        "dms": [
-          "+1 if rank E7 to E9",
-          "+2 if combat assignment",
-          "-2 if training",
-          "-1 if rank O7+",
-          "+2 if command duty"
         ]
       },
       "browniePoints": {
