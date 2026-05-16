@@ -336,16 +336,10 @@
         "dm": 1
       },
       "cashTableDm": [
+        { "when": { "retired": true }, "dm": 1 },
+        { "when": { "skillAtLeast": { "skill": "Gambling", "level": 1 } }, "dm": 1 },
         {
-          "condition": "Retired",
-          "dm": 1
-        },
-        {
-          "condition": "Gambling-1 or better",
-          "dm": 1
-        },
-        {
-          "condition": "Prospecting-1 or better",
+          "when": { "skillAtLeast": { "skill": "Prospecting", "level": 1 } },
           "dm": 1,
           "services": [
             "merchants",

@@ -10,8 +10,16 @@
 import type { Character } from "../character";
 import { getEdition } from "../editions";
 
+interface CashTableDmWhen {
+  retired?: boolean;
+  skillAtLeast?: { skill: string; level: number };
+}
+
 interface CashTableDm {
-  condition: string;
+  /** Legacy: free-text condition. */
+  condition?: string;
+  /** Structured: discriminated by retired/skillAtLeast. */
+  when?: CashTableDmWhen;
   dm: number;
   services?: string[];
 }
@@ -40,9 +48,19 @@ export function cashDmFor(ch: Character): number {
   let total = 0;
   for (const c of r.cashTableDm) {
     if (c.services && !c.services.includes(ch.service)) continue;
-    if (conditionMatches(c.condition, ch)) total += c.dm;
+    if (c.when ? whenMatches(c.when, ch) : conditionMatches(c.condition ?? "", ch)) {
+      total += c.dm;
+    }
   }
   return total;
+}
+
+function whenMatches(w: CashTableDmWhen, ch: Character): boolean {
+  if (w.retired === true && !ch.retired) return false;
+  if (w.skillAtLeast && !ch.checkSkillLevel(w.skillAtLeast.skill, w.skillAtLeast.level)) {
+    return false;
+  }
+  return true;
 }
 
 /** Benefit-table DM for this character under the active edition's rules. */
