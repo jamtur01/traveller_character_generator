@@ -1114,13 +1114,10 @@ function PreCareerPhase({
             onClick={() => onApply("militaryAcademy")}
           />
         )}
-        {!has("merchantAcademy") && (
-          <PreCareerButton
-            label="Merchant Academy"
-            sub="Open to characters already in Megacorp / Sector-wide line. Auto O1 commission."
-            onClick={() => onApply("merchantAcademy")}
-          />
-        )}
+        {/* Merchant Academy is post-enlistment-only (PM p. 44: "available
+            after enlistment in a Megacorporation or Sector-wide line"). The
+            pre-career UI no longer offers it; attemptPreCareer enforces the
+            lineType gate. */}
         {medAvailable && (
           <PreCareerButton
             label="Medical School"
