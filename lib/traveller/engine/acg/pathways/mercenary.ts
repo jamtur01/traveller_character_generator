@@ -400,8 +400,12 @@ function promptDecorationDmTradeoff(ch: Character): void {
 function rollMercenarySkill(ch: Character): void {
   // Ship's Troops takes precedence for Marines (manual: ship-troops column
   // is available to Marines on Ship's Troops assignment regardless of rank).
+  // The "Ship's Troops" label comes from JSON's assignmentReroutes.marines
+  // toAssignment so the string lives in one place.
+  const data = dataFor(ch);
+  const shipsTroopsLabel = data.assignmentReroutes?.marines?.toAssignment ?? "Ship's Troops";
   if (ch.acgState!.branch === "Marines" &&
-      ch.acgState!.currentAssignment === "Ship's Troops") {
+      ch.acgState!.currentAssignment === shipsTroopsLabel) {
     rollMercenarySkillFromColumn(ch, "shipboard");
     return;
   }
