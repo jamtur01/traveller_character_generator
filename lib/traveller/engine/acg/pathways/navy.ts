@@ -40,7 +40,11 @@ interface NavyData {
   branches?: string[];
   initialTraining?: string[];
   commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
-  assignment: { columns: string[]; rows: Array<Record<string, number | string>> };
+  assignment: {
+    columns: string[];
+    rows: Array<Record<string, number | string>>;
+    dms?: StructuredDm[];
+  };
   assignmentResolution: Record<string, {
     columns: string[];
     rows: Array<Record<string, unknown>>;
@@ -53,8 +57,16 @@ interface NavyData {
   combatAssignments?: string[];
   rankCaps?: { imperialNavy: number; reserveFleet: number; systemSquadron: number };
   specialistSchool?: Record<string, unknown>;
-  serviceSkills?: { columns: string[]; rows: Array<Record<string, unknown>> };
-  branchSkills?: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: string[] };
+  serviceSkills?: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
+  branchSkills?: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
   ranks: { enlisted: Array<[string, string]>; officer: Array<[string, string, number]> };
   reenlistment: {
     perFleet?: Record<string, {
@@ -289,10 +301,7 @@ export function navyRollAssignment(ch: Character): string {
     ch.acgState!.retainedAssignment = null;
     return retained;
   }
-  // College/Academy E4-E9 → DM +1.
-  let dm = 0;
-  const rankNum = parseInt(ch.acgState!.rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  if (!ch.acgState!.isOfficer && rankNum >= 4) dm += 1;
+  const dm = applyStructuredDms(data.assignment.dms, ch);
   const r = Math.max(2, Math.min(12, roll(2) + dm));
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Navy assignment table missing row for die=${r}`);

@@ -336,6 +336,10 @@ export interface StructuredDm {
    *  (mercenary/navy serviceSkills). Callers that don't filter by column
    *  see every entry. */
   column?: string;
+  /** True if the character has any of these schools/pre-careers recorded
+   *  in acgState.schoolsAttended (used for "College or Academy graduate"
+   *  conditions). */
+  attendedAnyOf?: string[];
   /** When set, restricts this DM to one of survival/promotion/decoration/
    *  skills/bonus. applyDmRules filters by this; applyStructuredDms ignores
    *  it (callers without a rollType context see every entry). */
@@ -413,6 +417,10 @@ function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
     if (!r.currentDepartmentIn.includes(ch.acgState?.department ?? "")) return false;
   }
   if (r.termsAtLeast !== undefined && ch.terms < r.termsAtLeast) return false;
+  if (r.attendedAnyOf) {
+    const schools = ch.acgState?.schoolsAttended ?? [];
+    if (!r.attendedAnyOf.some((s) => schools.includes(s))) return false;
+  }
   if (r.homeworldTechAtLeast) {
     const order = (getEdition(ch.editionId).data as {
       homeworld?: { techCodeOrder?: string[] };
