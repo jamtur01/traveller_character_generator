@@ -8,6 +8,10 @@ import type { StepFn } from "./types";
 
 export const promotionStep: StepFn = ({ character, service, config, edition }) => {
   if (character.deceased) return;
+  if (character.shortTermThisTerm) {
+    character.verboseHistory("Skipping promotion (short term after survival failure).");
+    return;
+  }
   if (!character.commissioned) return;
   if (character.rank >= 6) return;
   if (service.promotionThrow === undefined) return;

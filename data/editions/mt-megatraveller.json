@@ -287,7 +287,12 @@
       "agingSave": "2d6"
     },
     "survival": {
-      "onFailure": "musterOut",
+      "onFailure": "shortTerm",
+      "shortTermYears": 2,
+      "fullTermYears": 4,
+      "shortTermDoesNotCountForMusterBenefits": true,
+      "skipCommissionPromotionInShortTerm": true,
+      "specialDutyAndSkillsStillRoll": true,
       "optionalDeathRule": "Referee or player may decide that failure of the survival throw results in death and that a new character must be generated."
     },
     "reenlistment": {

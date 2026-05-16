@@ -89,6 +89,19 @@ export class Character {
    */
   mandatoryReenlistment = false;
   /**
+   * True for the current term when MT's short-term rule fired: the character
+   * failed survival, served only 2 years of the 4-year term, and the term is
+   * not counted for mustering-out benefits. Commission/promotion are skipped
+   * for the term; special duty/skills can still happen. Per MT PM p. 16.
+   * Reset at the start of each term in doServiceTermStep.
+   */
+  shortTermThisTerm = false;
+  /**
+   * Count of short terms served. Each one was 2 years (not 4) and does not
+   * count toward mustering-out benefit rolls.
+   */
+  shortTermsCount = 0;
+  /**
    * The edition this character was rolled under. Determines which service
    * map, cascade pools, and edition hooks apply. Stays fixed for the
    * character's lifetime — switching editions mid-chargen would invalidate
@@ -618,6 +631,7 @@ export class Character {
   doServiceTermStep() {
     // A mandatory reenlistment is consumed by serving the term it forced.
     this.mandatoryReenlistment = false;
+    this.shortTermThisTerm = false;
     this.verboseHistory("--------------------------------------------");
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
@@ -789,8 +803,9 @@ export class Character {
   musterOutRolls(): number {
     this.finalizeAcgRankForMuster();
     // Reads rules.musterOutRolls from the active edition.
-    //   perTerm × terms (default 1) + the additionalRolls of whichever
-    //   rankBand contains this character's rank.
+    //   perTerm × qualifyingTerms (default 1) + the additionalRolls of
+    //   whichever rankBand contains this character's rank.
+    // Short terms (MT survival-failure) don't count toward muster benefits.
     const rules = (
       getEdition(this.editionId).data.rules as {
         musterOutRolls?: {
@@ -800,7 +815,8 @@ export class Character {
       }
     ).musterOutRolls;
     const perTerm = rules?.perTerm ?? 1;
-    let r = perTerm * this.terms;
+    const qualifyingTerms = Math.max(0, this.terms - this.shortTermsCount);
+    let r = perTerm * qualifyingTerms;
     const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
     if (band) r += band.additionalRolls;
     // ACG court-martial outcomes reduce mustering-out rolls (DD = -3,

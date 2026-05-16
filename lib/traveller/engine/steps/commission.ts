@@ -14,6 +14,10 @@ import type { StepFn } from "./types";
 export const commissionStep: StepFn = ({ character, service, config, edition }) => {
   if (character.deceased) return;
   if (character.commissioned) return;
+  if (character.shortTermThisTerm) {
+    character.verboseHistory("Skipping commission (short term after survival failure).");
+    return;
+  }
   if (character.drafted && character.terms === 1) {
     character.verboseHistory("Skipping commission because of draft.");
     return;
