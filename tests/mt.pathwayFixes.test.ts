@@ -122,10 +122,36 @@ describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
   it("Marine reenlist returns a boolean and consults crossTrainedArms", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.4);
     const c = makeMt();
-    c.beginAcg("mercenary", { service: "marines", combatArm: "Cavalry" });
+    // Marines enter as Infantry/Support; cross-training into Cavalry happens
+    // later via Cross-Training assignment. Simulate that post-state directly.
+    c.beginAcg("mercenary", { service: "marines", combatArm: "Infantry" });
     c.acgState!.combatArm = "Cavalry";
     c.acgState!.crossTrainedArms = ["Artillery"];
     const result = mercenaryReenlist(c);
     expect(typeof result).toBe("boolean");
+  });
+});
+
+describe("Mercenary: combat-arm entry restrictions (PM p. 50)", () => {
+  it("Army cannot start as Commando without Military Academy honors", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = makeMt();
+    expect(() =>
+      c.beginAcg("mercenary", { service: "army", combatArm: "Commando" }),
+    ).toThrow(/Military Academy honors/);
+  });
+  it("Marines cannot start in Cavalry or Artillery", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = makeMt();
+    expect(() =>
+      c.beginAcg("mercenary", { service: "marines", combatArm: "Cavalry" }),
+    ).toThrow(/Marines cannot enter combat arm/);
+  });
+  it("Marines can start in Infantry or Support", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = makeMt();
+    expect(() =>
+      c.beginAcg("mercenary", { service: "marines", combatArm: "Infantry" }),
+    ).not.toThrow();
   });
 });
