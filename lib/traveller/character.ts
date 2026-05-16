@@ -349,6 +349,10 @@ export class Character {
       fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
       division?: "field" | "bureaucracy";
       lineType?: string;
+      /** Subsector tech code (PM p. 52: Navy characters must know this).
+       *  Defaults to homeworld tech, clamped to Early Stellar minimum per
+       *  PM rule ("always no less than Early Stellar"). */
+      subsectorTechCode?: string;
     } = {},
   ): void {
     this.useAcg = true;
@@ -387,6 +391,21 @@ export class Character {
       ...(carryRank?.preCareerBranch !== undefined ? { preCareerBranch: carryRank.preCareerBranch } : {}),
     };
     if (carryRank) this.commissioned = true;
+    // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
+    // clamped to Early Stellar minimum.
+    if (pathway === "navy") {
+      const homeworldTech = this.homeworld?.tech;
+      const order = (getEdition(this.editionId).data as {
+        homeworld?: { techCodeOrder?: string[] };
+      }).homeworld?.techCodeOrder ?? [];
+      let subsectorTech = options.subsectorTechCode ?? homeworldTech;
+      const earlyIdx = order.indexOf("Early Stellar");
+      if (subsectorTech && order.length > 0 && earlyIdx >= 0) {
+        const idx = order.indexOf(subsectorTech);
+        if (idx < earlyIdx) subsectorTech = "Early Stellar";
+      }
+      if (subsectorTech) this.acgState.subsectorTechCode = subsectorTech;
+    }
     // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
     // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
     // the character's pendingChoices stand. The UI resolves them and the
