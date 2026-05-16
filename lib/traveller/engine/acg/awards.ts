@@ -201,26 +201,29 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     return;
   }
 
-  // Jail. "Jail 2D months" serves as the next year of service; longer jail
-  // sentences are full mustering-out terminators that age the character.
+  // Jail. "Jail 2D months" serves as the next year of service; longer
+  // sentences are full muster-out terminators that age the character by
+  // a rolled NDx-year sentence (manual p. 47).
   if (lc.includes("jail")) {
     const monthsMatch = result.match(/jail\s+2D\s+months/i);
     if (monthsMatch) {
-      // 2D months ≈ this year; do not muster out, just record.
-      ch.acgState.jailMonthsThisYear = (ch.acgState.jailMonthsThisYear ?? 0) + 7;
-      ch.history.push("Jailed 2D months — counts as this year of service.");
+      // 2D months consumes the current year of service. We mark the year as
+      // "jail-served" so it counts toward terms but provides no skills or
+      // promotion (commission/promotion already short-circuit on
+      // shortTermThisTerm / equivalent jail flag).
+      const months = roll(1) + roll(1);
+      ch.acgState.jailMonthsThisYear = months;
+      ch.history.push(`Jailed ${months} months — consumes this year of service.`);
       return;
     }
-    const yearsMatch = result.match(/jail\s+(\d+)D?\s+years/i);
+    // "Jail 1D years; ..." or "Jail 2D years; ..."
+    const yearsMatch = result.match(/jail\s+(\d+)D\s+years/i);
     if (yearsMatch) {
-      const years = parseInt(yearsMatch[1]!, 10);
-      // Roll the dice: NdY years for 1D and 2D forms. Use D6 average if dice unknown.
-      // Manual specifies 1D and 2D years; both age the character before muster.
-      const isTwoDice = /2D\s+years/i.test(result);
-      const dice = isTwoDice ? 2 : 1;
-      const aging = years * dice * 3.5; // average per die
-      ch.age += Math.round(aging);
-      ch.history.push(`Imprisoned for ~${Math.round(aging)} years; service ends.`);
+      const dice = parseInt(yearsMatch[1]!, 10);
+      let years = 0;
+      for (let i = 0; i < dice; i++) years += roll(1);
+      ch.age += years;
+      ch.history.push(`Imprisoned for ${years} years (${dice}D rolled); service ends.`);
     } else {
       ch.history.push("Imprisoned; service ends.");
     }
@@ -233,15 +236,36 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   }
 
   // Death penalty / escape. The character has a price on his head; no
-  // mustering-out benefits and no pension (manual p. 47).
+  // mustering-out benefits and no pension. Manual p. 47 lists three forms:
+  //   "Death; escape; KCr10 reward"
+  //   "Death; escape; KCr10 reward" (10-year sentence variant)
+  //   "Death; escape, killing 1D guards; KCr100 reward"
+  // We parse the bounty value and any "killing ND guards" suffix.
   if (lc.includes("death")) {
     ch.acgState.deathSentence = true;
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 99; // zero out benefits
     ch.acgState.pensionForfeit = true;
     ch.activeDuty = false;
+    const bountyMatch = result.match(/KCr(\d+)/i);
+    if (bountyMatch) {
+      ch.acgState.bountyOnHeadKCr = parseInt(bountyMatch[1]!, 10);
+    }
+    const guardsMatch = result.match(/killing\s+(\d+)D\s+guards/i);
+    if (guardsMatch) {
+      const dice = parseInt(guardsMatch[1]!, 10);
+      let killed = 0;
+      for (let i = 0; i < dice; i++) killed += roll(1);
+      ch.acgState.guardsKilledInEscape = killed;
+    }
     if (lc.includes("escape")) {
-      ch.history.push("Sentenced to death; escaped. No benefits or pension.");
+      const bountyTxt = ch.acgState.bountyOnHeadKCr !== undefined
+        ? ` Bounty: KCr${ch.acgState.bountyOnHeadKCr}.`
+        : "";
+      const killedTxt = ch.acgState.guardsKilledInEscape
+        ? ` Killed ${ch.acgState.guardsKilledInEscape} guards in escape.`
+        : "";
+      ch.history.push(`Sentenced to death; escaped.${bountyTxt}${killedTxt}`);
     } else {
       ch.history.push("Sentenced to death. No benefits or pension.");
       ch.deceased = true;

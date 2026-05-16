@@ -142,6 +142,12 @@ export interface AcgState {
   /** Count of terms that were started but not completed (4 years). Used
    *  by musterOutRolls to discount benefits from short terms. */
   partialTerms?: number;
+  /** Bounty in KCr on the character's head after a death-sentence escape
+   *  (PM p. 47: KCr10 base, KCr100 if escape killed guards). */
+  bountyOnHeadKCr?: number;
+  /** Guards killed during a death-sentence escape (PM p. 47: "killing 1D
+   *  guards"). Recorded for resume/sheet output. */
+  guardsKilledInEscape?: number;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
