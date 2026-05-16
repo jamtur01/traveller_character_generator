@@ -21,8 +21,7 @@
 
 import type { Character } from "../character";
 import {
-  cascadeAircraft, cascadeBlade, cascadeBow, cascadeGun,
-  cascadeVehicle, cascadeWatercraft,
+  AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
 } from "../cascades";
 import type { AttributeKey } from "../types";
 import type { BenefitDetail } from "../editions/types";
@@ -48,21 +47,21 @@ const SHIPS = new Set([
   "Scout Ship", "Free Trader",
 ]);
 
-const CASCADE_BY_LABEL: Record<string, (ch: Character) => string> = {
-  "Blade Cbt": cascadeBlade,
-  "Blade Combat": cascadeBlade,
-  "Blade": cascadeBlade,
-  "Gun Cbt": cascadeGun,
-  "Gun Combat": cascadeGun,
-  "Gun": cascadeGun,
-  "Bow Cbt": cascadeBow,
-  "Bow Combat": cascadeBow,
-  "Bow": cascadeBow,
-  "Vehicle": cascadeVehicle,
-  "Air Craft": cascadeAircraft,
-  "Aircraft": cascadeAircraft,
-  "Water Craft": cascadeWatercraft,
-  "Watercraft": cascadeWatercraft,
+const CASCADE_POOL_BY_LABEL: Record<string, readonly string[]> = {
+  "Blade Cbt": BLADES,
+  "Blade Combat": BLADES,
+  "Blade": BLADES,
+  "Gun Cbt": GUNS,
+  "Gun Combat": GUNS,
+  "Gun": GUNS,
+  "Bow Cbt": BOWS,
+  "Bow Combat": BOWS,
+  "Bow": BOWS,
+  "Vehicle": VEHICLES,
+  "Air Craft": AIRCRAFTS,
+  "Aircraft": AIRCRAFTS,
+  "Water Craft": WATERCRAFTS,
+  "Watercraft": WATERCRAFTS,
 };
 
 /** Canonicalize cells whose printed label differs from the engine's skill name. */
@@ -94,12 +93,11 @@ export function applyCell(
   }
 
   // Cascade skill — pick a specific weapon/vehicle from the pool.
-  const cascade = CASCADE_BY_LABEL[label];
-  if (cascade) {
-    const skill = cascade(ch);
+  const pool = CASCADE_POOL_BY_LABEL[label];
+  if (pool) {
     if (mode === "muster") {
       // Muster cascades follow doWeaponBenefit's add-as-benefit-plus-skill-0
-      // semantics (first occurrence). The Character helpers track repeats.
+      // semantics on first occurrence; Character helpers manage repeats.
       if (label === "Blade Cbt" || label === "Blade Combat" || label === "Blade") {
         ch.doBladeBenefit();
         return;
@@ -109,7 +107,16 @@ export function applyCell(
         return;
       }
     }
-    ch.addSkill(skill);
+    const known: string[] = [];
+    for (const [n] of ch.skills) if (pool.includes(n)) known.push(n);
+    ch.pickOrDefer({
+      kind: "cascade",
+      label: `Choose a ${label}`,
+      options: pool,
+      preferred: known,
+      context: { source: mode === "muster" ? "muster" : "skillTable", cellLabel: label },
+      onResolve: (c, name) => c.addSkill(name),
+    });
     return;
   }
 

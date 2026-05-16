@@ -2,8 +2,10 @@
 // tables live in `./services/*` and are looked up via the `s` registry inside
 // method bodies (avoids module-load cycles).
 
-import { rndInt, roll } from "./random";
-import { cascadeBlade, cascadeGun } from "./cascades";
+import { arnd, rndInt, roll } from "./random";
+import { BLADES, GUNS } from "./cascades";
+import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
+import { genChoiceId } from "./engine/choices";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
 import type {
@@ -69,6 +71,46 @@ export class Character {
    * the UI suppresses voluntary muster-out until the forced term completes.
    */
   mandatoryReenlistment = false;
+  /**
+   * Choice mode. "auto" (default) preserves the original random-everywhere
+   * behavior used by tests and the streamlined UI flow. "interactive" makes
+   * cascade picks, weapon-benefit type/specific picks, and skill-table
+   * selection defer to the UI via pendingChoices.
+   */
+  choiceMode: ChoiceMode = "auto";
+  /**
+   * Choices waiting for user resolution. Each entry holds the apply-on-pick
+   * closure; the UI calls resolveChoice(id, optionIdx) when the user picks.
+   */
+  pendingChoices: PendingChoice<string>[] = [];
+
+  /**
+   * Generic choice point. In auto mode, picks randomly from options and runs
+   * the resolver immediately. In interactive mode, queues a PendingChoice
+   * and returns without applying — the UI is expected to call resolveChoice
+   * later.
+   */
+  pickOrDefer(req: ChoiceRequest<string>): void {
+    if (this.choiceMode === "auto") {
+      const pool = req.preferred && req.preferred.length > 0
+        ? req.preferred
+        : req.options;
+      req.onResolve(this, arnd(pool));
+      return;
+    }
+    this.pendingChoices.push({ id: genChoiceId(), ...req });
+  }
+
+  /** Apply the user's pick for a pending choice. */
+  resolveChoice(id: string, optionIdx: number): void {
+    const idx = this.pendingChoices.findIndex((p) => p.id === id);
+    if (idx < 0) return;
+    const choice = this.pendingChoices[idx]!;
+    const chosen = choice.options[optionIdx];
+    if (chosen === undefined) return;
+    this.pendingChoices.splice(idx, 1);
+    choice.onResolve(this, chosen);
+  }
 
   // ---------- attributes / skills / benefits ----------
 
@@ -156,33 +198,70 @@ export class Character {
    * bump skill in the same weapon.
    */
   doBladeBenefit() {
-    if (this.bladeBenefit === "") {
-      this.bladeBenefit = cascadeBlade(this);
-      this.addBenefit(this.bladeBenefit);
-      this.addSkill(this.bladeBenefit, 0);
-    } else {
+    if (this.bladeBenefit !== "") {
       this.addSkill(this.bladeBenefit);
+      return;
     }
+    const known = this.knownFromPool(BLADES);
+    this.pickOrDefer({
+      kind: "cascade",
+      label: "Choose a blade for your weapon benefit",
+      options: BLADES,
+      preferred: known,
+      context: { source: "muster", benefit: "Blade" },
+      onResolve: (ch, blade) => {
+        ch.bladeBenefit = blade;
+        ch.addBenefit(blade);
+        ch.addSkill(blade, 0);
+      },
+    });
   }
 
   doGunBenefit() {
-    if (this.gunBenefit === "") {
-      this.gunBenefit = cascadeGun(this);
-      this.addBenefit(this.gunBenefit);
-      this.addSkill(this.gunBenefit, 0);
-    } else {
+    if (this.gunBenefit !== "") {
       this.addSkill(this.gunBenefit);
+      return;
     }
+    const known = this.knownFromPool(GUNS);
+    this.pickOrDefer({
+      kind: "cascade",
+      label: "Choose a gun for your weapon benefit",
+      options: GUNS,
+      preferred: known,
+      context: { source: "muster", benefit: "Gun" },
+      onResolve: (ch, gun) => {
+        ch.gunBenefit = gun;
+        ch.addBenefit(gun);
+        ch.addSkill(gun, 0);
+      },
+    });
   }
 
   /**
-   * CotI generic "Weapon" benefit: character may pick any personal weapon from
-   * Book 1 (blades or guns). Since we have no UI prompt in a procedural roll,
-   * pick 50/50 between blade and gun and then cascade as normal.
+   * CotI generic "Weapon" benefit: character may pick any personal weapon
+   * (blade or gun). Two-stage choice: first weapon type, then specific.
    */
   doWeaponBenefit() {
-    if (roll(1) <= 3) this.doBladeBenefit();
-    else this.doGunBenefit();
+    this.pickOrDefer({
+      kind: "weaponType",
+      label: "Choose weapon type",
+      options: ["Blade", "Gun"],
+      context: { source: "muster", benefit: "Weapon" },
+      onResolve: (ch, type) => {
+        if (type === "Blade") ch.doBladeBenefit();
+        else ch.doGunBenefit();
+      },
+    });
+  }
+
+  /** Names from `pool` that the character already has skills in (for cascade
+   *  preference: subsequent blade cascades stack onto an existing blade). */
+  private knownFromPool(pool: readonly string[]): string[] {
+    const out: string[] = [];
+    for (const [n] of this.skills) {
+      if (pool.includes(n)) out.push(n);
+    }
+    return out;
   }
 
   // ---------- enlistment ----------
