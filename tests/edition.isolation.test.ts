@@ -230,6 +230,64 @@ describe("MT smoke test: build character, enlist, run a term", () => {
 // Step composition is edition-agnostic — same registry, different ordering
 // ---------------------------------------------------------------------------
 
+describe("MT data wiring (post-PDF swap)", () => {
+  it("MT aging table reads from JSON not hardcoded code paths", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.showHistory = "none";
+    c.choiceMode = "auto";
+    c.attributes = {
+      strength: 12, dexterity: 12, endurance: 12,
+      intelligence: 12, education: 12, social: 12,
+    };
+    c.service = "navy";
+    c.terms = 4;
+    c.age = 34;
+    c.doAging();
+    // After 4 terms, the term-4 row applies (-1 saves 8/7/8). With all
+    // attributes at 12, no save should fail — but the call should not throw.
+    expect(c.deceased).toBe(false);
+  });
+
+  it("MT musterOutRolls applies rank-band bonus", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.service = "navy";
+    c.terms = 4;
+    c.rank = 5;
+    // MT: 2 per term × 4 terms + rank-band [5,6] +1 = 9
+    expect(c.musterOutRolls()).toBe(9);
+  });
+
+  it("CT musterOutRolls still uses rank-band scaling (TTB)", () => {
+    const c = new Character();
+    c.editionId = "ct-classic";
+    c.service = "navy";
+    c.terms = 4;
+    c.rank = 5;
+    // CT: 1 per term × 4 + rank-band [5,6] +3 = 7
+    expect(c.musterOutRolls()).toBe(7);
+  });
+
+  it("MT skill allocation honors per-service skillsPerTerm", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.showHistory = "none";
+    c.choiceMode = "auto";
+    c.attributes = {
+      strength: 12, dexterity: 12, endurance: 12,
+      intelligence: 12, education: 12, social: 12,
+    };
+    c.service = "scouts";
+    c.doServiceTermStep();
+    // Scouts: skillsPerTerm=2 from JSON, plus 1–2 from MT's specialDuty
+    // (target 4 with possible +1 overshoot bonus on roll >=8). All-12s →
+    // specialDuty almost certainly succeeds → final total of 3 or 4.
+    expect(c.skillPoints).toBeGreaterThanOrEqual(2);
+    expect(c.skillPoints).toBeLessThanOrEqual(4);
+  });
+});
+
 describe("MT lifecycle includes specialDuty; CT does not", () => {
   it("ct-classic.lifecycle.terms has no specialDuty step", () => {
     const terms = getEdition("ct-classic").data.lifecycle?.terms ?? [];

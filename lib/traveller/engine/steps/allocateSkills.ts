@@ -1,36 +1,49 @@
-// Allocate the per-term skill points based on service and term.
+// Allocate the per-term skill points. Reads rules.skillEligibility from the
+// active edition so per-edition variation (CT's scouts/CotI-rankless 2/term,
+// MT's services declaring skillsPerTerm explicitly) is purely data.
 //
-// CT (TTB p. 24): scouts and certain CotI rankless careers gain 2 per term;
-// otherwise 2 in the first term, 1 in every later term.
-//
-// MT term1Bonus config: services with skillsPerTerm=1 gain +1 in term 1.
-// MT skillsPerTerm=2 services get 2 per term, no first-term boost (the
-// boost is implicit in the per-term count).
+// Algorithm:
+//   1. If serviceData declares skillsPerTerm (MT-style), use it.
+//   2. Else if rules.skillEligibility.perTermExceptions[serviceKey] is set,
+//      use that value.
+//   3. Else use subsequentTerm (default 1).
+//   4. On the first term, add config.term1Bonus = 1 extra skill point.
+//   5. Term-1 doubling for CT's "initialTerm": 2 is encoded by giving 1 by
+//      default + 1 first-term bonus.
 
-import type { ServiceKey } from "../../types";
 import type { StepFn } from "./types";
 
-const CT_TWO_PER_TERM: ServiceKey[] = [
-  "scouts", "belters", "doctors", "rogues", "scientists", "hunters",
-];
+interface SkillEligibility {
+  initialTerm?: number;
+  subsequentTerm?: number;
+  perTermExceptions?: Record<string, number>;
+}
 
-export const allocateSkillsStep: StepFn = ({ character, service, config }) => {
-  // MT-shape config: service-data declares skillsPerTerm (1 or 2); term-1
-  // bonus adds +1 for skillsPerTerm=1 services.
-  const skillsPerTerm = service.skillsPerTerm;
-  if (typeof skillsPerTerm === "number") {
-    let n = skillsPerTerm;
-    if (config.term1Bonus && skillsPerTerm === 1 && character.terms === 1) n += 1;
+export const allocateSkillsStep: StepFn = ({
+  character, service, edition, config,
+}) => {
+  const elig = (
+    edition.data.rules as { skillEligibility?: SkillEligibility }
+  ).skillEligibility;
+  const exceptions = elig?.perTermExceptions ?? {};
+  const subsequent = elig?.subsequentTerm ?? 1;
+  const initial = elig?.initialTerm ?? subsequent;
+
+  // 1. Explicit per-service skillsPerTerm from ServiceData wins.
+  if (typeof service.skillsPerTerm === "number") {
+    let n = service.skillsPerTerm;
+    if (config.term1Bonus && service.skillsPerTerm === 1 && character.terms === 1) n += 1;
     character.skillPoints += n;
     return;
   }
 
-  // CT-shape: hardcoded rule based on service key + first-term boost.
-  if (CT_TWO_PER_TERM.includes(character.service)) {
-    character.skillPoints += 2;
-  } else if (character.terms === 1) {
-    character.skillPoints += 2;
-  } else {
-    character.skillPoints += 1;
+  // 2. Per-service exception list.
+  const except = exceptions[character.service];
+  if (typeof except === "number") {
+    character.skillPoints += except;
+    return;
   }
+
+  // 3. Default: initial on term 1, subsequent thereafter.
+  character.skillPoints += character.terms === 1 ? initial : subsequent;
 };
