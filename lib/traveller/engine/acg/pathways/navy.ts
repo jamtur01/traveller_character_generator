@@ -113,10 +113,26 @@ export function navyEnlist(
   const spec = data.enlistment[fleet];
   ch.acgState!.fleet = fleet;
 
-  // Naval Academy / NOTC graduates auto-enlist at O1 (Imperial Navy or
-  // Reserve Fleet respectively, per manual p. 52).
+  // Naval Academy / NOTC graduates auto-enlist at O1 (manual p. 52):
+  //   - Naval Academy graduates commission into the Imperial Navy.
+  //   - NOTC graduates commission into the Reserve Fleet.
+  // Enforce that fleet here: ignore the caller-provided fleet if it conflicts.
   if (ch.acgState!.preCareerCommission) {
-    ch.history.push(`Auto-enlisted in the ${fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`);
+    const schools = ch.acgState!.schoolsAttended;
+    let forcedFleet: typeof fleet | null = null;
+    if (schools.includes("navalAcademy")) forcedFleet = "imperialNavy";
+    else if (ch.acgState!.preCareerBranch === "navy") forcedFleet = "reserveFleet"; // college NOTC
+    if (forcedFleet && fleet !== forcedFleet) {
+      ch.acgState!.fleet = forcedFleet;
+      ch.history.push(
+        `Fleet adjusted to ${forcedFleet} per academy/NOTC commission (PM p. 52).`,
+      );
+    } else {
+      ch.acgState!.fleet = forcedFleet ?? fleet;
+    }
+    ch.history.push(
+      `Auto-enlisted in the ${ch.acgState!.fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`,
+    );
     navyAssignBranch(ch);
     return;
   }
@@ -321,11 +337,14 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    // Shore Duty / Training etc. — try a fallback resolution if the
-    // assignment is "Frozen Watch" (special: 1 year passes, no skills).
+    // Frozen Watch (PM p. 53): cold sleep replacement; chronological age
+    // advances normally (runAcgYear handles the +1) but the character is
+    // *physically* one year younger per Frozen Watch year. No skills.
     if (assignment === "Frozen Watch") {
-      ch.history.push("Frozen Watch: 1 year in suspended animation.");
-      ch.age -= 1; // physically 1 year younger than chronologically
+      ch.acgState!.frozenWatchYears = (ch.acgState!.frozenWatchYears ?? 0) + 1;
+      ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) - 1;
+      ch.acgState!.assignmentHistory.push(assignment);
+      ch.history.push("Frozen Watch: 1 year in cold sleep (chronological +1, physical +0).");
       return;
     }
     ch.verboseHistory(`Unknown navy assignment "${assignment}" for branch ${branch}`);

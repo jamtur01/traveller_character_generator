@@ -148,6 +148,13 @@ export interface AcgState {
   /** Guards killed during a death-sentence escape (PM p. 47: "killing 1D
    *  guards"). Recorded for resume/sheet output. */
   guardsKilledInEscape?: number;
+  /** Years spent on Navy Frozen Watch (PM p. 53). Character is physically
+   *  one year younger per year of Frozen Watch. */
+  frozenWatchYears?: number;
+  /** Physical-age offset relative to chronological character.age. Negative
+   *  when the character has spent time in suspended animation (Frozen
+   *  Watch) — physicalAge = age + physicalAgeOffset. */
+  physicalAgeOffset?: number;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
