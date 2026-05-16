@@ -426,19 +426,11 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   }
 }
 
-export function merchantRetention(ch: Character, assignment: string): void {
-  if (ch.acgState!.justRetained) {
-    ch.acgState!.justRetained = false;
-    return;
-  }
-  // Manual: no explicit retention rule for merchants. We use the same
-  // 1D=6 rule as the other pathways for consistency.
-  const r = roll(1);
-  if (r === 6 && assignment !== "Transfer Up" && assignment !== "Transfer Down") {
-    ch.acgState!.retainedAssignment = assignment;
-    ch.acgState!.justRetained = true;
-  } else {
-    ch.acgState!.retainedAssignment = null;
+/** Retention is Navy-only in MT. Kept as a no-op for back-compat. */
+export function merchantRetention(ch: Character, _assignment: string): void {
+  if (ch.acgState) {
+    ch.acgState.justRetained = false;
+    ch.acgState.retainedAssignment = null;
   }
 }
 
