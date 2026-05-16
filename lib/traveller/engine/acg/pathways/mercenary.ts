@@ -483,20 +483,12 @@ export function mercenarySpecialAssignment(ch: Character): void {
   applyMercenarySchool(ch, sa);
 }
 
-/** End-of-year retention roll (1D=6 → same assignment next year). */
-export function mercenaryRetention(ch: Character, assignment: string): void {
-  if (ch.acgState!.justRetained) {
-    // Already retained once — can't retain back-to-back.
-    ch.acgState!.justRetained = false;
-    return;
-  }
-  const r = roll(1);
-  if (r === 6) {
-    ch.acgState!.retainedAssignment = assignment;
-    ch.acgState!.justRetained = true;
-    ch.verboseHistory(`Retained in ${assignment} next year (rolled 6)`);
-  } else {
-    ch.acgState!.retainedAssignment = null;
+/** Retention is Navy-only in MT. Kept as a no-op for back-compat with the
+ *  pathway impl interface. */
+export function mercenaryRetention(ch: Character, _assignment: string): void {
+  if (ch.acgState) {
+    ch.acgState.justRetained = false;
+    ch.acgState.retainedAssignment = null;
   }
 }
 

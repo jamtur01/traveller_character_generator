@@ -315,18 +315,11 @@ function promoteScout(ch: Character): void {
   }
 }
 
-export function scoutRetention(ch: Character, assignment: string): void {
-  if (ch.acgState!.justRetained) {
-    ch.acgState!.justRetained = false;
-    return;
-  }
-  const r = roll(1);
-  if (r === 6 && assignment !== "Special Duty" && assignment !== "Special Mission" &&
-      assignment !== "Wartime Mission") {
-    ch.acgState!.retainedAssignment = assignment;
-    ch.acgState!.justRetained = true;
-  } else {
-    ch.acgState!.retainedAssignment = null;
+/** Retention is Navy-only in MT. Kept as a no-op for back-compat. */
+export function scoutRetention(ch: Character, _assignment: string): void {
+  if (ch.acgState) {
+    ch.acgState.justRetained = false;
+    ch.acgState.retainedAssignment = null;
   }
 }
 
