@@ -62,25 +62,46 @@ export function tryMitigate(
   return autoMitigate(ch, req);
 }
 
-/** Auto-mitigation policy: spend BPs only to save the character's life
- *  (survival failures) and to push court martial outcomes to Reprimand
- *  or better. Other rolls are left as-is. */
+/** Auto-mitigation policy (PM p. 46: brownie points may apply to any
+ *  roll). Different roll types have different policy thresholds:
+ *    - survival     : spend whatever it takes (death prevention)
+ *    - courtMartial : spend whatever it takes (mitigate worst outcomes)
+ *    - promotion    : spend up to 2 BP for a borderline fail
+ *    - decoration   : spend up to 1 BP for a borderline fail
+ *    - skills       : spend up to 1 BP for a borderline fail
+ *  The intent: critical outcomes get full BP backing; lesser outcomes get
+ *  a conservative cap so the BP pool isn't drained on minor rolls. */
 function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
-  if (req.rollName !== "survival" && req.rollName !== "courtMartial") {
-    return { spent: 0, newMargin: req.margin };
+  const need = Math.abs(req.margin);
+  let maxSpend: number;
+  switch (req.rollName) {
+    case "survival":
+    case "courtMartial":
+      maxSpend = need;
+      break;
+    case "promotion":
+      maxSpend = 2;
+      break;
+    case "decoration":
+    case "skills":
+      maxSpend = 1;
+      break;
+    default:
+      maxSpend = 0;
   }
-  // Need |margin| BPs to flip the roll.
-  const needed = Math.abs(req.margin);
-  if (ch.acgState!.browniePoints < needed) {
+  if (maxSpend <= 0 || need > maxSpend) {
     // Not enough — don't waste partial spending on a roll we can't save.
     return { spent: 0, newMargin: req.margin };
   }
-  ch.acgState!.browniePoints -= needed;
-  ch.acgState!.browniePointsSpent += needed;
+  if (ch.acgState!.browniePoints < need) {
+    return { spent: 0, newMargin: req.margin };
+  }
+  ch.acgState!.browniePoints -= need;
+  ch.acgState!.browniePointsSpent += need;
   ch.verboseHistory(
-    `Spent ${needed} brownie point(s) to mitigate ${req.rollName} failure (avoided: ${req.consequence})`,
+    `Spent ${need} brownie point(s) to mitigate ${req.rollName} failure (avoided: ${req.consequence})`,
   );
-  return { spent: needed, newMargin: 0 };
+  return { spent: need, newMargin: 0 };
 }
 
 /** Explicit player spending — used by the UI's PendingChoice resolver.
