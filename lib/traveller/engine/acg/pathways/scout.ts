@@ -21,6 +21,7 @@ import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
   applyDmRules, labelToColumnKey, lookupResolution, rollVsTarget,
+  type StructuredDm,
 } from "../tables";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
@@ -37,8 +38,16 @@ interface ScoutData {
   };
   officeAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
   initialTraining?: Record<string, unknown>;
-  dutyAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
-  assignmentResolution: Record<string, { columns: string[]; rows: Array<Record<string, unknown>>; dms?: string[] }>;
+  dutyAssignment: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
+  assignmentResolution: Record<string, {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: Array<string | StructuredDm>;
+  }>;
   schoolAssignment?: Record<string, unknown>;
   schools?: { columns: string[]; rows: Array<Record<string, unknown>> };
   skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>> }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>> } };
