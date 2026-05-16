@@ -3137,8 +3137,9 @@
         { "condition": "size = Small", "dm": -2 },
         { "condition": "size = Large", "dm": 2 }
       ],
-      "population": [
-        { "condition": "atmosphere = Exotic", "dm": -1 }
+      "law": [
+        { "condition": "population = Low Pop", "dm": -1 },
+        { "condition": "population = High Pop", "dm": 1 }
       ],
       "tech": [
         { "condition": "starport = A", "dm": 3 },
