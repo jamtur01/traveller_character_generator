@@ -7,11 +7,11 @@ import {
   cashDmFor,
   cloneCharacter,
   DEFAULT_EDITION_ID,
-  ENLISTABLE_SERVICES,
   aggregateBenefits,
   editionHasAcg,
   extendedHex,
   getEditionServices,
+  getEnlistableServices,
   intToOrdinal,
   listAcgPathways,
   listEditions,
@@ -1030,6 +1030,10 @@ function CareerPhase({
   const def = targetSvc ? getEditionServices(character.editionId)[targetSvc] ?? null : null;
   const dm = def ? def.enlistmentDM(character.attributes) : 0;
   const target = def ? def.enlistmentThrow : 0;
+  // Only services in the *character's* edition are valid picks. The cross-
+  // edition union was leaking CT-only services into MT pickers and vice
+  // versa, causing edition-specific service lookups to throw later.
+  const enlistableForEdition = getEnlistableServices(character.editionId);
 
   return (
     <PhaseCard
@@ -1046,9 +1050,9 @@ function CareerPhase({
           className="max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="random">Random</option>
-          {ENLISTABLE_SERVICES.map((k) => (
+          {enlistableForEdition.map((k) => (
             <option key={k} value={k}>
-              {serviceLabel(k)}
+              {serviceLabel(k, character.editionId)}
             </option>
           ))}
         </select>
