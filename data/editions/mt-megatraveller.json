@@ -3090,6 +3090,110 @@
       67
     ]
   },
+  "homeworld": {
+    "source": "MegaTraveller Players' Manual pp. 12-13",
+    "appliesTo": ["basic", "acg"],
+    "description": "Roll 2D on each column to determine the homeworld's profile. Result of 12 on starport requires an extra 1D roll. Each column has DMs based on previously-rolled values; tech is rolled last and consumes DMs from starport/size/hydrosphere/population.",
+    "rollTable": {
+      "columns": ["die", "starport", "size", "atmosphere", "hydrosphere", "population", "law", "tech"],
+      "rows": [
+        { "die": 2,  "starport": "A",   "size": "Asteroid", "atmosphere": "Vacuum",   "hydrosphere": "Desert",      "population": "Low Pop",  "law": "No Law",    "tech": "Pre-Industrial" },
+        { "die": 3,  "starport": "A",   "size": "Small",    "atmosphere": "Vacuum",   "hydrosphere": "Desert",      "population": "Low Pop",  "law": "Low Law",   "tech": "Industrial" },
+        { "die": 4,  "starport": "A",   "size": "Small",    "atmosphere": "Thin",     "hydrosphere": "Dry",         "population": "Mod Pop",  "law": "Low Law",   "tech": "Industrial" },
+        { "die": 5,  "starport": "A",   "size": "Small",    "atmosphere": "Thin",     "hydrosphere": "Dry",         "population": "Mod Pop",  "law": "Mod Law",   "tech": "Pre-Stellar" },
+        { "die": 6,  "starport": "A",   "size": "Small",    "atmosphere": "Standard", "hydrosphere": "Wet World",   "population": "Mod Pop",  "law": "Mod Law",   "tech": "Pre-Stellar" },
+        { "die": 7,  "starport": "B",   "size": "Medium",   "atmosphere": "Standard", "hydrosphere": "Wet World",   "population": "Mod Pop",  "law": "Mod Law",   "tech": "Early Stellar" },
+        { "die": 8,  "starport": "B",   "size": "Medium",   "atmosphere": "Standard", "hydrosphere": "Wet World",   "population": "High Pop", "law": "Mod Law",   "tech": "Early Stellar" },
+        { "die": 9,  "starport": "B",   "size": "Medium",   "atmosphere": "Dense",    "hydrosphere": "Wet World",   "population": "High Pop", "law": "Mod Law",   "tech": "Avg Stellar" },
+        { "die": 10, "starport": "C",   "size": "Large",    "atmosphere": "Dense",    "hydrosphere": "Wet World",   "population": "High Pop", "law": "High Law",  "tech": "Avg Stellar" },
+        { "die": 11, "starport": "C",   "size": "Large",    "atmosphere": "Exotic",   "hydrosphere": "Wet World",   "population": "High Pop", "law": "High Law",  "tech": "High Stellar" },
+        { "die": 12, "starport": "D-X", "size": "Large",    "atmosphere": "Exotic",   "hydrosphere": "Water World", "population": "High Pop", "law": "Ext Law",   "tech": "High Stellar" }
+      ]
+    },
+    "starportXRoll": {
+      "comment": "When starport rolls 12 (D-X), roll 1D to determine specific code.",
+      "die": "1D",
+      "results": { "1": "D", "2": "D", "3": "D", "4": "E", "5": "E", "6": "X" }
+    },
+    "dmsByColumn": {
+      "atmosphere": [
+        { "condition": "size = Asteroid", "dm": -9 },
+        { "condition": "size = Small", "dm": -2 },
+        { "condition": "size = Large", "dm": 2 }
+      ],
+      "hydrosphere": [
+        { "condition": "size = Small", "dm": -2 },
+        { "condition": "size = Large", "dm": 2 }
+      ],
+      "population": [
+        { "condition": "atmosphere = Exotic", "dm": -1 }
+      ],
+      "tech": [
+        { "condition": "starport = A", "dm": 3 },
+        { "condition": "starport = B", "dm": 2 },
+        { "condition": "starport = C", "dm": 1 },
+        { "condition": "starport = X", "dm": -2 },
+        { "condition": "size = Asteroid", "dm": 1 },
+        { "condition": "hydrosphere = Water World", "dm": 1 },
+        { "condition": "population = Low Pop", "dm": 1 },
+        { "condition": "population = High Pop", "dm": 2 }
+      ]
+    },
+    "defaultSkills": [
+      { "condition": "service in [navy, marines, flyers, scouts, merchants, pirates]", "skill": "Vacc Suit", "level": 0, "source": "MT p. 13" },
+      { "condition": "service not in [barbarians]", "skill": "Gun Combat", "level": 0, "source": "MT p. 13" },
+      { "condition": "tech >= Early Stellar", "skill": "Computer", "level": 0, "source": "MT p. 13" },
+      { "condition": "tech >= Avg Stellar", "skill": "Grav Vehicle", "level": 0, "source": "MT p. 13" },
+      { "condition": "tech in [Industrial, Pre-Stellar, Early Stellar]", "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
+    ],
+    "careerAvailability": [
+      { "denyIfTechIn": ["Pre-Industrial", "Industrial"],                                   "services": ["army", "marines", "navy", "scientists", "nobles"] },
+      { "denyIfTechIn": ["Pre-Industrial", "Industrial", "Pre-Stellar"],                    "services": ["scouts", "merchants", "belters", "pirates"] },
+      { "denyIfTechIn": ["Pre-Industrial"],                                                 "services": ["flyers", "lawenforcers", "doctors", "diplomats", "rogues"] },
+      { "denyIfTechNotIn": ["Pre-Industrial"],                                              "services": ["barbarians"] },
+      { "denyIfSocialBelow": 10,                                                            "services": ["nobles"] }
+    ],
+    "techCodeOrder": ["Pre-Industrial", "Industrial", "Pre-Stellar", "Early Stellar", "Avg Stellar", "High Stellar"],
+    "starportTypes": {
+      "A": "Excellent quality installation.",
+      "B": "Good quality installation.",
+      "C": "Routine quality installation.",
+      "D": "Poor quality installation.",
+      "E": "Frontier installation.",
+      "X": "No starport."
+    },
+    "sizeCodes": {
+      "Asteroid":  "Diameter below 200 km.",
+      "Small":     "Diameter 200–7199 km.",
+      "Medium":    "Diameter 7200–11,999 km.",
+      "Large":     "Diameter 12,000–16,800 km."
+    },
+    "atmosphereCodes": {
+      "Vacuum":   "Pressure below 0.43.",
+      "Thin":     "Thin nitrogen-oxygen, pressure 0.43–0.7.",
+      "Standard": "Standard nitrogen-oxygen, pressure 0.71–1.49.",
+      "Dense":    "Dense nitrogen-oxygen, pressure 1.5–2.5.",
+      "Exotic":   "Unusual, dangerous."
+    },
+    "hydrosphereCodes": {
+      "Desert":      "Water covers under 5% of surface.",
+      "Dry":         "Water covers 5–24% of surface.",
+      "Wet World":   "Water covers 25–94% of surface.",
+      "Water World": "Water covers 95–100% of surface."
+    },
+    "populationCodes": {
+      "Low Pop":  "Less than 10,000.",
+      "Mod Pop":  "10,000 to 1 billion.",
+      "High Pop": "1 billion or more."
+    },
+    "lawCodes": {
+      "No Law":   "No prohibitions.",
+      "Low Law":  "Machineguns, autorifles, energy weapons, body pistols prohibited.",
+      "Mod Law":  "Firearms prohibited.",
+      "High Law": "Weapons prohibited outside the home.",
+      "Ext Law":  "Weapons prohibited."
+    }
+  },
   "aging": {
     "source": "MegaTraveller Players Manual enhanced character generation aging table, printed page 47",
     "startsAfterFourthTerm": true,

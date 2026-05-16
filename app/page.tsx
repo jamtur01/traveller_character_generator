@@ -78,6 +78,10 @@ export default function Home() {
     const c = new Character();
     c.editionId = edition;
     c.showHistory = verbose ? "verbose" : "simple";
+    // MT homeworld generation (p. 12-13) — runs after attribute roll
+    // (which happens in the Character constructor) and BEFORE service
+    // selection. Gates which careers the character can enlist in.
+    c.generateHomeworld();
     // Only enable interactive mode if the active edition opts in (CT does
     // not). This makes the chosen edition's metadata the authority — the
     // checkbox is disabled in that case but we double-guard the flag here.
