@@ -19,6 +19,7 @@ import {
   rollVsTarget,
 } from "../tables";
 import { awardBrownie, awardDecoration, runCourtMartial } from "../awards";
+import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 
 const PATHWAY = "navy";
@@ -229,9 +230,19 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const sv = rollVsTarget(res.survival, survDm);
   ch.verboseHistory(`Navy ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`);
   if (!sv.success) {
-    ch.history.push("Failed survival; invalided out of Navy service.");
-    ch.activeDuty = false;
-    return;
+    const mit = tryMitigate(ch, {
+      rollName: "survival",
+      rollValue: sv.roll,
+      dm: survDm,
+      target: typeof res.survival === "number" ? res.survival : 0,
+      margin: sv.margin,
+      consequence: "Invalided out of Navy service",
+    });
+    if (mit.newMargin < 0) {
+      ch.history.push("Failed survival; invalided out of Navy service.");
+      ch.activeDuty = false;
+      return;
+    }
   }
   if (sv.margin === 0 && typeof res.survival === "number" &&
       ["Battle", "Siege", "Strike"].includes(assignment)) {

@@ -30,6 +30,7 @@ import {
   rollVsTarget,
 } from "../tables";
 import { awardDecoration, runCourtMartial } from "../awards";
+import { tryMitigate } from "../browniePoints";
 import { applyMercenarySchool } from "../schools";
 import type { AcgState, ResolutionTarget } from "../types";
 
@@ -240,9 +241,21 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     `Mercenary ${assignment} survival: ${sv.roll}${survDm ? ` + ${survDm}` : ""} vs ${res.survival} → ${sv.success ? "survived" : "INJURED/INVALIDED"}`,
   );
   if (!sv.success) {
-    ch.history.push("Failed survival; invalided out of mercenary service.");
-    ch.activeDuty = false;
-    return;
+    // Try brownie-point mitigation before invaliding out.
+    const mit = tryMitigate(ch, {
+      rollName: "survival",
+      rollValue: sv.roll,
+      dm: survDm,
+      target: typeof res.survival === "number" ? res.survival : 0,
+      margin: sv.margin,
+      consequence: "Invalided out of mercenary service",
+    });
+    if (mit.newMargin < 0) {
+      ch.history.push("Failed survival; invalided out of mercenary service.");
+      ch.activeDuty = false;
+      return;
+    }
+    // Survived via brownie point spending.
   }
   if (sv.margin === 0 && typeof res.survival === "number") {
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
