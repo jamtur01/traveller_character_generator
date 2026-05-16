@@ -29,7 +29,8 @@ import {
   applyDmRules, labelToColumnKey, lookupResolution, parseResolutionTarget,
   rollVsTarget,
 } from "../tables";
-import { awardBrownie, awardDecoration, runCourtMartial } from "../awards";
+import { awardDecoration, runCourtMartial } from "../awards";
+import { applyMercenarySchool } from "../schools";
 import type { AcgState, ResolutionTarget } from "../types";
 
 const PATHWAY = "mercenary";
@@ -362,20 +363,24 @@ function promoteMercenary(ch: Character): void {
 }
 
 /** Special Assignment table — replaces the normal assignment when the
- *  assignment roll yields "Special Duty". */
+ *  assignment roll yields "Special Duty". Routes through the schools
+ *  module which applies the school's specific skill awards. */
 export function mercenarySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
-  const r = roll(1);
+  // Per manual p. 50: Marine enlisted DM +1 if Edu 7+; Army enlisted DM +1 if End 7+.
+  let dm = 0;
+  if (!ch.acgState!.isOfficer) {
+    if (ch.acgState!.branch === "Marines" && ch.attributes.education >= 7) dm += 1;
+    if (ch.acgState!.branch === "Army" && ch.attributes.endurance >= 7) dm += 1;
+  }
+  const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.specialAssignments.rows.find((row) => row.die === r);
   if (!row) return;
   const sa = row[col] as string | undefined;
   if (!sa) return;
-  ch.acgState!.schoolsAttended.push(sa);
   ch.history.push(`Special Assignment: ${sa}`);
-  awardBrownie(ch, 1, `Special Assignment: ${sa}`);
-  // Schools that grant skills are handled in a future pass; for now the
-  // assignment is recorded and the BP awarded.
+  applyMercenarySchool(ch, sa);
 }
 
 /** End-of-year retention roll (1D=6 → same assignment next year). */
