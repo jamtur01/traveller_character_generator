@@ -484,14 +484,30 @@ export function navyRetention(ch: Character, assignment: string): void {
 export function navySpecialAssignment(ch: Character): void {
   // Roll on the Navy Special Assignments table (officer vs enlisted column),
   // then apply that school's effects from JSON-driven specialAssignmentDetails.
+  // OCS over age 38 rerolls; if OCS comes up again, a waiver allows
+  // attendance (PM p. 54).
   const data = dataFor(ch);
   if (!data.specialAssignments) return;
   const dm = applyStructuredDms(data.specialAssignments.dms, ch);
-  const r = Math.max(1, Math.min(7, roll(1) + dm));
-  const row = data.specialAssignments.rows.find((row) => row.die === r);
-  if (!row) return;
   const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
-  const assignment = String(row[col]);
+  const rollOnce = (): string | null => {
+    const r = Math.max(1, Math.min(7, roll(1) + dm));
+    const row = data.specialAssignments!.rows.find((row) => row.die === r);
+    return row ? String(row[col]) : null;
+  };
+  let assignment = rollOnce();
+  if (!assignment) return;
+  if (assignment === "OCS" && ch.age > 38) {
+    const reroll = rollOnce();
+    if (reroll === "OCS") {
+      ch.history.push("OCS over age 38: waiver granted on reroll.");
+    } else if (reroll) {
+      ch.verboseHistory(`OCS over age 38: rerolled to ${reroll}.`);
+      assignment = reroll;
+    } else {
+      return;
+    }
+  }
   ch.acgState!.assignmentHistory.push(assignment);
   applySpecialAssignment(ch, "navy", assignment);
 }

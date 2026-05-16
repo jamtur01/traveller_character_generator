@@ -55,10 +55,9 @@ export function applySpecialAssignment(
     ch.history.push(`Special Assignment "${assignment}" (no JSON detail)`);
     return;
   }
-  if (spec.ageLimit !== undefined && ch.age > spec.ageLimit) {
-    ch.history.push(`${assignment} waiver required for age > ${spec.ageLimit}`);
-    return;
-  }
+  // Age limits (e.g., OCS over 38) are evaluated by the caller before
+  // dispatching here — by the time we run, the caller has either rerolled
+  // or invoked the waiver and we apply the school normally.
 
   for (const effect of spec.effects) {
     runEffect(ch, pathway, assignment, effect, data!);

@@ -39,6 +39,11 @@ const PATHWAY = "mercenary";
 
 interface MercenaryData {
   combatArms: string[];
+  combatArmEligibility?: {
+    army?: string[];
+    marines?: string[];
+    commandoEntryRequires?: string;
+  };
   combatArmResolution?: Record<string, string>;
   initialTraining: string[];
   enlistment: {
@@ -86,6 +91,30 @@ export function mercenaryEnlist(
   combatArm: string,
 ): void {
   const data = dataFor(ch);
+  // Combat-arm entry restrictions per manual p. 50:
+  //   - Army characters may select any combat arm except Commando.
+  //   - Marine characters may select only Infantry or Support.
+  //   - Commando entry is gated to Military Academy honors graduates,
+  //     regardless of service.
+  const elig = data.combatArmEligibility;
+  if (elig) {
+    const allowedByService = elig[service] ?? null;
+    if (combatArm === "Commando") {
+      const honorsMilitaryAcademy =
+        ch.acgState!.schoolsAttended.includes("militaryAcademy") &&
+        !!ch.acgState!.preCareerCommission;
+      if (!honorsMilitaryAcademy) {
+        throw new Error(
+          "Commando combat arm requires Military Academy honors graduate (PM p. 50).",
+        );
+      }
+    } else if (allowedByService && !allowedByService.includes(combatArm)) {
+      throw new Error(
+        `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
+        `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
+      );
+    }
+  }
   ch.acgState!.combatArm = combatArm;
   ch.acgState!.branch = service === "army" ? "Army" : "Marines";
 
@@ -474,11 +503,27 @@ export function mercenarySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.specialAssignments.dms, ch);
-  const r = Math.max(1, Math.min(7, roll(1) + dm));
-  const row = data.specialAssignments.rows.find((row) => row.die === r);
-  if (!row) return;
-  const sa = row[col] as string | undefined;
+  const rollOnce = (): string | null => {
+    const r = Math.max(1, Math.min(7, roll(1) + dm));
+    const row = data.specialAssignments.rows.find((row) => row.die === r);
+    return (row?.[col] as string | undefined) ?? null;
+  };
+  let sa = rollOnce();
   if (!sa) return;
+  // OCS age limit (PM p. 51): "OCS is prohibited over age 38: Reroll on the
+  // Special Assignments table, and if OCS is selected, a waiver allows
+  // attendance."
+  if (sa === "OCS" && ch.age > 38) {
+    const reroll = rollOnce();
+    if (reroll === "OCS") {
+      ch.history.push("OCS over age 38: waiver granted on reroll.");
+    } else if (reroll) {
+      ch.verboseHistory(`OCS over age 38: rerolled to ${reroll}.`);
+      sa = reroll;
+    } else {
+      return;
+    }
+  }
   ch.history.push(`Special Assignment: ${sa}`);
   applyMercenarySchool(ch, sa);
 }

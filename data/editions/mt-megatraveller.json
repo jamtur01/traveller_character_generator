@@ -3904,6 +3904,11 @@
         "Support",
         "Commando"
       ],
+      "combatArmEligibility": {
+        "army": ["Artillery", "Cavalry", "Infantry", "Support"],
+        "marines": ["Infantry", "Support"],
+        "commandoEntryRequires": "Military Academy honors graduate"
+      },
       "combatArmResolution": {
         "Infantry": "infantryCavalryArtillery",
         "Cavalry": "infantryCavalryArtillery",
