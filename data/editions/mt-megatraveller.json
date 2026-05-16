@@ -364,6 +364,18 @@
       "pensionCreditsPerTerm": 2000,
       "excludedServices": ["barbarians", "pirates", "rogues", "scouts"],
       "anagathicTermsExcluded": true
+    },
+    "draft": {
+      "trigger": "failedEnlistment",
+      "overridesHomeworldRestriction": true,
+      "noCommissionFirstTerm": true,
+      "die": "1D",
+      "note": "Failed enlistment is followed by a 1D draft roll using each service's 'draft' field. Draft assignment overrides homeworld career restrictions. Drafted characters cannot receive a commission during their first term of service."
+    },
+    "merchantBonus": {
+      "rule": "Successful bonus throw lets the character roll once on the Cash mustering-out table and receive half the indicated amount.",
+      "halfOfCashTable": true,
+      "cashTableSource": "services.merchants.musterOut.cash"
     }
   },
   "cascadeSkills": {
