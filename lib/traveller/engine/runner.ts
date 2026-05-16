@@ -8,22 +8,20 @@
 
 import type { Character } from "../character";
 import { getEdition } from "../editions";
-import type { Edition } from "../editions/types";
-import { s } from "../services";
 import { STEP_REGISTRY } from "./steps";
 
-export function runTermSteps(
-  character: Character,
-  editionId?: string,
-): void {
-  const edition: Edition = getEdition(editionId);
+export function runTermSteps(character: Character): void {
+  // The character's editionId is authoritative — we don't accept an override
+  // here. If callers need a specific edition, they construct a Character
+  // with that editionId.
+  const edition = getEdition(character.editionId);
   const lifecycle = edition.data.lifecycle;
   if (!lifecycle?.terms) {
     throw new Error(
       `Edition ${edition.meta.id} has no lifecycle.terms — cannot run term steps`,
     );
   }
-  const service = s[character.service];
+  const service = character.serviceDef();
   for (const step of lifecycle.terms) {
     const fn = STEP_REGISTRY[step.id];
     if (!fn) {

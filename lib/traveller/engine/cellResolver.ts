@@ -20,11 +20,9 @@
 // skills or benefits.
 
 import type { Character } from "../character";
-import {
-  AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
-} from "../cascades";
 import type { AttributeKey } from "../types";
 import type { BenefitDetail } from "../editions/types";
+import { cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 
 const ATTR_BY_ABBR: Record<string, AttributeKey> = {
   Stren: "strength",
@@ -47,22 +45,9 @@ const SHIPS = new Set([
   "Scout Ship", "Free Trader",
 ]);
 
-const CASCADE_POOL_BY_LABEL: Record<string, readonly string[]> = {
-  "Blade Cbt": BLADES,
-  "Blade Combat": BLADES,
-  "Blade": BLADES,
-  "Gun Cbt": GUNS,
-  "Gun Combat": GUNS,
-  "Gun": GUNS,
-  "Bow Cbt": BOWS,
-  "Bow Combat": BOWS,
-  "Bow": BOWS,
-  "Vehicle": VEHICLES,
-  "Air Craft": AIRCRAFTS,
-  "Aircraft": AIRCRAFTS,
-  "Water Craft": WATERCRAFTS,
-  "Watercraft": WATERCRAFTS,
-};
+// Note: the cascade pool for any given label is now resolved per-edition
+// via cascadeMap.cascadePoolForLabel(label, editionId). The edition-aware
+// lookup ensures CT's blade pool doesn't leak into MT or vice versa.
 
 /** Canonicalize cells whose printed label differs from the engine's skill name. */
 const SKILL_LABEL_RENAMES: Record<string, string> = {
@@ -92,17 +77,24 @@ export function applyCell(
     return;
   }
 
-  // Cascade skill — pick a specific weapon/vehicle from the pool.
-  const pool = CASCADE_POOL_BY_LABEL[label];
+  // Cascade label — resolve the pool via the character's edition.
+  // A label might be a cascade alias in MT (e.g., "Gunnery" cascades to
+  // Screens/Spinal/Turret) but a literal skill in CT. Pool existence is
+  // the authoritative test: alias + edition has pool = cascade; alias +
+  // no pool = fall through to literal skill handling below.
+  const pool = isCascadeLabel(label)
+    ? cascadePoolForLabel(label, ch.editionId)
+    : undefined;
   if (pool) {
     if (mode === "muster") {
       // Muster cascades follow doWeaponBenefit's add-as-benefit-plus-skill-0
       // semantics on first occurrence; Character helpers manage repeats.
-      if (label === "Blade Cbt" || label === "Blade Combat" || label === "Blade") {
+      const lc = label.toLowerCase();
+      if (lc === "blade cbt" || lc === "blade combat" || lc === "blade") {
         ch.doBladeBenefit();
         return;
       }
-      if (label === "Gun Cbt" || label === "Gun Combat" || label === "Gun") {
+      if (lc === "gun cbt" || lc === "gun combat" || lc === "gun") {
         ch.doGunBenefit();
         return;
       }

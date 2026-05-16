@@ -3,20 +3,24 @@
 // method bodies (avoids module-load cycles).
 
 import { arnd, rndInt, roll } from "./random";
-import { BLADES, GUNS } from "./cascades";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId } from "./engine/choices";
+import { cascadePoolByKey } from "./engine/cascadeMap";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
 import type {
   AttributeKey,
   Attributes,
   Gender,
+  ServiceDef,
   ServiceKey,
   ShowHistory,
   Skill,
 } from "./types";
-import { DRAFT_SERVICES, SERVICES, s } from "./services";
+import {
+  DRAFT_SERVICES, SERVICES, getEditionServices,
+} from "./services";
+import { DEFAULT_EDITION_ID } from "./editions";
 import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
@@ -72,6 +76,13 @@ export class Character {
    */
   mandatoryReenlistment = false;
   /**
+   * The edition this character was rolled under. Determines which service
+   * map, cascade pools, and edition hooks apply. Stays fixed for the
+   * character's lifetime — switching editions mid-chargen would invalidate
+   * accumulated skills and benefits.
+   */
+  editionId: string = DEFAULT_EDITION_ID;
+  /**
    * Choice mode. "auto" (default) preserves the original random-everywhere
    * behavior used by tests and the streamlined UI flow. "interactive" makes
    * cascade picks, weapon-benefit type/specific picks, and skill-table
@@ -99,6 +110,26 @@ export class Character {
       return;
     }
     this.pendingChoices.push({ id: genChoiceId(), ...req });
+  }
+
+  /** Service definition for this character's current service key, looked up
+   *  in this character's edition's service map. Throws if the service key is
+   *  not part of the active edition — that's an edition-isolation violation
+   *  we want to surface, not silently mask. */
+  serviceDef(): ServiceDef {
+    return this.editionService(this.service as ServiceKey);
+  }
+
+  /** Look up any service in this character's edition. */
+  editionService(key: ServiceKey): ServiceDef {
+    const map = getEditionServices(this.editionId);
+    const def = map[key];
+    if (!def) {
+      throw new Error(
+        `Service "${key}" is not part of edition "${this.editionId}"`,
+      );
+    }
+    return def;
   }
 
   /** Apply the user's pick for a pending choice. */
@@ -202,11 +233,12 @@ export class Character {
       this.addSkill(this.bladeBenefit);
       return;
     }
-    const known = this.knownFromPool(BLADES);
+    const pool = cascadePoolByKey("bladeCombat", this.editionId);
+    const known = this.knownFromPool(pool);
     this.pickOrDefer({
       kind: "cascade",
       label: "Choose a blade for your weapon benefit",
-      options: BLADES,
+      options: pool,
       preferred: known,
       context: { source: "muster", benefit: "Blade" },
       onResolve: (ch, blade) => {
@@ -222,11 +254,12 @@ export class Character {
       this.addSkill(this.gunBenefit);
       return;
     }
-    const known = this.knownFromPool(GUNS);
+    const pool = cascadePoolByKey("gunCombat", this.editionId);
+    const known = this.knownFromPool(pool);
     this.pickOrDefer({
       kind: "cascade",
       label: "Choose a gun for your weapon benefit",
-      options: GUNS,
+      options: pool,
       preferred: known,
       context: { source: "muster", benefit: "Gun" },
       onResolve: (ch, gun) => {
@@ -279,21 +312,22 @@ export class Character {
       this.history.push(
         "Distinguished by social standing, automatically enrolled in the Nobility.",
       );
-      const skills = s.nobles.getServiceSkills(this);
+      const skills = this.editionService("nobles").getServiceSkills(this);
       for (const sk of skills) this.addSkill(sk);
       return "nobles";
     }
 
-    const dm = s[preferredService].enlistmentDM(this.attributes);
+    const pref = this.editionService(preferredService);
+    const dm = pref.enlistmentDM(this.attributes);
     const en = roll(2);
-    this.history.push(`Attempted to enlist in ${s[preferredService].serviceName}.`);
+    this.history.push(`Attempted to enlist in ${pref.serviceName}.`);
     this.verboseHistory(
-      `Enlistment roll ${en} + ${dm} vs ${s[preferredService].enlistmentThrow}`,
+      `Enlistment roll ${en} + ${dm} vs ${pref.enlistmentThrow}`,
     );
-    if (en + dm >= s[preferredService].enlistmentThrow) {
+    if (en + dm >= pref.enlistmentThrow) {
       this.history.push("Enlistment accepted.");
       this.applyServiceStartAge(preferredService);
-      const skills = s[preferredService].getServiceSkills(this);
+      const skills = pref.getServiceSkills(this);
       for (const sk of skills) this.addSkill(sk);
       return preferredService;
     }
@@ -303,7 +337,7 @@ export class Character {
       DRAFT_SERVICES[Math.floor(Math.random() * DRAFT_SERVICES.length)]!;
     this.history.push(`Drafted into ${draftService}.`);
     this.applyServiceStartAge(draftService);
-    const skills = s[draftService].getServiceSkills(this);
+    const skills = this.editionService(draftService).getServiceSkills(this);
     for (const sk of skills) this.addSkill(sk);
     return draftService;
   }
@@ -331,7 +365,7 @@ export class Character {
   // ---------- reenlistment ----------
 
   doReenlistmentStep() {
-    const def = s[this.service];
+    const def = this.serviceDef();
     const reenlistRoll = roll(2);
     const target = def.reenlistThrow;
     if (def.inverseReenlist) {
@@ -432,7 +466,7 @@ export class Character {
 
   musterOutCash(cashDM: number) {
     const idx = Math.min(7, Math.max(1, roll(1) + cashDM));
-    const cash = s[this.service].musterCash[idx] ?? 0;
+    const cash = this.serviceDef().musterCash[idx] ?? 0;
     this.credits += cash;
     this.musterLog.push(`Cr${numCommaSep(cash)} cash`);
     this.verboseHistory(`${numCommaSep(cash)} credits`);
@@ -447,7 +481,7 @@ export class Character {
     for (const [n, l] of this.skills) beforeSkillLevels.set(n, l);
     const beforeMortgage = this.mortgage;
 
-    s[this.service].musterBenefits(this, benefitsDM);
+    this.serviceDef().musterBenefits(this, benefitsDM);
 
     const newBenefitsList = this.benefits.slice(beforeBenefitsLen);
     const newBenefitsSet = new Set(newBenefitsList);
