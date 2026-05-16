@@ -1,18 +1,36 @@
-// Validate lib/traveller code against data/editions/ct-classic.json.
+// Validate the runtime engine against each "active" edition's JSON. The
+// service registry (`s`) only ever holds the default edition's services, so
+// these tests run per active edition listed in the registry; data-only
+// editions are covered by tests/editions.structural.test.ts.
 //
-// Each describe block compares one slice of the JSON canonical table against
-// what the code emits. Failures here mean the code disagrees with the JSON;
-// the JSON is the source of truth (extracted by hand from the two PDFs).
+// Failures here mean the code disagrees with the JSON; the JSON is the
+// source of truth (extracted by hand from the rulebooks).
 
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-  Character, s, type AttributeKey, type ServiceKey,
+  Character, DEFAULT_EDITION_ID, listEditions, s,
+  type AttributeKey, type ServiceKey,
 } from "../lib/traveller";
 import {
   AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
 } from "../lib/traveller/cascades";
+
+// The runtime engine only binds one edition's services at import time
+// (the default). The "active" editions to validate here are therefore the
+// ones reachable through `s` — currently just the default. listEditions()
+// gives us the registry; we filter to status="active" and pick the one the
+// runtime currently exposes.
+const ACTIVE_EDITION = listEditions().find(
+  (e) => e.id === DEFAULT_EDITION_ID && e.status !== "data-only",
+);
+if (!ACTIVE_EDITION) {
+  throw new Error(
+    "Default edition is not active; data.validation.test cannot run.",
+  );
+}
+const EDITION_DATA_PATH = `../data/editions/${ACTIVE_EDITION.id}.json`;
 
 interface JsonCheck {
   target: number | null;
@@ -60,7 +78,7 @@ interface CanonData {
 }
 
 const DATA: CanonData = JSON.parse(
-  readFileSync(resolve(__dirname, "../data/editions/ct-classic.json"), "utf8"),
+  readFileSync(resolve(__dirname, EDITION_DATA_PATH), "utf8"),
 ) as CanonData;
 
 const SERVICES = Object.keys(DATA.services) as ServiceKey[];
