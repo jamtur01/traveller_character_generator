@@ -135,15 +135,6 @@
   "lifecycle": {
     "terms": [
       {
-        "id": "allocateSkills",
-        "config": {
-          "term1Bonus": true
-        }
-      },
-      {
-        "id": "autoSkillTerm"
-      },
-      {
         "id": "survival"
       },
       {
@@ -163,6 +154,15 @@
         "config": {
           "doubleBonusOvershoot": 4
         }
+      },
+      {
+        "id": "allocateSkills",
+        "config": {
+          "term1Bonus": true
+        }
+      },
+      {
+        "id": "autoSkillTerm"
       }
     ],
     "mtChecklist": [
