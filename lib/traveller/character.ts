@@ -879,9 +879,12 @@ export class Character {
     // them. Otherwise it follows chronological terms served (effective
     // terms used to pick the row).
     if (this.apparentAge === 0) this.apparentAge = this.age;
+    // Short terms only count for half-aging. PM p. 16: a short term is 2
+    // years and the term should not trigger full-term aging breakpoints.
+    // Compute aging from completed full terms only (terms minus short).
     const effectiveTermsForAging = this.onAnagathics
       ? Math.floor((this.apparentAge - 18) / 4)
-      : this.terms;
+      : Math.max(0, this.terms - this.shortTermsCount);
 
     // Pick the highest row whose endOfTerm <= effectiveTermsForAging.
     const applicable = aging.rows
