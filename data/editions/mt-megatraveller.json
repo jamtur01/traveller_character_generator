@@ -6003,7 +6003,7 @@
           }
         ],
         "dms": [
-          "DM +2 if rank IS-10+; natural 2 remains 2"
+          { "rankAtLeast": "IS-10", "dm": 2, "note": "voluntary; natural 2 still forces war mission" }
         ],
         "notes": []
       },
@@ -6039,8 +6039,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if End 9+",
-            "Skills DM +1 if terms 3+"
+            { "rollType": "survival", "attribute": "endurance", "min": 9, "dm": 1 },
+            { "rollType": "skills", "termsAtLeast": 3, "dm": 1 }
           ],
           "notes": []
         },
@@ -6075,8 +6075,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if End 9+",
-            "Skills DM +1 if Pilot-3+"
+            { "rollType": "survival", "attribute": "endurance", "min": 9, "dm": 1 },
+            { "rollType": "skills", "skillAtLeast": { "skill": "Pilot", "level": 3 }, "dm": 1 }
           ],
           "notes": []
         },
@@ -6111,8 +6111,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if End 9+",
-            "Skills DM +1 if Int 9+"
+            { "rollType": "survival", "attribute": "endurance", "min": 9, "dm": 1 },
+            { "rollType": "skills", "attribute": "intelligence", "min": 9, "dm": 1 }
           ],
           "notes": []
         },
@@ -6156,7 +6156,7 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if Int 9+"
+            { "rollType": "survival", "attribute": "intelligence", "min": 9, "dm": 1 }
           ],
           "notes": []
         },
@@ -6200,8 +6200,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if Pilot-2+",
-            "Promotion DM +1 if Int 9+"
+            { "rollType": "survival", "skillAtLeast": { "skill": "Pilot", "level": 2 }, "dm": 1 },
+            { "rollType": "promotion", "attribute": "intelligence", "min": 9, "dm": 1 }
           ],
           "notes": []
         },
@@ -6245,7 +6245,7 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if Edu 10+"
+            { "rollType": "survival", "attribute": "education", "min": 10, "dm": 1 }
           ],
           "notes": []
         },
@@ -6289,7 +6289,7 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if rank O1+"
+            { "rollType": "survival", "rankAtLeast": "O1", "dm": 1 }
           ],
           "notes": []
         }
@@ -6545,7 +6545,12 @@
             }
           ],
           "dms": [
-            "DM +4 conditions: Str 9+ for Scout Life; terms 3+ for Exploration, Communications, Survey, and Field Service; rank IS-10+ for Special or War Mission"
+            { "column": "scoutLife", "attribute": "strength", "min": 9, "dm": 4 },
+            { "column": "exploration", "termsAtLeast": 3, "dm": 4 },
+            { "column": "communications", "termsAtLeast": 3, "dm": 4 },
+            { "column": "survey", "termsAtLeast": 3, "dm": 4 },
+            { "column": "fieldService", "termsAtLeast": 3, "dm": 4 },
+            { "column": "specialOrWarMission", "rankAtLeast": "IS-10", "dm": 4 }
           ],
           "notes": []
         },
@@ -6652,7 +6657,12 @@
             }
           ],
           "dms": [
-            "DM +4 conditions: IS-10+ for Admin, Operation, Detached Duty, Bureaucracy; Edu 9+ for Technical; IS-13+ for Admin Rank"
+            { "column": "admin", "rankAtLeast": "IS-10", "dm": 4 },
+            { "column": "operation", "rankAtLeast": "IS-10", "dm": 4 },
+            { "column": "detachedDuty", "rankAtLeast": "IS-10", "dm": 4 },
+            { "column": "bureaucracy", "rankAtLeast": "IS-10", "dm": 4 },
+            { "column": "technical", "attribute": "education", "min": 9, "dm": 4 },
+            { "column": "adminRank", "rankAtLeast": "IS-13", "dm": 4 }
           ],
           "notes": []
         }

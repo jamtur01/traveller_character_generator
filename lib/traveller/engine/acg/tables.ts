@@ -74,7 +74,7 @@ export function lookupResolution(
   resolution: {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: string[];
+    dms?: Array<string | StructuredDm>;
     notes?: string[];
   },
   assignment: string,
@@ -435,7 +435,7 @@ function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
 }
 
 function parseRankLetter(code: string): { letter: string; n: number } | null {
-  const m = code.match(/^([A-Za-z]+)(\d+)$/);
+  const m = code.match(/^([A-Za-z]+-?)(\d+)$/);
   if (!m) return null;
   return { letter: m[1]!, n: parseInt(m[2]!, 10) };
 }
