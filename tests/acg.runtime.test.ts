@@ -225,6 +225,12 @@ describe("Merchant Prince ACG runtime", () => {
     const c = freshAcgChar();
     c.attributes.strength = 10;
     c.attributes.intelligence = 10;
+    // Megacorp requires starport B+; give the character a Starport A homeworld.
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     expect(c.acgState!.lineType).toBe("Megacorp");
     expect(c.acgState!.department).toBeDefined();

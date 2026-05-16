@@ -35,6 +35,11 @@ describe("Merchant: row 13 reachable on the specific assignment table", () => {
   it("Roll 12 + DM +1 (rank O4+) yields die=13 without clamping", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     c.acgState!.isOfficer = true;
     c.acgState!.rankCode = "O4";

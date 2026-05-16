@@ -113,6 +113,20 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     out.notes.push(`No pre-career data for "${opt}"`);
     return out;
   }
+  // Merchant Academy gate (PM p. 44): "A character who has enlisted in a
+  // Megacorporation or a Sector-wide line may apply for admission to a
+  // Merchant Academy." Block admission if those conditions aren't met.
+  if (opt === "merchantAcademy") {
+    const lineType = ch.acgState?.lineType;
+    const allowed = lineType === "Megacorp" || lineType === "Sector-wide";
+    if (!allowed) {
+      out.notes.push(
+        `Merchant Academy requires enlistment in a Megacorporation or Sector-wide line ` +
+        `first; current line is ${lineType ?? "(none)"}.`,
+      );
+      return out;
+    }
+  }
 
   // Admission.
   if (spec.admission) {
