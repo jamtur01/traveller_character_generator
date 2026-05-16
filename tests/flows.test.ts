@@ -2,7 +2,8 @@
 // the outcomes are deterministic.
 
 import { describe, expect, it, vi } from "vitest";
-import { Character, s } from "../lib/traveller";
+import { s } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 /** Force Math.random() to a value that makes d6 = `v`. Caller must restore. */
 function pinD6(v: number) {

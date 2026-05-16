@@ -4,7 +4,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Character } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import {
   applyHomeworldSkills, availableServicesForHomeworld, editionHasHomeworld,
   rollHomeworld,

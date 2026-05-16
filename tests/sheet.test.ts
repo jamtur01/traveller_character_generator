@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Character, formatCharacterSheet } from "../lib/traveller";
+import { formatCharacterSheet } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 function jamison(): Character {
   // Reconstruct the TTB worked example (page 31).

@@ -5,7 +5,8 @@
 // the engine would fail one of these tests.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { Character, type ServiceKey } from "../lib/traveller";
+import { type ServiceKey } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 afterEach(() => {
   vi.restoreAllMocks();

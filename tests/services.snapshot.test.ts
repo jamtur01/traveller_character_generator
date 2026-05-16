@@ -4,9 +4,8 @@
 // reviewers will see the diff alongside the code change.
 
 import { describe, expect, it, vi } from "vitest";
-import {
-  Character, s, SERVICES, type AttributeKey, type ServiceKey,
-} from "../lib/traveller";
+import { s, SERVICES, type AttributeKey, type ServiceKey } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 const ALL: ServiceKey[] = [...SERVICES, "nobles"];
 const BASE = 7;

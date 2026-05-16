@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCharacterSheetPdf, highestSkillIn, safeFilename, splitSkills,
 } from "../lib/pdfSheet";
-import { Character } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 describe("safeFilename", () => {
   it("strips diacritics via NFKD", () => {

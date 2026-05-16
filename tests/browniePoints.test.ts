@@ -3,7 +3,7 @@
 // outcomes.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { Character } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import {
   spendBrowniePoints, tryMitigate,
 } from "../lib/traveller/engine/acg/browniePoints";

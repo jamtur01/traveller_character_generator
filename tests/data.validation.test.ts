@@ -9,10 +9,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import {
-  Character, DEFAULT_EDITION_ID, listEditions, s,
-  type AttributeKey, type ServiceKey,
-} from "../lib/traveller";
+import { DEFAULT_EDITION_ID, listEditions, s, type AttributeKey, type ServiceKey } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import {
   AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
 } from "../lib/traveller/cascades";
