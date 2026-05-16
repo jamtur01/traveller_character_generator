@@ -17,9 +17,12 @@ import type { AcgPathwayImpl } from "../../editions/types";
  *  The runner walks these in order; the index is recorded in acgState.yearStep
  *  so an interactive choice that throws ChoicePendingError can be resumed
  *  by re-invoking runAcgYear after the choice resolves. */
+// Per the ACG checklist (PM "Resolve Current Year"): determine assignment
+// FIRST, then command-duty within that assignment (officers only), then
+// resolve, then age+count, then retention. Pre-fix had commandDuty first.
 const YEAR_STEPS = [
-  "commandDuty",
   "rollAssignment",
+  "commandDuty",
   "resolveAssignment",
   "ageAndCount",
   "retention",
@@ -90,17 +93,9 @@ export function runAcgYear(ch: Character): void {
     ? Math.max(0, YEAR_STEPS.indexOf(acg.pausedAtStep as YearStep))
     : 0;
 
-  // Step 0: command duty (no-op for enlisted; skipped after retention).
-  if (startIdx <= 0) {
-    if (p.commandDuty && !acg.justRetained) {
-      const ok = runStep(ch, "commandDuty", () => p.commandDuty!(ch));
-      if (!ok) return;
-    }
-  }
-
-  // Step 1: roll the year's assignment.
+  // Step 0: roll the year's assignment (PM checklist 6.A.1).
   let assignment = acg.currentAssignment ?? null;
-  if (startIdx <= 1) {
+  if (startIdx <= 0) {
     let rolled: string | null = null;
     const ok = runStep(ch, "rollAssignment", () => {
       rolled = p.rollAssignment(ch);
@@ -108,6 +103,15 @@ export function runAcgYear(ch: Character): void {
     if (!ok) return;
     assignment = rolled;
     acg.currentAssignment = assignment;
+  }
+
+  // Step 1: command duty (officers only; per PM, after the assignment is
+  // known so the player can decide whether to seek a command position).
+  if (startIdx <= 1) {
+    if (p.commandDuty && !acg.justRetained) {
+      const ok = runStep(ch, "commandDuty", () => p.commandDuty!(ch));
+      if (!ok) return;
+    }
   }
   if (!assignment) {
     // Defensive: nothing to resolve. Treat as a no-op year.
@@ -177,6 +181,12 @@ export function runAcgTerm(ch: Character): void {
     awardBrownie(ch, 1, "Completed four-year term");
     ch.terms += 1;
   }
+  if (ch.deceased || !ch.activeDuty) return;
+
+  // PM ACG checklist (mtChecklist step 7): Conclude Current Term → Aging,
+  // then Reenlistment, then Muster Out. Aging fires here so the result is
+  // observable before reenlist decides whether to continue.
+  ch.doAging();
   if (ch.deceased || !ch.activeDuty) return;
 
   // End-of-term reenlistment check.

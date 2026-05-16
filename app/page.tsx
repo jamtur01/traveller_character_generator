@@ -200,8 +200,10 @@ export default function Home() {
       commit(c, pickSkillPhase(c));
       return;
     }
-    // No skills to pick — proceed straight to aging + reenlistment.
-    if (!c.deceased) c.doAging();
+    // No skills to pick — proceed straight to aging + reenlistment for
+    // basic chargen. ACG handles aging + reenlistment inside runAcgTerm
+    // already, so we skip the duplicate aging call here for ACG characters.
+    if (!c.useAcg && !c.deceased) c.doAging();
     if (c.deceased) {
       commit(c, "end");
       return;
