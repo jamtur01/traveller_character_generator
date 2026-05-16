@@ -64,7 +64,10 @@ interface MercenaryData {
   serviceSkills: { columns: string[]; rows: Array<Record<string, unknown>> };
   mos: { columns: string[]; rows: Array<Record<string, unknown>> };
   ranks: { enlisted: Array<[string, string]>; officer: Array<[string, string, number]> };
-  reenlistment: { army: { target: number; dms: string[] }; marines: { target: number; dms: string[] } };
+  reenlistment: {
+    army: { target: number; dms: StructuredDm[] };
+    marines: { target: number; dms: StructuredDm[] };
+  };
 }
 
 function dataFor(ch: Character): MercenaryData {
@@ -498,31 +501,13 @@ export function mercenaryRetention(ch: Character, assignment: string): void {
 }
 
 /** Reenlistment per service. Returns true if continuing.
- *  Manual p. 51 DMs:
- *    Army: +2 if rank E9 or less
- *    Marines: +1 if cross-trained in Artillery or Cavalry AND reenlisting
- *             into either of those arms */
+ *  Manual p. 51 DMs are sourced from JSON (mercenary.reenlistment.*.dms)
+ *  and evaluated via the shared structured-DM evaluator. */
 export function mercenaryReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   const svc = ch.acgState!.branch === "Marines" ? "marines" : "army";
   const spec = data.reenlistment[svc];
-  let dm = 0;
-  for (const ruleStr of spec.dms) {
-    const lc = ruleStr.toLowerCase();
-    const m = ruleStr.match(/[+\-]\s*(\d+)/);
-    if (!m) continue;
-    const mag = parseInt(m[1]!, 10);
-    if (lc.includes("rank e9 or less") && ch.acgState!.rankCode.startsWith("E")) {
-      dm += mag;
-    }
-    if (lc.includes("cross-trained in artillery or cavalry")) {
-      const xtrain = ch.acgState!.crossTrainedArms ?? [];
-      const eligibleArms = ["Artillery", "Cavalry"];
-      const hasXTrain = xtrain.some((a) => eligibleArms.includes(a));
-      const inEligibleArm = eligibleArms.includes(ch.acgState!.combatArm ?? "");
-      if (hasXTrain && inEligibleArm) dm += mag;
-    }
-  }
+  const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);
   ch.verboseHistory(`Mercenary reenlist (${svc}): ${r} + ${dm} vs ${spec.target}`);
   if (r === 12) {
