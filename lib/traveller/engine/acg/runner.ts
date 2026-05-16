@@ -160,6 +160,13 @@ export function runAcgYear(ch: Character): void {
 export function runAcgTerm(ch: Character): void {
   if (!ch.acgState) throw new Error("Cannot run ACG term on non-ACG character");
   if (ch.deceased || !ch.activeDuty) return;
+  // PM p. 15: anagathics intent is declared before the term's first survival
+  // roll. Reset per-term flags and consult the standing order so the year-1
+  // survival roll sees the correct DM.
+  ch.anagathicsActiveThisTerm = false;
+  ch.anagathicsWithdrawalThisTerm = false;
+  ch.wantsAnagathicsThisTerm = false;
+  ch.preSurvivalAnagathicsHook();
   const p = getPathwayImpl(ch);
   if (p.startOfTerm) p.startOfTerm(ch);
   ch.acgState.year = 1;

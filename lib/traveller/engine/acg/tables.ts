@@ -149,6 +149,12 @@ export function applyDmRules(
     if (rule.rollType !== undefined && rule.rollType !== rollType) continue;
     if (matchesStructuredDm(rule, ch)) total += rule.dm;
   }
+  // PM p. 15: anagathics user takes -1 (-2 for nobles) survival DM.
+  // Applies whether or not the supply is found; only on the survival roll.
+  if (rollType === "survival" &&
+      (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm)) {
+    total += ch.service === "nobles" ? -2 : -1;
+  }
   return total;
 }
 
