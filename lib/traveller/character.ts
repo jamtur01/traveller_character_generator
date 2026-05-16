@@ -428,28 +428,48 @@ export class Character {
   }
 
   doAging() {
-    if (this.age < 34) return;
-    if (this.age <= 46) {
-      this.ageAttribute("strength", 8, -1);
-      this.ageAttribute("dexterity", 7, -1);
-      this.ageAttribute("endurance", 8, -1);
-    } else if (this.age <= 62) {
-      this.ageAttribute("strength", 9, -1);
-      this.ageAttribute("dexterity", 8, -1);
-      this.ageAttribute("endurance", 9, -1);
-    } else {
-      this.ageAttribute("strength", 9, -2);
-      this.ageAttribute("dexterity", 9, -2);
-      this.ageAttribute("endurance", 9, -2);
-      this.ageAttribute("intelligence", 9, -1);
+    // Reads the active edition's aging.rows table. Each row applies if
+    // this.terms >= row.endOfTerm AND the row is the highest qualifying.
+    // CT and MT share the same aging breakpoints (term 4-7, 8-11, 12+).
+    interface AgingRow {
+      age: number | string;
+      endOfTerm: number;
+      effects: Partial<
+        Record<AttributeKey, { delta: number; save: number }>
+      >;
     }
+    interface AgingCrisis {
+      whenAttributeReducedTo?: number;
+      save?: number;
+    }
+    const aging = getEdition(this.editionId).data.aging as {
+      rows?: AgingRow[];
+      agingCrisis?: AgingCrisis;
+    } | undefined;
+    if (!aging?.rows) return;
+
+    // Pick the highest row whose endOfTerm <= this.terms. Aging fires once
+    // per term, at the end of the term (i.e., after this.terms has been
+    // incremented for the term just completed).
+    const applicable = aging.rows
+      .filter((r) => this.terms >= r.endOfTerm)
+      .sort((a, b) => b.endOfTerm - a.endOfTerm)[0];
+    if (!applicable) return;
+
+    for (const [attr, eff] of Object.entries(applicable.effects) as
+      [AttributeKey, { delta: number; save: number }][]) {
+      this.ageAttribute(attr, eff.save, eff.delta);
+    }
+
+    const crisisThreshold = aging.agingCrisis?.whenAttributeReducedTo ?? 0;
+    const crisisSave = aging.agingCrisis?.save ?? 8;
     for (const a of Object.keys(this.attributes) as AttributeKey[]) {
-      if (this.attributes[a] < 1) {
+      if (this.attributes[a] <= crisisThreshold) {
         const cr = roll(2);
         this.verboseHistory(
-          `Aging crisis due to ${a} dropping below 1 roll ${cr} vs 8`,
+          `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`,
         );
-        if (cr < 8) {
+        if (cr < crisisSave) {
           this.history.push("Died of illness.");
           this.deceased = true;
           this.activeDuty = false;
@@ -463,10 +483,21 @@ export class Character {
   // ---------- muster out ----------
 
   musterOutRolls(): number {
-    let r = this.terms;
-    if (this.rank === 1 || this.rank === 2) r += 1;
-    else if (this.rank === 3 || this.rank === 4) r += 2;
-    else if (this.rank >= 5) r += 3;
+    // Reads rules.musterOutRolls from the active edition.
+    //   perTerm × terms (default 1) + the additionalRolls of whichever
+    //   rankBand contains this character's rank.
+    const rules = (
+      getEdition(this.editionId).data.rules as {
+        musterOutRolls?: {
+          perTerm?: number;
+          rankBands?: { ranks: number[]; additionalRolls: number }[];
+        };
+      }
+    ).musterOutRolls;
+    const perTerm = rules?.perTerm ?? 1;
+    let r = perTerm * this.terms;
+    const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
+    if (band) r += band.additionalRolls;
     return r;
   }
 

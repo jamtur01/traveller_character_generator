@@ -116,6 +116,11 @@ export interface CanonData {
   services: Record<ServiceKey, ServiceData>;
   benefitDetails: Record<string, BenefitDetail>;
   lifecycle?: LifecycleSpec & Record<string, unknown>;
+  /** Engine-consumable rules. Each block is opt-in: the engine falls back
+   *  to its defaults when a block is missing. */
+  rules?: Record<string, unknown>;
+  /** Aging table — rows keyed by end-of-term number. */
+  aging?: Record<string, unknown>;
 }
 
 /**

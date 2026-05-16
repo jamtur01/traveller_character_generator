@@ -81,23 +81,32 @@
     "skillEligibility": {
       "initialTerm": 2,
       "subsequentTerm": 1,
-      "commissionOrPosition": 1,
-      "promotion": 1,
+      "onPositionOrCommission": 1,
+      "onPromotion": 1,
       "advancedEducationTableRequiresEducation": 8,
-      "ttbScoutException": "Scouts receive two skills per term and no commission or promotion extra skills."
+      "perTermExceptions": {
+        "scouts": 2,
+        "belters": 2,
+        "doctors": 2,
+        "rogues": 2,
+        "scientists": 2,
+        "hunters": 2
+      },
+      "notes": "Scouts (TTB) and the rankless CotI services (Belters, Doctors, Rogues, Scientists, Hunters) gain two skills per term; all others gain two in the first term and one per term thereafter."
     },
     "musterOutRolls": {
-      "perFullTerm": 1,
-      "rank1Or2": 1,
-      "rank3Or4": 2,
-      "ttbRank5Or6": 3,
-      "cotiRank5Or6": 2,
-      "benefitsTableDM": [{ "condition": "rank 5 or 6", "modifier": 1 }],
-      "cashTableDM": [
-        { "source": "ttb", "condition": "Gambling skill", "modifier": 1 },
-        { "source": "coti", "condition": "Gambling skill or retired", "modifier": 1, "cumulative": false }
+      "perTerm": 1,
+      "rankBands": [
+        { "ranks": [1, 2], "additionalRolls": 1 },
+        { "ranks": [3, 4], "additionalRolls": 2 },
+        { "ranks": [5, 6], "additionalRolls": 3 }
       ],
-      "cashRollLimit": 3
+      "benefitTableDm": { "rankAtLeast": 5, "dm": 1 },
+      "cashTableDm": [
+        { "condition": "Gambling-1 or better", "dm": 1 }
+      ],
+      "cashRollLimit": 3,
+      "notes": "Per TTB p. 18: one roll per full term plus rank-band bonus (rank 1-2 +1, 3-4 +2, 5-6 +3). Gambling-1 grants +1 DM on the cash table."
     },
     "reenlistment": {
       "mandatoryOnExactRoll": 12,
@@ -130,11 +139,18 @@
     }
   },
   "aging": {
-    "termsToAge": { "4": 34, "5": 38, "6": 42, "7": 46, "8": 50, "9": 54, "10": 58, "11": 62, "12": 66, "13": 70, "14+": 74 },
-    "effects": [
-      { "termRange": [4, 7], "attributes": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
-      { "termRange": [8, 11], "attributes": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
-      { "termRange": [12, null], "attributes": { "strength": { "delta": -2, "save": 9 }, "dexterity": { "delta": -2, "save": 9 }, "endurance": { "delta": -2, "save": 9 }, "intelligence": { "delta": -1, "save": 9 } } }
+    "source": "TTB p. 24 aging table",
+    "startsAfterFourthTerm": true,
+    "rows": [
+      { "age": 34, "endOfTerm": 4, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
+      { "age": 38, "endOfTerm": 5, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
+      { "age": 42, "endOfTerm": 6, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
+      { "age": 46, "endOfTerm": 7, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
+      { "age": 50, "endOfTerm": 8, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
+      { "age": 54, "endOfTerm": 9, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
+      { "age": 58, "endOfTerm": 10, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
+      { "age": 62, "endOfTerm": 11, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
+      { "age": "66+", "endOfTerm": 12, "effects": { "strength": { "delta": -2, "save": 9 }, "dexterity": { "delta": -2, "save": 9 }, "endurance": { "delta": -2, "save": 9 }, "intelligence": { "delta": -1, "save": 9 } } }
     ],
     "unaffected": ["education", "social"],
     "agingCrisis": { "whenAttributeReducedTo": 0, "save": 8, "dice": "2d6" }
