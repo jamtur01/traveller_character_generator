@@ -23,6 +23,7 @@ import type { Character } from "../character";
 import type { AttributeKey } from "../types";
 import type { BenefitDetail } from "../editions/types";
 import { cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
+import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 
 const ATTR_BY_ABBR: Record<string, AttributeKey> = {
   Stren: "strength",
@@ -107,7 +108,13 @@ export function applyCell(
       options: pool,
       preferred: known,
       context: { source: mode === "muster" ? "muster" : "skillTable", cellLabel: label },
-      onResolve: (c, name) => c.addSkill(name),
+      onResolve: (c, name) => {
+        // Homeworld limitation: tech/law-restricted cascade picks (vehicles,
+        // weapons) require a 2D 7+ override per PM p. 39. On failure the
+        // skill roll is forfeited entirely.
+        if (mode !== "muster" && !acquireSkillWithRestrictionCheck(c, name)) return;
+        c.addSkill(name);
+      },
     });
     return;
   }
@@ -150,6 +157,9 @@ export function applyCell(
 
   // Skill-table mode: literal skill name (with renames applied).
   const skillName = SKILL_LABEL_RENAMES[label] ?? label;
+  // Homeworld limitation: literal vehicle/weapon cells (e.g., "Grav Belt")
+  // also gate through the override roll. Non-restricted skills pass through.
+  if (!acquireSkillWithRestrictionCheck(ch, skillName)) return;
   ch.addSkill(skillName);
 }
 

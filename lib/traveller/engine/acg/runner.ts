@@ -183,9 +183,12 @@ export function runAcgTerm(ch: Character): void {
   }
   if (ch.deceased || !ch.activeDuty) return;
 
-  // PM ACG checklist (mtChecklist step 7): Conclude Current Term → Aging,
-  // then Reenlistment, then Muster Out. Aging fires here so the result is
-  // observable before reenlist decides whether to continue.
+  // PM ACG checklist (mtChecklist step 7): Conclude Current Term → enforce
+  // the Int+Edu skill cap (PM p. 39), Aging, then Reenlistment, then Muster
+  // Out. Aging fires after the cap so a player's reduced Edu doesn't shrink
+  // the cap window after they've already committed to skills this term.
+  ch.enforceSkillCap();
+  if (ch.deceased || !ch.activeDuty) return;
   ch.doAging();
   if (ch.deceased || !ch.activeDuty) return;
 
