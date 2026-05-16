@@ -54,9 +54,11 @@ export function benefitDmFor(ch: Character): number {
   return 0;
 }
 
-/** Max cash rolls allowed per character (CT and MT: 3). */
+/** Max cash rolls allowed per character (CT and MT: 3). Anagathics users
+ *  are permanently capped at 2 (MT PM p. 15). */
 export function maxCashRolls(ch: Character): number {
-  return rules(ch)?.cashRollLimit ?? 3;
+  const base = rules(ch)?.cashRollLimit ?? 3;
+  return ch.anagathicsEverTaken ? Math.min(2, base) : base;
 }
 
 /** Interpret a JSON condition string against the character. The conditions

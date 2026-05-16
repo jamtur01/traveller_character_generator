@@ -103,6 +103,27 @@ export class Character {
    */
   shortTermsCount = 0;
   /**
+   * Anagathics state (MT PM p. 15). Apparent age is what the Aging table
+   * uses each term; chronological `age` advances normally. Frozen each
+   * term anagathics supply is maintained; advances when supply is missing.
+   */
+  onAnagathics = false;
+  /** Per-term flag: anagathics taken this term. -1 survival DM, no muster
+   *  benefit roll this term. Player must specify before survival. */
+  anagathicsActiveThisTerm = false;
+  /** Per-term flag: character lost the anagathics supply this term — double
+   *  saving throws on aging. */
+  anagathicsWithdrawalThisTerm = false;
+  /** True once the character has ever opted into anagathics: caps cash
+   *  table rolls at 2 permanently. */
+  anagathicsEverTaken = false;
+  /** Apparent age — the Aging-table line the character is on. Defaults to
+   *  chronological age; diverges when anagathics is active. */
+  apparentAge = 0;
+  /** Count of terms in which anagathics was active — those terms forfeit
+   *  the muster-out benefit roll (PM p. 15). */
+  anagathicsBenefitForfeitedTerms = 0;
+  /**
    * The edition this character was rolled under. Determines which service
    * map, cascade pools, and edition hooks apply. Stays fixed for the
    * character's lifetime — switching editions mid-chargen would invalidate
@@ -710,6 +731,61 @@ export class Character {
     }
   }
 
+  // ---------- anagathics ----------
+
+  /** Try to obtain anagathics for the upcoming term (PM p. 15). Returns
+   *  whether a supply was secured. Requires age ≥ 30 at end of third
+   *  term. Throws if called before the third term's end. Caller is
+   *  expected to call this before survival each term they want to use
+   *  anagathics. */
+  tryAnagathics(): boolean {
+    if (this.age < 30 || this.terms < 3) {
+      this.verboseHistory("Anagathics unavailable: must be at least age 30 and end of third term.");
+      return false;
+    }
+    let dm = 0;
+    const sp = this.homeworld?.starport;
+    if (sp === "A") dm += 3;
+    else if (sp === "B") dm += 2;
+    else if (sp === "C") dm += 1;
+    const t = this.homeworld?.tech;
+    if (t === "Early Stellar") dm += 1;
+    else if (t === "Avg Stellar") dm += 2;
+    else if (t === "High Stellar") dm += 3;
+    const r = roll(2) + dm;
+    this.verboseHistory(`Anagathics availability roll ${r} (DM ${dm}) vs 12+`);
+    const success = r >= 12;
+    if (success) {
+      if (!this.onAnagathics) {
+        // First term on anagathics: still advance one line on the Aging
+        // Table per manual (so apparent age becomes current chronological).
+        this.apparentAge = this.age;
+      }
+      this.onAnagathics = true;
+      this.anagathicsActiveThisTerm = true;
+      this.anagathicsEverTaken = true;
+      this.anagathicsBenefitForfeitedTerms += 1;
+      this.history.push(
+        "Found a supply of anagathics for this term (-1 survival, no muster benefit roll).",
+      );
+    } else if (this.onAnagathics) {
+      this.history.push("Lost anagathics supply — withdrawal effects at end of term.");
+      this.anagathicsWithdrawalThisTerm = true;
+      this.onAnagathics = false;
+    }
+    return success;
+  }
+
+  /** Voluntarily stop taking anagathics. The character reverts to normal
+   *  survival rolls; withdrawal applies at term end. */
+  discontinueAnagathics(): void {
+    if (!this.onAnagathics) return;
+    this.onAnagathics = false;
+    this.anagathicsActiveThisTerm = false;
+    this.anagathicsWithdrawalThisTerm = true;
+    this.history.push("Stopped taking anagathics; withdrawal effects pending.");
+  }
+
   // ---------- aging ----------
 
   ageAttribute(attrib: AttributeKey, req: number, reduction: number) {
@@ -739,17 +815,44 @@ export class Character {
     } | undefined;
     if (!aging?.rows) return;
 
-    // Pick the highest row whose endOfTerm <= this.terms. Aging fires once
-    // per term, at the end of the term (i.e., after this.terms has been
-    // incremented for the term just completed).
+    // Apparent age tracks the Aging-table line. On anagathics it stays
+    // frozen at the line the character was on when they started taking
+    // them. Otherwise it follows chronological terms served (effective
+    // terms used to pick the row).
+    if (this.apparentAge === 0) this.apparentAge = this.age;
+    const effectiveTermsForAging = this.onAnagathics
+      ? Math.floor((this.apparentAge - 18) / 4)
+      : this.terms;
+
+    // Pick the highest row whose endOfTerm <= effectiveTermsForAging.
     const applicable = aging.rows
-      .filter((r) => this.terms >= r.endOfTerm)
+      .filter((r) => effectiveTermsForAging >= r.endOfTerm)
       .sort((a, b) => b.endOfTerm - a.endOfTerm)[0];
     if (!applicable) return;
 
+    // Anagathics withdrawal: double saving throws on each characteristic;
+    // both must pass to avoid the listed reduction (PM p. 15).
+    const withdrawal = this.anagathicsWithdrawalThisTerm;
     for (const [attr, eff] of Object.entries(applicable.effects) as
       [AttributeKey, { delta: number; save: number }][]) {
-      this.ageAttribute(attr, eff.save, eff.delta);
+      if (withdrawal) {
+        const r1 = roll(2);
+        const r2 = roll(2);
+        const failed = r1 < eff.save || r2 < eff.save;
+        this.verboseHistory(
+          `Anagathics withdrawal aging ${attr}: ${r1}/${r2} vs ${eff.save} → ${failed ? "failed" : "passed"}`,
+        );
+        if (failed) this.improveAttribute(attr, eff.delta);
+      } else {
+        this.ageAttribute(attr, eff.save, eff.delta);
+      }
+    }
+    // Clear withdrawal flag after the term-end aging applies it once.
+    this.anagathicsWithdrawalThisTerm = false;
+    // If anagathics supply is maintained, apparent age does NOT advance.
+    // Otherwise update apparent age to chronological.
+    if (!this.onAnagathics) {
+      this.apparentAge = this.age;
     }
 
     const crisisThreshold = aging.agingCrisis?.whenAttributeReducedTo ?? 0;
@@ -817,7 +920,11 @@ export class Character {
     ).musterOutRolls;
     const perTerm = rules?.perTerm ?? 1;
     const acgPartial = this.acgState?.partialTerms ?? 0;
-    const qualifyingTerms = Math.max(0, this.terms - this.shortTermsCount - acgPartial);
+    const anagathicsTerms = this.anagathicsBenefitForfeitedTerms;
+    const qualifyingTerms = Math.max(
+      0,
+      this.terms - this.shortTermsCount - acgPartial - anagathicsTerms,
+    );
     let r = perTerm * qualifyingTerms;
     const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
     if (band) r += band.additionalRolls;
