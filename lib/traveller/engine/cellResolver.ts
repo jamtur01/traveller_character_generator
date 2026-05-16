@@ -161,14 +161,17 @@ function applyShipBenefit(
   const already = ch.benefits.indexOf(label) > -1;
   const detail = benefitDetails?.[label];
 
-  // Free Trader: repeat receipts pay down the mortgage by a fixed number of
-  // years (encoded in benefitDetails.repeatReducesMortgageYears).
-  if (label === "Free Trader" && already && detail?.repeatReducesMortgageYears) {
+  // Mortgaged ship benefit (Free Trader, Seeker, Yacht, Lab Ship, Safari
+  // Ship): repeat receipts pay down the mortgage by repeatReducesMortgageYears
+  // years (PM p. 17: "non-Scout/Corsair ships follow the 40-year/10-year
+  // repeat rule"). Scout Ship and Corsair use ownership semantics that
+  // ignore mortgage entirely — they fall through to the no-mortgage path.
+  if (already && detail?.repeatReducesMortgageYears) {
     ch.mortgages += 1;
     if (ch.mortgage > 0) {
       ch.mortgage -= detail.repeatReducesMortgageYears;
       ch.verboseHistory(
-        `${detail.repeatReducesMortgageYears} years of mortgage paid off`,
+        `${detail.repeatReducesMortgageYears} years of ${label} mortgage paid off`,
       );
     } else {
       ch.debugHistory("No benefit");
