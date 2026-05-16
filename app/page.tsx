@@ -40,6 +40,7 @@ export default function Home() {
   const [character, setCharacter] = useState<Character | null>(null);
   const [verbose, setVerbose] = useState(false);
   const [interactiveMode, setInteractiveMode] = useState(false);
+  const [edition, setEdition] = useState<string>(DEFAULT_EDITION_ID);
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -62,6 +63,7 @@ export default function Home() {
 
   const startCareer = () => {
     const c = new Character();
+    c.editionId = edition;
     c.showHistory = verbose ? "verbose" : "simple";
     c.choiceMode = interactiveMode ? "interactive" : "auto";
     commit(c, "career");
@@ -271,6 +273,8 @@ export default function Home() {
               onStart={startCareer}
               interactiveMode={interactiveMode}
               setInteractiveMode={setInteractiveMode}
+              edition={edition}
+              setEdition={setEdition}
             />
           )}
 
@@ -601,13 +605,16 @@ function StartPhase({
   onStart,
   interactiveMode,
   setInteractiveMode,
+  edition,
+  setEdition,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
   setInteractiveMode: (v: boolean) => void;
+  edition: string;
+  setEdition: (v: string) => void;
 }) {
   const editions = listEditions();
-  const [edition, setEdition] = useState(DEFAULT_EDITION_ID);
   const selected = editions.find((e) => e.id === edition);
   const dataOnly = selected?.status === "data-only";
 

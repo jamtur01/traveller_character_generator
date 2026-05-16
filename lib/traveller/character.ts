@@ -18,9 +18,9 @@ import type {
   Skill,
 } from "./types";
 import {
-  DRAFT_SERVICES, SERVICES, getEditionServices,
+  getDraftServices, getEditionServices, getEnlistableServices,
 } from "./services";
-import { DEFAULT_EDITION_ID } from "./editions";
+import { DEFAULT_EDITION_ID, getEdition } from "./editions";
 import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
@@ -300,11 +300,13 @@ export class Character {
   // ---------- enlistment ----------
 
   doEnlistment(method: string): ServiceKey {
+    const enlistable = getEnlistableServices(this.editionId);
+    const draftPool = getDraftServices(this.editionId);
     let preferredService: ServiceKey;
     if (method && method !== "random") {
       preferredService = method as ServiceKey;
     } else {
-      preferredService = SERVICES[Math.floor(Math.random() * SERVICES.length)]!;
+      preferredService = enlistable[Math.floor(Math.random() * enlistable.length)]!;
     }
 
     // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
@@ -334,7 +336,7 @@ export class Character {
     this.drafted = true;
     this.history.push("Enlistment denied.");
     const draftService =
-      DRAFT_SERVICES[Math.floor(Math.random() * DRAFT_SERVICES.length)]!;
+      draftPool[Math.floor(Math.random() * draftPool.length)]!;
     this.history.push(`Drafted into ${draftService}.`);
     this.applyServiceStartAge(draftService);
     const skills = this.editionService(draftService).getServiceSkills(this);
@@ -342,9 +344,13 @@ export class Character {
     return draftService;
   }
 
-  /** CotI p. 2: belters and barbarians begin their careers at age 14. */
+  /** Apply the joined service's startAge from edition data. CotI's belter
+   *  and barbarian start-at-14 rule comes through this path; MT services
+   *  all declare startAge=18. Editions encode this declaratively. */
   private applyServiceStartAge(svc: ServiceKey) {
-    if (svc === "belters" || svc === "barbarians") this.age = 14;
+    const edition = getEdition(this.editionId);
+    const data = edition.data.services[svc];
+    if (data?.startAge !== undefined) this.age = data.startAge;
   }
 
   // ---------- service term ----------

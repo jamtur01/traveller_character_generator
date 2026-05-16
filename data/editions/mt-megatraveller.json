@@ -3,10 +3,10 @@
   "edition": {
     "id": "mt-megatraveller",
     "name": "MegaTraveller",
-    "displayName": "MegaTraveller (data extracted, engine wiring TODO)",
+    "displayName": "MegaTraveller",
     "rulebooks": ["MegaTraveller Players' Manual"],
     "year": 1987,
-    "status": "data-only",
+    "status": "active",
     "source": "Extracted from https://traveller.chromeblack.com/files/mtpcgen.html (mtpcgen.html JS data tables)."
   },
   "title": "MegaTraveller basic character generation data",

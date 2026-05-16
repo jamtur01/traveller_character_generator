@@ -22,6 +22,7 @@ export {
 export { Character, cloneCharacter } from "./character";
 export {
   s, SERVICES, DRAFT_SERVICES, ENLISTABLE_SERVICES, serviceLabel,
+  getEditionServices, getEnlistableServices, getDraftServices,
 } from "./services";
 export {
   DEFAULT_EDITION_ID, getEdition, listEditions,
