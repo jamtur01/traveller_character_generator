@@ -47,6 +47,13 @@ export default function Home() {
   const [edition, setEdition] = useState<string>(DEFAULT_EDITION_ID);
   const [useAcg, setUseAcg] = useState(false);
   const [acgPathway, setAcgPathway] = useState<string>("");
+  const [acgService, setAcgService] = useState<"army" | "marines">("army");
+  const [acgCombatArm, setAcgCombatArm] = useState<string>("Infantry");
+  const [acgFleet, setAcgFleet] = useState<
+    "imperialNavy" | "reserveFleet" | "systemSquadron"
+  >("imperialNavy");
+  const [acgDivision, setAcgDivision] = useState<"field" | "bureaucracy">("field");
+  const [acgLineType, setAcgLineType] = useState<string>("Free Trader");
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -101,9 +108,28 @@ export default function Home() {
     if (!prev) return;
     const c = cloneCharacter(prev);
     c.showHistory = verbose ? "verbose" : "simple";
-    c.service = c.doEnlistment(
-      preferredService === "random" ? "" : preferredService,
-    );
+    if (c.useAcg && c.acgPathway) {
+      // ACG: bypass basic doEnlistment and call the pathway-specific
+      // enlist via beginAcg with the user's sub-option choices.
+      try {
+        c.beginAcg(c.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {
+          service: acgService,
+          combatArm: acgCombatArm,
+          fleet: acgFleet,
+          division: acgDivision,
+          lineType: acgLineType,
+        });
+      } catch (err) {
+        // beginAcg throws on enlistment rejection; surface to the user.
+        c.history.push(`ACG enlistment failed: ${(err as Error).message}`);
+        commit(c, "end");
+        return;
+      }
+    } else {
+      c.service = c.doEnlistment(
+        preferredService === "random" ? "" : preferredService,
+      );
+    }
     commit(c, "term");
   };
 
@@ -309,6 +335,16 @@ export default function Home() {
               setUseAcg={setUseAcg}
               acgPathway={acgPathway}
               setAcgPathway={setAcgPathway}
+              acgService={acgService}
+              setAcgService={setAcgService}
+              acgCombatArm={acgCombatArm}
+              setAcgCombatArm={setAcgCombatArm}
+              acgFleet={acgFleet}
+              setAcgFleet={setAcgFleet}
+              acgDivision={acgDivision}
+              setAcgDivision={setAcgDivision}
+              acgLineType={acgLineType}
+              setAcgLineType={setAcgLineType}
             />
           )}
 
@@ -650,6 +686,16 @@ function StartPhase({
   setUseAcg,
   acgPathway,
   setAcgPathway,
+  acgService,
+  setAcgService,
+  acgCombatArm,
+  setAcgCombatArm,
+  acgFleet,
+  setAcgFleet,
+  acgDivision,
+  setAcgDivision,
+  acgLineType,
+  setAcgLineType,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
@@ -660,6 +706,16 @@ function StartPhase({
   setUseAcg: (v: boolean) => void;
   acgPathway: string;
   setAcgPathway: (v: string) => void;
+  acgService: "army" | "marines";
+  setAcgService: (v: "army" | "marines") => void;
+  acgCombatArm: string;
+  setAcgCombatArm: (v: string) => void;
+  acgFleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
+  setAcgFleet: (v: "imperialNavy" | "reserveFleet" | "systemSquadron") => void;
+  acgDivision: "field" | "bureaucracy";
+  setAcgDivision: (v: "field" | "bureaucracy") => void;
+  acgLineType: string;
+  setAcgLineType: (v: string) => void;
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
@@ -775,25 +831,106 @@ function StartPhase({
             </span>
           </label>
           {useAcg && (
-            <label className="mt-3 flex flex-col gap-1 text-sm">
-              <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                ACG pathway
-              </span>
-              <select
-                value={acgPathway}
-                onChange={(e) => setAcgPathway(e.target.value)}
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                <option value="" disabled>
-                  Select a pathway…
-                </option>
-                {acgPathways.map((p) => (
-                  <option key={p} value={p}>
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
+            <>
+              <label className="mt-3 flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                  ACG pathway
+                </span>
+                <select
+                  value={acgPathway}
+                  onChange={(e) => setAcgPathway(e.target.value)}
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  <option value="" disabled>
+                    Select a pathway…
                   </option>
-                ))}
-              </select>
-            </label>
+                  {acgPathways.map((p) => (
+                    <option key={p} value={p}>
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {acgPathway === "mercenary" && (
+                <>
+                  <label className="mt-3 flex flex-col gap-1 text-sm">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Service</span>
+                    <select
+                      value={acgService}
+                      onChange={(e) => setAcgService(e.target.value as "army" | "marines")}
+                      className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                      <option value="army">Army</option>
+                      <option value="marines">Marines</option>
+                    </select>
+                  </label>
+                  <label className="mt-3 flex flex-col gap-1 text-sm">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Combat arm</span>
+                    <select
+                      value={acgCombatArm}
+                      onChange={(e) => setAcgCombatArm(e.target.value)}
+                      className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                      <option value="Infantry">Infantry</option>
+                      <option value="Cavalry">Cavalry</option>
+                      <option value="Artillery">Artillery</option>
+                      <option value="Support">Support</option>
+                    </select>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Commando is restricted to Military Academy honors graduates.
+                    </span>
+                  </label>
+                </>
+              )}
+
+              {acgPathway === "navy" && (
+                <label className="mt-3 flex flex-col gap-1 text-sm">
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Fleet</span>
+                  <select
+                    value={acgFleet}
+                    onChange={(e) => setAcgFleet(e.target.value as typeof acgFleet)}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <option value="imperialNavy">Imperial Navy (8+ to enlist)</option>
+                    <option value="reserveFleet">Reserve Fleet (7+ to enlist)</option>
+                    <option value="systemSquadron">System Squadron (6+, requires homeworld tech Early Stellar+)</option>
+                  </select>
+                </label>
+              )}
+
+              {acgPathway === "scout" && (
+                <label className="mt-3 flex flex-col gap-1 text-sm">
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Division</span>
+                  <select
+                    value={acgDivision}
+                    onChange={(e) => setAcgDivision(e.target.value as "field" | "bureaucracy")}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <option value="field">Field (Survey, Communications, Exploration)</option>
+                    <option value="bureaucracy">Bureaucracy (Technical, Operations, Administration, Detached Duty)</option>
+                  </select>
+                </label>
+              )}
+
+              {acgPathway === "merchantPrince" && (
+                <label className="mt-3 flex flex-col gap-1 text-sm">
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Line type</span>
+                  <select
+                    value={acgLineType}
+                    onChange={(e) => setAcgLineType(e.target.value)}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <option value="Megacorp">Megacorp (9+, Class B starport+)</option>
+                    <option value="Sector-wide">Sector-wide (8+, Class C+)</option>
+                    <option value="Subsector-wide">Subsector-wide (7+, Class D+)</option>
+                    <option value="Interface">Interface (7+)</option>
+                    <option value="Fledgling">Fledgling (7+)</option>
+                    <option value="Free Trader">Free Trader (7+)</option>
+                  </select>
+                </label>
+              )}
+            </>
           )}
         </div>
       )}

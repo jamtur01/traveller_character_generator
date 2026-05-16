@@ -32,6 +32,12 @@ export {
   editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
 } from "./engine/acg";
 export {
+  runAcgTerm, runAcgYear, runAcgReenlist,
+} from "./engine/acg/runner";
+export type {
+  AcgPathwayId, AcgState, AssignmentResolution, ResolutionTarget,
+} from "./engine/acg/types";
+export {
   benefitDmFor, cashDmFor, maxCashRolls,
 } from "./engine/musterDm";
 export type { AcgData, AcgPathway } from "./editions/types";

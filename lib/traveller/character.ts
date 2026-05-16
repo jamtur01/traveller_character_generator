@@ -7,6 +7,11 @@ import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices"
 import { genChoiceId } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
 import type { AcgState } from "./engine/acg/types";
+import { mercenaryEnlist } from "./engine/acg/pathways/mercenary";
+import { navyEnlist } from "./engine/acg/pathways/navy";
+import { scoutEnlist } from "./engine/acg/pathways/scout";
+import { merchantEnlist } from "./engine/acg/pathways/merchantPrince";
+import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
 import type {
@@ -220,6 +225,65 @@ export class Character {
       );
     }
     return def;
+  }
+
+  /**
+   * Begin Advanced Character Generation. Initializes acgState for the
+   * chosen pathway and runs pathway-specific enlistment with the
+   * pathway-appropriate options. After this call, subsequent
+   * doServiceTermStep() invocations run the ACG per-year cycle.
+   */
+  beginAcg(
+    pathway: "mercenary" | "navy" | "scout" | "merchantPrince",
+    options: {
+      combatArm?: string;
+      service?: "army" | "marines";
+      fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
+      division?: "field" | "bureaucracy";
+      lineType?: string;
+    } = {},
+  ): void {
+    this.useAcg = true;
+    this.acgPathway = pathway;
+    this.acgState = {
+      pathway,
+      rankCode: "E1",
+      isOfficer: false,
+      year: 1,
+      currentAssignment: null,
+      inCommand: false,
+      justRetained: false,
+      retainedAssignment: null,
+      promotedThisTerm: false,
+      injuredThisYear: false,
+      assignmentHistory: [],
+      combatRibbons: 0,
+      commandClusters: 0,
+      schoolsAttended: [],
+      decorations: [],
+      browniePoints: 0,
+      browniePointsSpent: 0,
+      decorationDmStrategy: 0,
+    };
+    switch (pathway) {
+      case "mercenary":
+        mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
+        this.service = (options.service === "marines" ? "marines" : "army") as ServiceKey;
+        break;
+      case "navy":
+        navyEnlist(this, options.fleet ?? "imperialNavy");
+        this.service = "navy" as ServiceKey;
+        break;
+      case "scout":
+        this.acgState.division = options.division ?? "field";
+        scoutEnlist(this);
+        this.service = "scouts" as ServiceKey;
+        break;
+      case "merchantPrince":
+        merchantEnlist(this, options.lineType ?? "Free Trader");
+        this.service = "merchants" as ServiceKey;
+        break;
+    }
   }
 
   /** Apply the user's pick for a pending choice. */
@@ -455,19 +519,35 @@ export class Character {
   doServiceTermStep() {
     // A mandatory reenlistment is consumed by serving the term it forced.
     this.mandatoryReenlistment = false;
+    this.verboseHistory("--------------------------------------------");
+    if (this.useAcg && this.acgState) {
+      // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
+      // assignments per term). The ACG runner handles term/age increments
+      // because mid-term death has different semantics.
+      this.verboseHistory(`ACG term ${this.terms + 1} age ${this.age}`);
+      runAcgTerm(this);
+      return;
+    }
     this.terms += 1;
     this.age += 4;
-    this.verboseHistory("--------------------------------------------");
     this.verboseHistory(`Term ${this.terms} age ${this.age}`);
-    // Delegate the step sequence to the engine runner, which reads the
-    // active edition's lifecycle.terms declaration from JSON. Adding
-    // edition-specific steps (MT specialDuty, etc.) requires no change here.
+    // Basic chargen: delegate the step sequence to the engine runner.
     runTermSteps(this);
   }
 
   // ---------- reenlistment ----------
 
   doReenlistmentStep() {
+    if (this.useAcg && this.acgState) {
+      const keep = runAcgReenlist(this);
+      if (!keep) {
+        this.activeDuty = false;
+        this.history.push(`Mustered out after ${intToOrdinal(this.terms)} term.`);
+      } else if (!this.mandatoryReenlistment) {
+        this.history.push(`Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`);
+      }
+      return;
+    }
     const def = this.serviceDef();
     const reenlistRoll = roll(2);
     const target = def.reenlistThrow;
