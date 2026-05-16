@@ -744,7 +744,20 @@ export class Character {
       this.history.push(
         `Mandatory reenlistment for ${intToOrdinal(this.terms + 1)} term.`,
       );
-    } else if (this.terms >= 7) {
+    } else if (
+      // CT mandates retirement at end of term 7. MT does not (voluntary
+      // any-term per PM p. 17). Read the cap from edition rules.
+      (() => {
+        const rules = getEdition(this.editionId).data.rules as {
+          reenlistment?: { mandatoryRetireAfterTerm?: number };
+        } | undefined;
+        const cap = rules?.reenlistment?.mandatoryRetireAfterTerm ?? 7;
+        return this.terms >= cap;
+      })() && !(
+        getEdition(this.editionId).data.rules as {
+          reenlistment?: { voluntaryAnyTerms?: boolean };
+        } | undefined)?.reenlistment?.voluntaryAnyTerms
+    ) {
       this.activeDuty = false;
       this.retired = true;
       this.history.push(

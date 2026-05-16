@@ -297,7 +297,8 @@
     },
     "reenlistment": {
       "mandatoryOnExactRoll": 12,
-      "voluntaryTermsThrough": 7,
+      "voluntaryAnyTerms": true,
+      "retireAfterCompletedTerm": 5,
       "mandatoryRoll": 12,
       "mandatoryRollNote": "A reenlistment throw of exactly 12 calls for mandatory reenlistment; Bureaucrats must reenlist if the reenlistment throw is successful."
     },
