@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   Character,
   cloneCharacter,
+  DEFAULT_EDITION_ID,
   ENLISTABLE_SERVICES,
   aggregateBenefits,
   extendedHex,
   intToOrdinal,
+  listEditions,
   numCommaSep,
   roll,
   s,
@@ -573,11 +575,38 @@ function PhaseCard({
 }
 
 function StartPhase({ onStart }: { onStart: () => void }) {
+  const editions = listEditions();
+  const [edition, setEdition] = useState(DEFAULT_EDITION_ID);
+
   return (
     <PhaseCard
       title="Begin character generation"
       subtitle="Two dice are rolled six times to produce your Universal Personality Profile. Then you'll choose a service, run terms of duty, pick skills, and finally muster out."
     >
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+          Edition
+        </span>
+        <select
+          value={edition}
+          onChange={(e) => setEdition(e.target.value)}
+          disabled={editions.length === 1}
+          className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        >
+          {editions.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.displayName}
+            </option>
+          ))}
+        </select>
+        {editions.length === 1 && (
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            More editions coming. Drop a new JSON under data/editions/ and
+            register it in lib/traveller/editions/index.ts.
+          </span>
+        )}
+      </label>
+
       <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
         <strong className="font-semibold">What happens next:</strong>
         <ol className="mt-2 list-decimal space-y-1 pl-4">

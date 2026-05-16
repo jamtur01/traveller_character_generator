@@ -1,4 +1,4 @@
-// Validate lib/traveller code against data/traveller-character-generation.json.
+// Validate lib/traveller code against data/editions/ct-classic.json.
 //
 // Each describe block compares one slice of the JSON canonical table against
 // what the code emits. Failures here mean the code disagrees with the JSON;
@@ -60,7 +60,7 @@ interface CanonData {
 }
 
 const DATA: CanonData = JSON.parse(
-  readFileSync(resolve(__dirname, "../data/traveller-character-generation.json"), "utf8"),
+  readFileSync(resolve(__dirname, "../data/editions/ct-classic.json"), "utf8"),
 ) as CanonData;
 
 const SERVICES = Object.keys(DATA.services) as ServiceKey[];

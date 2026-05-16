@@ -186,8 +186,8 @@ describe("Scouts Material Benefits (TTB p. 24)", () => {
     expect(got.benefits).toEqual(["Scout Ship"]);
     expect(got.ship).toBe(true);
   });
-  it("row 7 → +1 Social (unreachable, no rank in Scouts)", () => {
-    assertRow("scouts", 7, { attr: { social: 1 } });
+  it("row 7 → no benefit (—, unreachable, no rank in Scouts)", () => {
+    assertRow("scouts", 7, { noop: true });
   });
 });
 
@@ -340,11 +340,8 @@ describe("Rogues Material Benefits (CotI p. 8)", () => {
   it("row 6 → Travellers'", () => assertRow("rogues", 6, {
     benefit: "Travellers' Aid Society", TAS: true,
   }));
-  it("row 7 → Travellers' (unreachable; code default catches both 6 and 7)", () => {
-    // Rogues have no ranks → no +1 DM → row 7 never fires. The code's
-    // default branch covers rolls of 6 (correct, Travellers') and 7 (which
-    // can't happen here). PDF cell is blank.
-    assertRow("rogues", 7, { benefit: "Travellers' Aid Society", TAS: true });
+  it("row 7 → no benefit (—, unreachable, Rogues have no ranks)", () => {
+    assertRow("rogues", 7, { noop: true });
   });
 });
 
@@ -375,9 +372,8 @@ describe("Scientists Material Benefits (CotI p. 8)", () => {
     expect(got.benefits).toEqual(["Lab Ship"]);
     expect(got.ship).toBe(true);
   });
-  it("row 7 → Lab Ship (unreachable; code default catches both 6 and 7)", () => {
-    const got = rowFor("scientists", 7);
-    expect(got.benefits).toEqual(["Lab Ship"]);
+  it("row 7 → no benefit (—, unreachable, Scientists have no ranks)", () => {
+    assertRow("scientists", 7, { noop: true });
   });
 });
 
@@ -392,8 +388,7 @@ describe("Hunters Material Benefits (CotI p. 8)", () => {
     expect(got.benefits).toEqual(["Safari Ship"]);
     expect(got.ship).toBe(true);
   });
-  it("row 7 → Safari Ship (unreachable; code default catches both 6 and 7)", () => {
-    const got = rowFor("hunters", 7);
-    expect(got.benefits).toEqual(["Safari Ship"]);
+  it("row 7 → no benefit (—, unreachable, Hunters have no ranks)", () => {
+    assertRow("hunters", 7, { noop: true });
   });
 });
