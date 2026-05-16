@@ -71,7 +71,11 @@ interface NavyData {
   reenlistment: {
     perFleet?: Record<string, {
       target: number;
-      dms: Array<{ condition: string; dm: number }>;
+      dms: Array<{
+        condition?: string;
+        when?: { enlistedRankAtLeast?: number; officer?: boolean };
+        dm: number;
+      }>;
     }>;
     target?: number;
     dms?: string[];
@@ -524,9 +528,22 @@ export function navyReenlist(ch: Character): boolean {
   }
   let dm = 0;
   const rankNum = parseInt(ch.acgState!.rankCode.replace(/[^\d]/g, ""), 10) || 0;
+  const isOfficer = ch.acgState!.isOfficer;
   for (const d of spec.dms) {
-    if (d.condition === "rankE4orAbove" && !ch.acgState!.isOfficer && rankNum >= 4) dm += d.dm;
-    else if (d.condition === "officer" && ch.acgState!.isOfficer) dm += d.dm;
+    // Structured form preferred.
+    if (d.when) {
+      const w = d.when;
+      if (w.enlistedRankAtLeast !== undefined &&
+          !isOfficer && rankNum >= w.enlistedRankAtLeast) {
+        dm += d.dm;
+      } else if (w.officer === true && isOfficer) {
+        dm += d.dm;
+      }
+      continue;
+    }
+    // Legacy string form.
+    if (d.condition === "rankE4orAbove" && !isOfficer && rankNum >= 4) dm += d.dm;
+    else if (d.condition === "officer" && isOfficer) dm += d.dm;
   }
   const r = roll(2);
   ch.verboseHistory(`Navy reenlist (${fleet}): ${r} + ${dm} vs ${spec.target}`);
