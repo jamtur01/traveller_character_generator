@@ -123,15 +123,39 @@ export function buildServiceDef(
   };
 
   // --- skill acquisition -------------------------------------------------
+  // In auto mode `pickOrDefer` selects a table immediately and resolves;
+  // in interactive mode the choice is queued for the UI. Either way the
+  // resolver rolls the cell die and applies the cell.
   const acquireSkill = (ch: Character): void => {
-    const tableIdx = ch.whichSkillTable();
+    if (ch.forceTable) {
+      // Test path: ch.forceTableIndex forces a specific table; bypass the
+      // interactive picker entirely so existing row-level tests stay green.
+      runTablePick(ch, ch.forceTableIndex);
+      return;
+    }
+    const eduBonus = ch.attributes.education >= 8;
+    const tables = ["Personal Development", "Service Skills", "Advanced Education"];
+    if (eduBonus) tables.push("Advanced Education (Edu 8+)");
+    ch.pickOrDefer({
+      kind: "skillTable",
+      label: "Choose a skill table to roll on",
+      options: tables,
+      context: { source: "skillRoll" },
+      onResolve: (c, tableName) => {
+        const idx = tables.indexOf(tableName) + 1;
+        runTablePick(c, idx);
+      },
+    });
+  };
+
+  function runTablePick(ch: Character, tableIdx: number): void {
     if (tableIdx < 1 || tableIdx > 4) return;
     const tableKey = SKILL_TABLE_ORDER[tableIdx - 1]!;
     const r = roll(1);
     const cell = serviceData.skillTables[tableKey][r];
     if (cell == null) return;
     applyCell(ch, cell, "skill");
-  };
+  }
 
   const def: ServiceDef = {
     serviceName: serviceData.displayName,

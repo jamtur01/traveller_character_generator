@@ -39,6 +39,7 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>("start");
   const [character, setCharacter] = useState<Character | null>(null);
   const [verbose, setVerbose] = useState(false);
+  const [interactiveMode, setInteractiveMode] = useState(false);
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -62,7 +63,16 @@ export default function Home() {
   const startCareer = () => {
     const c = new Character();
     c.showHistory = verbose ? "verbose" : "simple";
+    c.choiceMode = interactiveMode ? "interactive" : "auto";
     commit(c, "career");
+  };
+
+  const resolvePending = (choiceId: string, optionIdx: number) => {
+    const prev = characterRef.current;
+    if (!prev) return;
+    const c = cloneCharacter(prev);
+    c.resolveChoice(choiceId, optionIdx);
+    commit(c, phase);
   };
 
   const enlist = () => {
@@ -249,7 +259,20 @@ export default function Home() {
         )}
 
         <section className="flex flex-col gap-6">
-          {phase === "start" && <StartPhase onStart={startCareer} />}
+          {character && character.pendingChoices.length > 0 && (
+            <PendingChoicesPanel
+              character={character}
+              onResolve={resolvePending}
+            />
+          )}
+
+          {phase === "start" && (
+            <StartPhase
+              onStart={startCareer}
+              interactiveMode={interactiveMode}
+              setInteractiveMode={setInteractiveMode}
+            />
+          )}
 
           {phase === "career" && character && (
             <CareerPhase
@@ -574,7 +597,15 @@ function PhaseCard({
   );
 }
 
-function StartPhase({ onStart }: { onStart: () => void }) {
+function StartPhase({
+  onStart,
+  interactiveMode,
+  setInteractiveMode,
+}: {
+  onStart: () => void;
+  interactiveMode: boolean;
+  setInteractiveMode: (v: boolean) => void;
+}) {
   const editions = listEditions();
   const [edition, setEdition] = useState(DEFAULT_EDITION_ID);
   const selected = editions.find((e) => e.id === edition);
@@ -635,9 +666,79 @@ function StartPhase({ onStart }: { onStart: () => void }) {
           </li>
         </ol>
       </div>
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={interactiveMode}
+          onChange={(e) => setInteractiveMode(e.target.checked)}
+          className="mt-0.5"
+        />
+        <span>
+          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+            Interactive choices
+          </span>
+          <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+            When ticked, the engine pauses for player decisions — which blade
+            or gun a weapon benefit becomes, which specific blade/gun a
+            cascade resolves to, etc. Off = the original auto-everything
+            flow.
+          </span>
+        </span>
+      </label>
       <PrimaryButton onClick={onStart}>
         Roll attributes &amp; begin →
       </PrimaryButton>
+    </PhaseCard>
+  );
+}
+
+function PendingChoicesPanel({
+  character,
+  onResolve,
+}: {
+  character: Character;
+  onResolve: (choiceId: string, optionIdx: number) => void;
+}) {
+  const first = character.pendingChoices[0];
+  if (!first) return null;
+  const preferred = first.preferred ?? [];
+  const isPreferred = (opt: string) => preferred.includes(opt);
+
+  return (
+    <PhaseCard
+      title="Player choice"
+      subtitle={first.label}
+    >
+      <div className="flex flex-wrap gap-2">
+        {first.options.map((opt, i) => (
+          <button
+            key={`${first.id}-${i}`}
+            type="button"
+            onClick={() => onResolve(first.id, i)}
+            className={
+              "rounded-md border px-3 py-2 text-sm transition " +
+              (isPreferred(opt)
+                ? "border-amber-400 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950 dark:hover:bg-amber-900"
+                : "border-zinc-300 bg-white hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800")
+            }
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+      {preferred.length > 0 && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Highlighted: weapons you already have skill in. Picking one of these
+          stacks the new level onto the existing skill.
+        </p>
+      )}
+      {character.pendingChoices.length > 1 && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          {character.pendingChoices.length - 1} more choice
+          {character.pendingChoices.length - 1 === 1 ? "" : "s"} queued after
+          this one.
+        </p>
+      )}
     </PhaseCard>
   );
 }
