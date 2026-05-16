@@ -5,7 +5,7 @@
 // failure per the MT Players' Manual p. 47.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { Character } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 afterEach(() => { vi.restoreAllMocks(); });
 

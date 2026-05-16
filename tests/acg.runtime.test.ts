@@ -7,9 +7,8 @@
 // force failures.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import {
-  Character, getAcgPathway,
-} from "../lib/traveller";
+import { getAcgPathway } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import { runAcgYear, runAcgTerm } from "../lib/traveller/engine/acg/runner";
 
 afterEach(() => {

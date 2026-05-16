@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
-import {
-  BLADES, Character, formatBenefit, getEdition, GUNS, numCommaSep,
-} from "./traveller";
+import { Character } from "./traveller/character";
+import { BLADES, GUNS } from "./traveller/cascades";
+import { formatBenefit } from "./traveller/sheet";
+import { getEdition } from "./traveller/editions";
+import { numCommaSep } from "./traveller/formatting";
 
 // Pistols are the prefix of the GUNS pool; deriving from the shared constant
 // keeps the two definitions from drifting.

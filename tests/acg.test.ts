@@ -4,9 +4,8 @@
 // characters can't accidentally access MT's ACG data.
 
 import { describe, expect, it } from "vitest";
-import {
-  Character, editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
-} from "../lib/traveller";
+import { editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import { buildCharacterSheetPdf } from "../lib/pdfSheet";
 
 // ---------------------------------------------------------------------------

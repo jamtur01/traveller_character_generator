@@ -1,27 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Character, cloneCharacter } from "@/lib/traveller/character";
+import { benefitDmFor, cashDmFor } from "@/lib/traveller/engine/musterDm";
+import { DEFAULT_EDITION_ID, listEditions } from "@/lib/traveller/editions";
+import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
+import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
 import {
-  Character,
-  benefitDmFor,
-  cashDmFor,
-  cloneCharacter,
-  DEFAULT_EDITION_ID,
-  aggregateBenefits,
-  editionHasAcg,
-  extendedHex,
   getEditionServices,
   getEnlistableServices,
-  intToOrdinal,
-  listAcgPathways,
-  listEditions,
-  numCommaSep,
-  roll,
-  runAcgYear,
   serviceLabel,
-  type AttributeKey,
-  type ServiceKey,
-} from "@/lib/traveller";
+} from "@/lib/traveller/services";
+import { aggregateBenefits } from "@/lib/traveller/sheet";
+import { extendedHex, intToOrdinal, numCommaSep } from "@/lib/traveller/formatting";
+import { roll } from "@/lib/traveller/random";
+import type { AttributeKey, ServiceKey } from "@/lib/traveller/types";
 import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 
 type Phase =

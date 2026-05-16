@@ -8,10 +8,8 @@
 // these tests prove the engine respects the data's edition boundary.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import {
-  Character, getEdition, getEditionServices, listEditions,
-  type ServiceKey,
-} from "../lib/traveller";
+import { getEdition, getEditionServices, listEditions, type ServiceKey } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 import {
   cascadePoolByKey, cascadePoolForLabel, isCascadeLabel,
 } from "../lib/traveller/engine/cascadeMap";

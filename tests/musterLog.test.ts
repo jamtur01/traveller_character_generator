@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { Character, s } from "../lib/traveller";
+import { s } from "../lib/traveller";
+import { Character } from "../lib/traveller/character";
 
 // The muster-out log shows what each roll produced. Cover the four outcome
 // shapes: new benefit, attribute boost, weapon (skill+benefit combo), and
