@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Source rulebook PDFs used only for local audit work, never to be committed.
+# (Classic Traveller PDFs are copyrighted; only the player owning a licensed
+# copy may have them locally.)
+*.pdf
