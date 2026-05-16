@@ -114,12 +114,10 @@ export interface LifecycleStep {
 }
 
 export interface LifecycleSpec {
-  /** Ordered sequence of steps run once per term in basic chargen. */
+  /** Ordered sequence of steps run once per term in basic chargen. ACG
+   *  chargen does NOT use this sequence — it runs the dedicated per-year
+   *  assignment cycle via runAcgYear in engine/acg/runner.ts. */
   terms: LifecycleStep[];
-  /** Optional sequence of steps run per term for ACG chargen. When the
-   *  active edition has Advanced Character Generation and the character
-   *  set useAcg=true, the runner uses this sequence instead of `terms`. */
-  acgTerms?: LifecycleStep[];
 }
 
 export interface CanonData {

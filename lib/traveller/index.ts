@@ -30,7 +30,6 @@ export {
 } from "./editions";
 export {
   editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
-  pathwayBaseService,
 } from "./engine/acg";
 export {
   benefitDmFor, cashDmFor, maxCashRolls,
