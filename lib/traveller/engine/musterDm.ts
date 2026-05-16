@@ -33,6 +33,8 @@ interface MusterRules {
   cashTableDm?: CashTableDm[];
   benefitTableDm?: BenefitTableDm;
   cashRollLimit?: number;
+  /** MT JSON spelling. Same semantics as cashRollLimit; takes precedence. */
+  maxCashTableRolls?: number;
 }
 
 function rules(ch: Character): MusterRules | undefined {
@@ -75,7 +77,8 @@ export function benefitDmFor(ch: Character): number {
 /** Max cash rolls allowed per character (CT and MT: 3). Anagathics users
  *  are permanently capped at 2 (MT PM p. 15). */
 export function maxCashRolls(ch: Character): number {
-  const base = rules(ch)?.cashRollLimit ?? 3;
+  const r = rules(ch);
+  const base = r?.maxCashTableRolls ?? r?.cashRollLimit ?? 3;
   return ch.anagathicsEverTaken ? Math.min(2, base) : base;
 }
 
