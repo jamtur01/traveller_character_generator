@@ -13,7 +13,6 @@ import {
 } from "@/lib/traveller/services";
 import { aggregateBenefits } from "@/lib/traveller/sheet";
 import { extendedHex, intToOrdinal, numCommaSep } from "@/lib/traveller/formatting";
-import { roll } from "@/lib/traveller/random";
 import type { AttributeKey, ServiceKey } from "@/lib/traveller/types";
 import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 
@@ -190,14 +189,22 @@ export default function Home() {
       }
     }
     c.doServiceTermStep();
-    if (!c.deceased) c.doAging();
 
     if (c.deceased) {
       commit(c, "end");
       return;
     }
     if (c.skillPoints > 0) {
+      // Aging deliberately deferred until after skill picks so the player's
+      // Edu (which gates the Advanced Education 8+ table) reflects pre-aging
+      // state. PM checklist: skills → aging → reenlistment.
       commit(c, pickSkillPhase(c));
+      return;
+    }
+    // No skills to pick — proceed straight to aging + reenlistment.
+    if (!c.deceased) c.doAging();
+    if (c.deceased) {
+      commit(c, "end");
       return;
     }
     // ACG: runAcgTerm flips activeDuty to false at end-of-term when the
@@ -221,28 +228,13 @@ export default function Home() {
   const attemptMusterOut = () => {
     const prev = characterRef.current;
     if (!prev) return;
-    // Per TTB p. 18: a roll-of-12 mandatory reenlistment forces another term
-    // regardless of the character's preference. Block voluntary muster-out
-    // until the forced term has been served.
+    // Per TTB p. 18 / PM p. 17: a roll-of-12 mandatory reenlistment forces
+    // another term regardless of the character's preference. The reenlist
+    // throw fired at the end of skill-picks already; this is the player's
+    // *voluntary* decision to leave when they were eligible to stay. No
+    // second 2D roll, no second aging — both already happened.
     if (prev.mandatoryReenlistment) return;
     const c = cloneCharacter(prev);
-    const r = roll(2);
-    c.verboseHistory(`Voluntary muster-out roll ${r} (12 forces another term)`);
-    if (r === 12) {
-      c.mandatoryReenlistment = true;
-      c.history.push(
-        `Mandatory reenlistment for ${intToOrdinal(c.terms + 1)} term despite attempt to muster out.`,
-      );
-      commit(c, "term");
-      return;
-    }
-    // Apply aging for the term they're leaving, matching runTerm's flow.
-    c.doAging();
-    if (c.deceased) {
-      c.history.push("======= End Generation =======");
-      commit(c, "end");
-      return;
-    }
     c.activeDuty = false;
     if (c.terms >= 5 && c.service !== "scouts" && c.service !== "other")
       c.retired = true;
@@ -278,7 +270,19 @@ export default function Home() {
       return;
     }
 
-    if (!c.deceased) c.doReenlistmentStep();
+    // PM checklist: after the last skill pick, age, then run reenlistment.
+    if (!c.deceased) c.doAging();
+    if (c.deceased) {
+      commit(c, "end");
+      return;
+    }
+
+    // Short-term characters (failed survival) are already mustering out;
+    // they don't take a reenlistment throw. Same for any path that already
+    // dropped activeDuty.
+    if (!c.shortTermThisTerm && c.activeDuty && !c.deceased) {
+      c.doReenlistmentStep();
+    }
 
     if (c.deceased) {
       commit(c, "end");
@@ -289,7 +293,6 @@ export default function Home() {
       c.musteredOut = true;
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
-        // Bug fix: was skipping retirement pay on this direct-to-end path.
         c.musterOutPay();
         c.history.push("======= End Generation =======");
         commit(c, "end");
