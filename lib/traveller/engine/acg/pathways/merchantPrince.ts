@@ -109,6 +109,20 @@ function dataFor(ch: Character): MerchantData {
   return acg.merchantPrince as MerchantData;
 }
 
+/** Starport letter ordering A (best) … X (worst). Higher = better. */
+const STARPORT_ORDER: Record<string, number> = {
+  "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "X": 0,
+};
+
+function starportMeets(home: string | undefined, minimum: string): boolean {
+  if (!home) return false;
+  if (!minimum || minimum.toLowerCase() === "any") return true;
+  const have = STARPORT_ORDER[home.toUpperCase()];
+  const want = STARPORT_ORDER[minimum.toUpperCase()];
+  if (have === undefined || want === undefined) return true;
+  return have >= want;
+}
+
 export function merchantEnlist(
   ch: Character,
   lineType: string,
@@ -118,6 +132,17 @@ export function merchantEnlist(
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
   if (!row) {
     throw new Error(`Unknown merchant line type "${lineType}"`);
+  }
+  // Starport restriction (PM p. 60): "If the character's homeworld has a
+  // starport type less than that shown, the individual may not enlist in
+  // that merchant line."
+  if (row.minimumStarport && row.minimumStarport.toLowerCase() !== "any") {
+    if (!starportMeets(ch.homeworld?.starport, row.minimumStarport)) {
+      throw new Error(
+        `Merchant line "${lineType}" requires homeworld starport ${row.minimumStarport}+; ` +
+        `this character's homeworld starport is ${ch.homeworld?.starport ?? "unset"}.`,
+      );
+    }
   }
   const parsed = parseResolutionTarget(row.target);
   if (parsed.target === "auto") {
@@ -357,10 +382,17 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const order = data.enlistment.rows.map((r) => r.typeOfLine);
   const idx = order.indexOf(ch.acgState!.lineType ?? "");
   if (idx < 0) return;
-  const newIdx = dir === "up"
-    ? Math.max(0, idx - 1)
-    : Math.min(order.length - 1, idx + 1);
-  if (newIdx === idx) return;
+  // PM p. 60: "It is not possible to transfer up to a megacorporation."
+  // The enlistment table is ordered Megacorp → ... → Free Trader (index 0
+  // is Megacorp). Transfer-up lowers the index by 1; clamp at index 1 so
+  // Megacorp (index 0) is unreachable via transfer.
+  const lower = dir === "up" ? Math.max(1, idx - 1) : idx;
+  const upper = dir === "down" ? Math.min(order.length - 1, idx + 1) : idx;
+  const newIdx = dir === "up" ? lower : upper;
+  if (newIdx === idx) {
+    ch.verboseHistory(`Transfer ${dir} from ${order[idx]} not possible.`);
+    return;
+  }
   ch.acgState!.lineType = order[newIdx]!;
   ch.history.push(`Transferred ${dir} to ${order[newIdx]}.`);
 }
@@ -391,6 +423,12 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       ch.acgState!.isOfficer = true;
       ch.acgState!.rankCode = ch.acgState!.lineType === "Free Trader" ? "O1" : "O0";
       ch.commissioned = true;
+      // O0 holders must pass exam for O1 within 4 years or revert to
+      // enlisted rank (PM Special Duty: Commission entry, p. 63).
+      if (ch.acgState!.rankCode === "O0") {
+        ch.acgState!.commissionO0DeadlineYear =
+          (ch.acgState!.yearsServed ?? 0) + 4;
+      }
       ch.history.push(`Commissioned to rank ${ch.acgState!.rankCode}.`);
     }
     return;
@@ -454,6 +492,19 @@ export function merchantStartOfTerm(ch: Character): void {
       const n = parseInt(m[1]!, 10);
       ch.acgState!.rankCode = `E${n + 1}`;
     }
+    return;
+  }
+  // O0 holders revert to enlisted if they haven't passed O1 within 4 years
+  // of receiving the commission (PM Special Duty: Commission entry).
+  const deadline = ch.acgState!.commissionO0DeadlineYear;
+  if (deadline !== undefined &&
+      ch.acgState!.rankCode === "O0" &&
+      (ch.acgState!.yearsServed ?? 0) >= deadline) {
+    ch.acgState!.isOfficer = false;
+    ch.acgState!.rankCode = "E1";
+    ch.commissioned = false;
+    delete ch.acgState!.commissionO0DeadlineYear;
+    ch.history.push("Failed to pass exam for O1 within 4 years — reverted to enlisted (E1).");
     return;
   }
   // Officers: yearly promotion exam runs at start of term (manual p. 61).

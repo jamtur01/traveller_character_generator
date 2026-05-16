@@ -155,6 +155,10 @@ export interface AcgState {
    *  when the character has spent time in suspended animation (Frozen
    *  Watch) — physicalAge = age + physicalAgeOffset. */
   physicalAgeOffset?: number;
+  /** Merchant Prince O0 holders must pass exam for O1 within 4 years or
+   *  revert to enlisted (PM Special Duty Commission entry). Stores the
+   *  yearsServed value at which the deadline passes; cleared on promotion. */
+  commissionO0DeadlineYear?: number;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
