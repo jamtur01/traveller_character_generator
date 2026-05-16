@@ -4996,7 +4996,12 @@
           }
         ],
         "dms": [
-          "DM +1 if College or Academy graduate and rank E4-E9"
+          {
+            "attendedAnyOf": ["college", "navalAcademy", "militaryAcademy", "merchantAcademy"],
+            "rankAtLeast": "E4",
+            "rankAtMost": "E9",
+            "dm": 1
+          }
         ],
         "notes": []
       },
@@ -5595,10 +5600,16 @@
           }
         ],
         "dms": [
-          "Navy Life and Shipboard DM +4 if O1+",
-          "Shore Duty DM +1 if O4+, +4 if O7+",
-          "Petty Officer DM +2 if O5+, +4 if O7+",
-          "Command/Staff Officer DM +2 if O4+, +4 if O7+"
+          { "column": "navyLife", "rankAtLeast": "O1", "dm": 4 },
+          { "column": "shipboard", "rankAtLeast": "O1", "dm": 4 },
+          { "column": "shoreDuty", "rankAtLeast": "O4", "dm": 1 },
+          { "column": "shoreDuty", "rankAtLeast": "O7", "dm": 3, "note": "cumulative with the O4+ entry brings total to +4" },
+          { "column": "pettyOfficer", "rankAtLeast": "O5", "dm": 2 },
+          { "column": "pettyOfficer", "rankAtLeast": "O7", "dm": 2, "note": "cumulative brings total to +4" },
+          { "column": "commandOfficer", "rankAtLeast": "O4", "dm": 2 },
+          { "column": "commandOfficer", "rankAtLeast": "O7", "dm": 2, "note": "cumulative brings total to +4" },
+          { "column": "staffOfficer", "rankAtLeast": "O4", "dm": 2 },
+          { "column": "staffOfficer", "rankAtLeast": "O7", "dm": 2, "note": "cumulative brings total to +4" }
         ],
         "notes": []
       },
@@ -5687,8 +5698,8 @@
           }
         ],
         "dms": [
-          "DM +1 if Reserve Fleet",
-          "DM +2 if Imperial Navy"
+          { "fleet": "reserveFleet", "dm": 1 },
+          { "fleet": "imperialNavy", "dm": 2 }
         ],
         "notes": []
       },
