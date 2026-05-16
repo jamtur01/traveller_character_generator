@@ -39,6 +39,19 @@ export interface DecorationOutcome {
   courtMartial: boolean;
 }
 
+/** Helper for pathway code to log a transfer event into acgState. */
+export function recordTransfer(
+  state: AcgState,
+  kind: "branch" | "department" | "lineType" | "combatArm" | "division" | "office",
+  from: string,
+  to: string,
+  yearOfService: number,
+): void {
+  if (from === to) return;
+  if (!state.transferHistory) state.transferHistory = [];
+  state.transferHistory.push({ yearOfService, from, to, kind });
+}
+
 /** All the per-character ACG state. Lives on Character.acgState. */
 export interface AcgState {
   pathway: AcgPathwayId;
@@ -159,6 +172,29 @@ export interface AcgState {
    *  revert to enlisted (PM Special Duty Commission entry). Stores the
    *  yearsServed value at which the deadline passes; cleared on promotion. */
   commissionO0DeadlineYear?: number;
+
+  // Resume/sheet fields (PM "Resumes" p. 47).
+  /** Per-event log of branch / department / line / arm transfers, each
+   *  stamped with the year-of-service at which it occurred. */
+  transferHistory?: Array<{
+    yearOfService: number;
+    from: string;
+    to: string;
+    kind: "branch" | "department" | "lineType" | "combatArm" | "division" | "office";
+  }>;
+  /** Subsector tech code recorded at character generation start (PM
+   *  requires this for Naval characters and is harmless for others). */
+  subsectorTechCode?: string;
+  /** Dischargeworld — the homeworld-style world where the character left
+   *  the service. Distinct from homeworld for travellers who served
+   *  elsewhere. Free-text (UPP code or world name). */
+  dischargeworld?: string;
+  /** ISO date string for birthdate (Imperial calendar). Stored as a
+   *  free-text field — campaigns vary on canonical form. */
+  birthdate?: string;
+  /** Equipment qualified on: weapons/vehicles the character has at least
+   *  one skill level in, suitable for resume output. Derived but cached. */
+  equipmentQualifiedOn?: string[];
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {

@@ -26,6 +26,7 @@ import {
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { applyScoutSchool } from "../schools";
+import { recordTransfer } from "../types";
 
 const PATHWAY = "scout";
 
@@ -331,12 +332,19 @@ function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
 
 function applyScoutTransferToBureaucracy(ch: Character): void {
   const data = dataFor(ch);
+  const fromDivision = ch.acgState!.division ?? "field";
+  recordTransfer(ch.acgState!, "division", fromDivision, "bureaucracy",
+    ch.acgState!.yearsServed ?? 0);
+  const fromOffice = ch.acgState!.office ?? "";
   ch.acgState!.division = "bureaucracy";
   // Reroll office assignment under the Bureaucracy division.
   const r = Math.max(2, Math.min(12, roll(2)));
   const row = data.officeAssignment.rows.find((row) => row.die === r);
   const off = row?.bureaucracy;
-  ch.acgState!.office = typeof off === "string" ? off : "Technical";
+  const newOffice = typeof off === "string" ? off : "Technical";
+  recordTransfer(ch.acgState!, "office", fromOffice, newOffice,
+    ch.acgState!.yearsServed ?? 0);
+  ch.acgState!.office = newOffice;
   // Bureaucracy has rank; ordinary rank becomes terms served.
   const termsServed = Math.max(1, ch.terms);
   ch.acgState!.rankCode = `IS-${Math.min(9, termsServed)}`;

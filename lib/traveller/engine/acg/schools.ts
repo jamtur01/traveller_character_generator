@@ -12,6 +12,7 @@ import { getEdition } from "../../editions";
 import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
 import { applyAcgSkillCell } from "./pathways/mercenary";
+import { recordTransfer } from "./types";
 
 type Effect = Record<string, unknown> & { type: string };
 
@@ -86,6 +87,9 @@ function runEffect(
       const arms = (data.combatArms ?? []).filter((a) => !excl.includes(a));
       if (arms.length === 0) return;
       const newArm = arnd(arms);
+      const fromArm = ch.acgState.combatArm ?? "";
+      recordTransfer(ch.acgState, "combatArm", fromArm, newArm,
+        ch.acgState.yearsServed ?? 0);
       ch.acgState.combatArm = newArm;
       ch.acgState.crossTrainedArms = ch.acgState.crossTrainedArms ?? [];
       if (!ch.acgState.crossTrainedArms.includes(newArm)) {
@@ -100,8 +104,11 @@ function runEffect(
       const current = ch.acgState.branch ?? branches[0]!;
       const opts = branches.filter((b) => b !== current);
       if (opts.length === 0) return;
-      ch.acgState.branch = arnd(opts);
-      ch.history.push(`Cross-trained in ${ch.acgState.branch}`);
+      const newBranch = arnd(opts);
+      recordTransfer(ch.acgState, "branch", current, newBranch,
+        ch.acgState.yearsServed ?? 0);
+      ch.acgState.branch = newBranch;
+      ch.history.push(`Cross-trained in ${newBranch}`);
       return;
     }
     case "rollOnMosTable": {

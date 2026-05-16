@@ -34,6 +34,7 @@ import {
 import { awardBrownie } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
+import { recordTransfer } from "../types";
 
 const PATHWAY = "merchantPrince";
 
@@ -393,8 +394,14 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
     ch.verboseHistory(`Transfer ${dir} from ${order[idx]} not possible.`);
     return;
   }
-  ch.acgState!.lineType = order[newIdx]!;
-  ch.history.push(`Transferred ${dir} to ${order[newIdx]}.`);
+  const from = order[idx]!;
+  const to = order[newIdx]!;
+  recordTransfer(
+    ch.acgState!, "lineType", from, to,
+    ch.acgState!.yearsServed ?? 0,
+  );
+  ch.acgState!.lineType = to;
+  ch.history.push(`Transferred ${dir} to ${to}.`);
 }
 
 export function merchantSpecialAssignment(ch: Character): void {
@@ -455,8 +462,12 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   if (res.effect) {
     const transfer = res.effect.match(/Transfer to (\w+)/i);
     if (transfer) {
-      ch.acgState!.department = transfer[1]!;
-      ch.history.push(`Transferred to ${transfer[1]} department.`);
+      const from = ch.acgState!.department ?? "";
+      const to = transfer[1]!;
+      recordTransfer(ch.acgState!, "department", from, to,
+        ch.acgState!.yearsServed ?? 0);
+      ch.acgState!.department = to;
+      ch.history.push(`Transferred to ${to} department.`);
     }
     if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
       ch.acgState!.examDm = (ch.acgState!.examDm ?? 0) + 1;
