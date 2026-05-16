@@ -1,0 +1,672 @@
+{
+  "schemaVersion": 1,
+  "title": "Classic Traveller character generation data",
+  "extractionNotes": [
+    "Extracted from the two local PDF manuals only: CT_TTB_The_Traveller_Book.pdf and Classic_Traveller_CT_S04_Supplement_04_Citizens_of_the_Imperium.pdf.",
+    "Table cells printed as dashes are stored as null, except cash tables where a dash is stored as 0 for numeric consumption.",
+    "Attribute names are normalized to strength, dexterity, endurance, intelligence, education, and social while table labels preserve the book wording where useful.",
+    "CotI uses Position for the commission-equivalent roll. TTB uses Commission. Both are stored as checks.position with a label.",
+    "Book page references are printed page numbers, not PDF page indexes."
+  ],
+  "sources": {
+    "ttb": {
+      "title": "The Traveller Book",
+      "file": "CT_TTB_The_Traveller_Book.pdf",
+      "characterGenerationPages": [17, 18, 19, 24, 25, 29]
+    },
+    "coti": {
+      "title": "Citizens of the Imperium",
+      "file": "Classic_Traveller_CT_S04_Supplement_04_Citizens_of_the_Imperium.pdf",
+      "characterGenerationPages": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    }
+  },
+  "attributes": [
+    { "key": "strength", "label": "Strength", "uppPosition": 1, "initialRoll": "2d6" },
+    { "key": "dexterity", "label": "Dexterity", "uppPosition": 2, "initialRoll": "2d6" },
+    { "key": "endurance", "label": "Endurance", "uppPosition": 3, "initialRoll": "2d6" },
+    { "key": "intelligence", "label": "Intelligence", "uppPosition": 4, "initialRoll": "2d6" },
+    { "key": "education", "label": "Education", "uppPosition": 5, "initialRoll": "2d6" },
+    { "key": "social", "label": "Social Standing", "uppPosition": 6, "initialRoll": "2d6" }
+  ],
+  "lifecycle": {
+    "ttbChecklist": [
+      { "step": 1, "id": "rollCharacteristics", "uses": ["attributes", "hexadecimalNotation"] },
+      { "step": 2, "id": "selectServiceAndEnlist", "uses": ["services.*.checks.enlistment"] },
+      { "step": "2A", "id": "draftIfRejected", "uses": ["services.*.draft"], "source": "ttb" },
+      { "step": "2B", "id": "survival", "uses": ["services.*.checks.survival"] },
+      { "step": "2C1", "id": "commissionOrPosition", "uses": ["services.*.checks.position"] },
+      { "step": "2C2", "id": "promotion", "uses": ["services.*.checks.promotion", "services.*.ranks"] },
+      { "step": "2D1", "id": "automaticSkills", "uses": ["services.*.automaticSkills"] },
+      { "step": "2D2", "id": "acquiredSkills", "uses": ["services.*.skillTables", "rules.skillEligibility"] },
+      { "step": "2D3", "id": "cascadeSkills", "uses": ["cascadeSkills", "weapons"] },
+      { "step": "2E", "id": "aging", "uses": ["aging"] },
+      { "step": "2F", "id": "reenlistment", "uses": ["services.*.checks.reenlistment"] },
+      { "step": 3, "id": "musterOut", "uses": ["rules.musterOutRolls", "services.*.musterOut"] }
+    ],
+    "cotiDifferences": [
+      "CotI has no draft table; a failed enlistment means the character tries another career.",
+      "CotI belter and barbarian careers begin at age 14 instead of age 18.",
+      "CotI uses Position as the commission-equivalent rank-entry roll.",
+      "CotI nobles are automatic only for social standing 10+.",
+      "CotI bureaucrats invert re-enlistment: they must roll the target or higher to leave before retirement."
+    ]
+  },
+  "rules": {
+    "dice": {
+      "characteristics": "2d6 each",
+      "serviceChecks": "2d6",
+      "draft": "1d6",
+      "skillTableRoll": "1d6",
+      "musterOutRoll": "1d6",
+      "agingSave": "2d6"
+    },
+    "characteristicRange": {
+      "initial": { "min": 2, "max": 12 },
+      "modifiedPlayerCharacter": { "min": 1, "max": 15 }
+    },
+    "skillEligibility": {
+      "initialTerm": 2,
+      "subsequentTerm": 1,
+      "commissionOrPosition": 1,
+      "promotion": 1,
+      "advancedEducationTableRequiresEducation": 8,
+      "ttbScoutException": "Scouts receive two skills per term and no commission or promotion extra skills."
+    },
+    "musterOutRolls": {
+      "perFullTerm": 1,
+      "rank1Or2": 1,
+      "rank3Or4": 2,
+      "ttbRank5Or6": 3,
+      "cotiRank5Or6": 2,
+      "benefitsTableDM": [{ "condition": "rank 5 or 6", "modifier": 1 }],
+      "cashTableDM": [
+        { "source": "ttb", "condition": "Gambling skill", "modifier": 1 },
+        { "source": "coti", "condition": "Gambling skill or retired", "modifier": 1, "cumulative": false }
+      ],
+      "cashRollLimit": 3
+    },
+    "reenlistment": {
+      "mandatoryOnExactRoll": 12,
+      "voluntaryTermsThrough": 7
+    },
+    "retirementPay": {
+      "source": "ttb",
+      "excludedServices": ["scouts", "other"],
+      "annualCreditsByTerms": { "5": 4000, "6": 6000, "7": 8000, "8": 10000, "9": 12000 },
+      "additionalAnnualCreditsPerTermAfter9": 2000,
+      "cotiNotes": ["Rates vary by career type in prose; barbarians cannot retire."]
+    },
+    "hexadecimalNotation": {
+      "0": "0",
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "4",
+      "5": "5",
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "A",
+      "11": "B",
+      "12": "C",
+      "13": "D",
+      "14": "E",
+      "15": "F"
+    }
+  },
+  "aging": {
+    "termsToAge": { "4": 34, "5": 38, "6": 42, "7": 46, "8": 50, "9": 54, "10": 58, "11": 62, "12": 66, "13": 70, "14+": 74 },
+    "effects": [
+      { "termRange": [4, 7], "attributes": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
+      { "termRange": [8, 11], "attributes": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
+      { "termRange": [12, null], "attributes": { "strength": { "delta": -2, "save": 9 }, "dexterity": { "delta": -2, "save": 9 }, "endurance": { "delta": -2, "save": 9 }, "intelligence": { "delta": -1, "save": 9 } } }
+    ],
+    "unaffected": ["education", "social"],
+    "agingCrisis": { "whenAttributeReducedTo": 0, "save": 8, "dice": "2d6" }
+  },
+  "nobleRanks": [
+    { "hex": "B", "social": 11, "titles": ["Knight", "Knightess", "Dame"], "address": "Sir or Dame" },
+    { "hex": "C", "social": 12, "titles": ["Baron", "Baronet", "Baroness"], "allowedPrefixes": ["von", "haut", "hault"] },
+    { "hex": "D", "social": 13, "titles": ["Marquis", "Marquesa", "Marchioness"] },
+    { "hex": "E", "social": 14, "titles": ["Count", "Countess", "Contessa"] },
+    { "hex": "F", "social": 15, "titles": ["Duke", "Duchess"] }
+  ],
+  "cascadeSkills": {
+    "aircraft": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter"],
+    "bladeCombat": ["Dagger", "Blade", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"],
+    "gunCombat": ["Body Pistol", "Auto Pistol", "Revolver", "Carbine", "Rifle", "Auto Rifle", "Shotgun", "SMG", "Laser Carbine", "Laser Rifle"],
+    "vehicle": ["Aircraft", "Grav Vehicle", "Tracked Vehicle", "Watercraft", "Wheeled Vehicle"],
+    "watercraft": ["Large Watercraft", "Small Watercraft", "Hovercraft", "Submersible"],
+    "bowCombat": ["Sling", "Short Bow", "Long Bow", "Sporting Crossbow", "Military Crossbow", "Repeating Crossbow"]
+  },
+  "weapons": {
+    "bladesAndPolearms": [
+      { "name": "Dagger", "advantage": "8+", "disadvantage": "3-", "wounds": "2D" },
+      { "name": "Blade", "advantage": "9+", "disadvantage": "4-", "wounds": "2D" },
+      { "name": "Foil", "advantage": "10+", "disadvantage": "4-", "wounds": "1D" },
+      { "name": "Sword", "advantage": "10+", "disadvantage": "5-", "wounds": "2D" },
+      { "name": "Cutlass", "advantage": "11+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Broadsword", "advantage": "12+", "disadvantage": "7-", "wounds": "4D" },
+      { "name": "Bayonet", "advantage": "9+", "disadvantage": "4-", "wounds": "3D" },
+      { "name": "Spear", "advantage": "9+", "disadvantage": "4-", "wounds": "2D" },
+      { "name": "Halberd", "advantage": "10+", "disadvantage": "5-", "wounds": "3D" },
+      { "name": "Pike", "advantage": "10+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Cudgel", "advantage": "8+", "disadvantage": "4-", "wounds": "2D" }
+    ],
+    "guns": [
+      { "name": "Body Pistol", "advantage": "11+", "disadvantage": "7-", "wounds": "2D" },
+      { "name": "Auto Pistol", "advantage": "10+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Revolver", "advantage": "9+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Carbine", "advantage": "9+", "disadvantage": "4-", "wounds": "3D" },
+      { "name": "Rifle", "advantage": "8+", "disadvantage": "5-", "wounds": "3D" },
+      { "name": "Auto Rifle", "advantage": "10+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Shotgun", "advantage": "9+", "disadvantage": "3-", "wounds": "4D" },
+      { "name": "SMG", "advantage": "9+", "disadvantage": "5-", "wounds": "3D" },
+      { "name": "Laser Carbine", "advantage": "10+", "disadvantage": "5-", "wounds": "4D" },
+      { "name": "Laser Rifle", "advantage": "11+", "disadvantage": "6-", "wounds": "5D" }
+    ],
+    "bows": [
+      { "name": "Sling", "advantage": "11+", "disadvantage": "3-", "wounds": "2D" },
+      { "name": "Short Bow", "advantage": "10+", "disadvantage": "5-", "wounds": "1D" },
+      { "name": "Long Bow", "advantage": "11+", "disadvantage": "7-", "wounds": "2D" },
+      { "name": "Sporting Crossbow", "advantage": "9+", "disadvantage": "4-", "wounds": "2D" },
+      { "name": "Military Crossbow", "advantage": "11+", "disadvantage": "6-", "wounds": "3D" },
+      { "name": "Repeating Crossbow", "advantage": "12+", "disadvantage": "8-", "wounds": "2D" }
+    ]
+  },
+  "benefitDetails": {
+    "passages": {
+      "High Psg": { "cashValueCredits": 10000, "resalePercent": 90 },
+      "Mid Psg": { "cashValueCredits": 8000, "resalePercent": 90 },
+      "Low Psg": { "cashValueCredits": 1000, "resalePercent": 90, "revivalSave": "5+" }
+    },
+    "Travellers'": { "name": "Travellers' Aid Society membership", "repeat": "no effect" },
+    "Free Trader": { "shipType": "Type A Free Trader", "firstReceiptMortgageYears": 40, "repeatReducesMortgageYears": 10 },
+    "Scout Ship": { "shipType": "Type S Scout/Courier", "basis": "reserve use" },
+    "Corsair": { "shipType": "Corsair", "repeat": "no benefit" },
+    "Seeker": { "shipType": "Seeker", "repeat": "no benefit" },
+    "Yacht": { "shipType": "Yacht", "repeat": "no benefit" },
+    "Lab Ship": { "shipType": "Type L Lab Ship", "repeat": "no benefit" },
+    "Safari Ship": { "shipType": "Type K Safari Ship", "repeat": "no benefit" },
+    "Instruments": { "description": "Medical instrument set", "valueCredits": 5000 },
+    "Watch": { "description": "Presentation watch", "typicalValueCredits": 50, "valuableValueRoll": "2d6 * Cr100 on 7+" },
+    "Weapon": { "choices": ["Blade", "Gun"], "repeatMayBecomeSkill": true },
+    "Blade": { "choices": "bladesAndPolearms", "repeatMayBecomeSkill": true },
+    "Gun": { "choices": "guns", "repeatMayBecomeSkill": true }
+  },
+  "services": {
+    "navy": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Navy",
+      "startAge": 18,
+      "draft": 1,
+      "checks": {
+        "enlistment": { "target": 8, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 8 }, { "modifier": 2, "attribute": "education", "min": 9 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 7 }] },
+        "position": { "label": "Commission", "target": 10, "dm": [{ "modifier": 1, "attribute": "social", "min": 9 }] },
+        "promotion": { "target": 8, "dm": [{ "modifier": 1, "attribute": "education", "min": 8 }] },
+        "reenlistment": { "target": 6 }
+      },
+      "ranks": [null, "Ensign", "Lieutenant", "Lt Cmdr", "Commander", "Captain", "Admiral"],
+      "automaticSkills": [{ "trigger": "rank", "rank": 5, "effect": "+1 Social" }, { "trigger": "rank", "rank": 6, "effect": "+1 Social" }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "+1 Educ", "+1 Social"],
+        "serviceSkills": [null, "Ship's Boat", "Vacc Suit", "Fwd Obsvr", "Gunnery", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Vacc Suit", "Mechanical", "Electronic", "Engineering", "Gunnery", "Jack-o-T"],
+        "advancedEducation8Plus": [null, "Medical", "Navigation", "Engineering", "Computer", "Pilot", "Admin"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "+2 Educ", "Blade", "Travellers'", "High Psg", "+2 Social"],
+        "cash": [null, 1000, 5000, 5000, 10000, 20000, 50000, 50000]
+      }
+    },
+    "marines": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Marines",
+      "startAge": 18,
+      "draft": 2,
+      "checks": {
+        "enlistment": { "target": 9, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 8 }, { "modifier": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 6, "dm": [{ "modifier": 2, "attribute": "endurance", "min": 8 }] },
+        "position": { "label": "Commission", "target": 9, "dm": [{ "modifier": 1, "attribute": "education", "min": 7 }] },
+        "promotion": { "target": 9, "dm": [{ "modifier": 1, "attribute": "social", "min": 8 }] },
+        "reenlistment": { "target": 6 }
+      },
+      "ranks": [null, "Lieutenant", "Captain", "Force Cmdr", "Lt Colonel", "Colonel", "Brigadier"],
+      "automaticSkills": [{ "trigger": "service", "skill": "Cutlass", "level": 1 }, { "trigger": "rank", "rank": 1, "skill": "Revolver", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "Brawling", "Blade Cbt"],
+        "serviceSkills": [null, "ATV", "Vacc Suit", "Blade Cbt", "Gun Cbt", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Vehicle", "Mechanical", "Electronic", "Tactics", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation8Plus": [null, "Medical", "Tactics", "Tactics", "Computer", "Leader", "Admin"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+2 Intel", "+1 Educ", "Blade", "Travellers'", "High Psg", "+2 Social"],
+        "cash": [null, 2000, 5000, 5000, 10000, 20000, 30000, 40000]
+      }
+    },
+    "army": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Army",
+      "startAge": 18,
+      "draft": 3,
+      "checks": {
+        "enlistment": { "target": 5, "dm": [{ "modifier": 1, "attribute": "dexterity", "min": 6 }, { "modifier": 2, "attribute": "endurance", "min": 5 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "education", "min": 6 }] },
+        "position": { "label": "Commission", "target": 5, "dm": [{ "modifier": 1, "attribute": "endurance", "min": 7 }] },
+        "promotion": { "target": 6, "dm": [{ "modifier": 1, "attribute": "education", "min": 7 }] },
+        "reenlistment": { "target": 7 }
+      },
+      "ranks": [null, "Lieutenant", "Captain", "Major", "Lt Colonel", "Colonel", "General"],
+      "automaticSkills": [{ "trigger": "service", "skill": "Rifle", "level": 1 }, { "trigger": "rank", "rank": 1, "skill": "SMG", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "+1 Educ", "Brawling"],
+        "serviceSkills": [null, "ATV", "Air/Raft", "Gun Cbt", "Fwd Obsvr", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Vehicle", "Mechanical", "Electronic", "Tactics", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation8Plus": [null, "Medical", "Tactics", "Tactics", "Computer", "Leader", "Admin"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "+2 Educ", "Gun", "High Psg", "Mid Psg", "+1 Social"],
+        "cash": [null, 2000, 5000, 10000, 10000, 10000, 20000, 30000]
+      }
+    },
+    "scouts": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Scouts",
+      "startAge": 18,
+      "draft": 4,
+      "checks": {
+        "enlistment": { "target": 7, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 6 }, { "modifier": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 7, "dm": [{ "modifier": 2, "attribute": "endurance", "min": 9 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 3 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Pilot", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "+1 Educ", "Gun Cbt"],
+        "serviceSkills": [null, "Air/Raft", "Vacc Suit", "Mechanical", "Navigation", "Electronics", "Jack-o-T"],
+        "advancedEducation": [null, "Vehicle", "Mechanical", "Electronic", "Jack-o-T", "Gunnery", "Medical"],
+        "advancedEducation8Plus": [null, "Medical", "Navigation", "Engineering", "Computer", "Pilot", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+2 Intel", "+2 Educ", "Blade", "Gun", "Scout Ship", null],
+        "cash": [null, 20000, 20000, 30000, 30000, 50000, 50000, 50000]
+      },
+      "notes": ["Two skills per term; no ranks, commissions, or promotions."]
+    },
+    "merchants": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Merchants",
+      "startAge": 18,
+      "draft": 5,
+      "checks": {
+        "enlistment": { "target": 7, "dm": [{ "modifier": 1, "attribute": "strength", "min": 7 }, { "modifier": 2, "attribute": "intelligence", "min": 6 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 7 }] },
+        "position": { "label": "Commission", "target": 4, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 6 }] },
+        "promotion": { "target": 10, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 9 }] },
+        "reenlistment": { "target": 4 }
+      },
+      "ranks": [null, "4th Officer", "3rd Officer", "2nd Officer", "1st Officer", "Captain", null],
+      "automaticSkills": [{ "trigger": "rank", "rank": 4, "skill": "Pilot", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Stren", "Blade Cbt", "Bribery"],
+        "serviceSkills": [null, "Vehicle", "Vacc Suit", "Jack-o-T", "Steward", "Electronics", "Gun Cbt"],
+        "advancedEducation": [null, "Streetwise", "Mechanical", "Electronic", "Navigation", "Gunnery", "Medical"],
+        "advancedEducation8Plus": [null, "Medical", "Navigation", "Engineering", "Computer", "Pilot", "Admin"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "+1 Educ", "Gun", "Blade", "Low Psg", "Free Trader"],
+        "cash": [null, 1000, 5000, 10000, 20000, 20000, 40000, 40000]
+      }
+    },
+    "other": {
+      "source": "ttb",
+      "bookPage": 24,
+      "displayName": "Other",
+      "startAge": 18,
+      "draft": 6,
+      "checks": {
+        "enlistment": { "target": 3, "dm": [] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 9 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 5 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Blade Cbt", "Brawling", "-1 Social"],
+        "serviceSkills": [null, "Vehicle", "Gambling", "Brawling", "Bribery", "Blade Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Streetwise", "Mechanical", "Electronic", "Gambling", "Brawling", "Forgery"],
+        "advancedEducation8Plus": [null, "Medical", "Forgery", "Electronics", "Computer", "Streetwise", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "+1 Educ", "Gun", "High Psg", null, null],
+        "cash": [null, 1000, 5000, 10000, 10000, 10000, 50000, 100000]
+      },
+      "notes": ["No ranks, commissions, or promotions."]
+    },
+    "pirates": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Pirates",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 7, "dm": [{ "modifier": 1, "attribute": "social", "max": 7 }, { "modifier": 2, "attribute": "endurance", "min": 9 }] },
+        "survival": { "target": 6, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 8 }] },
+        "position": { "label": "Position", "target": 9, "dm": [{ "modifier": 1, "attribute": "strength", "min": 10 }] },
+        "promotion": { "target": 8, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 9 }] },
+        "reenlistment": { "target": 7 }
+      },
+      "ranks": [null, "Henchman", "Corporal", "Sergeant", "Lieutenant", "Leader", null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Brawling", "level": 1 }, { "trigger": "rank", "rank": 4, "skill": "Pilot", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "Brawling", "Blade Cbt"],
+        "serviceSkills": [null, "Blade Cbt", "Vacc Suit", "Gun Cbt", "Gunnery", "Zero-G Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Streetwise", "Gunnery", "Engnrng", "Ship Tactic", "Tactics", "Mechanical"],
+        "advancedEducation8Plus": [null, "Navigation", "Pilot", "Forgery", "Computer", "Leader", "Electronic"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "Weapon", null, "-1 Social", "Mid Psg", "Corsair"],
+        "cash": [null, 0, 0, 1000, 10000, 50000, 50000, 50000]
+      }
+    },
+    "belters": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Belters",
+      "startAge": 14,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 8, "dm": [{ "modifier": 1, "attribute": "dexterity", "min": 9 }, { "modifier": 2, "attribute": "intelligence", "min": 6 }] },
+        "survival": { "target": 9, "dm": [{ "modifier": "termNumber", "description": "+1 in first term, +2 in second term, through +7 in seventh term" }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 7 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Vacc Suit", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "Brawling", "Vacc Suit"],
+        "serviceSkills": [null, "Vacc Suit", "Vacc Suit", "Prospecting", "Fwd Obsv", "Prospecting", "Ship's Boat"],
+        "advancedEducation": [null, "Ship's Boat", "Electronic", "Prospecting", "Mechanical", "Prospecting", "Instruction"],
+        "advancedEducation8Plus": [null, "Navigation", "Medical", "Pilot", "Computer", "Engnrng", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "Weapon", "High Psg", "Travellers'", "Seeker", null],
+        "cash": [null, 0, 0, 1000, 10000, 100000, 100000, 100000]
+      }
+    },
+    "sailors": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Sailors",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 6, "dm": [{ "modifier": 1, "attribute": "endurance", "min": 10 }, { "modifier": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "endurance", "min": 8 }] },
+        "position": { "label": "Position", "target": 5, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 9 }] },
+        "promotion": { "target": 6, "dm": [{ "modifier": 1, "attribute": "education", "min": 8 }] },
+        "reenlistment": { "target": 6 }
+      },
+      "ranks": [null, "Ensign", "Lieutenant", "Lt Cmdr", "Commander", "Captain", "Admiral"],
+      "automaticSkills": [],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "Brawling", "Carousing"],
+        "serviceSkills": [null, "Gun Cbt", "Commo", "Fwd Obsv", "Vehicle", "Vehicle", "Battle Dress"],
+        "advancedEducation": [null, "Water Craft", "Electronic", "Mechanical", "Gravitics", "Navigation", "Demolition"],
+        "advancedEducation8Plus": [null, "Medical", "Vehicle", "Streetwise", "Computer", "Admin", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Educ", "Weapon", "Weapon", "High Psg", "High Psg", "+1 Social"],
+        "cash": [null, 2000, 5000, 10000, 10000, 10000, 20000, 30000]
+      }
+    },
+    "diplomats": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Diplomats",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 8, "dm": [{ "modifier": 1, "attribute": "education", "min": 8 }, { "modifier": 2, "attribute": "social", "min": 9 }] },
+        "survival": { "target": 3, "dm": [{ "modifier": 2, "attribute": "education", "min": 9 }] },
+        "position": { "label": "Position", "target": 5, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 8 }] },
+        "promotion": { "target": 10, "dm": [{ "modifier": 1, "attribute": "social", "min": 10 }] },
+        "reenlistment": { "target": 5 }
+      },
+      "ranks": [null, "3d Secretary", "2d Secretary", "1st Secretary", "Counselor", "Minister", "Ambassador"],
+      "automaticSkills": [{ "trigger": "service", "skill": "Liaison", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Educ", "+1 Intel", "Blade Cbt", "Gun Cbt", "Carousing"],
+        "serviceSkills": [null, "+1 Intel", "Vacc Suit", "Vehicle", "Vehicle", "Gambling", "Computer"],
+        "advancedEducation": [null, "Forgery", "Streetwise", "Interrogation", "Recruiting", "Instruction", "Admin"],
+        "advancedEducation8Plus": [null, "Liaison", "Liaison", "Admin", "Computer", "+1 Social", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Intel", "+2 Educ", "Weapon", "+1 Social", "High Psg", "Travellers'"],
+        "cash": [null, 10000, 10000, 10000, 20000, 50000, 60000, 70000]
+      }
+    },
+    "doctors": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Doctors",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 9, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 8 }, { "modifier": 2, "attribute": "dexterity", "min": 9 }] },
+        "survival": { "target": 3, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 8 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 4 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Medical", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "+1 Educ", "+1 Social"],
+        "serviceSkills": [null, "+1 Dext", "Electronic", "Medical", "Streetwise", "Medical", "Blade Cbt"],
+        "advancedEducation": [null, "Medical", "Medical", "Mechanical", "Electronic", "Computer", "Admin"],
+        "advancedEducation8Plus": [null, "Medical", "Medical", "Admin", "Computer", "+1 Intel", "+1 Educ"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Educ", "+1 Educ", "Weapon", "Instruments", "Mid Psg", null],
+        "cash": [null, 20000, 20000, 20000, 30000, 40000, 60000, 100000]
+      }
+    },
+    "flyers": {
+      "source": "coti",
+      "bookPage": 6,
+      "displayName": "Flyers",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 6, "dm": [{ "modifier": 1, "attribute": "strength", "min": 7 }, { "modifier": 2, "attribute": "dexterity", "min": 9 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "dexterity", "min": 8 }] },
+        "position": { "label": "Position", "target": 5, "dm": [{ "modifier": 1, "attribute": "education", "min": 6 }] },
+        "promotion": { "target": 8, "dm": [{ "modifier": 1, "attribute": "education", "min": 8 }] },
+        "reenlistment": { "target": 6 }
+      },
+      "ranks": [null, "Pilot", "Flight Leader", "Sqdrn Leader", "Staff Major", "Group Leader", "Air Marshal"],
+      "automaticSkills": [{ "trigger": "service", "skill": "Air Craft", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "Gambling", "Brawling", "Carousing"],
+        "serviceSkills": [null, "Brawling", "Vacc Suit", "Gun Cbt", "Vehicle", "Vehicle", "Vehicle"],
+        "advancedEducation": [null, "Air Craft", "Mechanical", "Electronic", "Gravitics", "Gun Cbt", "Survival"],
+        "advancedEducation8Plus": [null, "Medical", "Leader", "Pilot", "Computer", "Admin", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Educ", "Weapon", "Weapon", "High Psg", "Mid Psg", "+1 Social"],
+        "cash": [null, 2000, 5000, 10000, 10000, 10000, 20000, 30000]
+      }
+    },
+    "barbarians": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Barbarians",
+      "startAge": 14,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 5, "dm": [{ "modifier": 1, "attribute": "endurance", "min": 9 }, { "modifier": 2, "attribute": "strength", "min": 10 }] },
+        "survival": { "target": 6, "dm": [{ "modifier": 2, "attribute": "strength", "min": 8 }] },
+        "position": { "label": "Position", "target": 6, "dm": [{ "modifier": 1, "attribute": "strength", "min": 10 }] },
+        "promotion": { "target": 9, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 6 }] },
+        "reenlistment": { "target": 6 }
+      },
+      "ranks": [null, null, "Warrior", null, null, "Chief", null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Sword", "level": 1 }, { "trigger": "rank", "rank": 2, "skill": "Blade Combat", "level": 1 }, { "trigger": "rank", "rank": 5, "skill": "Leader", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+2 Stren", "+1 Stren", "Carousing", "+1 Dext", "+1 Endur"],
+        "serviceSkills": [null, "Brawling", "Blade Cbt", "Blade Cbt", "Bow Cbt", "Bow Cbt", "Gun Cbt"],
+        "advancedEducation": [null, "Blade Cbt", "Mechanical", "Survival", "Recon", "Streetwise", "Bow Cbt"],
+        "advancedEducation8Plus": [null, "Medical", "Interrogation", "Tactics", "Leader", "Instruction", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "Blade", "Blade", "Blade", null, "High Psg", "High Psg"],
+        "cash": [null, 0, 0, 1000, 2000, 3000, 4000, 5000]
+      },
+      "notes": ["Cannot retire."]
+    },
+    "bureaucrats": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Bureaucrats",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 5, "dm": [{ "modifier": 1, "attribute": "education", "min": 8 }, { "modifier": 2, "attribute": "strength", "max": 8 }] },
+        "survival": { "target": 4, "dm": [{ "modifier": 2, "attribute": "education", "min": 10 }] },
+        "position": { "label": "Position", "target": 6, "dm": [{ "modifier": 1, "attribute": "social", "min": 9 }] },
+        "promotion": { "target": 7, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 9 }] },
+        "reenlistment": { "target": 3, "inverseToLeave": true }
+      },
+      "ranks": [null, "Clerk", "Supervisor", "Asst Manager", "Manager", "Executive", "Director"],
+      "automaticSkills": [],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Endur", "+1 Educ", "+1 Intel", "Brawling", "Carousing", "+1 Dext"],
+        "serviceSkills": [null, "Gun Cbt", "Vehicle", "Blade Cbt", "Instruction", "Vehicle", "+1 Educ"],
+        "advancedEducation": [null, "Recruiting", "Vehicle", "Liaison", "Interrogation", "Admin", "Admin"],
+        "advancedEducation8Plus": [null, "Admin", "Admin", "Computer", "Admin", "Jack-o-T", "Leader"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "Mid Psg", null, "Watch", null, "High Psg", "+1 Social"],
+        "cash": [null, 0, 0, 10000, 10000, 40000, 40000, 80000]
+      }
+    },
+    "rogues": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Rogues",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 6, "dm": [{ "modifier": 1, "attribute": "social", "max": 8 }, { "modifier": 2, "attribute": "endurance", "min": 7 }] },
+        "survival": { "target": 6, "dm": [{ "modifier": 2, "attribute": "intelligence", "min": 9 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 5 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Streetwise", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "Brawling", "Carousing"],
+        "serviceSkills": [null, "Blade Cbt", "Gun Cbt", "Demolition", "Vehicle", "+1 Educ", "Vehicle"],
+        "advancedEducation": [null, "Streetwise", "Forgery", "Bribery", "Carousing", "Liaison", "Ship Tactics"],
+        "advancedEducation8Plus": [null, "Medical", "Bribery", "Forgery", "Computer", "Leader", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "+1 Soc", "Gun", "Blade", "High Psg", "Travellers'", null],
+        "cash": [null, 0, 0, 10000, 10000, 50000, 100000, 100000]
+      }
+    },
+    "nobles": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Nobles",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": null, "special": "Automatic and only available with social standing 10+" },
+        "survival": { "target": 3, "dm": [] },
+        "position": { "label": "Position", "target": 5, "dm": [{ "modifier": 1, "attribute": "education", "min": 9 }] },
+        "promotion": { "target": 12, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 10 }] },
+        "reenlistment": { "target": 4 }
+      },
+      "ranks": [null, "B Knight", "C Baron", "D Marquis", "E Count", "F Duke", null],
+      "automaticSkills": [],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "Carousing", "Brawling"],
+        "serviceSkills": [null, "Gun Cbt", "Blade Cbt", "Hunting", "Vehicle", "Bribery", "+1 Dext"],
+        "advancedEducation": [null, "Pilot", "Ship's Boat", "Vehicle", "Navigation", "Engnrng", "Leader"],
+        "advancedEducation8Plus": [null, "Medical", "Computer", "Admin", "Liaison", "Leader", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "High Psg", "High Psg", "Gun", "Blade", "Travellers'", "Yacht", null],
+        "cash": [null, 10000, 50000, 50000, 100000, 100000, 100000, 200000]
+      },
+      "notes": ["Rank corresponds to noble rank from social standing once position is achieved."]
+    },
+    "scientists": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Scientists",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 6, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 9 }, { "modifier": 2, "attribute": "education", "min": 10 }] },
+        "survival": { "target": 5, "dm": [{ "modifier": 2, "attribute": "education", "min": 9 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 5 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Computer", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "+1 Educ", "Carousing"],
+        "serviceSkills": [null, "Gun Cbt", "Blade Cbt", "Vehicle", "Jack-o-T", "Navigation", "Survival"],
+        "advancedEducation": [null, "Mechanical", "Electronic", "Gravitics", "Computer", "+1 Intel", "+1 Educ"],
+        "advancedEducation8Plus": [null, "Medical", "Computer", "Admin", "Leader", "+1 Intel", "Jack-o-T"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "Mid Psg", "High Psg", "+1 Soc", "Gun", "Lab Ship", null],
+        "cash": [null, 1000, 2000, 5000, 10000, 20000, 30000, 40000]
+      }
+    },
+    "hunters": {
+      "source": "coti",
+      "bookPage": 8,
+      "displayName": "Hunters",
+      "startAge": 18,
+      "draft": null,
+      "checks": {
+        "enlistment": { "target": 9, "dm": [{ "modifier": 1, "attribute": "dexterity", "min": 10 }, { "modifier": 2, "attribute": "endurance", "min": 9 }] },
+        "survival": { "target": 6, "dm": [{ "modifier": 2, "attribute": "strength", "min": 10 }] },
+        "position": null,
+        "promotion": null,
+        "reenlistment": { "target": 5 }
+      },
+      "ranks": [null, null, null, null, null, null, null],
+      "automaticSkills": [{ "trigger": "service", "skill": "Hunting", "level": 1 }],
+      "skillTables": {
+        "personalDevelopment": [null, "+1 Stren", "+1 Dext", "+1 Endur", "+1 Intel", "Gun Cbt", "Blade Cbt"],
+        "serviceSkills": [null, "Gun Cbt", "Blade Cbt", "Survival", "Hunting", "Vehicle", "Hunting"],
+        "advancedEducation": [null, "Mechanical", "Electronic", "Gravitics", "Computer", "Hunting", "Admin"],
+        "advancedEducation8Plus": [null, "Medical", "Computer", "Hunting", "Leader", "Survival", "Admin"]
+      },
+      "musterOut": {
+        "benefits": [null, "Low Psg", "High Psg", "Weapon", "Weapon", "Weapon", "Safari Ship", null],
+        "cash": [null, 1000, 1000, 5000, 5000, 10000, 100000, 100000]
+      }
+    }
+  }
+}

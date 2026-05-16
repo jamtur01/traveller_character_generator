@@ -1,0 +1,53 @@
+       SKILLS AND BENEFITS
+           The skills and benefits which a character can acquire during the course of a term
+       are of diverse types and values. They form an integral part of the player's character,
+       assisting the referee (and the player) in determining general ability as well as the
+       specific probability of performing certain tasks.
+           There are only a finite number of skills available, and it i s possible that a
+       character may acquire the same skill more than once; in such a case, the second
+       acquisition of the skill increases the character's expertise in that skill. When a skill is
+       first received, the player writes the skill name, followed by a dash, and the number
+       1 (for example, Navigation-1). The second time the same skill is received, the
+       number is increased to show the greater level of expertise (for example, Navi-
+       gation-2). Further acquisitions of the same skill increase this skill level in the same
+       manner.
+           Skills are of three basic types: characteristic alterations (such as +1 strength),
+       weapon expertise (such as Gun Combat), and basicskill (such as Navigation). These
+       are each explained below:
+
+           Characteristic Alteration: Expressed as an addition to a character's ability.
+       Characteristic alterations are applied immediately, increasing the character's current
+       ability, and require no further attention.
+           Weapon Expertise: Expressed as a general trait, such as Brawling, Blade Combat,
+       or Gunnery. When acquired, the acquisition is noted as a skill by the character. In
+       the case of Blade Combat, Gun Combat, or Bow Combat, (not Brawling or
+       Gunnery), the character must immediately select a weapon within the category as
+       the specific weapon of expertise.
+           Most characters have a natural weapon expertise (in all gun and blade weapons
+       listed below) of one-half; exceptions are noted. Acquisition of expertise in a
+       weapon boosts this to level-1. Additional acquisitions of expertise in the same
+       weapon increase the current level by one each time.
+           Brawling: Brawling i s a general skill for hand-to-handfighting. It includes the use
+       of hands, clubs, bottles, and similar weapons.
+           Blade Combat: Blade Combat is a specific skill in the use of blades and polearms.
+       The character must immediately choose one blade or polearm weapon in which the
+       skill is received (a different weapon may be selected each time that skill is ac-
+       quired). The blades and polearms table
+       indicates the weapons available under this              BLADES AND POLEARMS
+       skill. All characters have a natural expertise Weapon          +DM -DM Wounds
+       of one-half in all blades and polearms; Dagger                  8+       3-       2D
+       initial receipt of blade combat boosts the Blade                9+       4-       2D
+       skill in the selected weapon to level-1. Foil                  10+       4-       1D
+       Selection of a specific blade or polearm Sword                 10+       5-       2D
+       should be a discriminating decision; the Cutlass               11+       7-       3D
+       table shows the disadvantaged and ad- Broadsword 12+                     7-       4D
+       vantaged strength levels for each weapon. Bayonet               9+       4-       3D
+       When using the weapon in combat, a Spear                        9+       4-       2D
+       character with a strength equal to or Halberd                  10+       5-       3D
+       greater than the advantaged value receives Pike                10+       6-       3D
+       favorable DMs, while one with a strength Cudgel                 8+       4-       2D
+
+
+
+James Turnbull (Order #51963372)
+

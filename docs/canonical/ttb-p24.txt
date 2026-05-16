@@ -1,0 +1,69 @@
+             The Traveller Book                                                                                                   Characters
+
+                 Skills described on this page: Electronics, Engineering, Forgery, Forward Observer, Gambling.
+
+                 Electronics: The individual has skill in the use, opera-          Referee: Forgery is a useful skill, but control is required
+             tion, and repair of electronic devices. The person is con-        to prevent blatant misuse (to provide a bottomless checking
+             sidered handy in this field, with the equivalent of a green       account, for example). Note that administration and
+             thumb; this skill includes the repair of energy weapons.          bribery may also be used to determine whether documents
+                 An advanced technological civilization depends heavily        are actually examined by the individuals involved.
+             on the use of electronic devices. The need to use, repair,            Forward Observer: The individual has been trained (in
+             and replace electronic devices is ubiquitous.                     military service) to call on and adjust artillery {projecti le,
+                 Electronic expertise allows a character to use and            missile, and laser) fire from distant batteries and from
+             operate electronic items; generally the skill is a DM applied     ships in orbit.
+             to the throw to understand, repair, assemble, or operate.             Modern fire support can be a tremendously effective
+             Complex items would also requ ire a certain level of educa-       weapon, when available, but is virtually useless unless the
+             tion or a very high intelligence; many devices may also           technique of its application and adjustment is known. If
+             require some degree of dexterity to disassemble, repair, and      artillery of any form (including communication w ith the
+             reassemble.                                                       firing battery) is available, the first shots fired will i n-
+                 Referee: Specific throws for specific situations must be      variably miss the target. On each subsequent turn i n which
+             generated. Obviously, some throws will be harder than             such fire is delivered, a basic throw of 11+ to hit is re-
+             others, and many will be impossible without an accumu-            quired. Apply these DMs : +4 per level of expertise; per
+             lation of DMs based on expertise, education, dexterity,           adjustment (two minutes per adjustment), +1 ; if adjusting
+             intelligence, and the availability of parts and tools. To         person has no expertise: -4.
+             generate a specific throw, the referee analyzes the specific
+             circumstances and selects a number to be thrown (usually             Gambling: The individual is well informed on games of
+             throw that number or greater to succeed). DMs allowed             chance, and wise in their play. He or she has an advantage
+             should be the level of electronics skill, +1 for intelligence     over nonexperts, and is generally capable of w inning
+             above some level (say, 10). +1 for education above some           when engaged in such games. Gambling, however, should
+             level (say, 9), and appropriate values for lack of tools          not be confused w ith general risk-taking.
+             (perhaps -5) or poor conditions (maybe -3). The throw                Organized games (as in casinos) allow bets of up to
+             is then made, and success is determined by the result.            Cr5000, and require a throw of 9+ to win. Private games
+                                                                                                                                                 23
+             Such throws are restricted to one per specific time period,       allow bets ranging from Cr50 to Cr5000, and requ ire a
+             an hour, four hours, a day, or a week, as appropriate.            throw of 8+ to win. Gambl ing skill allows a DM of +1 per
+                                                                               level, but the house always w ins on a throw of 2 exactly.
+                Engineeri ng: The individual is skilled in the operation          Games may be crooked (throw 10+ to be dishonest) in
+             and maintenance of starship maneuver drives, jump drives,         which case the referee will stack the odds against the
+             and power plants.                                                 players. Gambling-3 or better will usually detect crooked
+                Engineering experience enables an individual to operate        games (throw 7+ to detect).
+             the vital drives of starships (and interplanetary craft) and to      Gambling-4 or better may be suspected of cheating and
+             maintain the machinery against failure.                           the gambler ejected (or worse) due to the finesse of the
+                The engineer is essential for the proper operation of any      skill involved (throw 9+ to be suspected ; DM -1 per level
+             starships. Expertise qualifies the individual for such jobs,      over 4). Characters may elect to use a lower expertise
+             and can be used to get working passage on a ship in need of       level in order to avoid detection of true skill level.
+             help. Greater levels of expertise enable the individual               Referee: Characters' d ie rolls should not be d ivulged
+             to handle problems of greater complexity and jobs with             when gambling; instead, merely inform the individuals of
+             higher levels of responsibi lity.                                  wins and losses. This procedure should serve to conceal any
+                Referee: Skill level is generally a DM applied to the          manipulation of dice throws.
+             throw to remedy an engineering problem. In order to
+             handle the relative value of experience, the DM may be
+             assigned on the basis of +2 per level of expertise.
+
+                Forgery: T he individual has a skill at fak ing documents
+             and papers with a view to deceiving officials, banks,
+             patrons, or other persons.
+                Documents necessary for cargo transfers, bank trans-
+             actions, personal identificat ion, and many other purposes
+             are often closely inspected by officials such as the police,
+             customs agents, or clerks when encounters occur (such
+             encounters happen when the law level for a world or less is
+             thrown; generally once or twice per day). The throw for
+             detection of forged or fake documents is 6+; DMs to be
+             applied : - 2 per level of expertise.
+
+
+
+
+James Turnbull (Order #51963180)
+

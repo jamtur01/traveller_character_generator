@@ -1,0 +1,62 @@
+         General Description                                                     Specific Game Effects
+            Recon: Discussed i n Book 4.
+            Recruiting: Discussed i n Book 4.
+            Ship Tactics: Discussed in Book 5.
+            Ship's Boat: Discussed in Book 1.
+            Streetwise: Discussed i n Book 1.
+            Survival: Discussed in Book 4.
+            Tactics: Discussed in Book 1.
+            Vehicle: The individual is a trained vehicle       Immediately upon receipt of this skill, the
+         operator.                                         individual must specify one o f the following
+                                                           vehicles as the type in which skill is received.
+                                                               Wheeled (tech level 5 - 15): This skill is
+                                                           the equivalent o f A T V skitl.
+                                                               Tracked (tech level 6 - 9): This skill is
+                                                           primarily of military usefulness, such as
+                                                           in Mercenary, Book 4.
+                                                                                   -
+                                                               Grav (tech level 6 15): This skill is the
+                                                           equivalent o f AirlRaft skill (not A i r Craft
+                                                           skill).
+                                                               Vehicle skill, as specified in this supple-
+                                                           ment, is different from Vehicle skill discussed
+                                                           in Book 5.
+            Water Craft: The individual is a trained           Upon receipt of this skill. the individual
+         operator of water craft.                          must immediately select one o f the following
+                                                           types of water craft i n which to take the
+                                                           expertise.
+                                                                                         -
+                                                               H o v w c r f t (tech level 7 9): Governs the
+                                                           use of air cushion craft capable of traversing
+                                                           land and water.
+                                                                                                 -
+                                                              Small Water Craft (tech level 1 8): Gov-
+                                                           erns all small craft under 50 tons displace-
+                                                           ment, including sailing craft and submersibles.
+             Vacc Suit: Discussed i n Book 1.
+             Zero42 Combat: Discussed in Book 4.
+
+            Benefits: Mustering-out benefits may be characteristics alterations (page lo),
+         dr some physical object. Membership in the Travellers' Aid Society is possible, and
+         subsequent receipts of gun, blade, or weapon benefits may be taken as skill levels
+         instead.
+             Instruments: A doctor may receive a complete set of medical instruments,
+         suitable for treatment of individuals suffering from all manner of injuries and ill-
+         nesses. The set includes surgeons instruments, diagnostic tools, and a set of drugs
+         for most purposes. Basic value of the set is Cr5,OOO.
+            Watch: Bureaucrats may receive a watch from their fellow workers or their
+         employers, as a token of esteem or respect. Typically, this item has a value of
+         approximately Cr50; on a throw of 7+, it will have a value of from Cr200 to
+         Cr1200 (2D times Cr100).
+            Weapon: Many individuals may receive a weapon as a mustering~utbenefit. If
+         specified as a weapon, it may be taken as either a blade weapon or a gun weapon. If
+         specified as a blade, it must be taken as a blade; if specified as a gun, it must be
+         taken as a gun. In any case, the allowed range is any weapon discussed in Book 1.
+         Once a weapon is taken as a benefit, additional receipts of the weapon may be
+         taken as skill in that weapon instead. An individual is always free to take additional
+         physical examples of the weapons if so desired.
+
+
+
+James Turnbull (Order #51963372)
+

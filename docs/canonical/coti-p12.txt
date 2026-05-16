@@ -1,0 +1,53 @@
+                                    ACQUIRED SKILLS TABLE
+
+           Personal Development Table
+             Pirate       Belter      Sailor           Diplomat    Doctor       Flyer
+           1 +1 Stren     +1 Stren    +1 Stren         +1 Stren    +1 Stren     +1 Stren
+           2 +1 Dext      +1 Dext     +1 Dext          +1 Educ     +1 Dext      +1 Dext
+           3 +1 Endur     +1 Endur    +1 Endur         +1 lntel    +1 Endur     +1 Endur
+           4 Gambling     Gambling    Gambling         Blade Cbt   +1 lntel     Gambling
+           5 Brawling     Brawling    Brawling         Gun Cbt     +1 Educ      Brawling
+           6 Blade Cbt    Vacc Suit   Carousing        Carousing   +1 Social    Carousing
+
+           Service Skills Table
+             Pirate         Belter      Sailor       Diplomat      Doctor       Flyer
+           1 Blade Cbt      Vacc Suit   Gun Cbt      +1 lntel      +1 Dext      Brawling
+           2 Vacc Suit      Vacc Suit   Commo        Vacc Suit     Electronic   Vacc Suit
+           3 Gun Cbt        Prospecting Fwd Obsv Vehicle           Medical      Gun Cbt
+           4 Gunnery        Fwd Obsv Vehicle         Vehicle       Streetwise   Vehicle
+           5 Zero-G Cbt Prospecting Vehicle          Gambling      Medical      Vehicle
+           6 Gun Cbt        Ship's Boat Battle Dress Computer      Blade Cbt    Vehicle
+
+           Advanced Education Table
+             Pirate      Belter      Sailor     Diplomat     Doctor             Flyer
+           1 Streetwise Ship's Boat Water Craft Forgery      Medical            Air Craft
+           2 Gunnery     Electronic Electronic Streetwise Medical               Mechanical
+           3 Engnrng     Prospecting Mechanical InterrogationMechanical         Electronic
+           4 Ship Tactic Mechanical Gravitics   Recruiting Electronic           Gravitics
+           5 Tactics     Prospecting Navigation Instruction Computer            Gun Cbt
+           6 Mechanical Instruction Demolition Admin         Admin              Survival
+
+           Advanced Education Table (allowed only if character has education of 8+)
+             Pirate     Better        Sailor        Diplomat      Doctor       Flyer
+           1 Navigation Navigation Medical          Liaison       Medical      Medical
+           2 Pilot      Medical       Vehicle       Liaison       Medical      Leader
+           3 Forgery    Pilot         Streetwise Admin            Admin        Pilot
+           4 Computer Computer Computer Computer Computer Computer
+           5 Leader      Engnrng      Admin         +1 Social     +1 Intel     Admin
+           6 Electronic Jack-o-T      Jack-o-T      Jack-o-T      +1 Educ      Jack*-T
+
+
+          Characters consult this set of tables                 AUTOMATIC SKILLS
+       during each term of service. A character        Belter...............  Vacc Suit-1
+       must have an education characteristic of 8      Pirate...............   Brawling-1
+       or greater before using the fourth table.                     ..........
+                                                       Pirate Lieutenant.          Pilot-1
+          Blade combat, gun combat, air craft          Doctor ...............   Medical-1
+       and vehicle call for additional specification   Diplomat..............    Liaison-1
+       by the character immediately.                   Flyer................   Air Craft-1
+
+
+
+
+James Turnbull (Order #51963372)
+

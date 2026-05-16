@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* Belt-and-suspenders: keep every button utility in the bundle even if a
+   class only appears in a rarely-rendered branch of the JSX. */
+@source inline("{,hover:}bg-{emerald,amber,indigo,zinc,sky}-{500,600,700,800}");
+
+/* Explicit button colors — outside any @layer, so they outrank Tailwind's
+   preflight `button { background-color: transparent }` reset regardless of
+   layer ordering or browser extension interference. */
+button.bg-emerald-700 { background-color: #047857; color: #ffffff; }
+button.bg-emerald-700:hover { background-color: #059669; }
+button.bg-emerald-800 { background-color: #065f46; color: #ffffff; }
+button.bg-amber-700 { background-color: #b45309; color: #ffffff; }
+button.bg-amber-700:hover { background-color: #d97706; }
+button.bg-amber-600 { background-color: #d97706; color: #ffffff; }
+button.bg-amber-600:hover { background-color: #f59e0b; }
+button.bg-indigo-700 { background-color: #4338ca; color: #ffffff; }
+button.bg-indigo-700:hover { background-color: #4f46e5; }
+button.bg-indigo-800 { background-color: #3730a3; color: #ffffff; }
+button.bg-indigo-800:hover { background-color: #4338ca; }
+button.bg-zinc-700 { background-color: #3f3f46; color: #ffffff; }
+button.bg-zinc-700:hover { background-color: #52525b; }
+button.bg-sky-700 { background-color: #0369a1; color: #ffffff; }
+button.bg-sky-700:hover { background-color: #0284c7; }
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -22,5 +45,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }

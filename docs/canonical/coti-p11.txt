@@ -1,0 +1,61 @@
+                                           PRIOR SERVICE TABLE
+                         Pirates       Behers   Sailors  Diplomats Doctors                     Flyers
+         Enlistment      7+             8+             6+           8+             9+          6+
+         D M +1 if       Soc7      -    Dext 9+        Endur 10+    Educ 8+        Intel 8+    Stren 7 t
+         D M +2 if       Endur 9 t      Intel 6+       Stren 8+     Soc 9+         Dext 9+     Dext 9+
+
+         survival        6+            9+              5+           3+             3+          5+
+         D M +2 if       lntel 8+       (terms)         Endur 8t    Educ 9+        lntel 8+    Dext 8t
+
+         Position        9+             -              5+           5+             -           5+
+         D M + I if      Stren 10+      -               Intel 9+    Intel 8+       -           Educ 6+
+
+         promotion       8+             -              6+           10+            -           8+
+         D M +l if       Intel 9+       -              Educ8+       Soc 10+        -                 8+
+                                                                                               E ~ U C
+
+
+         Reenlist        7+            7+              6+           5+             4+          6+
+            Belters receive a variable D M for survival based on terms served; in the first term of service,
+         the D M is + l ; in the second term, the D M is +2, in the seventh term, the D M is +7.
+
+                                                     T A B L E OF RANKS
+         Rank 1          Henchman      -               Ensign       3d Secretary  -            Pilot
+         Rank 2          Corporal      -               Lieutenant   2d Secretary  -            Flight Leader
+         Rank 3          Sergeant      -               L t Cmdr     1st Secretary -            Sqdrn Leader
+         Rank 4          Lieutenant    -               Commander    Counselor  -               Staff Major
+         Rank 5          Leader        -               Captain      Minister   -               Group Leader
+         Rank 6          -             -               Admiral      Ambassador -               Air Marshal
+                                                   BENEFITS TABLES
+         Table 1 1 L o w Psg           Low Psg         L o w Psg    L o w Psg      Low Psg     L o w Psg
+         Material 2 +I lntel           +I lntel        +1 Educ      +I lntel       +1 Educ     +1 Educ
+         Benefits 3 Weapon             Weapon          Weapon       +2 Educ        +1 Educ     Weapon
+                      4 -              High Psg        Weapon       Weapon         Weapon      Weapon
+                      5  -
+                         1 Social      Travellers'     High Psg     +1 Social      Instruments High Psg
+                      6 Mid Psg        Seeker          High Psg     High Psg       Mid Psg     M i d Psg
+                      7 Corsair                        +1 Social    Travellers'                +1 Social
+             The first occurrence of a weapon benefit is taken as one physical example o f any personal
+         weapon stated in Traveller Book 1; i t must be taken immediately. Additional occurrences of
+         weapon may be declared as skill i n the weapon previously taken. Characters with rank 5 or 6
+         may add +1 t o their rolls on this table. Corsair allows possession of a pirate ship as described
+         i n the benefits section; seeker allows possession of a prospecting ship as described i n the
+         benefits section. Second and subsequent occurrences of corsair, seeker, and Travellers' are
+         treated as no benefit.
+
+        Table 2 1            -              -           2000        10000          20000        2000
+        Cash     2           -              -           5000        10000          20000        5000
+        Benefits 3       1000            1000          10000        10000          20000       10000
+                      4 10000           10000          10000        20000          30000       10000
+                      5 50000          100000          10000        50000          40000       10000
+                      6 50000          10000           20000        60000          60000       20000
+                      7 50000          100000          30000        70000         100000       30000
+             A maximum of three rolls o n table 2 are allowed per character; all remaining rolls must be
+         made on table 1. Individuals w i t h gambling skill o r who have retired are allowed a D M of +1 on
+         table 2 (the D M is not cumulative).
+
+
+
+
+James Turnbull (Order #51963372)
+

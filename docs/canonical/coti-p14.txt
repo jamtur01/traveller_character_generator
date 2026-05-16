@@ -1,0 +1,58 @@
+                                     ACQUIRED SKILLS TABLE
+
+            Personal Development Table
+              Barbarian    Bureaucrat Rogue             Noble        Scientist     Hunter
+            1 +1 Stren     +1 Endur    +1 Stren         +1 Stren     +1 Stren      +1 Stren
+            2 +2 Stren     +1 Educ     +1 Dext          +1 Dext      +1 Dext       +1 Dext
+            3 +1 Stren     +1 lntel    +1 Endur         +1 Endur     +1 Endur      +1 Endur
+            4 Carousing Brawling       +1 lntel         +1 lntel     +1 lntel      +1 lntel
+            5 +1 Dext      Carousing   Brawling         Carousing    +1 Educ       Gun Cbt
+            6 +1 Endur     +1 Dext     Carousing        Brawling     Carousing     Blade Cbt
+
+            Service Skills Table
+              Barbarian      Bureaucrat    Rogue        Noble        Scientist     Hunter
+            1 Brawling       Gun Cbt       Blade Cbt    Gun Cbt      Gun Cbt       Gun Cbt
+            2 Blade Cbt Vehicle            Gun Cbt      Blade Cbt    Blade Cbt     Blade Cbt
+            3 Blade Cbt      Blade Cbt     Demolition   Hunting      Vehicle       Survival
+            4 Bow Cbt        lnstruction   Vehicle      Vehicle      Jack-o-T      Hunting
+            5 Bow Cbt        Vehicle       +1 Educ      Bribery      Navigation    Vehicle
+            6 Gun Cbt        +1 Educ       Vehicle      +1 Dext      Survival      Hunting
+
+            Advanced Education Table
+              Barbarian  Bureaucrat Rogue           Noble            Scientist     Hunter
+            1 Blade Cbt  Recruiting Streetwise Pilot                 Mechanical    Mechanical
+            2 Mechanical Vehicle       Forgery      Ship's Boat      Electronic    Electronic
+            3 Survival    Liaison      Bribery      Vehicle          Gravitics     Gravitics
+            4 Recon       InterrogationCarousing Navigation          Computer      Computer
+            5 Streetwise Admin         Liaison      Engnrng          +1 Intel      Hunting
+            6 Bow Cbt    Admin         Ship Tactics Leader           +I Educ       Admin
+
+            Advanced Education Table (allowed only if character has education 8+)
+              Barbarian    Bureacrat   Rogue         Noble         Scientist   Hunter
+            1 Medical      Admin        Medical      Medical       Medical      Medical
+            2 InterrogationAdmin        Bribery      Computer Computer Computer
+            3 Tactics      Computer     Forgery      Admin         Admin        Hunting
+            4 Leader       Admin       Computer Liaison            Leader       Leader
+            5 Instruction Jack-o-T      Leader       Leader        +1 Intel     Survival
+            6 Jack-o-T     Leader      Jack-o-T      Jack-o-T      Jack-o-T     Admin
+
+
+           Characters consult this set of tables                AUTOMATIC SKILLS
+        during each term of service. A character        Barbarian.. . . . . .. ..... .
+                                                                               .        Sword-1
+        must have an education characteristics of 8                            .
+                                                        Barbarian Warrior . . .Blade Combat-1
+        or greater before using the fourth table.       Barbarian Chief. . . ... ... .
+                                                                                 .      Leader-1
+           Blade combat, gun combat, and vehicle        Rogue.  ... .            . .
+                                                                     . . . . . . . Streetwise-1
+        call for additional specification by the                 . . . . .. .
+                                                        Scientist . . . .          . .Computer-1
+        character immediately.         I                         . . . . . . . . . .. . .
+                                                        Hunter . .                     Hunting-1
+
+
+
+
+James Turnbull (Order #51963372)
+

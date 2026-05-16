@@ -1,0 +1,55 @@
+                                      PRIOR SERVICE TABLE
+                        Barbarian Bureaucrat Rogue  Noble                       Scientist     Hunter
+        Enlistment       5+           5+            6+             (specia~)    6+            9+
+        DM +1 if        Endur 9+      Educ8+        Social 8 -     -            Intel 9+      Dext 1 0 t
+        DM+2 if         Stren 1 0 t   Stren8 -      Endur 7+       -            Educ 1 0 t    Endur 9+
+
+        survival        6+            4+            6+             3+           5+            6+
+        DM+2 if         Stren 8+      Educ 1Ot      lntel 9+       -            EducW         Stren 10+
+
+        Position        6+            6+            -              5+           -             -
+        DM + 1 if       Stren 1 Ot    Soc 9+        -              Educ9+       -             -
+        Promotion       9f            7+            -              12+          -             -
+        DM + l if        Intel 6+     Intel 9 t     -              Intel 10+    -             -
+
+           The noble career is open only (and automatically) to persons with Social 1Ot. Rank corres-
+        ponds to noble rank (taken from Social Standing) once position is achieved.
+           Bureaucrats must throw re-enlistment or higher t o leave the service before retirement.
+                                                TABLE OF RANKS
+        Rank 1          -             Clerk         -       B Knight            -             -
+        Rank 2          Warrior       Supervisor -          C Baron             -             -
+        Rank 3          -             A u t Manager -       D Marquis           -             -
+        Rank4           -             Manager       -       E Count             -             -
+        Rank 5          Chief         Executive     -       F Duke              -             -
+        Rank6           -             Director      -       -                   -             -
+                                                  BENEFITS TABLES
+        Tabla 1 1       Low Psg       Low Psg       Low Psg       High Psg      Low Psg      Low Psg
+        Material 2      Blade         Mid Psg       +1 Soc        High Psg      Mid Psg      High Psg
+        Benefits 3      Blade         -             Gun           Gun           High Psg     Weapon
+                 4      Blade         Watch         Blade         Blade         + 1 Soc      Weapon
+                    5 -               -             High Psg      Travellers'   Gun          Weapon
+                    6 High Psg        High Psg      Travellers'   Yacht         Lab Ship     Safari Ship
+                    7 High Psg        +1 Social     -              -            -             -
+           The first occurrence of a weapon benefit is taken as one physical example of any personal
+        weapon stated i n Trawller Book 1; i t must be taken immediately. Additional occurrences of
+        weapon may be declared as skill in the weapon previously taken. Characters with rank 5 or 6
+        may add +1 t o their rolls on this table. Yacht, Lab ship and Safari ship each allow possession of
+        the appropriate ship as described in the benefits section. Second and subsequent occurrences of
+        ships and Travellers' are treated as no benefit.
+
+        Tabla 2 1           -             -             -          10000         1000          1000
+        Cash     2          -             -             -          50000         2000          1000
+        Benefits 3        1000        10000         10000          50000         5000          5000
+                    4     2000        10000         10000         100000        10000          5000
+                    5     3000        40000         50000         100000        20000         10000
+                    6     4000        40000        100000         100000        30000        100000
+                    7     5000        80000        100000         200000        40000        100000
+           A maximum of three rolls on table 2 are allowed per character; all remaining rolls must be
+        made on table 1. Individuals with gambling skill or who have retired are allowed a DM of +1 on
+        table 2 (the DM is not cumulative). Barbarians cannot retire.
+
+
+
+
+James Turnbull (Order #51963372)
+

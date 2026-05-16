@@ -1,0 +1,56 @@
+         of the disadvantaged value or less receives unfavorable DMs.
+             Gun Combat: Gun Combat is a specific skill in the use of firearms. The character
+                                                      must immediately choose one firearm
+                            GUNS                      from the guns table; a different gun may
+         Weapon            + D M - D M Wounds be selected each time that the skill i s
+         Body Pistol       11+      7-       20       received. The guns table indicates the
+         Auto Pistol       10+      6-       30       firearms which are available for selec-
+         Revolver           9+      6-       30       tion. Most characters have a natural
+         Carbine            9+      4-       3D       expertise in all guns listed; receipt of
+          Rifle             8+      5-       3D       skill initially boosts this expertise to
+         Auto Rifle        10+      6-       3D       level-1. However, barbarians, bureau-
+         Shotgun            9+      3-       4D       crats, and doctors do not have a natural
+         SMG                9+      6-       3D       expertise in guns; they are treated
+          Laser Carbine 10+         5-       4D       as totally unskilled in guns (per
+          Laser Rifle      11+      6-       50       Traveller Book 1, page 30- DM -5 when
+                                                      attacking).
+             Selection of gun expertise should be based on the character's dexterity; the
+         guns table indicates the level of dexterity which will result in an unfavorable DM as
+         well as the level of dexterity which will result in a favorable DM in combat. The
+         guns table also indicates the wounding which a gun can inflict.
+            Bow Combat: Bow Combat is a specific skill in the use of bow weapons. The
+         character must immediately select one bow
+         weapon in which the skill is received.                      BOW WEAPONS
+         The bow weapons table indicates the Weapon                        + DM - D M Wounds
+         weapons available under this skill. Only Sling                    11+     3-    2D
+         barbarians have any skill whatsoever in Short Bow                 10+     5-    1D
+         bow weapons; all other characters are Long Bow                    11+     7-    2D
+         treated as being totally unskilled (Book 1, Sporting Cross 9+             -
+                                                                                   4     2D
+         page 30). While blades require strength Military Cross 11+                -
+                                                                                   6     3D
+         for advantage, and guns require dexterity Repeating Cross 12+             -
+                                                                                   8     2D
+         for advantage, bow weapons require both
+         strength and dexterity for advantage. The bow weapons table indicates the required
+         levels of both strength and dexterity for favorable and unfavorable DMs.
+             Gunnery: Gunnery is a general skill in the use of weapons mounted aboard
+         spacecraft. Possession of this skill entitles the character to the job-title Gunner.
+         Gunnery skill allows an individual to operate any turret mounted weapons aboard a
+         ship; these include Idsers, sandcasters, energy weapons (plasma and fusion guns in
+         mounts), missiles, and particle accelerators. Use of this skill is governed by the
+         space combat systems in Book 2 and Book 5. This skill is necessary for hiring on as
+         a gunner on any ship. Untrained individuals do not have any skill in this field.
+             Basic Skills: Expressed as a general ability, such as Navigation or Engineering.
+         Each skill is further defined in various Traveller Booklets, or below. The listing
+         below enumerates each skill, and notes those booklets where it is defined. Book 1 is
+         Characters and Combat, included in the basic set; Book 4 is Mercenary; Book 5 i s
+         High Guard. Where information is given here, it supersedes the skill data in other
+         booklets for characters generated using this booklet.
+            The skills listed on the following pages are called for using the generation
+         systems in this booklet:
+
+
+
+James Turnbull (Order #51963372)
+

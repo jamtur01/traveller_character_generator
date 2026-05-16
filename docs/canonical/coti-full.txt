@@ -1,0 +1,2272 @@
+                                   For Referees Only   310
+
+
+
+
+Supplement 4
+Citizens of the lmperium
+
+                          ~cience-Fictioni.lventure
+                          in the Far Future
+
+
+
+
+ Game Desigqers' Workshop
+James Turnbull (Order #51963372)
+  CD-ROM Collections of Classic Traveller at www.farfuture.net/cdroml
+      Classic Traveller ebook downloads at www.farfuture.net/ebooksl
+              Classic Traveller hardcopy at www.farfuture.net/booksl
+
+
+
+
+James Turnbull (Order #51963372)
+                                   This page is intentionally blank.
+  Supplement 4
+  Citizens of the lmperium
+                                   TRAVEL1ER"
+                                   Science-Fiction Adventure
+                                   in the Far Future
+
+
+
+
+  Game Designers' Workshop
+James Turnbull (Order #51963372)
+         Citizens
+         TRAVELLER, Supplement 4
+
+         Copyright 01979, by Game Designers' Workshop, Inc.
+         All Rights Reserved. Printed in the United States of America.
+         No part of this book may be reproduced in any form, or
+         by any means without permission in writing from the publisher.
+
+
+
+         This booklet is a supplement for Traveller,
+         GDW's science-fiction role-playinggame set in the far future.
+
+         Game Designers' Workshop, Inc.
+         203 North Street
+         Normal, Illinois 61761
+
+
+
+James Turnbull (Order #51963372)
+                                                Table of Contents
+         INTRODUCTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1.
+           Player Characters  ..........................................                              1
+           Heroes and Villains  ........................................                              1
+         CHARACTER GENERATION        ...................................                             2
+                                      ..................................
+            Initial Character Generation                                                             2
+                                       .................................
+           Acquiring Skills and Expertise                                                            2
+            Retirement    ..............................................                             4
+           Mustering Out    ............................................                             4
+           Aging       .................................................                             4
+           The Character Types   .......................................                             5
+           A Note on Gender and Race  ..................................                             5
+           Skills and Benefits ........................................                             10
+         BOWWEAPONS         ...........................................                             16
+         PIRATES       ................................................                             18
+         BELTERS        ...............................................                             20
+         SURFACENAVY            ..........................................                          22
+         DIPLOMATS           .............................................                          24
+         DOCTORS        ...............................................                             26
+         FLYERS        ...............................................                              28
+         BARBARIANS        ...........................................                            -30
+         BUREAUCRATS         ..........................................                             32
+         ROGUES        ...............................................                              34
+         NOBLES        ...............................................                              36
+         SCIENTISTS       .............................................                             38
+         HUNTERS        ...............................................                             40
+         HEROES AND VILLAINS            ....................................                        42
+
+
+
+
+James Turnbull (Order #51963372)
+                                                          Introduction
+            In the course of Traveller adventures, both players and referees constantly need
+         additional characters for use in patron or random encounters, or to fill specific
+         campaign game needs. While the character generation tables provided in Traveller
+         Book 1, as well as the expanded character generation systems of Mercenary Book 4
+         and High Guard Book 5, provide methods for producing military and merchant
+         characters, there exists no specific set of tables for character generation in other
+         pursuits. This supplement is intended to fill that void.
+            This booklet contains character generation instructions and tables for twelve
+         distinct character types; some, such as the maritime forces (the wet navy) and the
+         orbital forces, expand on military force structure, while others provide individuals
+         from various civilian occupations. Complete information is provided for character
+         generation, including explanations of skills not dealt with in other books in the
+         Traveller series, and descriptions of special mustering out benefits.
+            In addition, twelve separate chapters each contain forty pregenerated examples
+         of the characters; these listings allow random, fast selection of such characters for
+         patron or other encounters where necessary in Traveller situations. Each listing
+         indicates service rank, age, cash balance, skills, and mustering out benefits. Each
+         character is numbered consecutively within the chapter to allow random selection
+         using die rolls. A typical listing within this booklet is shown below:
+
+         (Consecutive Number)
+            (Service Rank)                          (UPP)                   (Credit Balance)
+            7 Captain                               777686      Age 26 2 terms       Cr9.000
+                  Rifle-1, Pistol-1 (Skills)                 (Muster Out Benefits) Travellers'
+
+            The UPP is the Universal Personality Profile as described in Traveller Book 1,
+         page 8. It uses the letters A through F to represent the numbers 10 through 15.
+         Terms indicates the number of full terms the character has served in his or her
+         career. Age equals (with some exceptions) the terms of service times four, plus the
+         basic 18 year starting age; for randomly selected individuals for encounters, the
+         referee may add 1 - 6 (on one die) years to that age. Skills are drawn from the pool
+         of available skills; specific weapons skills assigned to each character are somewhat
+         arbitrary, and may be used as indicated, or other, more appropriate weaposn
+         substituted as the referee decides.
+
+         PLAYER CHARACTERS
+            The characters and their generation systems given here are also suitable for use as
+         player-characters should the referee and the players decide. They are used in just
+         the same manner as regular characters.
+
+         HEROES A N D VILLAINS
+            One chapter in this booklet is devoted to quantifying in Traveller terms major
+         characters from science-fiction. See page 42.
+
+
+
+
+James Turnbull (Order #51963372)
+      Character Generation
+        Characters are the foundation of Traveller; they are the alter-egos of the players
+     and all action is centered around them. This section provides complete instructions
+     for the generation of twelve distinct types of characters.
+
+      INITIAL CHARACTER GENERATION
+        Characters are generated initially through a series of six double dice rolls which
+     detremine the basic characteristics affecting abilities and reactions. These six char-
+     acteristics are:
+
+         Strength: A general evaluation of the character's physical ability and a
+         specific measure of the force which may be applied in combat situations.
+         Dexterity: A measure of physical coordination.
+         Endurance: A measure of physical stamina and determination.
+         Intelligence: A measure of 10.
+         Education: A measure of schooling and training.
+         Social Standing: A measure of social class and an indication of the level of
+         society from which the character comes.
+
+         Values for characteristics range from 2 t o 12 initially; 7 is the average value. As
+     a result of modifications ocurring during the career process, these values may
+     ultimately range from 1 to 15. Characteristics (for player-characters) may never
+     exceed 15; they do not go below 1 except in the case of aging or injury.
+         Age: Characters are generated at age 18; they begin their career process at that
+     age. As an exception, belter and barbarian characters begin their careers earlier, at
+     age 14.
+         Rank: Characters who receive ranks while in the career process may retain the
+     rank as part of their names after ending the career process.
+         Titles: Traveller Book 3 indicates the noble titles associated with social standing
+     values of B through F. Such titles may be used as part of the character's name.
+
+     ACQUIRING SKILLS AND EXPERTISE
+        A newly generated character is singularly unequipped :o deal with the adven-
+     turing universe, having neither the expertise, nor the experience necessary for the
+     active life. In order to acquire some experience, it is possible for the character to
+     begin a career.
+         Enlistment: A character may select any of the twelve career types in this
+     booklet. Enlistment is the term used for beginning a career in a military service; the
+     same term is used when referring to beginning a career in a civilian occupation. The
+     prior service table gives the throw required to enlist; successfully rolling the number
+     or higher on two dice allows enlistment. DMs (die roll modifications) are allowed
+     on the throw if the individual has certain stated characteristics or higher. If both
+     stated characteristics are present at the required level, the die modification is
+     cumulative.
+
+
+
+
+James Turnbull (Order #51963372)
+              Enlistment is for a term of service lasting four years. This adds four years to the
+          character's age. If the character re-enlists, it i s for another term of four years.
+              Rejection: Should an individual fail to make the enlistment throw, he or she
+          must find another career to follow. Attempts a t enlistment in other careers should
+          be made.
+              Survival: Each term of service involves some danger; during the term, a character
+          must successfully roll the career's survival number or greater to avoid death in the
+          line of duty. Each career also lists DMs which may apply. Failure to achieve the
+          survival throw results in death; a new character must be generated.
+              Positions and Promotions: An individual may attain a position of responsibility
+          in his or her chosen career, and may later be promoted to higher and higher
+          positions. In military careers, this position is a commission as an officer; in other
+          careers, this position has various meanings. Each career has a position number; in
+          order to achieve a position, the character must throw the stated number or greater
+          on two dice. DMs may apply. If the individual is successful in attaining a position,
+          he or she receives rank 1 for the career. A character may attempt to achieve
+          position once per term of service until successful.
+              In the same term of service in which a character achieves position, and in
+          each subsequent term of service, a character may attempt to be promoted. Each
+          career has a promotion number, and DMs which apply. If a promotion i s achieved,
+          the character advances to the next higher rank in his or her career. A character is
+          eligible for one promotion per term of service, beginning with the term of service in
+          which position is achieved.
+              Skills and Training: During each term of service, a character has the opportunity
+          to acquire personal skills and expertise. Provision is made for the acquisition of new
+          skills based on time served, position, promotion, and duty.
+              Skills are acquired by rolling on the acquired skills table once for each skill
+          allowed, using one die. There are four tables, each containing different types of
+          skills. One of the tables is chosen before the die is rolled, and the single die roll
+          indicates the specific skill the character acquires.
+              Of the four skill tables, the first three may always be used by any character. The
+          fourth is available only to characters having an education characteristic of 8 or
+          greater.
+              During a character's initial term of service, he or she is eligible for two skills;
+          during each additional term of service, he or she becomes eligible for one skill.
+          Upon achieving position, he or she is eligible for one skill. Upon being promoted, he
+          or she is eligible for one skill. For example, a character joins the maritime forces,
+          achieves position and is then promoted during her initial term of service. Total eligi-
+          bility for the term is four skills. The same character, in the next term of service
+          but not receiving a promotion, is eligible for one skill.
+              Some skills automatically accrue to a character (without using eligibility) by
+          virtue of rank or service. There are also exceptions to the basic eligibility based on
+          specific careers. These exceptions are covered under each individual career.
+              Re-enlistment: Generally, a character is free to leave a career, or to remain for
+          another term, depending on personal desires and goals. There is some chance
+          that other considerations may force the person out, or keep the person in the
+          specific career for another term. Each career has a reenlistment number; in order
+          to undertake a subsequent term of service, a character must throw that number or
+
+
+
+James Turnbull (Order #51963372)
+        greater (no DMs allowed). If the throw is not made, the individual must leave the
+        career, and character generation ends. If the throw is 12 (exactly), then the
+        individual must remain in the career for one more term of service. The reenlistment
+        throw must be made during each term of service.
+
+        RETIREMENT
+           A character may serve up to seven terms voluntarily, and retire at any time after
+        the end of the fifth term. Retirement grants the person an annual retirement pay
+        in addition to any mustering out benefits): rates of retirement pay are based on
+        time of service and type of career. Service beyond the seventh term is normally im-
+        possible, and retirement is mandatory. However, persons who throw 12 (exactly)
+        on the re-enlistment roll must serve an additional term, and may thus avoid
+        retirement for a period.
+
+        MUSTERING OUT
+            When a character leaves his or her career (for any reason), mustering out benefits
+        become available. The two mustering out tables indicate the nature of these bene
+        fits: table 1 provides travel, education, and material benefits, while table 2 provides
+        cash severance pay. Each table is matrixed by career and a single die roll. When
+        mustering out, the character is allowed to consult these tables based on total terms
+        of service and on final rank.
+            One benefit roll is allowed for each four-year term of service served. Addition-
+        ally, a character who has received rank 1 or 2 receives one extra roll. A character
+        who has achieved rank 3 or 4 receives two extra rolls. A character who has achieved
+        rank 5 or 6 is allowed two extra rolls, and may add 1 to the die roll when
+        consulting table 1. Any character who has received any gambling skill may add 1 to
+        the die roll when consulting table 2.
+            A character is free to choose whether table 1 or table 2 is consulted, or both,
+        and in what proportion, but in no case i s a character allowed to consult table 2
+        more than three times.
+            For example, a character who has not achieved position while serving four terms
+        of service is eligible for four mustering out benefits. He may roll a total of four
+        times, distributing the rolls as he desires between table 1 and table 2, so long as he
+        rolls no more than three times on table 2. The character must designate the table
+        before the die is rolled.
+
+        AGING
+          As each term of service is four years in length, a character can potentially age
+        20 years or more before he or she ventures into the travelling portion of the game.
+        This aging may have a detrimental effect on a character's strength, dexterity, en-
+        durance, and intelligence.
+           There is a possibility i f detrimental aging effects when a character reaches
+        the age of 34, and in four year increments thereafter. When a character reaches
+        age 34 (when adventuring during the game, or at the end of the fourth term of
+        service), he or she is subject to a possible reduction in characteristic values. The
+        aging table indicates the potential reduction and the saving throw required to avoid
+        the reduction.
+           If, as a result of aging, a characteristic is reduced to zero, the character is con-
+
+
+
+
+James Turnbull (Order #51963372)
+         sidered to be ill. A basic saving throw of 8+ applies; if the character survives, the
+         career ends, and re-enlistment is not allowed.
+
+                                               AGING TABLE
+         Term of Service 4             5     6      7     8     9 10 11     12    13 14+
+         Age             34           38 42 46          50 54 58 62         66    70 74+
+         Strength                  ...-     ....
+                                       1 (8+)          ....         .... -
+                                                                1 (9+)       . 2 (9+)   ..
+         Dexterity                 ...      ....
+                                      -1 (7+).         ...          .... .
+                                                              -1 (8+).        - 2 (9+)  ..
+         Endurance                 ...      ....
+                                      -1 (8+).         ...-         . . . . . - 2 (9+). .
+                                                                1 (9+).
+         Intelligence              ......                      . . . . . . . . - 1 (9+) . .
+                                          no effect before age 66
+         Education                 .............                      ..............
+                                                     unaffected by aging.
+         Social Standing           .............                      ..............
+                                                     unaffected by aging.
+
+             Note: Terms of service refers to the end of that numbered term. Age refers to
+             the first day of the personal (physiological, not chronological) year. The
+             negative number shown is the potential reduction in characteristic if the
+             saving throw (in parentheses) is not made. Saving throws use two dice.
+
+
+
+        THE CHARACTER TYPES
+            The twelve character types contained in this booklet are:
+            Pirates: lndividuals crewing interplanetary or interstellar vessels, who make their
+        living by attacking, hijacking, or plundering commerce.
+            Betters: lndividuals who prospect and mine asteroid belts in search of mineral
+        deposits, artifacts, or salvage materials.
+            Sailors: Members of the Nautical Force Command (the wet navy) of a world.
+            Diplomats: Members of the Foreign Service of a government.
+            Doctors: Trained individuals conducting medical practice.
+            Flyers: Members of the Close Orbit and Airspace Control Command (the air
+        force) of a world.
+            Barbarians: Rugged individuals from primitive planets accustomed to hardship
+        and well-trained in wilderness and survival situations.
+            Bureaucrats: lndividuals serving a government or organization in management or
+        executive capacities.
+            Rogues: Criminal elements familiar with the rougher or more illegal methods of
+        accomplishing tasks.
+            Nobles: lndividuals of the upper classes who perform little consistent function,
+        but often have large amounts of ready money.
+            Scientists: lndividuals trained in technological or research sciences who con-
+        duct scientific investigations into materials, situations, and phenomena.
+            Hunters: lndividuals who track and hunt animals of varying sizes and types for
+        profit or enjoyment.
+
+        A NOTE ON GENDER AND RACE
+           Nowhere in these rules is there a specific requirement established that any
+        character (player or non-player) be of a specific race or gender. Any character is
+        potentially of any race and of either sex.
+
+
+
+James Turnbull (Order #51963372)
+                                           PRIOR SERVICE TABLE
+                         Pirates       Behers   Sailors  Diplomats Doctors                     Flyers
+         Enlistment      7+             8+             6+           8+             9+          6+
+         D M +1 if       Soc7      -    Dext 9+        Endur 10+    Educ 8+        Intel 8+    Stren 7 t
+         D M +2 if       Endur 9 t      Intel 6+       Stren 8+     Soc 9+         Dext 9+     Dext 9+
+
+         survival        6+            9+              5+           3+             3+          5+
+         D M +2 if       lntel 8+       (terms)         Endur 8t    Educ 9+        lntel 8+    Dext 8t
+
+         Position        9+             -              5+           5+             -           5+
+         D M + I if      Stren 10+      -               Intel 9+    Intel 8+       -           Educ 6+
+
+         promotion       8+             -              6+           10+            -           8+
+         D M +l if       Intel 9+       -              Educ8+       Soc 10+        -                 8+
+                                                                                               E ~ U C
+
+
+         Reenlist        7+            7+              6+           5+             4+          6+
+            Belters receive a variable D M for survival based on terms served; in the first term of service,
+         the D M is + l ; in the second term, the D M is +2, in the seventh term, the D M is +7.
+
+                                                     T A B L E OF RANKS
+         Rank 1          Henchman      -               Ensign       3d Secretary  -            Pilot
+         Rank 2          Corporal      -               Lieutenant   2d Secretary  -            Flight Leader
+         Rank 3          Sergeant      -               L t Cmdr     1st Secretary -            Sqdrn Leader
+         Rank 4          Lieutenant    -               Commander    Counselor  -               Staff Major
+         Rank 5          Leader        -               Captain      Minister   -               Group Leader
+         Rank 6          -             -               Admiral      Ambassador -               Air Marshal
+                                                   BENEFITS TABLES
+         Table 1 1 L o w Psg           Low Psg         L o w Psg    L o w Psg      Low Psg     L o w Psg
+         Material 2 +I lntel           +I lntel        +1 Educ      +I lntel       +1 Educ     +1 Educ
+         Benefits 3 Weapon             Weapon          Weapon       +2 Educ        +1 Educ     Weapon
+                      4 -              High Psg        Weapon       Weapon         Weapon      Weapon
+                      5  -
+                         1 Social      Travellers'     High Psg     +1 Social      Instruments High Psg
+                      6 Mid Psg        Seeker          High Psg     High Psg       Mid Psg     M i d Psg
+                      7 Corsair                        +1 Social    Travellers'                +1 Social
+             The first occurrence of a weapon benefit is taken as one physical example o f any personal
+         weapon stated in Traveller Book 1; i t must be taken immediately. Additional occurrences of
+         weapon may be declared as skill i n the weapon previously taken. Characters with rank 5 or 6
+         may add +1 t o their rolls on this table. Corsair allows possession of a pirate ship as described
+         i n the benefits section; seeker allows possession of a prospecting ship as described i n the
+         benefits section. Second and subsequent occurrences of corsair, seeker, and Travellers' are
+         treated as no benefit.
+
+        Table 2 1            -              -           2000        10000          20000        2000
+        Cash     2           -              -           5000        10000          20000        5000
+        Benefits 3       1000            1000          10000        10000          20000       10000
+                      4 10000           10000          10000        20000          30000       10000
+                      5 50000          100000          10000        50000          40000       10000
+                      6 50000          10000           20000        60000          60000       20000
+                      7 50000          100000          30000        70000         100000       30000
+             A maximum of three rolls o n table 2 are allowed per character; all remaining rolls must be
+         made on table 1. Individuals w i t h gambling skill o r who have retired are allowed a D M of +1 on
+         table 2 (the D M is not cumulative).
+
+
+
+
+James Turnbull (Order #51963372)
+                                    ACQUIRED SKILLS TABLE
+
+           Personal Development Table
+             Pirate       Belter      Sailor           Diplomat    Doctor       Flyer
+           1 +1 Stren     +1 Stren    +1 Stren         +1 Stren    +1 Stren     +1 Stren
+           2 +1 Dext      +1 Dext     +1 Dext          +1 Educ     +1 Dext      +1 Dext
+           3 +1 Endur     +1 Endur    +1 Endur         +1 lntel    +1 Endur     +1 Endur
+           4 Gambling     Gambling    Gambling         Blade Cbt   +1 lntel     Gambling
+           5 Brawling     Brawling    Brawling         Gun Cbt     +1 Educ      Brawling
+           6 Blade Cbt    Vacc Suit   Carousing        Carousing   +1 Social    Carousing
+
+           Service Skills Table
+             Pirate         Belter      Sailor       Diplomat      Doctor       Flyer
+           1 Blade Cbt      Vacc Suit   Gun Cbt      +1 lntel      +1 Dext      Brawling
+           2 Vacc Suit      Vacc Suit   Commo        Vacc Suit     Electronic   Vacc Suit
+           3 Gun Cbt        Prospecting Fwd Obsv Vehicle           Medical      Gun Cbt
+           4 Gunnery        Fwd Obsv Vehicle         Vehicle       Streetwise   Vehicle
+           5 Zero-G Cbt Prospecting Vehicle          Gambling      Medical      Vehicle
+           6 Gun Cbt        Ship's Boat Battle Dress Computer      Blade Cbt    Vehicle
+
+           Advanced Education Table
+             Pirate      Belter      Sailor     Diplomat     Doctor             Flyer
+           1 Streetwise Ship's Boat Water Craft Forgery      Medical            Air Craft
+           2 Gunnery     Electronic Electronic Streetwise Medical               Mechanical
+           3 Engnrng     Prospecting Mechanical InterrogationMechanical         Electronic
+           4 Ship Tactic Mechanical Gravitics   Recruiting Electronic           Gravitics
+           5 Tactics     Prospecting Navigation Instruction Computer            Gun Cbt
+           6 Mechanical Instruction Demolition Admin         Admin              Survival
+
+           Advanced Education Table (allowed only if character has education of 8+)
+             Pirate     Better        Sailor        Diplomat      Doctor       Flyer
+           1 Navigation Navigation Medical          Liaison       Medical      Medical
+           2 Pilot      Medical       Vehicle       Liaison       Medical      Leader
+           3 Forgery    Pilot         Streetwise Admin            Admin        Pilot
+           4 Computer Computer Computer Computer Computer Computer
+           5 Leader      Engnrng      Admin         +1 Social     +1 Intel     Admin
+           6 Electronic Jack-o-T      Jack-o-T      Jack-o-T      +1 Educ      Jack*-T
+
+
+          Characters consult this set of tables                 AUTOMATIC SKILLS
+       during each term of service. A character        Belter...............  Vacc Suit-1
+       must have an education characteristic of 8      Pirate...............   Brawling-1
+       or greater before using the fourth table.                     ..........
+                                                       Pirate Lieutenant.          Pilot-1
+          Blade combat, gun combat, air craft          Doctor ...............   Medical-1
+       and vehicle call for additional specification   Diplomat..............    Liaison-1
+       by the character immediately.                   Flyer................   Air Craft-1
+
+
+
+
+James Turnbull (Order #51963372)
+                                      PRIOR SERVICE TABLE
+                        Barbarian Bureaucrat Rogue  Noble                       Scientist     Hunter
+        Enlistment       5+           5+            6+             (specia~)    6+            9+
+        DM +1 if        Endur 9+      Educ8+        Social 8 -     -            Intel 9+      Dext 1 0 t
+        DM+2 if         Stren 1 0 t   Stren8 -      Endur 7+       -            Educ 1 0 t    Endur 9+
+
+        survival        6+            4+            6+             3+           5+            6+
+        DM+2 if         Stren 8+      Educ 1Ot      lntel 9+       -            EducW         Stren 10+
+
+        Position        6+            6+            -              5+           -             -
+        DM + 1 if       Stren 1 Ot    Soc 9+        -              Educ9+       -             -
+        Promotion       9f            7+            -              12+          -             -
+        DM + l if        Intel 6+     Intel 9 t     -              Intel 10+    -             -
+
+           The noble career is open only (and automatically) to persons with Social 1Ot. Rank corres-
+        ponds to noble rank (taken from Social Standing) once position is achieved.
+           Bureaucrats must throw re-enlistment or higher t o leave the service before retirement.
+                                                TABLE OF RANKS
+        Rank 1          -             Clerk         -       B Knight            -             -
+        Rank 2          Warrior       Supervisor -          C Baron             -             -
+        Rank 3          -             A u t Manager -       D Marquis           -             -
+        Rank4           -             Manager       -       E Count             -             -
+        Rank 5          Chief         Executive     -       F Duke              -             -
+        Rank6           -             Director      -       -                   -             -
+                                                  BENEFITS TABLES
+        Tabla 1 1       Low Psg       Low Psg       Low Psg       High Psg      Low Psg      Low Psg
+        Material 2      Blade         Mid Psg       +1 Soc        High Psg      Mid Psg      High Psg
+        Benefits 3      Blade         -             Gun           Gun           High Psg     Weapon
+                 4      Blade         Watch         Blade         Blade         + 1 Soc      Weapon
+                    5 -               -             High Psg      Travellers'   Gun          Weapon
+                    6 High Psg        High Psg      Travellers'   Yacht         Lab Ship     Safari Ship
+                    7 High Psg        +1 Social     -              -            -             -
+           The first occurrence of a weapon benefit is taken as one physical example of any personal
+        weapon stated i n Trawller Book 1; i t must be taken immediately. Additional occurrences of
+        weapon may be declared as skill in the weapon previously taken. Characters with rank 5 or 6
+        may add +1 t o their rolls on this table. Yacht, Lab ship and Safari ship each allow possession of
+        the appropriate ship as described in the benefits section. Second and subsequent occurrences of
+        ships and Travellers' are treated as no benefit.
+
+        Tabla 2 1           -             -             -          10000         1000          1000
+        Cash     2          -             -             -          50000         2000          1000
+        Benefits 3        1000        10000         10000          50000         5000          5000
+                    4     2000        10000         10000         100000        10000          5000
+                    5     3000        40000         50000         100000        20000         10000
+                    6     4000        40000        100000         100000        30000        100000
+                    7     5000        80000        100000         200000        40000        100000
+           A maximum of three rolls on table 2 are allowed per character; all remaining rolls must be
+        made on table 1. Individuals with gambling skill or who have retired are allowed a DM of +1 on
+        table 2 (the DM is not cumulative). Barbarians cannot retire.
+
+
+
+
+James Turnbull (Order #51963372)
+                                     ACQUIRED SKILLS TABLE
+
+            Personal Development Table
+              Barbarian    Bureaucrat Rogue             Noble        Scientist     Hunter
+            1 +1 Stren     +1 Endur    +1 Stren         +1 Stren     +1 Stren      +1 Stren
+            2 +2 Stren     +1 Educ     +1 Dext          +1 Dext      +1 Dext       +1 Dext
+            3 +1 Stren     +1 lntel    +1 Endur         +1 Endur     +1 Endur      +1 Endur
+            4 Carousing Brawling       +1 lntel         +1 lntel     +1 lntel      +1 lntel
+            5 +1 Dext      Carousing   Brawling         Carousing    +1 Educ       Gun Cbt
+            6 +1 Endur     +1 Dext     Carousing        Brawling     Carousing     Blade Cbt
+
+            Service Skills Table
+              Barbarian      Bureaucrat    Rogue        Noble        Scientist     Hunter
+            1 Brawling       Gun Cbt       Blade Cbt    Gun Cbt      Gun Cbt       Gun Cbt
+            2 Blade Cbt Vehicle            Gun Cbt      Blade Cbt    Blade Cbt     Blade Cbt
+            3 Blade Cbt      Blade Cbt     Demolition   Hunting      Vehicle       Survival
+            4 Bow Cbt        lnstruction   Vehicle      Vehicle      Jack-o-T      Hunting
+            5 Bow Cbt        Vehicle       +1 Educ      Bribery      Navigation    Vehicle
+            6 Gun Cbt        +1 Educ       Vehicle      +1 Dext      Survival      Hunting
+
+            Advanced Education Table
+              Barbarian  Bureaucrat Rogue           Noble            Scientist     Hunter
+            1 Blade Cbt  Recruiting Streetwise Pilot                 Mechanical    Mechanical
+            2 Mechanical Vehicle       Forgery      Ship's Boat      Electronic    Electronic
+            3 Survival    Liaison      Bribery      Vehicle          Gravitics     Gravitics
+            4 Recon       InterrogationCarousing Navigation          Computer      Computer
+            5 Streetwise Admin         Liaison      Engnrng          +1 Intel      Hunting
+            6 Bow Cbt    Admin         Ship Tactics Leader           +I Educ       Admin
+
+            Advanced Education Table (allowed only if character has education 8+)
+              Barbarian    Bureacrat   Rogue         Noble         Scientist   Hunter
+            1 Medical      Admin        Medical      Medical       Medical      Medical
+            2 InterrogationAdmin        Bribery      Computer Computer Computer
+            3 Tactics      Computer     Forgery      Admin         Admin        Hunting
+            4 Leader       Admin       Computer Liaison            Leader       Leader
+            5 Instruction Jack-o-T      Leader       Leader        +1 Intel     Survival
+            6 Jack-o-T     Leader      Jack-o-T      Jack-o-T      Jack-o-T     Admin
+
+
+           Characters consult this set of tables                AUTOMATIC SKILLS
+        during each term of service. A character        Barbarian.. . . . . .. ..... .
+                                                                               .        Sword-1
+        must have an education characteristics of 8                            .
+                                                        Barbarian Warrior . . .Blade Combat-1
+        or greater before using the fourth table.       Barbarian Chief. . . ... ... .
+                                                                                 .      Leader-1
+           Blade combat, gun combat, and vehicle        Rogue.  ... .            . .
+                                                                     . . . . . . . Streetwise-1
+        call for additional specification by the                 . . . . .. .
+                                                        Scientist . . . .          . .Computer-1
+        character immediately.         I                         . . . . . . . . . .. . .
+                                                        Hunter . .                     Hunting-1
+
+
+
+
+James Turnbull (Order #51963372)
+       SKILLS AND BENEFITS
+           The skills and benefits which a character can acquire during the course of a term
+       are of diverse types and values. They form an integral part of the player's character,
+       assisting the referee (and the player) in determining general ability as well as the
+       specific probability of performing certain tasks.
+           There are only a finite number of skills available, and it i s possible that a
+       character may acquire the same skill more than once; in such a case, the second
+       acquisition of the skill increases the character's expertise in that skill. When a skill is
+       first received, the player writes the skill name, followed by a dash, and the number
+       1 (for example, Navigation-1). The second time the same skill is received, the
+       number is increased to show the greater level of expertise (for example, Navi-
+       gation-2). Further acquisitions of the same skill increase this skill level in the same
+       manner.
+           Skills are of three basic types: characteristic alterations (such as +1 strength),
+       weapon expertise (such as Gun Combat), and basicskill (such as Navigation). These
+       are each explained below:
+
+           Characteristic Alteration: Expressed as an addition to a character's ability.
+       Characteristic alterations are applied immediately, increasing the character's current
+       ability, and require no further attention.
+           Weapon Expertise: Expressed as a general trait, such as Brawling, Blade Combat,
+       or Gunnery. When acquired, the acquisition is noted as a skill by the character. In
+       the case of Blade Combat, Gun Combat, or Bow Combat, (not Brawling or
+       Gunnery), the character must immediately select a weapon within the category as
+       the specific weapon of expertise.
+           Most characters have a natural weapon expertise (in all gun and blade weapons
+       listed below) of one-half; exceptions are noted. Acquisition of expertise in a
+       weapon boosts this to level-1. Additional acquisitions of expertise in the same
+       weapon increase the current level by one each time.
+           Brawling: Brawling i s a general skill for hand-to-handfighting. It includes the use
+       of hands, clubs, bottles, and similar weapons.
+           Blade Combat: Blade Combat is a specific skill in the use of blades and polearms.
+       The character must immediately choose one blade or polearm weapon in which the
+       skill is received (a different weapon may be selected each time that skill is ac-
+       quired). The blades and polearms table
+       indicates the weapons available under this              BLADES AND POLEARMS
+       skill. All characters have a natural expertise Weapon          +DM -DM Wounds
+       of one-half in all blades and polearms; Dagger                  8+       3-       2D
+       initial receipt of blade combat boosts the Blade                9+       4-       2D
+       skill in the selected weapon to level-1. Foil                  10+       4-       1D
+       Selection of a specific blade or polearm Sword                 10+       5-       2D
+       should be a discriminating decision; the Cutlass               11+       7-       3D
+       table shows the disadvantaged and ad- Broadsword 12+                     7-       4D
+       vantaged strength levels for each weapon. Bayonet               9+       4-       3D
+       When using the weapon in combat, a Spear                        9+       4-       2D
+       character with a strength equal to or Halberd                  10+       5-       3D
+       greater than the advantaged value receives Pike                10+       6-       3D
+       favorable DMs, while one with a strength Cudgel                 8+       4-       2D
+
+
+
+James Turnbull (Order #51963372)
+         of the disadvantaged value or less receives unfavorable DMs.
+             Gun Combat: Gun Combat is a specific skill in the use of firearms. The character
+                                                      must immediately choose one firearm
+                            GUNS                      from the guns table; a different gun may
+         Weapon            + D M - D M Wounds be selected each time that the skill i s
+         Body Pistol       11+      7-       20       received. The guns table indicates the
+         Auto Pistol       10+      6-       30       firearms which are available for selec-
+         Revolver           9+      6-       30       tion. Most characters have a natural
+         Carbine            9+      4-       3D       expertise in all guns listed; receipt of
+          Rifle             8+      5-       3D       skill initially boosts this expertise to
+         Auto Rifle        10+      6-       3D       level-1. However, barbarians, bureau-
+         Shotgun            9+      3-       4D       crats, and doctors do not have a natural
+         SMG                9+      6-       3D       expertise in guns; they are treated
+          Laser Carbine 10+         5-       4D       as totally unskilled in guns (per
+          Laser Rifle      11+      6-       50       Traveller Book 1, page 30- DM -5 when
+                                                      attacking).
+             Selection of gun expertise should be based on the character's dexterity; the
+         guns table indicates the level of dexterity which will result in an unfavorable DM as
+         well as the level of dexterity which will result in a favorable DM in combat. The
+         guns table also indicates the wounding which a gun can inflict.
+            Bow Combat: Bow Combat is a specific skill in the use of bow weapons. The
+         character must immediately select one bow
+         weapon in which the skill is received.                      BOW WEAPONS
+         The bow weapons table indicates the Weapon                        + DM - D M Wounds
+         weapons available under this skill. Only Sling                    11+     3-    2D
+         barbarians have any skill whatsoever in Short Bow                 10+     5-    1D
+         bow weapons; all other characters are Long Bow                    11+     7-    2D
+         treated as being totally unskilled (Book 1, Sporting Cross 9+             -
+                                                                                   4     2D
+         page 30). While blades require strength Military Cross 11+                -
+                                                                                   6     3D
+         for advantage, and guns require dexterity Repeating Cross 12+             -
+                                                                                   8     2D
+         for advantage, bow weapons require both
+         strength and dexterity for advantage. The bow weapons table indicates the required
+         levels of both strength and dexterity for favorable and unfavorable DMs.
+             Gunnery: Gunnery is a general skill in the use of weapons mounted aboard
+         spacecraft. Possession of this skill entitles the character to the job-title Gunner.
+         Gunnery skill allows an individual to operate any turret mounted weapons aboard a
+         ship; these include Idsers, sandcasters, energy weapons (plasma and fusion guns in
+         mounts), missiles, and particle accelerators. Use of this skill is governed by the
+         space combat systems in Book 2 and Book 5. This skill is necessary for hiring on as
+         a gunner on any ship. Untrained individuals do not have any skill in this field.
+             Basic Skills: Expressed as a general ability, such as Navigation or Engineering.
+         Each skill is further defined in various Traveller Booklets, or below. The listing
+         below enumerates each skill, and notes those booklets where it is defined. Book 1 is
+         Characters and Combat, included in the basic set; Book 4 is Mercenary; Book 5 i s
+         High Guard. Where information is given here, it supersedes the skill data in other
+         booklets for characters generated using this booklet.
+            The skills listed on the following pages are called for using the generation
+         systems in this booklet:
+
+
+
+James Turnbull (Order #51963372)
+      General Description                                                    Specific Game Effacts
+         Air Craft: The individual is a trained            Upon receipt of this skill, the individual
+      aircraft pilot.                                  must immediately select one of four cate-
+                                                       gories i n which to take this skill: Propeller-
+                                                       driven Fixed Wing Aircraft, JetPropelled
+                                                       Fixed Wing Aircraft, Helicopters, or Grav
+                                                       Vehicles. I n each case, the skill allows the
+                                                       individual t o pilot that type of aircraft. Grav
+                                                       Vehicle is also discussed in Book 4 and is the
+                                                       equivalent of AirIRaft skill i n Book 1.
+         Admin: Discussed in Book 1.
+         Battle Dress: Discussed in Book 4.
+         Blade Combat: Discussed above on pages 10 and 1 1.
+         Bow Combat: Discussed above on page 11, and later in this supplement on pages 15 to 17.
+         Brawling: Discussed above on page 10.
+         Bribery: Discussed in Book 1.
+         Carousing: Discussed in Book 5.
+         Communications: Disucssed in Book 5.
+         Computer: Discussed in Book 1.
+         Demolition: Discussed in Book 4.
+         Electronics: Discussed in Book 1
+         Engineering: Discussed in Book 1.
+         Forgery: Discussed in Book 1.
+         Forward Obsewer: Discussed in Book 1.
+         Gambling: Discussed in Book 1.
+         Gravitics: Discussed in Book 5.
+         Gun Combat: Discussed above on page 11.
+         Gunnery: Discussed above on page 11.
+
+          Hunting: The individual is skilled i n           I n animal encounter situations, this skill is
+      tracking and hunting animals.                    used to enhance the chance of encountering
+                                                       any specific type of animal, of achieving sur-
+                                                       prise on such animals, and of surviving such
+                                                       encounters.
+                                                           DMs based on specific situations should be
+                                                       generated, and hunting skill should be used a
+                                                       a favorable DM.
+                                                           Hunting skill is also useful for jobs as
+                                                       guides for expeditions or tours.
+
+         Instruction: Discussed in Book 4 and Book 5. Book 4 should govern.
+         Interrogation: Discussed in Book 4 and Book 5. Book 5 should govern.
+         Jack-of all Trades: Discussed i n Book 1.
+         Leader: Discussed in Book 1.
+         Liaison: Discussed in Book 5.
+         Mechanical: Discussed in Book 1.
+         Medical: Discussed in Book 1.
+         Navigation: Discussed in Book 1.
+         Pilot: Discussed in Book 1. '
+         Prospecting: The individual is experienced       This skill allows an individual greater like-
+     in searching out mineral deposits on world       lihood of discovering mineral deposits. I n any
+     surfaces, and in deep space.                     situation calling for such a search, this skill
+                                                      allows a favorable DM for success.
+                                                          This skill alone is not sufficient for the
+                                                      discovery of vast mineral wealth; but i t does
+                                                      provide greater probability of an individual
+                                                      discovering what is there.
+
+
+
+
+James Turnbull (Order #51963372)
+         General Description                                                     Specific Game Effects
+            Recon: Discussed i n Book 4.
+            Recruiting: Discussed i n Book 4.
+            Ship Tactics: Discussed in Book 5.
+            Ship's Boat: Discussed in Book 1.
+            Streetwise: Discussed i n Book 1.
+            Survival: Discussed in Book 4.
+            Tactics: Discussed in Book 1.
+            Vehicle: The individual is a trained vehicle       Immediately upon receipt of this skill, the
+         operator.                                         individual must specify one o f the following
+                                                           vehicles as the type in which skill is received.
+                                                               Wheeled (tech level 5 - 15): This skill is
+                                                           the equivalent o f A T V skitl.
+                                                               Tracked (tech level 6 - 9): This skill is
+                                                           primarily of military usefulness, such as
+                                                           in Mercenary, Book 4.
+                                                                                   -
+                                                               Grav (tech level 6 15): This skill is the
+                                                           equivalent o f AirlRaft skill (not A i r Craft
+                                                           skill).
+                                                               Vehicle skill, as specified in this supple-
+                                                           ment, is different from Vehicle skill discussed
+                                                           in Book 5.
+            Water Craft: The individual is a trained           Upon receipt of this skill. the individual
+         operator of water craft.                          must immediately select one o f the following
+                                                           types of water craft i n which to take the
+                                                           expertise.
+                                                                                         -
+                                                               H o v w c r f t (tech level 7 9): Governs the
+                                                           use of air cushion craft capable of traversing
+                                                           land and water.
+                                                                                                 -
+                                                              Small Water Craft (tech level 1 8): Gov-
+                                                           erns all small craft under 50 tons displace-
+                                                           ment, including sailing craft and submersibles.
+             Vacc Suit: Discussed i n Book 1.
+             Zero42 Combat: Discussed in Book 4.
+
+            Benefits: Mustering-out benefits may be characteristics alterations (page lo),
+         dr some physical object. Membership in the Travellers' Aid Society is possible, and
+         subsequent receipts of gun, blade, or weapon benefits may be taken as skill levels
+         instead.
+             Instruments: A doctor may receive a complete set of medical instruments,
+         suitable for treatment of individuals suffering from all manner of injuries and ill-
+         nesses. The set includes surgeons instruments, diagnostic tools, and a set of drugs
+         for most purposes. Basic value of the set is Cr5,OOO.
+            Watch: Bureaucrats may receive a watch from their fellow workers or their
+         employers, as a token of esteem or respect. Typically, this item has a value of
+         approximately Cr50; on a throw of 7+, it will have a value of from Cr200 to
+         Cr1200 (2D times Cr100).
+            Weapon: Many individuals may receive a weapon as a mustering~utbenefit. If
+         specified as a weapon, it may be taken as either a blade weapon or a gun weapon. If
+         specified as a blade, it must be taken as a blade; if specified as a gun, it must be
+         taken as a gun. In any case, the allowed range is any weapon discussed in Book 1.
+         Once a weapon is taken as a benefit, additional receipts of the weapon may be
+         taken as skill in that weapon instead. An individual is always free to take additional
+         physical examples of the weapons if so desired.
+
+
+
+James Turnbull (Order #51963372)
+           Passages: High, middle, and low passages may be received as benefits. They are
+       discussed in Book 1.
+          Travellers': Membership in the Travellers' Aid Society may be received as a
+       benefit. This benefit is discussed in Book 1.
+           Ships: A variety of starships may be received as benefits.
+
+           Safari Ship (Type K): Built on a type 200 hull, the type K is equipped with
+       with 1G constant acceleration insystem. There are 11 total staterooms for the crew
+       of six, and eight passengers. Note that the crew (pilot, engineer, steward, medic,
+       gunner, and tour guide) all hold double occupancy during operations. Fuel tankage
+       i s 50 tons, and two tons are held in reserve for cargo. The bridge is equipped with a
+       Modelllbis computer with standard software package, and an additional one ton
+       is committed near the bridge for fire control. The hull has one hardpoint mounting
+       a double turret, although no weapons are installed as the ship comes from the
+       factory. Inside the streamlined hull, a life boat and airlraft are stored for use in
+       emergencies, and for expeditions.
+            Being a safari styled ship, the type K has some basic features. For customers
+       wanting only to capture their animals, two separate caging areas are present. One
+       is 10 tons in size, and able to reproduce any atmosphere natural for i t s occupants.
+       The second is a 13 ton marine caging area, all in a single tank, which may be set for
+       any pressure or simulated depth. There is also a 10 ton trophy room and lounge
+       where holographs of all the crew's major kills are available for display.
+            Base price for the Type K is Cr69,307,000.
+
+          Scientist characters may receive a laboratory ship as a benefit. This ship must be
+       assumed to be provided by some scientific foundation, and cannot be sold or
+       disposed of.
+           Lab Ship (Type L): Based on a 400 ton hull, the Type L Lab ship i s equipped
+       with jump drive-D, maneuver drive-C and power plant-C; it is capable of jump-2 an
+       and 1G acceleration. Twenty staterooms provide quarters for the crew of five
+       (pilot, navigator, medic, and two engineers), plus scientific and research personnel
+       as necessary. Fuel tankage is 90 tons, and the computer is a ModelI2. The lab ship
+       is not streamlined, but does carry a single pinnace, with provision for landing
+       either an ATV or an airlraft to a planetary surface; no ATV or airlraft is initially
+       provided. The ship has two hardpoints specified, but no turrets or weaponry.
+       One hundred tons of laboratory space is designated, with provisions for a wide
+       variety of equipment and research; most equipment in the labs i s common and
+       easily purchased, and little unique equipment is present. Twenty-four tons of cargo
+       space is provided.
+           Base price for the type L lab ship is Crl61,000,000.
+
+           Pirate characters may' receive a corsair: an armed raiding ship. The referee
+       may specify if the ship has a crew, or if it needs one.
+          Corsair (Type PI: Based on the type 400 hull, the corsair is fitted out with
+       jump drive-D, maneuver drive-F, and power plant-F, giving it a capability for
+       jump-2 and 3G acceleration. A Model12 computer installed, and contains
+       a standard software package. Most important to this ship are the three triple
+       turrets, although each turret is equipped with only one beam laser. Ten staterooms
+
+
+
+
+James Turnbull (Order #51963372)
+           serve as quarters for the crew (pilot, navigator, three engineers, and assorted thugs
+           and cutthroats numbering up to five more); twenty low berths are available for
+           emergency use, or to hold captives. The ship i s not streamlined, and there are no
+           ship's vehicles or boats. Fuel capacity is 120 tons, and cargo capacity is 160 tons.
+               Notable features on the corsair are large cargo doors and variable identification
+           features. The large clamshell doors can open to reveal the entire cargo bay; the ship
+           can accept a 100 to ship into its cargo bay. The ship has several centrally controlled
+           identification features which can alter the shape and configuration of the ship
+           at a moment's notice; fins retract or extend, modules appear or disappear, and
+           radio emissions alter frequency and content. The ship's transponders can be altered
+           to identify the vessel as having any of a variety of missions and identities.
+               The approximate value of the corsair is Cr180,000,000, but this price would be
+           difficult to obtain on the open market, as the ship is of a noncommercial type,
+           and its lineage and paperwork are of uncertain origin. It could probably bring
+           about onequarter its value.
+
+               The yacht called for as a benefit is discussed fully in Book 1.
+
+              Belters may receive as a benefit a seeker: a small asteroid mining or prospecting
+           ship.
+              Seeker (Type J): Based on the type 100 hull, the Seeker is a modified Type S
+           ScoutICourier, more fully discussed in Book 1. Alterations in the ship include
+           installation of a mining laser in a single turret and increased cargo space. The ship
+           has had cargo doors installed allowing carriage of ore or refined material in the ship
+           interior, at the cost of less recreation room. The mining laser operates as a pulse
+           laser-I in combat situations. Jump-2 and 1G capabilities are retained.
+              The general price range for seekers is approximately Cr20,000,000, based on age
+           and detrimental effects of the alterations.
+
+
+
+
+James Turnbull (Order #51963372)
+      Bow Wea~ons
+         Bow weapons are primitive devices which fling or propel arrows or bolts to some
+     distance. Because bow weapons combine the range effects of guns with the strength
+     effects of blades, they have minimum and advantageous requirements expressed for
+     both strength and dexterity.
+         The following weapons are considered bow weapons.
+         Sling: A simple loop of cord used to propel a stone or pellet over a relatively
+     short distance. It is always assumed to be aimed at the head or similar vulnerable
+     part or the body, which explains its similar results against nearly all forms of armor.
+     Sling weight is negligible. Reloading is automatic; one shot per round is allowed.
+     Pellets weigh 100 grams each.
+         Short Bow: A simple bow consisting of a bow and a string. The bow measures
+     800mm and the
+     arrow measures 300                             BOW WEAPONS
+     mm. Bow weight is                          Required        Advantageous
+     500      grams, and Weapon                 Level D M       Level     DM       Wounds
+     arrows weigh 100 Sling                     3- -2           11+       +1       2D
+     grams each. A qui- Short Bow               5- -2           10+       +1       1D
+     ver, to hold 10 Long Bow                   7- -3           11+       +2       2D
+     arrows, attached to Sporting Cross 4 -            -2         9+      +1       2D
+     the shoulder or the Military Cross         6-     -2       11+       +1       30
+     belt, weighs 1500 Repeating Cross 8 - - 2                  12+       +1       20
+     grams. Reloading a
+     short bow i s automatic; one shot per round is allowed.
+         Long Bow: A long bow is designed for longer ranges than a short bow; it is 1500
+     mm in length and weighs 1000 grams. Arrows (identical to short bow arrows)
+     weigh 100 grams. Reloading a long bow is automatic; one shot per round is allowed.
+         Sporting Crossbow: A small crossbow designed for hunting; it i s cocked by a
+     level along i t s side which then draws back the string to a catch activated by the
+     trigger. The crossbow weighs 3000 grams and measures 900mm along the bow and
+     800mm along the stock. Bolts (arrows) weigh 100 grams each, but are not inter-
+     changable with any other type. Cocking and reloading the sporting crossbow re-
+     quires one full turn, during which the individual is treated as evading. One shot is
+     allowed per round.
+         Military Crossbow: A large crossbow intended for battle. It measures 1000mm
+     along the bow and 900mm along the stock. Its heavy steel bow is cocked by a
+     geared cranequin which pulJs the string back as the lever is wound. The cranequin
+     is normally carried on the belt, and weighs 3000 grams, measuring 300mm by
+     300mm. The crossbow weighs 6000 grams. Bolts (arrows) weigh 100 grams each,
+     and are 300mm in length. They are not interchangable with any other type of
+     arrow. Reloading the military crossbow requires one round; two if the individual is
+     treated as evading. One shot is allowed per round.
+         Repeating Crossbow: A crossbow with a lighter bow than the military version,
+     and a magazine holding 10 bolts. A simple lever (much like the sporting crossbow)
+
+
+
+
+James Turnbull (Order #51963372)
+         cocks the string and places a new bolt in position for firing. Dimensions are
+         identical to the sporting crossbow. It weighs 4000 grams (unloaded) and each bolt
+         weighs 100 grams while measuring 200mm in length. It may fire one bolt per
+         round; reloading ten bolts into the magazine requires one round, or two if the
+         individual is treated as evading.
+
+
+
+                                              RANGE MATRIX
+         Attacker's                       ---------- Range ----------                       Wound
+         Weapon                      Close    Short       Medium Long            Very Long Inflicted
+         Sling                       -1        +3          0           -         -         2D
+         Short Bow                   -3        +2         +I           -5        -         1D
+         Long Bow                    -5        +1         +1           -4        -                 2D
+         Sporting Crossbow           -4         0         -1           -8        -                 2D
+         Military Crossbow           -4          0        -1           -8        -                 3D
+         Repeating Crossbow           0        -2          0        -10          -                 2D
+
+
+                                              WEAPONS MATRIX
+         Attacker's                ------------Defender's Armor -.-----                    ,----
+
+
+         Weapon          Nothing Jack              Mesh        Cloth        Reflec Ablat           Battle
+         Sling           -2       2       -          -2        -2           -2       -2            -9
+         Short Bow       -1      -2                  -6        -6           -1       -3            -7
+         Long Bow        +1       0                  -3        -3           +1       -1            -5
+         Sport Crossbow +3       +3                +1           0           +3       +1            -4
+         Military Cross  +3      +3                +2           0           +3       +2            -4
+         Repeating Cross +3      +3                +1          0            +3       +1            -4
+                                   WEAPONS AND EQUIPMENT WEIGHTS
+                                     Base   Arrow Width Length Base                                Ammo
+          Item                       Weight Weight Overall Overall Price                           Price
+          Sling                                100        -            1000        1               -
+          Short Bow                            100        -             800       50                2
+          Long Bow                             100        -            1500       75                2
+          Sporting Crossbow                    100         900          800      150                2
+          Military Crossbow                    100        1000          900      250                2
+          Cranequin                            -           300          300      100
+          Repeating Crossbow                   100         900          800      200                2
+
+
+
+
+James Turnbull (Order #51963372)
+         Pirate characters are produced in accordance with the character generation tables
+      given on pages 6 and 7 of this supplement. Each is assumed to have undergone the
+      musteringout procedure, although the referee may elect to still use them as if they
+      were working as pirates. Mustering-out benefits have been specified, but can be
+      altered quite easily to suit the whim or need of the referee or the situation.
+         Some suggestions for the use of these characters include groups looking to
+      shanghai crews, potential hijackers, simple ruffians in bars or dives, and nefarious
+      individuals for unsavory situations.
+
+               Pirate                              569AA9 Age 22 1 term                  CrO
+                  Brawling-1,Vacc-1
+               Pirate Corporal                     C5ABA6 Age 30 3 terms           Cr50.000
+                  Brawling-2,Zero-G Cbt-1, Gun Cbt-1, Navig-2                  gun, mid psg
+               Pirate                              8889AA Age 26 2 terms            Cr1,000
+                  Brawling-1,Pilot-1,Navig-1, Ship Tactic-1                      two low psg
+               Pirate Henchman                     486BA7      Age 30 3 terms CrlO0,OOO
+                  Brawling-I,Mech-1, Gambling-1,Vacc-1                         gun, mid psg
+               Pirate Sergeant                     649768      Age 26 2 terms Cr150,OOO
+                  Brawling-1,Tactics-1, Engineering-1, Blade Cbt-1                   low psg
+               Pirate                              9796A5      Age 22 1 term        Cr1,OOO
+                  Brawling-I,Engineering-1
+               Pirate Leader                       486BC8      Age 46 7 terms Cr150,OOO
+                  Brawling-3, Gun Cbt-2, Blade Cbt-I, Pilot3      three mid psg, gun, corsair
+               Pirate                              7ABB5C Age 22 Iterm             Crl0,OOO
+                  Brawling-1,Blade Cbt-1
+               Pirate Lieutenant                   5B5A89      Age 46 7 terms Cr110.000
+                  Brawling-1. Pilot-2, Navig-4, Gun Cbt-2, Gambling-I         three mid psg
+               Pirate Sergeant                     987975      Age 26 2 terms       Cr2,000
+                  Brawling-1, Streetwise-2, Engineering-2, Gun Cbt-1                     gun
+               Pirate                              646788      Age 22 1 term       Crl0.000
+                  Brawling-1, Gambling-1, Blade Cbt-I                                mid psg
+               Pirate                              C92788      Age 26 2 terms            CrO
+                  Brawling-2. Blade Cbt-1                                  mid psg, low psg
+               Pirate Corporal                     4A688A Age 22 1 term            Crl0,OOO
+                  Brawling-1, Gun Cbt-1,Zero-G Cbt-I                           gun, mid psg
+               Pirate                              876A7B      Age 30 3 terms      Cr50,OOO
+                  Brawling-1,Vacc-1,Engineering-I                                        gun
+               Pirate                              77AB8B Age 22 Iterm             Crl0,OOO
+                  Brawling-1,Pilot-1
+               Pirate Lieutenant                   6768B7      Age 34 4 terms      Cr50,OOO
+                  Brawling-2, Pilot-2, Navig-2, Gun Cbt-3, Streetwise-I         four mid psg
+
+
+
+James Turnbull (Order #51963372)
+                   Pirate                             4A8ABA Age 26 2 terms          Cr10.000
+                      Brawling-I, Leader-1,Gunnery-1                                   b.V psg
+                   Pirate Corporal                     577437    Age 22 1 term        Cr1,OOO
+                      Brawling-I, Engineering-2, Vacc-2                                     gun
+                   Pirate Henchman                     7A6797    Age 26 2 terms      Cr50,000
+                      Brawling-1,Computer-1,Electronics-1,Forgery-I           low psg, mid psg
+                   Pirate                              AA73A7 Age 22 1 term          Crl0,OOO
+                      Brawling-1,Mechanical-1,Gunnery-1                           low psg, gun
+                   Pirate Corporal                     A78385    Age 26 2 terms       Cr1,OOO
+                      Brawling-1, Vacc-2, Gun Cbt-2                               gun, 1 0 ~psg
+                   Pirate Henchman                     798A47    Age 26 2 terms      Cr11,OOO
+                      Brawling-1, Gun Cbt-1, Vacc-I ,Mechanical-1                gun, mid psg
+                   Pirate                              7B2886    Age 22 1 term        Crl,000
+                      Brawling-I,Gun Cbt-I
+                   Pirate                              475489    Age 30 3 terms       Cr3,000
+                      Brawling-2, Forgery-1,Blade Cbt-1,Engineering-I           blade, low psg
+                   Pirate Leader                       968883    Age 34 4 terms Cr150,000
+                      Brawling-4, Gun Cbt-1, Blade Cbt-1, Leader-1          gun, blade, corsair
+                   Pirate                              57865B    Age 22 1 term       Crl0,OOO
+                      Brawling-1,Gunnery-1
+                   Pirate Lieutenant                   748896    Age 34 4 terms      Cr10,OOO
+                      Brawling-1,Gunnery-1,Gun Cbt-1,Vacc-1, Tactics-1               two guns
+                   Pirate                              797894    Age 26 2 terms       Cr2,000
+                      Brawling-1,Vacc-I ,Streetwise-1                                  mid psg
+                   Pirate Henchman                     798A33    Age 22 1 term        Cr1,OOO
+                      Brawling4
+                   Pirate                              878777    Age 34 4 terms Cr100.000
+                      Brawling-1,Vacc-1,Engineering-1,Mech-1                           b w Psg
+                   Pirate Leader                      474A95     Age 42 5 terms Cr101,OOO
+                      Brawling-1,Pilot-1,Navig-1, Computer-1,Blade Cbt-1                corsair
+                   Pirate                              76A856    Age 22 1 term        Cr1,000
+                      Brawling-1,Vacc-I
+                   Pirate                              7B3886    Age 26 2 terms             CrO
+                      Brawling-I,Computer-1,Forgery-1                                     blade
+                   Pirate Sergeant                     B4B877    Age 34 4 terms Crl00,OOO
+                      Brawling-2, Blade Cbt-1, Vacc-1, Engineering1    blade, low psg, mid psg
+                   Pirate Leader                       555982    Age 46 7 terms      Cr10,OOO
+                      Brawling-1, Gun Cbt-3,Zero-G Cbt-2, Leader-1,Pilot-1              corsair
+                   Pirate                              A56435    Age 22 1 term       Crl0,000
+                      Brawling-1, unnery-1
+                   Pirate Lieutenant                   954884    Age 30 3 terms Cr100,000
+                      Brawling-1, Pilot-1, Computer-1,Gun Cbt-1                   Sun, low Psg
+                   Pirate                              578B96    Age 42 6 terms       Cr1,OOO
+                      Brawling-1, Forgery-1,Gun Cbt-1, Computer-2                 gun, low psg
+                   Pirate                              86A6A5 Age 22 1 term          Crl0,OOO
+                      Brawling-2
+                   Pirate                              4B4467    Age 26 2 terms      Cr10,OOO
+                      Brawling-1,Gunnery1                                              low psg
+
+
+
+James Turnbull (Order #51963372)
+       Beiters
+       -
+          Belter characters are produced in accordance with the character generation
+       tables given on pgaes 6 and 7 of this supplement. Each is assumed to have
+       undergone the mustering-out procedure, although the referee may elect to use them
+       as if they are still in the prospecting business. Mustering-out benefits have been
+       specified, but can be altered quite easily to suit the whim of the referee or the
+       needs of a specific situation.
+              Some suggestions for the use of these characters include miners looking for
+       workers, prospectors looking for a grubstake, and workers in need of assistance.
+
+                Belter                           47B745      Age 22 1 term              CrO
+                  Vacc-1,Prospecting-1                                                seeker
+                Belter                           BC5595      Age 38 5 terms Cr200,OOO
+                  Vacc-1,Instruction-1,Prospecting-1,Pilot-1                     Travellers'
+                Belter                           586954      Age 22 1 term        Crl0,OOO
+                  Vacc-1, Ship's Boat-1
+                Belter                           356768      Age 22 1 term       Crl00,OOO
+                  Vacc-1,Gambl ing-1
+                Belter                           BA7775 Age 26 2 terms            Cr10,OOO
+                  Vacc-1,Prospecting-1,Mechanical-1                                   seeker
+                Belter                           787995      Age 26 2 terms             CrO
+                  Vacc-1,Pilot-1,Brawling-1                                         high psg
+                Belter                           6546A3      Age 34 4 terms       Cr10,OOO
+                  Vacc-1,Pilot-1,Computer-1, Medical-1         seeker, high psg, Travellers'
+                Belter                           7A7547      Age 26 2 terms       Cr11,OOO
+                  Vacc-1,Fwd Obsv-1
+                Belter                           767986      Age 22 1 term              CrO
+                  Vacc-1, Ship's Boat-1                                               seeker
+                Belter                           WAD94 Age 26 2 terms                   CrO
+                  Vacc-2, Brawling-1                                             Travellers'
+                Belter                           697459      Age 22 1 term Cr100.000
+                  Vacc-1,Prospecting-1
+                Belter                           A98747      Age 34 4 terms Cr200,OOO
+                  Vacc-1,Fwd Obsv-1,Prospecting-1, Ship's Boat-1         seeker, Travellers'
+                Belter                           46A7AC Age 22 1 term             Cr10,OOO
+                  Vacc-1,~lectroni'c-1
+                Belter                           B36B57      Age 34 4 terms         Cr1,000
+                  Vacc-1, Gun Cbt-1, Prospecting-2                                      gun
+                Belter                           57A495      Age 22 1 term        Crl0,000
+                  Vacc-1,Prospecting-1
+                Belter                           539A44      Age 26 2 terms       Cr 10,000
+                  Vacc-1,Gambling-1,Prospecting-1                                     seeker
+
+
+
+James Turnbull (Order #51963372)
+                  Belter                             A82848    Age 2 2 1 term              CrO
+                     Vacc-1,Prospecting- 1                                          Travellers'
+                  Belter                             5482C7    Age 2 2 1 term Cr100,OOO
+                    Vacc-1
+                  Belter                             55597C    Age 3 0 3terms              CrO
+                     Vacc-1,Prospecting-2                                               seeker
+                  Belter                             48888C    Age 2 2 Iterm       CrlO0,OOO
+                     Vacc-2
+                  Belter                             748883    Age 3 0 3 terms       Cr10,OOO
+                     Vacc-1,Prospecting-1,Gambling-1                                    seeker
+                  Belter                             4668A6    Age 2 6 2 terms             CrO
+                    Vacc-1, Ship's Boat-1                                  seeker, Travellers'
+                  Beiter                             5472A3     Age 3 0 3 terms Cr300,OW
+                    Vacc-2, Prospect ing-1
+                  Belter                             685885    Age 2 2 1 term              CrO
+                    Vacc-1, Gambling-1                                                  seeker
+                  Belter                             9CAD78 Age 3 0 3 terms Cr200,000
+                    Vacc-2, Brawl ing-1                                             Travellers '
+                  Belter                             88476B    Age 3 4 4 terms Cr300,OOO
+                     Vacc-1, Prospecting-2, Mechanical-1                              high psg
+                  Belter                             A69678    Age 2 2 Iterm               CrO
+                     Vacc-1 ,Prospecting-1                                                 gun
+                  Belter                             C99A26    Age 2 6 2 terms       Cr10,OOO
+                     Vacc-1 ,Mechanical-1                                           Travellers'
+                  Belter                             589875    Age 2 2 1 term              CrO
+                    Vacc-1, Ship's Boat-1                                               seeker
+                  Belter                             652434    Age 2 6 2 terms        Cr1,000
+                     Vacc-2, Prospecting-1                                              seeker
+                  Belter                             66C898    Age 2 6 2 terms       Cr10.000
+                    Vacc-I , Pilot-1 ,Computer-1                                        seeker
+                  Belter                             53A347    Age 3 0 3 terms Cr100,OOO
+                     Vacc-1 ,Gambling-1,Prospecting-1                         seeker, high psg
+                  Belter                             493879    Age 2 6 2 terms       Cr10.000
+                    Vacc-1 ,Prospecting-1 ,Brawling-I                                 high psg
+                  Belter                             5668C4    Age 2 2 1 term              CrO
+                     Vacc-1,Pilot-1                                                     seeker
+                  Belter                             65A728     Age 2 6 2 terms Cr100,OOO
+                    Vacc-1 ,Electronic-1                                            Travellers'
+                  Belter                             589A66    Age 3 0 3 terms Cr200,OOO
+                     Vacc-1, Ship's Boat-1                                            high psg
+                  Belter                             427A59    Age 22 1 term          Cr1,OOO
+                     Vacc-1 ,Prospecting-2
+                  Belter                             96C985    Pge 4 6 7 terms Cr300,OOO
+                     Vacc-1 ,Prospecting-3, Brawling-1,Gambling-1           seeker, Travellers'
+                  Belter                             534984     Age 22 1 term        Cr10.000
+                     Vacc-3
+                  Belter                              BE8775    Age 3 0 3 terms            CrO
+                     Vacc-1, Ship's Boat-1                                    seeker, high psg
+
+
+
+James Turnbull (Order #51963372)
+     Sailors
+        Members of the wet (planetary surface, or maritime) navy are generated in accor-
+     dance with the tables given on pages 6 and 7 of this supplement. Each character is
+     assumed to have undergone the mustering-out procedure, although the referee may
+     elect to use them as if they were still employed in some form of maritime activity.
+     Musteringout benefits have been specified, but can be altered quite easily to suit
+     the whim of the referee or the needs of a specific situation.
+        Some suggestions for the use of these characters include (maritime) ship crews,
+     tour or hunting guides, and local citizenry.
+
+             Lieutenant Commander                676D75     Age 26 2 terms      Cr 10,000
+                Vehicle-2, Water Craft-1,Medical-1, Admin-1                       high psg
+             Sailor-1                            7497B5     Age 22 Iterm          Cr2,000
+                Gambling-1
+             Sailor-1                            547299     Age 22 1 term              CrO
+                Computer-1,Demolition-1                                           high psg
+             Lieutenant                          AA8837 Age 22 1 term                  CrO
+                Water Craft-1,Commo-1                                                  gun
+             Lieutenant                          874776     Age 22 1 term       Crl0.000
+                Vehicle-1,Streetwise-1,Carousing-1,Streetwise-1                   high psg
+             Lieutenant                          699947     Age 26 2 terms      Cr60,OOO
+                Water Craft-2, Jack-o-T-1                                         high psg
+             Sailor-1                            454399     Age 22 1 term       Cr10,OOO
+                Medic-1,Gravitics-1
+             Lieutenant Commander                577AA5 Age26 2 terms             Cr2,000
+                Medic-1, Computer-1,Admin-1,Brawling-1, Carousing-1          two high psg
+             Ensign                              3576B4     Age 22 Iterm               CrO
+                Computer-1,Mechanical-1                                           high psg
+             Admiral                             588AAA Age 46 7 terms          Cr60,000
+                Admin-1,Computer-3, Vehicle-2, Navigation-1                  two high psg
+             Sailor3                             885694     Age 30 3 terms      Cr10,OOO
+                Water Craft-1, Vehicle-1,Gravitics-I                              high psg
+             Sailor6                             934898     Age 38 5 terms      Cr20P00
+                Vehicle-1,Streetwise-1,Gravitics-1, Electronics-1,Brawling-1
+             Ensign                              349666     Age 22 1 term              CrO
+                Mechanical-1,B'attle Dress-1, Carousing-1                         high Psg
+             Commander                           54789A     Age 34 4 terms      Cr10,OOO
+                Admin-1, Jack of all trades-1, Commo-1                       high psg, gun
+             Sailor2                             577AA5 Age 26 2 terms          Cr20,000
+                Computer-1,Battle Dress-1,Navigation-1                       gun, high psg
+             Sailor4                             ABCAB4 Age 34 4 terms          Cr40.000
+                Computer-1,Vehicle-2, Gun Cbt-1                                        gun
+
+
+
+James Turnbull (Order #51963372)
+                   Sailor4                              8536C4    Age 26 2terms             CrO
+                      Admin-1,Computer-1,Vehicle-1                                high psg, gun
+                   Sailor-3                             357B54    Age 30 3 terms      Cr10,OOO
+                      Battle Dress-2, Water Craft-1                               gun, high psg
+                   Captain                              A7ADB6 Age 38 5 terms         Cr20,000
+                      Water Craft2, Vehicle-1,Computer-1,Demolition-1             two high psg
+                   Sailor-1                             76398A     Age 22 1 term      Crl0,OOO
+                      Vehicle-1
+                   Sailor-4                             7B54B5     Age 34 4 terms     Cr60,OOO
+                       Gun Cbt-1,Battle Dress-1                                             gun
+                   Ensign                               846C87     Age 22 1 term      Crl0,OOO
+                      Vehicle-1, Computer-2                                            high Psg
+                   Sailor-1                             8535B5     Age 22 1 term       Cr2.000
+                       Electronic-1
+                   Lieutenant Commander                 737667     Age 34 4 terms     Cr22P00
+                       Gravitics-1, Mechanical-1, Electronics-1,Computer-1,Gun Cbt-1        gun
+                   Sailor4                              94A797     Age 38 5 terms     Cr 10,000
+                       Brawling-1,Gambling-1. Carousing-1,Admin-1                           w"J
+                   Lieutenant                           677A45     Age 22 1 term      Cr10.000
+                       Battle Dress-1, Brawling-1
+                   Commander                            56396A     Age 30 3 terms      Cr2,000
+                       Vehicle-1, Water Craft-1,Fwd Obsv-1, Commo-1                     high Psg
+                   Sailor-1                             945A45     Age 22 1 term             CrO
+                       Battle Dress-1, Demo-1                                               gun
+                   Sailor-1                             349BB6     Age 22 1 term             CrO
+                       Vehicle-1, Water Craft-1                                              gun
+                   Ensign                               863A56     Age 26 2 terms     Cr10,OOO
+                       Vehicle-1, Demo-1,Commo-1                                        high ~ s g
+                   Sailor-3                              7B54B7    Age30 3terms       Cr20,000
+                       Demo-1, Gun Cbt-1,Fwd Obsv-1                                          !Jun
+                   Commander                             7BB763    Age 46 7 terms     Cr60,OOO
+                       Gambling-1,Water Craft-1, Vehicle-1,Gun Cbt-1              gun, high ~ s g
+                   Sailor-1                              364578    Age 22 1 term        Cr2,000
+                       Brawling-1,Carousing-1                                                gun
+                   Sailor3                               993928    Age 30 3 terms       Cr7POO
+                       Carousing-1,Gambling-1, Water Craft-1                            high psg
+                    Lieutenant                           A33893    Age 30 3 terms            CrO
+                       Demo-3, Gravitics-1                                         two high psg
+                   Sailor4                               69A58A Age 34 4 terms        Cr10,OOO
+                       Gun Cbt-1, Battle Dress-1, Water Craft-1                   gun, high psg
+                   Sailor-1                              928423    Age 22 1 term      Cr20,000
+                       Water Craft-1,Electronics-1
+                   Sailor-3                              239567    Age 30 3 terms     Cr10,OOO
+                       Vehicle-2, Gravitics-1                                           high psg
+                   Captain                               329349    Age 38 5 terms     Cr20,OOO
+                       Vehicle-2, Blade Cbt-1,Demo-1, Commo-1                      high P S ~ ,
+                                                                                             gun
+                   Sailor-7                              585AB6 Age 46 7 terms        Cr60.000
+                       Water Craft-1,Electronics-1, Navigation2, Cpmputer-3        two high psg
+
+
+
+James Turnbull (Order #51963372)
+        Diplomats
+          Members of the diplomatic corps are generated in accordance with the tables
+       given on pages 6 and 7 of this supplement. Each character is assumed to have left
+       the service of the diplomatic corps, and mustered-out, although the referee may
+       elect to treat them as still employed as diplomats. Mustering-out benefits have been
+       specified, but may easily be alteredto suit the whim of the referee or the needs of
+       a specific situation.
+          Some suggestions for use of these characters include representatives of various
+       worlds or factions, or leaders of political groups.
+
+               1st Secretary                        378966     Age 50 8 terms Cr140,OOO
+                   Liaison-3, Vehicle-1, Recruiting-1,Carousing-1         gun, two high psg
+               Minister                             367987     Age 42 6 terms      Cr80,OOO
+                   Admin-1, Liaison-1,Computer-3, Vacc-1, Blade Cbt-1      blade, Travellers'
+               3rd Secretary                        B45BBB Age 22 1 term           Cr10,OOO
+                   Forgery-1, Interrogation-1,Computer-1
+               Diplomat-1                           435789     Age 22 1 term             CrO
+                   Computer-1,Vehicle-1                                             high psg
+               Diplomat3                            662C78     Age 30 3 terms      Cr20,OOO
+                   Vehicle-1,Instruction-1, Streetwise-1                                 gun
+               2nd Secretary                        468948     Age 26 2 terms      Cr50.000
+                   Carousing-2, Gun Cbt-1,Vacc-1                                         Qun
+               Diplomat-5                           585A6A Age 38 5 terms Cr100,OOO
+                   Liaison-1,Admin-1, Computer-1, Jack of all trades-1              high psg
+               Ambassador                           8689AD Age 46 7 terms Cr200,OOO
+                   Vehicle-3, Gun Cbt-1,Computer-1, Liaison-3                gun, Travellers'
+               Diplomat-1                           3739A4     Age 22 1 term       Crl0.000
+                   Forgery-2                                                        high psg
+               Counselor                            764BB7     Age 34 4 terms      Cr20.000
+                   Vehicle-2, Forgery-1, Recruiting-1, Computer-1, Vacc-1     three high psg
+               Diplomat-4                           665949     Age 34 4 terms Cr100,OOO
+                   Vehicle-1, Vacc-1,Liaison-1, Blade Cbt-1,Gun Cbt-1               high psg
+               2nd Secretary                        94996A     Age 30 3 terms      Cr10,OOO
+                   Vacc-1, Liaison-3, Gambling-1                               two high psg
+               Diplomat3                            860005 Age 30 3 terms          Cr40.000
+                   Admin-1, Jack of all trades-1,Carousing-1                   gun, high psg
+               3rd Secretary                        867452     Age 26 2 terms      Cr20,OOO
+                   Interrogation-1,Admin-1, Gambling-1                              high psg
+               1s t Secretary                       6559A5     Age 30 3 terms      Cr30.000
+                   Computer-1,Vacc-1,Vehicle-1,Carousing-1                          high psg
+               Minister                             37689C     Age 34 4 terms      Cr40,OOO
+                    Forgery-3, Computer-1, Liaison-1                              Travellers'
+
+
+
+James Turnbull (Order #51963372)
+                Diplomat3                            585AAB Age 30 3 terms           Cr20,OOO
+                    Liaison-1,Streetwise-1, Forgery-1,Vacc-1,Gun Cbt-1                high ~ s g
+                2nd Secretary                        B5B789      Age 34 4 terms      Cr30.000
+                    Liaison-1,Vehicle-1,Carousing-1, Recruiting-1                     high psg
+                Diplomat-2                           483A99      Age 26 2 terms      Cr10,OOO
+                    Interrogation-1, Liaison-1,Admin-1, Computer-1                    high psg
+                Minister                             948BDF Age 38 5 terms           Cr40.000
+                    Liaison-3, Vehicle-1, Carousing-1, Recruiting-1                 Travellers'
+                Diplomat4                            354DCA Age 38 5 terms           Cr60,000
+                    Liaison-1,Vehicle-1, Blade Cbt-1, Instruction-1                    high psg
+                Diplomat-2                           243B67      Age 26 2 terms      Cr10,OOO
+                    Liaison-1,Computer-1,Instruction-1, Vacc-1                         high psg
+                3rd Secretary                        999999      Age 26 2 terms      Cr20.000
+                    Liaison-1,Recruiting-1,Gambling-1, Vacc-1
+                1st Secretary                        69A5BC Age 30 3 terms           Cr50,000
+                    Liaison-1,Carousing-1, Streetwise-1,Admin-1                        high psg
+                Diplomat-4                           927BBB Age 34 4 terms           Cr30,000
+                    Liaison-1, Vacc-1, Vehicle-1, Computer-1                     two high psg
+                1st Secretary                         CC87B8 Age 30 3 terms          Cr10,OOO
+                    Liaison-1,Computer-1,Vehicle-1,Gun Cbt-1                     gun, high psg
+                Diplomat4                             8B6578     Age 26 2 terms      Cr20,OOO
+                    Liaison-1,Computer-1, Admin-1                                gun, high psg
+                Minister                              537BA8 Age 34 4 terms          Cr40,OOO
+                    Liaison-1,Computer-1,Vacc-1, Blade Cbt-1, Admin-1               Travellers'
+                Ambassador                            894CDB Age 38 5 terms Cr200,OOO
+                     Liaison-3, Vehicle-1, Vacc-1, Gun Cbt-1, Admin-1          gun, Travellers'
+                Diplomat4                             479478     Age 42 6 terms      Cr60,OOO
+                    Liaison-1,Vehicle-1,Vacc-1, Carousing-1,Computer-1,high psg
+                Diplomat9                             984789     Age26 2terms        CrlOPOO
+                     Liaison-1,Vehicle-1, Computer-1                             gun, high psg
+                2nd Secretary                         329994     Age 30 3 terms      Cr20,OOO
+                     Liaison-1,Admin-1,Streetwise-1,
+                 Diplomat-2                           69A839     Age 26 2 terms             CrO
+                     Liaison-1,Gun Cbt-1, Blade Cbt-1,Vehicle-1                  two high psg
+                 1st Secretary                        645B48     Age 34 4 terms      Cr40,OOO
+                     Liaison-1, Instruction-1,Streetwise-1, Carousing-1         three high psg
+                Am bassador                           835BCD Age 42 6 terms Cr130,OOO
+                     Liaison-2, Instruction-1,Vacc-1, Forgery-1,Computer-3          Travellers'
+                 Diplomat-3                           253867      Age 30 3 terms     Cr10,OOO
+                     Liaison-1,Vehicle-1,Vacc-1, Computer-1                            high psg
+                 Diplomat-1                           8839A9      Age 22 1 term             CrO
+                     Liaison-1,Computer-1
+                2nd Secretary                         656876      Age 26 2 terms            CrO
+                     Liaison-1,Computer-1,Gun Cbt-1                              gun, high psg
+                 Diplomat-1                           A679B7      Age 22 1 term      Cr10,OOO
+                     Liaison-1,Vehicle-1,Computer-1
+                 Counselor                            69387B      Age 38 5 terms      Cr20,OOO
+                     Liaison-1,Computer-1,Carousing-I,Streetwise-1
+
+
+
+James Turnbull (Order #51963372)
+       Doctors
+          Medical characters are generated in accordance with the character generation
+       tables given on pages 6 and 7 of this supplement. Each is assumed to have
+       undergone the mustering-out procedure, although all are considered to currently be
+       in medical practice. In accordance with the medical skill description in book 1,
+       characters with medical3 or higher are termed Doctor, while individuals with
+       dexterity of 8+ are termed Surgeon.
+          Individuals with less than medical3 are considered to have some training in
+       medicine, but should be treated as orderlies, paramedics, or nurses.
+
+               Doctor                            378966   Age 50 8 terms Cr160,000
+                  Medic-5, Electronic-1
+               Doctor                            367987   Age 42 6 terms       Cr40,OOO
+                  Medic4, Electronic-1,Computer-1                           instruments
+               Doctor                            746A97   Age 50 8 terms Cr160.000
+                  Medic-3, Computer-1,Blade Cbt-1                         three mid psg
+                                                 845885   Age 22 1 term       Cr20,000
+                  Medic-2                                                   instruments
+               Doctor                            877357   Age 26 2 terms      Cr60.000
+                  Medic4
+               Surgeon                           995756   Age 30 3 terms       Cr40,OOO
+                  Medic-3, Electronic-1                                          mid psg
+               Doctor                            A21C7A Age 50 8 terms        Cr60,000
+                  Medic-4, Streetwise-1,Admin-1,Computer-1         instruments, mid psg
+               Surgeon                           6A5445   Age 26 2 terms      Cr20,OOO
+                  Medic-3
+               Doctor                            A75374   Age 34 4 terms      Cr40.000
+                  Medic4, Admin-1                                          two mid psg
+               Doctor                            363987   Age 46 7 terms Cr260,000
+                  Medic4, Streetwise-1,Computer-1, Admin-1    instruments, two mid psg
+               Surgeon                           6977A5   Age 26 2 terms      Cr20,000
+                  Medic-3                                                   instruments
+               Doctor                            663BB6   Age 42 6 terms Cr200.000
+                  Medic4, Computer-1,Admin-1                       instruments, mid psg
+               Doctor                            4689B5   Age 38 5 terms Cr100,000
+                  Medic-3, Streetwise-2, Computer-1                              mid psg
+               Doctor                            965789   Age 30 3 terms       Cr20,OOO
+                  Medic4
+               Surgeon                           5946A8   Age 30 3 terms       Cr40,OOO
+                  Medic-3, Computer-1                                            mid psg
+               Surgeon                           9C6A69 Age 22 1 term          Cr20,000
+                  Medic-3
+
+
+
+James Turnbull (Order #51963372)
+                 Doctor                           645656     Age 26 2 terms      CrO
+                   Medic-3                                                two mid psg
+                                                   373B7B    Age 22 Iterm   Cr20,OW
+                    Medic-2, Computer-1
+                 Surgeon                           385756     Age 30 3 terms     Cr40,WO
+                    Medic-3, Electronic-1                                          mid psg
+                 Surgeon                           D98C6C Age 26 2 terms         Cr60,OOO
+                    Medic-3                                                   instruments
+                 Surgeon                           69-39      Age 30 3 terms     Cr20.000
+                    Medic-3, Mechanical-1                            instruments, mid psg
+                 Doctor                            7571459    Age 30 3 terms     Cr30.000
+                    Medic-3, Mechanical-1,Computer-1                               mid psg
+                 Doctor                            22487A     Age 46 7 terms     Cr60.000
+                    Medical-5, Electronic-1,Computer-1,Streetwise-1           two mid psg
+                 Surgeon                            AA4798 Age 34 4 terms        Cr50.000
+                    Medical-4, Electronic-1,Admin-1                         three mid psg
+                 Doctor                            243B67     Age 42 6 terms     Cr40,OOO
+                    Medical-4, Admin-4
+                 Surgeon                           983996     Age 34 4 terms Cr120,OOO
+                    Medical-3, Streetwise-1,Blade Cbt-1                            mid psg
+                 Surgeon                            B-789     Age 34 4 terms Cr100.000
+                    Medical-3, Computer-2, Admin-1
+                                                    867A92    Age 22 1 term      Cr20,OOO
+                    Medical-1, Blade Cbt-1
+                 Doctor                             731D86    Age 46 7 terms     Cr30.000
+                    Medical-4, Computer-1,Mechanical-1,Electronic-1                mid psg
+                 Doctor                             8448C9    Age 30 3 terms     Cr20,OOO
+                    Medical-3, Computer-1,Blade-1                                  mid psg
+                 Doctor                             76A6A8 Age 30 3 terms        Cr30,OOO
+                    Medical-5                                                 two mid psg
+                 Surgeon                            999658    Age 26 2 terms     Cr40,OOO
+                    Medical3
+                 Doctor                             447637    Age 30 3 terms     Cr50,OW
+                    Medical-3, Computer-1,Admin-1                                   mid psg
+                 Surgeon                            585ABC Age 50 8 terms        Cr40.000
+                    Medical-5, Electronic-1,Mechanical-1                     three mid psg
+                 Doctor                             62565A    Age 42 6 terms Crl00,OOO
+                    Medicaid, Streetwise-1, Electronic-1                            mid psg
+                  Doctor                            868883    Age 26 2 terms     Cr20.000
+                    Medical-3, Admin-1
+                 Surgeon                            989768    Age 26 2 terms     Cr40,OOO
+                    Medical-3, Electronics-1                                        mid psg
+                                                    77786A    Age 26 2 terms     Cr20,OOO
+                    Medical-2, Computer-1
+                  Doctor                            578AA8 Age 30 3 terms        Cr40,OOO
+                    Medical-3, Admin-1,Blade Cbt-1                                  mid psg
+                  Doctor                            879BB9    Age 30 3 terms     Cr50.000
+                    Medical-3, Streetwise-1                                    instruments
+
+
+
+James Turnbull (Order #51963372)
+       Flyers
+          Members of the planetary air force are generated in accordance with the tables
+       given on pages 6 and 7 of this supplement. Each character i s assumed to have
+       undergone the mustering-out procedure, although the referee may elect to use them
+       as if they are still imployed in some form of flight activity. Mustering-out benefits
+       have been specified, but can be easily altered to suit the whim of the referee or the
+       needs of a specific situation.
+              Some suggestions for the use of these characters include patron encounters,
+       mercenary air support, and private air vehicle drivers or pilots.
+
+               Flyer                                388636      Age 26 2 terms     Cr30,OOO
+                  Gambling-1, Air Craft-1, Gravities-1, Survival-1             gun, low psg
+               Squadron Leader                      8B5568      Age 34 4 terms     Cr15.000
+                  Air Craft-3, Vehicle-2, Vacc-1, Brawling-1                        high psg
+               Flight Leader                        957757      Age 26 2 terms      Cr2,OOO
+                  Air Craft-1,Electronics-1,Gravitics-1,Carousing-1,Vehicle-1       high psg
+               Staff Major                          444996      Age 30 3 terms     Cr20.000
+                  Air Craft-1, Gun Cbt-1, Vehicle-3, Survival-1, Brawling-1          1 0P Sg
+                                                                                          ~
+               Staff Major                          5A4667      Age 30 3 terms     Cr35.000
+                  Air Craft-2, Vehicle-2, Carousing-1,Computer-1                     mid psg
+               Flyer                                7949B7      Age 22 1 term      Cr10.000
+                  Air                Craft-1,             Gravitics-1,             Vehicle-1
+               Staff Major                          8779A5      Age 30 3 terms     Cr15,OOO
+                  Air Craft-2, Survival-1,Vacc-1,Gun Cbt-1                     gun, mid psg
+               Flight Leader                        A6978C      Age 26 2 terms     Cr20.000
+                  Air Craft-3, Pilot-1,Vacc-1                                        mid psg
+               Pilot                                895C77      Age 26 2 terms     Cr10,OOO
+                  Air Craft-1, Gun Cbt-1, Mechanical-1,Carousing-1                   low psg
+               Flyer-3                              6354A7      Age 30 3 terms     Cr20.000
+                  Air Craft-1, Gravitics-1, Mechanical-I,Vehicle-1              two low psg
+               Flyer-1                              757887      Age 22 1 term      Cr20,OOO
+                  Air Craft-1, Electronics-1                                         low psg
+               Pilot                                6899B8      Age 22 1 term      Cr10,000
+                  Air Craft-1,Vehicle-1,Gravities-1                                  low psg
+               Staff Major                          BA6457 Age30 3terms            Cr10,OOO
+                  Air Craft-2, Survival-1, Brawling-1                                    Qun
+               Group Leader                         187856      Age 46 7 terms     Cr60,OOO
+                  Air Craft4, Gambling-1, Gun Cbt-1                             two low psg
+               Squadron Leader                      555B5B      Age 34 4 terms      Cr7,000
+                  Air Craft-2, Carousing-I,Survival-1,Gravitics-1           low psg, mid psg
+               Flyer4                               77577A      Age 34 4 terms      Cr5,OOO
+                                       .
+                  Air Craft-1, Vehicle-1 Survival-1, Gun Cbt-1                  low psg. gun
+
+
+
+
+James Turnbull (Order #51963372)
+                 Air Marshal                          857668      Age42 7 terms       Cr30,000
+                    Air Craft-3, Vehicle-1,Brawling-1,Mechanical-1,Survival-1, Gun Cbt-2
+                 Flyer-4                              656769      Age 34 4 terms      Cr10,OOO
+                    Air Craft-1,Carousing-1,Vacc-1                                      mid psg
+                 Flyer6                               1A3A87 Age 38 5 terms            Cr5,OOO
+                    Air Craft-1, Gun Cbt-2, Medical-1                             gun, mid psg
+                 Flight Leader                        8B6A88      Age 22 1 term        Cr2,OOO
+                    Air Craft-1, Leader-1,Computer-1
+                 Flight Leader                        839BB4      Age 26 2 terms       Cr5,000
+                    Air Craft-2, Admin-1, Jack of all trades-1                          mid psg
+                 Group Leader                         624B86      Age 38 5 terms      Cr15,000
+                    Air Craft-1, Vehicle-3, Gravitics-1,Computer-1, Gun Cbt-1                 gun
+                 Pilot                                A6C935      Age 22 1 term        Cr5.000
+                    Air Craft-2, Survival-1
+                 Flyer-2                              9A4782      Age 26 2 terms      Cr10,OOO
+                    Air Craft-1,Computer-1                                              mid psg
+                 Squadron Leader                      A76A46 Age 26 2 terms           Cr10.000
+                    Air Craft-1,Mechanical-1,Gravities-1                                mid psg
+                 Air Marshal                          2788B4      Age 50 8 terms      Cr20.000
+                    Air Craft-3, Gravitics-1, Computer-1,Pilot-1,Leader-3              high psg
+                 Group Leader                         6B4A7C Age 38 5 terms           Cr20.000
+                    Air Craft-1, Gun Cbt-1, Survival-1, Vacc-1, Vehicle-2, Brawling-1
+                 Flight Leader                        595678      Age 26 2 terms      Cr20,000
+                    Air Craft-1, Brawling-1,Vehicle-1                                  high psg
+                 Pilot                                455658      Age 26 2 terms      Cr10.000
+                    Air Craft-1, Survival-1, Gun Cbt-1                                  mid psg
+                 Squadron Leader                      478484      Age 30 3 terms      Cr20,000
+                    Air Craft-1,Pilot-1, Admin-1                                  gun, mid psg
+                 Staff Major                          568593      Age 38 5 terms      CrlOP00
+                    Air Craft-1, Admin-1,Leader-1                             mid psg, low psg
+                 Flyer-1                              A76A46 Age 22 1 term             Cr2,000
+                    Air Craft-1, Vehicle-1
+                 Flyer9                               A26789      Age 26 2 terms       Cr5,000
+                    Air Craft-1                     Survival-1,Vacc-1                   mid psg
+                 Staff Major                          958955      Age 34 4 terms      Cr20.000
+                    Air Craft-1, Gun Cbt-1,Vacc-1, Survival-1                  mid psg, low psg
+                 Squadron Leader                      763BBC Age 26 2 terms           CrlOPOO
+                    Air Craft-1, Vehicle-1,Gambling-1                                   high psg
+                 Squadron Leader                      5896BA Age 30 3 terms            Cr5.000
+                    Air Craft-1,Mechanical-1,Electronic-1, Gravitics-1                   mid psg
+                 Flyer-5                              99579A      Age 38 5 terms       Cr5.000
+                    Air Craft-3, Leader-1                                     mid psg, low psg
+                 Group Leader                         696B9B      Age 38 5 terms      Cr20.000
+                    Air Craft-3, Survival-1,Gun Cbt-1                              gun, low psg
+                 Flight Leader                        933989      Age 26 2 terms       Cr5,000
+                    Air Craft-1,Pilot-1,Admin-1                                         tiiyll psy
+                 Squadron Leader                       6AAB5A Age 26 2 terms          CrlUP00
+                    Air Craft-1,Vehicle-1, Gun Cbt-1                                     mid psg
+
+
+
+James Turnbull (Order #51963372)
+        Barbarians
+          Barbarians characters are generated in accordance with the character generation
+       tables given on pages 8 and 9 of this supplement. Each is assumed to have under-
+       gone the mustering-out procedure; in this case, it must be assumed that the bar-
+       barian has somehow left his or her native world to travel among the stars. The
+       referee may elect to use them in native world situations as well.
+          Some suggestions for the use of these characters include native bearers or guides,
+       displaced persons in search of travel arrangements home, or bodyguards.
+
+                Barbarian-1                         A89689    Age 22 1 term       Cr3,000
+                  Sword-1,Leader-1
+                Barbarian-1                         498794    Age 22 1 term       Cr2,000
+                  Sword-1,Survival-1
+                Warrior                             9C6789    Age 30 3 terms      Cr1,OOO
+                  Sword-1, Blade Cbt-2, Brawling-1                                high Psg
+                Barbarian                           56C789    Age 26 2 terms            CrO
+                  Sword-2, Carousing-1,Survival-1                                  low psg
+                Chief                               487945    Age 46 7 terms      Cr4.000
+                  Sword-2, Leader-2, Bow Cbt-1,Mechanical-1,Recon-1         blade, low psg
+                Barbarian-4                         886578    Age 34 4 terms      Cr1,OOO
+                  Sword-1,Bow Cbt-1, Mechanical-1,Blade Cbt-1               blade, low psg
+                Barbarian-;!                        345725    Age 26 2 terms      Cr4,000
+                  Sword-1,Streetwise-2                                                blade
+                Warrior                             A67847    Age 34 4 terms      Cr1,OOO
+                  Sword-2, Blade Cbt-2, Recon-1                                two low psg
+                Barbarian-l                         D89888    Age 22 1 term             CrO
+                   Sword-1,Survival-1                                              low Psg
+                Warrior                             E68946    Age 42 6 terms      Cr1,OOO
+                  Sword-1, Blade-1, Leader-3, Bow Cbt-2, Carousing-1          two high psg
+                Chief                               978793    Age 46 7 terms      Cr5.000
+                   Sword-2, Survival-1, Brawling-1,Medical-1,Leader-1             high Psg
+                Barbarian                           486745    Age 26 2 terms            CrO
+                   Sword-1,Streetwise-1,Carousing-1                                low psg
+                Barbarian                           879889    Age 30 3 terms      Cr1.000
+                                         Tactics-1,Leader-1
+                   Sword-1, Gun ~ b t - 1 ,                                blade, high psg
+                Warrior                             98A56A Age 38 5 terms         Cr4,000
+                   Sword-1,Blade-3, Recon-1,Mechanical-1                two low psg, blade
+                Warrior                             58689B    Age 26 2 terms      Cr5,000
+                   Sword-1,Blade-1                                                 low psg
+                Barbarian                           BB3895    Age 30 3 terms      Cr2,000
+                   Sword-1, Gun Cbt-1, Medic-1                                        blade
+
+
+
+James Turnbull (Order #51963372)
+                 Warrior                           936427      Age 38 5 terms        Cr3,000
+                   Sword-1,Blade Cbt-3, Gun Cbt-1, Recon-2, Survival-1        blade, low psg
+                 Warrior                           774B8B      Age 34 4 terms        Cr2.000
+                   Bow Cbt-2, Sword-1, Tactics-2, Streetwise-1, Blade Cbt-3             blade
+                 Barbarian                         538429      Age 26 2 terms        Cr3,000
+                   Brawling-1, Sword-1,Blade Cbt-1                                   high psg
+                 Barbarian                         85687C      Age 26 2 terms        Cr5,000
+                   Sword-1,Blade Cbt-1, Bow Cbt-1, Survival-1                           blade
+                 Barbarian                         574367      Age 26 2 terms        Cr2.000
+                   Sword-1, Gun Cbt-1, Recon-1                                          blade
+                 Warrior                           354585      Age 30 3 terms        Cr4,000
+                   Sword-1,Blade Cbt-4, Brawling-1                            blade, low psg
+                 Warrior                           B89647      Age 34 4 terms        Cr4,OOO
+                   Sword-1, Blade Cbt-4, Brawling-1,Mechanical-2              blade, low psg
+                 Barbarian                         996776      Age 22 1 term         Cr2,000
+                   Sword-1,Mechanical-1                                               low psg
+                 Barbarian                         858483       Age 46 7 terms       Cr4,000
+                   Sword-1, Survival-1,Gun Cbt-1,Bow Cbt-1,Blade Cbt-1        blade, low psg
+                 Barbarian                         566A6A Age 26 2 turns             Cr5,000
+                   Sword-1,Blade-4, Carousing-1,Streetwise-1
+                 Barbarian                         787663       Age 26 2 terms       Cr2,000
+                   Sword-1, Gun Cbt-1, Streetwise-1                                      blade
+                 Barbarian                         845797       Age 34 4 terms       Cr2,000
+                   Sword-1, Blade Cbt-3, Medical-1, Leader-1                  blade, low psg
+                 Barbarian                         786759       Age 50 8 terms       Cr5,000
+                   Sword-1, Blade Cbt-3, Carousing-1,Brawling-1          blade, four high psg
+                 Barbarian                         6AB8A3 Age 22 1 term              Cr1.000
+                    Sword-1, Blade Cbt-1, Brawling-1
+                 Barbarian                         483A87       Age 22 1 term        Cr3,000
+                    Sword-1,Blade Cbt-1
+                 Barbarian                         768976       Age 34 4 terms       Cr4.000
+                    Sword-2, Mechanical-1                                      blade, low psg
+                 Barbarian                         7A6B7A Age 42 6 terms             Cr3.000
+                    Sword-1, Gun Cbt-1, Bow Cbt-4, Brawling-1                 blade, high psg
+                 Barbarian                         7B4A67 Age 42 6 terms             Cr6,000
+                    Sword-1, Blade Cbt-1, Carousing-1,Survival-3              blade, high psg
+                 Barbarian                         4758A5       Age 34 4 terms       Cr4.000
+                    Sword-3, Blade Cbt-1,Brawling-1                           blade, high psg
+                 Barbarian                         767458       Age 34 4 terms       Cr1,OOO
+                    Sword-1, Gun Cbt-1, Bow Cbt-1,Carousing-1                  three high psg
+                 Barbarian                          BA6655 Age 30 3 terms                  CrO
+                    Sword-1,Bow Cbt-3                                         blade, high psg
+                 Barbarian                         968567       Age 34 4 terms       Cr2,000
+                    Sword-1,Streetwise-1,Blade Cbt-1                          blade, high psg
+                 Barbarian                         46A656       Age 38 5 terms       Cr2,000
+                    Sword-1, Recon-1,Gun Cbt-3                                blade, high psg
+                 Barbarian                          557648      Age 26 2 terms       Cr1.000
+                    Sword-1, Blade Cbt-1,Recon-1                                         blade
+
+
+
+James Turnbull (Order #51963372)
+          Bureaucrats                                                                            1
+
+             Bureaucrat characters are generated in accordance with the character generation
+         tables given on pages 8 and 9 of this supplement. They are assumed to have
+         mustered-out of their particular bureaucratic service, and have embarked on some
+         sort of activity within the universe. Mustering out benefits have been specified, but
+         may be altered at the whim of the referee or to suit the needs of a specific
+         situation.
+            Suggested uses for bureaucrats include stock customs officials, potential patrons,
+         and tourists.
+
+                 Bureaucrat4                         758946    Age 34 4 terms       Cr10,OOO
+                    Admin-1, Blade Cbt-1, Vehicle-1,Liaison-1              high psg, low psg
+                 Supervisor                          943856    Age 26 2 terms             CrO
+                    Admin-2, Recruiting-1, Vehicle-1                                  low psg
+                 Executive                           768589    Age 46 7 terms Cr100,OOO
+                    Brawling-1,Carousing-1,Vehicle-1                           three low psg
+                 Asst Manager                        867865    Age 42 6 terms       Cr40,OOO
+                    Interrogation-3, Admin-1,Vehicle-1                          four mid psg
+                 Bureaucrat-1                        44A394    Age 22 Iterm         Cr10.000
+                    Liaison-1,Carousing-1                                            high psg
+                 Clerk                               97AA75 Age 42 6 terms          Cr40,OOO
+                    Liaison-2, Admin2, Jack of all trades-1                           low psg
+                 Manager                             668359    Age 50 8 terms       Cr10,OOO
+                    Instruction-1, Blade Cbt-2, Carousing-1,Admin-3                   low psg
+                 Manager                             463A7B    Age 30 3 terms       Cr40,OOO
+                    Liaison*, Vehicle-I , Brawling-1                                  low psg
+                 Director                            7744B7    Age 46 7 terms       Cr80,OOO
+                    Admin-7, Carousing-1                                          six low psg
+                 Asst Manager                        A85746    Age 30 3 terms       Cr10,OOO
+                    Admin-1, Liaison-1,Carousing-1, Recruiting-1                      mid psg
+                 Clerk                               7A585A Age 38 5 terms          Cr80.000
+                    Admin-1,Blade Cbt-1, Interrogation-2                     watch, high psg
+                 Supervisor                          BB5687    Age 30 3 terms       Cr40,OOO
+                    Admin-1, Vehicle-1,Computer-2                            watch, high psg
+                 Bureaucrat4                         748765    Age 34 4 terms       Cr10,OOO
+                    Admin-4                                                           low psg
+                 Bureaucrat-)                        8757A4    Age 22 1 term              CrO
+                    Vehicle-2                                                        high Psg
+                 Executive                           B67584    Age 38 5 terms       Cr80.000
+                    Computer43                                                three mid psg
+                 Bureaucrat4                         748656    Age 34 4 terms       Cr10.000
+                    Recruiting-3, Blade Cbt-1                              low psg, high psg
+
+
+
+James Turnbull (Order #51963372)
+                Clerk                                 786543      Age 50 8 terms       Cr40,OOO
+                     Admin-3, Liaison-1,Vehicle-I,Carousing-3            three mid psg, high psg
+                k i s t Manager                       786987      Age 34 4 terms       Cr20.000
+                     Admin-2, Vehicle-2, Recruiting-1,Computer-2                 mid psg, watch
+                Manager                               876975      Age 38 5 terms       Cr40,OOO
+                     Instruction-2, Admin-1, Vehicle-2, Computer-3             mid psg, high psg
+                Director                               876865      Age 42 6 terms      Cr80.000
+                     Admin4, Recruiting-1,Vehicle-1,Brawling-2, Blade Cbt               high psg
+                Executive                              7A7B84 Age 46 7 terms           Cr40.000
+                     Admin-1, Computer-6, Blade Cbt-1,Gun Cbt-1, Leader-2                  watch
+                Clerk                                  A568AB Age 26 2 terms           Cr10,OOO
+                     Admin-1,Leader-1, Liaison-1                                        high psg
+                Asst Manager                           655889      Age 42 6 terms            CrO
+                      Liaison-3, Admin-1, Computer-3, Blade Cbt-1                watch, high psg
+                Supervisor                             BB7658      Age 26 2 terms      Cr10,OOO
+                     Admin-5                                                            high psg
+                Bureaucratd                            879486      Age 30 3 terms      Cr50.000
+                      Admin-1, Computer-1, Vehicle-1, Jack of all trades-1
+                Manager                                ABA767 Age 38 5 terms           Cr10,OOO
+                      Computer-4, Vehicle-1,Admin-1, Gun Cbt-1, Instruction-2            low Psg
+                Clerk                                  463798      Age 42 6 terms      Cr40,OOO
+                      Admin-1,Liaison4                     high psg, two mid psg, low psg, watch
+                Clerk                                  344457      Age 22 1 term       Crl0,OOO
+                      Liaison-2
+                Supervisor                             969878      Age 26 2 terms      Cr40,OOO
+                      Liaison-1,Vehicle3
+                Asst Manager                           345249      Age 30 3 terms      Cr10.000
+                      Liaison-3, Carousing-1,Brawl ing-1                       high psg, mid psg
+                 Executive                             98AAB7 Age 34 4 terms Cr120,OOO
+                      Liaison-3, Leader-3, Computer-3, Gun Cbt-I                           watch
+                Supervisor                             99476B      Age 38 5 terms      Cr10,OOO
+                      Liaison-1, Admin-1, Computer-1, Vehicle-1, Gun Cbt-3       watch, high psg
+                 k i s t Manager                       879598      Age 50 8 terms      Cr40,OOO
+                      Admin-7, Computer-1,Vehicle3                                         watch
+                Clerk                                  884577      Age 42 6 terms      Cr80,OOO
+                      Vehicle-1, Instruction-I,Recruiting-1,Liaison-2                    high psg
+                 Bureaucrat4                           342678      Age 34 4 terms      Cr10.000
+                      Vehicle-1,Admin-1, Jack of all trades-1                  high psg, low psg
+                 Executive                             789689      Age 42 6 terms      Cr80,OOO
+                      Admin-6, Liaison4                                      watch, two high psg
+                 Bureaucrat-5                          889447      Age 38 5 terms      Cr10,OOO
+                      Computer-6                               watch, high psg, low psg, mid psg
+                 Director                              8BA7BB Age 42 6 terms           Cr80,OOO
+                      Computer-I,Vehicle-1, Admin-5, Liaison-1,Instruction-I watch, low psg
+                 Bureaucrat-2                          675925      Age 26 2 terms      Cr10.000
+                      Computer-1,Vehicle-1,Carousing-1
+                 Bureaucrat-7                          35BBB7      Age 46 7 terms Cr120,OW
+                      Brawling-3, Vehicle-2, Computer-1, Gun Cbt-I                 three high psg
+
+
+
+James Turnbull (Order #51963372)
+         Rogues
+           Rogues are produced in accordance with the character generation tables given
+        on pages 8 and 9 of this supplement. They are assumed to have undergone the
+        mustering-out procedure, and are now actively adventuring in the universe,
+        although they are still rogues. Musting out benefits have been specified, but may
+        be altered a t the whim of the referee or to suit the needs of a specific situation.
+           Suggested uses for these rogue characters include confidence men, ruffians or
+        thugs, or even patrons. All rogues should be regarded as initially untrustworthy,
+        and should be treated with suspicion.
+
+                Rogue                              637656       Age 26 2 terms       Cr50,OOO
+                  Gun Cbt-1, Streetwise-1,Admin-1                                          gun
+                Rogue                              8948A5       Age 50 8 terms Cr100,OOO
+                  Streetwise-1, Forgery-1, Bribery-1, Jack of all trades-1          gun, blade
+                Rogue                              84C5A6 Age 30 3 terms             Cr10.000
+                  Streetwise-2, Gun Cbt-1                                                  gun
+                Rogue                              67A4B7       Age 34 4 terms       Cr20,OOO
+                  Streetwise-1, Blade Cbt-2                                          Made, gun
+                Rogue                              676976       Age 46 7 terms Cr100,OOO
+                  Streetwise-2, Vehicle-1,Carousing-1,Demolition-1                     high psg
+                Rogue                              964769       Age 50 8 terms       Cr10,OOO
+                  Streetwise-1,Carousing-1,Liaison-2, Bribery2             gun. blade, high psg
+                Rogue                              2C4679       Age 46 7 terms Cr100.000
+                  Streetwise-1,Brawling-1,Blade Cbt-1,Liaison-1                     Travellers'
+                Rogue                              BA7657 Age 34 4 terms             Cr50,OOO
+                  Streetwise2, Ship Tactics-2                                       Travellers'
+                Rogue                              4BB984       Age 22 1 term        Crl0.000
+                  Streetwise-1, Liaison-1
+                Rogue                              864A88       Age 38 5 terms             CrO
+                  Streetwise-2, Brawling-1,Vehicle-1,Computer-1                     Travellers'
+                Rogue                              586385       Age 42 6 terms       Cr10,OOO
+                  Streetwise-2, Gun Cbt-1,Liaison-1,Carousing-1                gun, Travellers'
+                Rogue                              39887A       Age 26 2 terms Cr100,OOO
+                  Streetwise-2, Blade Cbt-1                                    gun, Travellers'
+                Rogue                              6A8796      Age 30 3 terms              CrO
+                  Streetwise-1,Ship'Tactics-1, Forgery-1, Gun Cbt-1            gun, Travellers'
+                Rogue                              876956      Age 30 3 terms        Cr10.000
+                  Streetwise-2, Blade Cbt-1, Carousing-1                            blade, gun
+                Rogue                              975277      Age 26 2 term         Cr50,000
+                  Streetwise-1,Vehicle-1, Bribery-1, Gun Cbt-1                      Travellers'
+                Rogue                              5888A4      Age 22 1 term         Crl0,OOO
+                  Streetwise9                                                       Travellers'
+
+
+
+
+James Turnbull (Order #51963372)
+                   Rogue                              85A35B     Age 22 1 term      Cr50,OOO
+                     Streetwise-1,Demolition-1                                            gun
+                   Rogue                              BABB57 Age 30 3 terms         Cr10,OOO
+                     Liaison-1,Streetwise-1, Carousing-1,Gun Cbt-1                        gu n
+                   Rogue                              485848     Age 26 2 terms Cr100,OOO
+                     Streetwise-1,Forgery3                                  eighteen high psg
+                   Rogue                              4368B6     Age 34 4 terms     Cr10,OOO
+                     Streetwise-1, Carousing-2, Brawling-1, Gun Cbt-2    gun, blade, high psg
+                   Rogue                              6BCA75 Age 30 3 terms Cr150,OOO
+                     Streetwise-1,Vehicle-1,Carousing-I, Bribery-I                   high psg
+                   Rogue                              898A67     Age 22 Iterm       Crl0.000
+                     Streetwise-3                                                         gun
+                   Rogue                              683547     Age 50 8 terms Cr100,OOO
+                     Streetwise-4, Gun Cbt-1, Blade Cbt-1, Vehicle-2        gun, two high psg
+                   Rogue                              A67889     Age 34 4 terms     Cr10,OOO
+                     Streetwise-1, Demolition-3                                  gun, low psg
+                   Rogue                              A89842     Age 22 1 term Cr100,OOO
+                     Streetwise-I, Brawling-1,Carousing-I
+                   Rogue                              773756     Age 42 6 terms     Cr50.000
+                     Streetwise-3, Blade Cbt-2, Vehicle-1
+                   Rogue                              734647     Age 26 2 terms     Cr50,M)O
+                     Streetwise-I,Forgery-1,Bribery-1
+                   Rogue                              278B57     Age 30 3 terms     Cr10,OOO
+                     Streetwise-1,Vehicle-3                                               gun
+                   Rogue                              A87498     Age 30 3 terms     Cr50,000
+                     Streetwise-1, Gun Cbt-1,Demolition-1, Brawling-I                high Psg
+                   Rogue                              A96499     Age 42 6 terms Cr100,OOO
+                     Streetwise-1,Gun Cbt-5, Blade-2, Vehicle-1                 gun, high psg
+                   Rogue                              38DD78 Age 38 5 terms         Cr10,OOO
+                     Streetwise-2, Vehicle3                                     gun, high psg
+                   Rogue                              C56789     Age 30 3 terms Cr100,OOO
+                     Streetwise-1,Carousing-I, Liaison-1,Ship Tactics-I            gun, blade
+                   Rogue                              8854B4     Age 38 5 terms     Cr50.000
+                     Streetwise-2, Ship Tactics-2, Leader-2                      two high psg
+                   Rogue                              4 B675C    Age 30 3 terms Crl00.000
+                     Streetwise-1, Gun Cbt-2
+                   Rogue                              436776     Age 26 2 terms     Cr10,OOO
+                     Streetwise-'i,Vehicle-1, Brawling-I
+                   Rogue                               BC67B7 Age 34 4 terms Cr100,OOO
+                     Streetwise-I,Leader-1, Jack of all trades-I
+                   Rogue                              975377     Age 22 1 term      Crl0,OOO
+                     Streetwise-3
+                   Rogue                              786595     Age 30 3 terms            CrO
+                     Streetwise-I, Blade Cbt-1, Brawling-3                               blade
+                   Rogue                               5888A6    Age 22 1 term      Crl0,000
+                     Streetwise-I,Carousing-I
+                   Rogue                               768589    Age 26 2 terms Cr100.000
+                      Streetwise-1,Carousing-1,Liaison-1
+
+
+
+James Turnbull (Order #51963372)
+          Nobles
+           Noble characters are produced in accordance with the character generation tables
+        given on pages 8 and 9 of this supplement. Nobles are special, in that the character
+        must already have a minimum social standing characteristics of 10.Each is assumed
+        to have undergone the musteringout procedure, but all should be assumed to
+        be nobles within the Imperium.
+           Suggested uses for nobles include patrons for patron encounters, governmental
+        officials, idle rich, and corporate executives.
+
+                 Knight                               5749BB      Age 26 2 terms Cr100.000
+                    Bribery-1, Ship's Boat-1, Computer-1, Gun Cbt-1         high psg, Travellers'
+                 Marchioness                          84737D      Age 30 3 terms Cr100.000
+                    Blade Cbt-2, Gun Cbt-1, Carousing-1                            two high psg
+                 Baron                                34398C      Age 46 7 terms Cr300.000
+                    Leader-1, Gun Cbt-1, Hunting-1, Carousing-2, Bribery-1            Travellers'
+                 Knight                               948868      Age 26 2 terms       Cr50.000
+                   Vehicle-1,Ship's Boat-1                                         gun, high psg
+                 Count                                55955E      Age 30 3 terms Cr150.000
+                    Navigation-1,Leader-1, Vehicle-1,Gun Cbt-1                  gun, Travellers'
+                 Dame                                 839488      Age26 2 terms              CrO
+                    Brawling-1,Vehicle-1,Engineering-1, Hunting-1                            gun
+                 Marquis                              57978D      Age 34 4 terms Cr100.000
+                    Gun Cbt-1, Hunting-1, Bribery-1,Carousing1              high psg, Travellers'
+                 Duke                                 49BB8F      Age 46 7 terms Cr400,OOO
+                    Pilot-3, Leader-1, Liaison-1, Admin-1,Jack of all trades-1             yacht
+                 Baron                                B5876C Age 34 4 terms Cr100,OOO
+                    Brawling-1,Pilot-1, Leader-1,Engineering-1, Admin-1               Travellers'
+                 Marquis                              27489D      Age 50 8 terms Cr300,OOO
+                    Navigation-1, Liaison-1,Computer-3, Medical-1,Vehicle-1 three high psg
+                 Knight                               886898      Age 34 4 terms CrlO0,OOO
+                    Blade Cbt-1, Gun Cbt-1, Computer-1, Pilot-1,Liaison-1             Travellers'
+                 Baroness                             48BB8C Age 30 3 terms            Cr50,OOO
+                    Blade Cbt-1, Leader-1, Computer-1                       high psg, Travellers'
+                 Knight                               348768      Age 26 2 terms Cr100,OOO
+                    Gun Cbt-1, Pilot-1,Carousing-1                                 high psg, gun
+                 Countess                             89342E      Age 30 3 terms Cr100,000
+                    Hunting-1,Carousing-1,Vehicle-1,Navigation-1                 high psg, yacht
+                 Baron                                49968C      Age 34 4 terms Cr200,OOO
+                    Pilot-1, Blade Cbt-2, Vehicle-1, Liaison-1, Admin-1             two high psg
+                 Duchess                              86798F      Age 38 5 terms Cr300,OOO
+                    Gun Cbt-1, Navigation-1, Computer-2, Liaison-2, ~eader-1                yacht
+
+
+
+James Turnbull (Order #51963372)
+                 Baroness                            84798C      Age 26 2 terms Cr200.000
+                    Carousing-1,Admin-1, Leader-1                                     Travellers'
+                 Marquis                             95737D      Age 30 3 terms Crl00,OOO
+                    Vehicle-3, Hunting-1                                                high psg
+                 Duke                                79876F      Age 22 1 term         Cr50,OOO
+                    Blade Cbt-1, Computer-1                                           Travellers'
+                                                     889BCA Age 26 2 terms             Cr50,OOO
+                    Navigation-1,Leader-1,Jack of all trades-1                          high psg
+                 Knight                              356876      Age 42 6 terms Cr100,OOO
+                    Engineering-3, Pilot-1, Blade Cbt-1, Leader-2       two high psg, Travellers'
+                 Dame                                894AAB Age 34 4 terms Cr150,OOO
+                    Bribery-1, Hunting-1, Brawling-1, Vehicle-1                            Yacht
+                 Baroness                            BB689C Age 30 3 terms             Cr10,OOO
+                    Pilot-3, Carousing-1
+                 Duchess                             9B6B7F Age 42 6 terms Cr100,OOO
+                    Navigation-1, Gun Cbt-2, Liaison-1                                     yacht
+                 Marquis                             67978D      Age 34 4 terms        Cr10,OOO
+                    Leader-3, Gun Cbt-1,Bribery-1                                     Travellers'
+                 Count                               98955E      Age 46 7 terms Cr200,000
+                    Navigation-2, Leader-1,Vehicle-2                                  Travellers'
+                 Knight                              67C78B      Age 30 3 terms Cr100,OOO
+                    Leader-1,Computer-1, Liaison-1                                 gun, high psg
+                 Count                               31787E      Age 50 8 terms        Cr 10,000
+                    Leader-3, Vehicle-1,Pilot-1                                yacht, Travellers'
+                 Baron                               89788C      Age 26 2 terms Cr100.000
+                    Engineering-1,Computer-1, Gun Cbt-1                               Travellers'
+                 Marquis                             33778D      Age 38 5 terms        Cr60,OOO
+                                   .
+                    Vehicle-1 Medical-3                                            high psg, gun
+                 Baron                               89444C      Age 26 2 terms        Cr10,OOO
+                    Ship's Boat-2, Gun Cbt-1                                               yacht
+                 Knight                              BC798B Age 30 3 terms             Cr60,OOO
+                    Carousing-1,Brawling-2
+                 Duchess                             46578F      Age 34 4 terms        Cr10.000
+                    Leader-1,Carousing-1,Liaison-1                                          yacht
+                 Marchioness                         25346D      Age 22 1 term                CrO
+                    Bribery-1, Medical-1                                                    yacht
+                 Knight                              757556      Age 34 4 terms Cr 100,000
+                    Navigation-1,Engineering3                                         Travellers'
+                 Marquis                             93369D      Age 26 2 terms        Cr 10,000
+                    Hunting-2, Bribery-1                                                    yacht
+                 Knight                              366888      Age 30 3 terms               CrO
+                    Gun Cbt-4                                                         Travellers'
+                 Baron                                B5AAAC Age 34 4 terms            Cr10,OOO
+                    Blade Cbt-5                                                       Travellers'
+                 Count                               AA678E Age 26 2 terms Cr100.000
+                    Liaison3                                                          Travellers'
+                 Duke                                365CCF       Age 46 7 terms Cr300,000
+                    Pilot-1,Navigation-1, Engineering-1, Jack of all trades-1               yacht
+
+
+
+James Turnbull (Order #51963372)
+        Scientists
+          Scientist characters are produced in accordance with the character generation
+       tables given on pages 8 and 9 of this supplement. Each is assumed to have
+       completed some basic portion of his or her research, and i s now embarked on a con-
+       tinuation of that research while operating somewhere in the un'iverse. Mustering-
+       out benefits have been specified, but may be altered or changed a t the whim of
+       the referee, or to suit the needs of a specific situation.
+          Some suggestions for use of scientist characters include patrons for patron
+       encounters, local citizens engaed in research, and idle encounters.
+
+               Scientist                             847657    Age 46 7 terms     Cr30.000
+                  Computer-1,Mechanical-1,Electronic-1,Navigation-1                 lab ship
+               Scientist                             647874    Age 30 3 terms     Cr10,OOO
+                  Computer4, Gun Cbt-1                                         gun, mid psg
+               Scientist                             747376    Age 22 1 term      Crl0,OOO
+                  Computer-1, Gun Cbt-1                                             lab ship
+               Scientist                             56A676    Age42 6terms              CrO
+                  Computer-2, Navigation3                                     gun, high psg
+               Scientist                             534556    Age 42 6 terms     Cr10,OOO
+                  Computer-1,Electronics-7                                          lab ship
+               Scientist                             3767BB    Age 34 4 terms      Cr5.000
+                  Computer-1,Mechanical-3                                      two high psg
+               Scientist                             798AB6 Age 42 6 terms        Cr15,OOO
+                  Computer-8                                                        lab ship
+               Scientist                             48B596    Age 34 4 terms      Cr5,000
+                  Computer-1,Medical3                                              high psg
+               Scientist                             387BCA Age 34 4 terms        Cr50,OOO
+                  Computer-1,Gravities-3                                            lab ship
+               Scientist                             978888    Age 30 3 terms     Cr10,OOO
+                  Computer-1, Electronics-1,Gun Cbt-1                          two high psg
+               Scientist                             964BB6    Age 26 2 terms           CrO
+                  Computer-1, Blade Cbt-1, Jack of all trades-1                     mid psg
+               Scientist                             272B67    Age 22 1 term      Crl0,OOO
+                  Computer-1, Brawling-1
+               Scientist                             9896C4    Age 30 3 terms      Cr5.000
+                  Computer-1, ~ r a h l i n ~ - l ,
+                                              Carousing-1                           lab ship
+               Scientist                             987498    Age 22 1 term            CrO
+                  Computer-1,Admin-1,Leader-1                                       lab ship
+               Scientist                             886585    Age 34 4 terms           CrO
+                  Computer-1,Gun Cbt-1, Blade Cbt-1,Brawling-1               three high psg
+               Scientist                             984865    Age 26 2 terms     Cr10.000
+                  Computer-1,Vehicle-1,Survival-1                                   lab ship
+
+
+
+James Turnbull (Order #51963372)
+                  Scientist                           786978      Age 42 6 terms      Cr30,OOO
+                     Computer-I, Navigation-1, Gravities-4                              lab ship
+                  Scientist                           676978      Age 46 7 terms      Cr20.000
+                     Computer-1, Electronics-7                                          lab ship
+                  Scientist                           B11987      Age 50 8 terms       Cr30.000
+                     Computer-8, Admin-1                                            six high psg
+                  Scientist                           267985      Age 38 5 terms       Cr60.000
+                     Computer-1,Vehicle-1,Medical-2, Leader-1            gun, high psg, low psg
+                  Scientist                           B69779      Age 26 2 terms        Cr5,000
+                     Computer-I, Navigation-1                                            low psg
+                  Scientist                           756568      Age 42 6 terms       Cr10,OOO
+                     Computer-1,Mechanical-5, Electronics-I                   four low psg, gun
+                  Scientist                           BB4B96 Age 46 7 terms            Cr10.000
+                     Computer-4, Mechanical-2, Medical-1                                 lab ship
+                  Scientist                           793A78      Age 42 6 terms       Cr20,OOO
+                     Computer-1, Jack of all trades-5, Electronics-1             three high psg
+                  Scientist                           896B66      Age 38 5 terms       Cr30,OOO
+                     Computer-1,Gravitics-1, Vehicle-I, Navigation-1                     lab ship
+                  Scientist                           385685      Age 42 6 terms       Cr40,OOO
+                     Computer-1,Admin-3, Leader-1                                three high psg
+                  Scientist                           897488      Age 42 6 terms       Cr20.000
+                     Computer-2, Gun Cbt-1, Blade Cbt-1, Navigation-1                    lab ship
+                  Scientist                           646B47      Age 34 4 terms       Cr 10,000
+                     Computer-3, Gravitics-1                                      three low psg
+                  Scientist                           B694B6      Age 38 5 terms        Cr1,000
+                     Computer-1, Medical-1, Admin-I, Jack of all trades-1                lab ship
+                  Scientist                           682687      Age 50 8 terms        Cr2.000
+                     Computerd, Gravitics-1, Medical-1,Vehicle-1                         lab ship
+                  Scientist                           75887B      Age 26 2 terms        Cr5,000
+                     Computer-1,Carousing-1                                             high psg
+                  Scientist                           793667      Age 50 8 terms       Cr30.000
+                     Computer-1,Mechanical-7, Survival-1                                  lab ship
+                  Scientist                           877758      Age 46 7 terms       Cr12.000
+                     Computer-1, Vehicle-1, Blade Cbt-1, Survival-1                       lab ship
+                  Scientist                            737B68     Age 26 2 terms       Crl0.000
+                     Computer-2, Vehicle-1                                                 low psg
+                  Scientist                           635BB7      Age 30 3 terms       Cr20,OOO
+                     Computer-I, Leader-1                                      mid psg, high psg
+                  Scientist                           867C98      Age 34 4 terms       Cr30,OOO
+                     Computer-2, Admin-2                                                  lab ship
+                  Scientist                           656B67      Age 34 4 terms        Cr1,OOO
+                     Computer-2, Vehicle-2                                         high psg, gun
+                  Scientist                           657BD8      Age 34 4 terms       Cr10.000
+                     Computer-1, Vehicle-1, Electronics-1                                 lab ship
+                  Scientist                            5967E      Age 30 3 terms       Cr30.000
+                     Computer-1,Gun Cbt-1, Carousing-2                                        gun
+                  Scientist                            776CA6 Age 42 6 terms           Cr60.000
+                     Computer-1,Gun Cbt-1, Gravitics-I, Navigation-2                      lab ship
+
+
+
+James Turnbull (Order #51963372)
+       Hunters
+         Hunter characters are generated in accordance with the character generation
+      tables given on pages 8 and 9 of this supplement. Each is assumed to have under-
+      gone the mustering-out procedure, although the referee may elect to use them as if
+      they were s t i l l functioning as hunters. Mustering-out benefits have been specified,
+      but they may be altered or enhanced by the referee a t his or her whim, or for
+      the needs of specific situations.
+         Some suggested uses for hunter characters include native or local planetary
+      guides, hired guards, or patrons for patron encounters.
+
+               Hunter                           474897      Age 30 3 terms      Cr15,000
+                 Hunting-), Gun Cbt-1,Blade Cbt-1, Survival-1                  safari ship
+               Hunter                           76B452      Age 42 6 terms      Cr10,OOO
+                 Hunting-4, Vehicle-1, Computer-1                         gun.. high psg
+               Hunter                           883677      Age 22 1 term        Cr5.000
+                 Hunting-1,Gravities-1
+               Hunter                           489688      Age42 6 terms             CrO
+                 Hunting7                                                      safari ship
+               Hunter                           697875      Age 30 3 terms      Cr10,000
+                 Hunting-2, Gun Cbt-1                                          safari ship
+               Hunter                           654857      Age 42 6 terms Cr 100,000
+                 Hunting-3, Admin-1, Computer-1, Survival-1              safari ship, gun
+               Hunter                           888697      Age 46 7 terms Cr 100,000
+                 Hunting-1, Admind, Gun Cbt-1                              gun, high psg
+               Hunter                           A86678      Age 46 7 terms Cr200,OOO
+                 Huntingd, Gun Cbt-2                                           safari ship
+               Hunter                           84887A      Age 22 1 term       Crl0.000
+                 Hunting1                                                        high psg
+               Hunter                           4837A6      Age 34 4 terms             CrO
+                 Hunting-1, Mechanical-1                                       safari ship
+               Hunter                           579456      Age 30 3 terms      Cr10.000
+                 Hunting-4                                                       high psg
+               Hunter                           67A445      Age 50 8 terms Cr100,OOO
+                 Hunting-5, Admin-1, Gun Cbt-1, Blade Cbt-1                    safari ship
+               Hunter                           9633A8      Age 46 7 terms Cr200,OOO
+                 Hunting-5, Admin-1,Electronic-1                               safari ship
+               Hunter                           112396      Age 46 7 terms      Cr10,OOO
+                 Hunting-3, Computer-3, Leader-1                         gun, safari ship
+               Hunter                           96A898      Age 38 5 terms             CrO
+                 Hunting-2, Gun Cbt-1, Blade Cbt-1                          five high psg
+               Hunter                           4A7967      Age 26 2 terms      Cr10,OOO
+                 Hunting-1,Gun Cbt-1                                           safari ship
+
+
+
+
+James Turnbull (Order #51963372)
+                 Hunter                             592277        Age 22 1 term        Cr5,000
+                   Hunting-I,Vehicle-I ,Gun Cbt-I
+                 Hunter                              845816       Age 26 2 terms Cr10,OOO
+                   Hunting-2, Survival-I,Blade Cbt-I                                         gun
+                 Hunter                              A76883       Age 46 7 terms Cr100,OOO
+                   Hunting-4, Survival-1,Leader-1,Medical-I                    gun, safari ship
+                 Hunter                              786799       Age 46 7 terms      Cr20.000
+                   ~unting-2,Gun Cbt-1, Mechanical-2, Computer2                      safari ship
+                 Hunter                              663967       Age 30 3 terms      Cr10,OOO
+                   Hunting-I, Gun Cbt-2, Vehicle-1                                      high psg
+                 Hunter                              68A988       Age 34 4 terms      Cr20,OOO
+                   Hunting-3, Blade Cbt-1,Leader-1                              gun, safari ship
+                 Hunter                              573936       Age 26 2 terms        Cr5.000
+                    Hunting4                                                            high psg
+                 Hunter                              769BB7       Age 46 7 terms        Cr3,000
+                    Hunting*, Blade Cbt-I ,Gun Cbt-1, Survival-I                     safari ship
+                 Hunter                              559987       Age 34 4 terms      Cr20,OOO
+                    Hunting-1,Gun Cbt-3, Survival-I,Vehicle-I                           high psg
+                 Hunter                              2687B6       Age 30 3 terms      Cr10,OOO
+                    Hunting-3, Leader-I,Admin-I                                      safari ship
+                 Hunter                              6314886 Age 22 Iterm Crl00,OOO
+                    Hunting-2, Blade Cbt-I                                              high psg
+                 Hunter                              656CC8       Age 34 4 terms      Cr 10,000
+                    Hunting-2, Vehicle-1                                             safari ship
+                 Hunter                              866977       Age 42 6 terms      Cr20.000
+                    Hunting-I, Electronics-I,Gravities-I ,Computer-I ,Gun Cbt-1 two high psg
+                 Hunter                              6A9B83 Age 50 8 terms            Cr10.000
+                    Hunting-6, Leader-1,Computer-I                              safari ship, gun
+                 Hunter                              679596        Age 38 5 terms Cr100,OOO
+                    Hunting-1,Computer-1,Vehicle-3, Gun Cbt-1                   gun, safari ship
+                 Hunter                               B8687A Age 46 7 terms            Cr20,000
+                    Hunting-2, Vehicle-2. Gravitics-2, Survival-I                 gun, high psg
+                 Hunter                              799A97        Age 26 2 terms             CrO
+                    Hunting-I, Vehicle-I, Computer-1, Gun Cbt-1                      safari ship
+                 Hunter                               565968       Age 46 7 terms Cr200,OOO
+                    Hunting-I,Gravitics-I, Electronics-1,Mechanical-2, Gun Cbt-3             gun
+                 Hunter                              42599A        Age 30 3 terms      Cr20,OOO
+                    Hunting-2, Blade Cbt-1, Computer-I                            gun. high psg
+                 Hunter                               9BB6BB Age 50 8 terms Cr300,000
+                    Hunting-7, Gun Cbt-I, Admin-I                               safari ship, gun
+                  Hunter                              947896       Age 42 6 terms      Cr10,OOO
+                    Hunting-1, Leader-3, Survival-1                                   safari ship
+                  Hunter                              476543       Age 22 1 term Crl00,OOO
+                    Hunting-1,Medical-I,Vehicle-I
+                  Hunter                              595694       Age 38 5 terms      Cr 10,000
+                    Hunting-1,Electronics-I,Survival-I                                safari ship
+                  Hunter                              3BCCB3 Age 22 Iterm              Crl0,OOO
+                    Hunting-1,Gun Cbt-1
+
+
+
+James Turnbull (Order #51963372)
+       Heroes and Villains
+           The following eight characters are drawn from the pages of science-fiction. While
+        they are expressed in terms of Traveller characters, they do not necessarily
+        represent a specific character generation system, and certainly do not meet any nor-
+        mal requirements given in Traveller. Last time, in Supplement 1, only heroes were
+        covered; this time, both heroes and villains are our subject.
+
+          1  Young Farmboy                        797655      Age 22           Cr minimal
+                 Pilot-2
+          For years an inexperienced farmboy, this individual has joined the rebellion
+       against the Empire as he seeks out the murderer of his father and the true story of
+       what happened.
+          He has a psionic rating of 11, with rudimentary training.
+
+         2  Special Agent                        8C8B77       4 e indeterminate Cr lots
+               Jack of all trades-2, Forgery-3, Streetwise-2, Electronic-2
+          Formerly a master thief, this individual was caught and now works (albeit
+       grudgingly so) as a field agent for an organization known as the Special Corps.
+
+         3   Sergeant Major                      A9B665     Age indeterminate Cr some
+                Vehicle-2, Heavy Weapons-2, Vacc-1,Instruction-1,several decorations
+          A veteran of the CoDominium Marines, this character now serves as the top
+        noncommissioned officer for an elite regiment of mercenaries.
+
+         4   Doctor/Surgeon                       7A8AA9 Age indeterminate Cr enough
+                Medical-4, Jack of all trades-2, Vacc-1
+          Highly trained in the medical arts, this character is often called upon to make on
+       the spot decisions concerning the treatment of injured or sick extraterrestrials in
+       the course of his work.
+
+         5    Diplomat                           988AA8 Age indeterminate Cr well off
+                Admin-3, Liaison-2, Carousing-2, Jack of all trades-2, Blade Cbt-2
+          A member of the CDT (Corps Diplomatique Terrestrienne), devoted to the
+       diplomatic settlement of differences between diffeing cultures and species, this
+       individual i s possessed of a marked adaptability and poise which serves him in good
+       stead.
+
+         6    Imperial Leader                         FAADFF Age indeterminate           Cr -
+                  Blade Cbt-5, Pilot-3, Jack of all trades-4, Leader-2
+           Of the highest rank of imperial nobility, this individual is charged with the
+       suppression of the rebellion.
+           He has a psionic rating of 13; it is not known if this is natural, or if it is
+       artificially enhanced. It i s reported that the life support system he wears constantly
+       is necessary as the result of a fall into a volcano.
+
+
+
+
+James Turnbull (Order #51963372)
+         7    Scoundrel                             685876  Age indeterminate Cr some
+                 Forgery-1, Pilot-1, Jack of all trades-1
+           An incorrigible scoundrel, this character has no particularly welldeveloped
+       skills, but does have the uncanny ability to wriggle out of almost any unpleasant
+       situation.
+
+         8   Commissioner                       566876     Age indeterminate         Cr -
+                Admin-3
+          A commissioner of the great King of the Tyranian Empire, this character dreams
+       of past glories as he searches for the center of opposition to Tyranni rule- the
+       so-called "Rebellion World."
+
+       THE ANSWERS
+         Identificationsof the heroes and villains given above are as follows-
+         1. Luke Skywalker, from Star Wars, by Gene Lucas.
+         2. James "Slippery Jim" di Griz, from The Stainless Steel Rat, by Harry Harrison.
+         3. Sargeant Major Calvin, from Sword and Sceptre, and The Mercenary, by Jerry
+       Pournelle.
+         4. Senior Physician Conway, from the Sector General series, including Major
+       Operation and Ambulance Ship, by James White.
+         5. Jame Retief, from the Retief series, including Galactic Diplomat and Retief's
+       War, by Keith Laumer.
+         6. Lord Darth Vader, from Star Wars, by Gene Lucas.
+         7. Harry Mudd, from Star Trek.
+         8. Simok Artrap, from The Stars, Like Dust, by Isaac Asimov.
+       THE PREVIOUS ANSWERS
+          Traveller Supplement 1, 1001 Characters, contained nine characters from
+       science-fiction, but did not carry identifications with the text. In fact. a
+       corallary contest was run in the Journal of the Travellers' Aid Society asking
+       for correct identifications.
+          The answers to those characters are-
+           1. John Carter of Mars, from Edgar Rice Burrough's John Carter of Mars series.
+          2. Kimball Kinnison, from the Lensman Series by E. E. "Doc" Smith.
+          3. Jason dinAlt, from the Deathworld Trilogy by Harry Harrison.
+          4. Earl Dumarest, from the Dumarest Saga, by E. C. Tubb.
+          5. Beowulf Shaeffer, from At the Core, and other stories of Known Space by
+       larry Niven.
+          6. Anthony Villiers, from Starwell, and The Thurb Revolution, by Alexei
+       Panshin.
+          7. Dominic Flandry, from the Flandry Series by Poul Anderson.
+          8. Kirth Girsen, from the Killing Machine, one of five Demon Prince novels
+       by Jack Vance.
+          9. Gully Foyle, from the Stan, My Destination, by Alfred Bester.
+
+
+
+
+James Turnbull (Order #51963372)
+James Turnbull (Order #51963372)
+                                   This page is intentionally blank.
+James Turnbull (Order #51963372)
+
