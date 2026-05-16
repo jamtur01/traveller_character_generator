@@ -105,20 +105,41 @@ describe("MT default skills match the manual (p. 13)", () => {
       readFileSync(resolve(__dirname, "../data/editions/mt-megatraveller.json"), "utf8"),
     ) as {
       homeworld: {
-        defaultSkills: Array<{ condition: string; skill: string; level: number }>;
+        defaultSkills: Array<{
+          skill: string;
+          level: number;
+          when?: {
+            serviceIn?: string[];
+            serviceNotIn?: string[];
+            techAtLeast?: string;
+            techIn?: string[];
+          };
+        }>;
       };
     };
     const ds = mt.homeworld.defaultSkills;
     // Vacc Suit-0 for navy/marines/flyers/scouts/merchants/pirates
-    expect(ds.some((d) => d.skill === "Vacc Suit" && d.condition.includes("service in"))).toBe(true);
+    expect(ds.some((d) =>
+      d.skill === "Vacc Suit" &&
+      d.when?.serviceIn?.includes("navy") === true,
+    )).toBe(true);
     // Gun Combat-0 for all except barbarians
-    expect(ds.some((d) => d.skill === "Gun Combat" && d.condition.includes("not in"))).toBe(true);
+    expect(ds.some((d) =>
+      d.skill === "Gun Combat" &&
+      d.when?.serviceNotIn?.includes("barbarians") === true,
+    )).toBe(true);
     // Computer-0 for Early Stellar+
-    expect(ds.some((d) => d.skill === "Computer" && d.condition.includes("Early Stellar"))).toBe(true);
+    expect(ds.some((d) =>
+      d.skill === "Computer" && d.when?.techAtLeast === "Early Stellar",
+    )).toBe(true);
     // Grav Vehicle-0 for Avg Stellar+
-    expect(ds.some((d) => d.skill === "Grav Vehicle" && d.condition.includes("Avg Stellar"))).toBe(true);
+    expect(ds.some((d) =>
+      d.skill === "Grav Vehicle" && d.when?.techAtLeast === "Avg Stellar",
+    )).toBe(true);
     // Wheeled Vehicle-0 for Industrial/Pre-Stellar/Early Stellar
-    expect(ds.some((d) => d.skill === "Wheeled Vehicle" && d.condition.includes("Industrial"))).toBe(true);
+    expect(ds.some((d) =>
+      d.skill === "Wheeled Vehicle" && d.when?.techIn?.includes("Industrial") === true,
+    )).toBe(true);
   });
 });
 
