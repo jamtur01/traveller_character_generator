@@ -27,7 +27,9 @@ import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
-  applyDmRules, labelToColumnKey, parseResolutionTarget, rollVsTarget,
+  applyDmRules, applyStructuredDms, labelToColumnKey,
+  parseResolutionTarget, rollVsTarget,
+  type StructuredDm,
 } from "../tables";
 import { awardBrownie } from "../awards";
 import { tryMitigate } from "../browniePoints";
@@ -44,21 +46,37 @@ interface MerchantData {
       lineSize: "Large" | "Small" | null;
       target: string | number;
     }>;
-    dms?: string[];
+    dms?: StructuredDm[];
   };
   departmentAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
-  availablePositions: { columns: string[]; rows: Array<Record<string, unknown>> };
-  specificAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
-  assignmentResolution: Record<string, { columns: string[]; rows: Array<Record<string, unknown>>; dms?: string[] }>;
+  availablePositions: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
+  specificAssignment: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
+  assignmentResolution: Record<string, {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: Array<string | StructuredDm>;
+  }>;
   ranksAndPromotions: Record<string, { enlisted?: unknown[]; officer?: unknown[]; promotion?: Record<string, unknown> }>;
   skillTables: Record<string, { columns: string[]; rows: Array<Record<string, unknown>> }>;
-  specialDuty: { columns: string[]; rows: Array<Record<string, unknown>> };
+  specialDuty: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+  };
   specialDutyResolution?: Record<string, {
     throw?: string;
     skills?: string[];
     effect?: string;
   }>;
-  reenlistment: { target: number; dms: string[] };
+  reenlistment: { target: number; dms: StructuredDm[] };
 }
 
 const ASSIGNMENT_COL_MAP: Record<string, string> = {
@@ -105,10 +123,7 @@ export function merchantEnlist(
   if (parsed.target === "auto") {
     ch.history.push(`Automatic enlistment with ${lineType}.`);
   } else if (typeof parsed.target === "number") {
-    let dm = 0;
-    // DMs from JSON.dms: "If Str 7+, DM +1. If Int 6+, DM +2"
-    if (ch.attributes.strength >= 7) dm += 1;
-    if (ch.attributes.intelligence >= 6) dm += 2;
+    const dm = applyStructuredDms(data.enlistment.dms, ch);
     const r = roll(2);
     ch.verboseHistory(`Merchant enlist (${lineType}): ${r} + ${dm} vs ${parsed.target}`);
     if (r + dm < parsed.target) {
@@ -148,12 +163,14 @@ export function merchantRollAssignment(ch: Character): string {
   }
   const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
   const lineCol = assignmentColumnFor(size);
-  let dm = 0;
-  // DMs from manual p. 60: Edu 6- → DM -1, rank O4+ → DM +1. Free Trader: Soc 5- → DM +1.
-  if (ch.attributes.education <= 6) dm -= 1;
-  if (ch.acgState!.isOfficer && ch.acgState!.rankCode.startsWith("O") &&
-      parseInt(ch.acgState!.rankCode.replace("O", ""), 10) >= 4) dm += 1;
-  if (lineCol === "freeTrader" && ch.attributes.social <= 5) dm += 1;
+  // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
+  const dm = (data.specificAssignment.dms ?? [])
+    .filter((d) => !d.column || d.column === lineCol)
+    .reduce((acc, d) => {
+      const rest: StructuredDm = { ...d };
+      delete rest.column;
+      return acc + applyStructuredDms([rest], ch);
+    }, 0);
   // Row 13 is reachable: a natural 12 plus a +1 DM hits 13. The
   // specificAssignment table includes rows for die ∈ [2,13]; do not truncate.
   const r = Math.max(2, Math.min(13, roll(2) + dm));
@@ -260,9 +277,7 @@ function merchantCheckAvailablePosition(ch: Character): void {
   const row = data.availablePositions.rows.find((r) => r.department === ch.acgState!.department);
   if (!row) return;
   const target = parseResolutionTarget(row[col]).target;
-  let dm = 0;
-  if (ch.attributes.intelligence >= 9) dm += 1;
-  if (ch.attributes.education >= 9) dm += 1;
+  const dm = applyStructuredDms(data.availablePositions.dms, ch);
   const r = roll(2);
   // Reset any prior temporary effective rank before evaluating this year.
   ch.acgState!.effectiveRankCode = null;
@@ -353,12 +368,7 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
 export function merchantSpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialDuty) return;
-  let dm = 0;
-  if (ch.attributes.education >= 9) dm += 1;
-  if (ch.acgState!.isOfficer && ch.acgState!.rankCode.startsWith("O")) {
-    const rn = parseInt(ch.acgState!.rankCode.replace("O", ""), 10) || 0;
-    if (rn >= 4 && ch.acgState!.department !== "Deck") dm += 1;
-  }
+  const dm = applyStructuredDms(data.specialDuty.dms, ch);
   const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.specialDuty.rows.find((row) => row.die === r);
   if (!row) return;
@@ -434,8 +444,7 @@ export function merchantRetention(ch: Character, assignment: string): void {
 
 export function merchantReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  let dm = 0;
-  if (ch.acgState!.isOfficer) dm += 1;
+  const dm = applyStructuredDms(data.reenlistment.dms, ch);
   const r = roll(2);
   if (r === 12) {
     ch.mandatoryReenlistment = true;
