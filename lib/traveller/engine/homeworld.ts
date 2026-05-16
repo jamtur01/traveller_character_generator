@@ -23,7 +23,11 @@ interface HomeworldData {
     rows: Array<Record<string, string | number>>;
   };
   starportXRoll: { results: Record<string, string> };
-  dmsByColumn: Record<string, Array<{ condition: string; dm: number }>>;
+  dmsByColumn: Record<string, Array<{
+    condition?: string;
+    when?: DmConditionWhen;
+    dm: number;
+  }>>;
   defaultSkills: Array<{ condition: string; skill: string; level: number }>;
   careerAvailability: Array<{
     /** Legacy form: deny services if homeworld tech is in this list. */
@@ -93,7 +97,8 @@ export function rollHomeworld(ch: Character): Homeworld | null {
     // Apply DMs based on previously-rolled values.
     const dms = data.dmsByColumn[col] ?? [];
     for (const rule of dms) {
-      if (matchesCondition(rule.condition, result)) r += rule.dm;
+      const cond = rule.when ?? rule.condition;
+      if (matchesCondition(cond, result, data.techCodeOrder)) r += rule.dm;
     }
     r = Math.max(2, Math.min(12, r));
     const row = data.rollTable.rows.find((row) => row.die === r);
@@ -114,9 +119,34 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   return hw;
 }
 
-function matchesCondition(condition: string, partial: Partial<Homeworld>): boolean {
-  // Conditions are of the form "size = Asteroid" or "starport = A".
-  const m = condition.match(/^([\w]+)\s*=\s*(.+)$/);
+interface DmConditionWhen {
+  column?: string;
+  equals?: string;
+  in?: string[];
+  atLeast?: string;
+}
+
+function matchesCondition(
+  raw: string | { when?: DmConditionWhen } | DmConditionWhen | undefined,
+  partial: Partial<Homeworld>,
+  techCodeOrder?: string[],
+): boolean {
+  if (raw == null) return false;
+  // Structured form: object with `when` or a flat shape.
+  if (typeof raw === "object") {
+    const w: DmConditionWhen = ("when" in raw && raw.when ? raw.when : raw) as DmConditionWhen;
+    if (!w.column) return false;
+    const actual = (partial as Record<string, string | undefined>)[w.column];
+    if (actual === undefined) return false;
+    if (w.equals !== undefined) return actual === w.equals;
+    if (w.in) return w.in.includes(actual);
+    if (w.atLeast && techCodeOrder && w.column === "tech") {
+      return techCodeOrder.indexOf(actual) >= techCodeOrder.indexOf(w.atLeast);
+    }
+    return false;
+  }
+  // Legacy string form (kept for back-compat with any non-MT JSON).
+  const m = raw.match(/^([\w]+)\s*=\s*(.+)$/);
   if (!m) return false;
   const col = m[1]!.trim();
   const expected = m[2]!.trim();
