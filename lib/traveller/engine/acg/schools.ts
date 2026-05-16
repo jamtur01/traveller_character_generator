@@ -112,19 +112,23 @@ function runEffect(
       return;
     }
     case "rollOnMosTable": {
+      if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
       for (let i = 0; i < rolls; i++) rollOnMos(ch, data);
       return;
     }
     case "rollOnBranchSkillsTable": {
+      if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
       for (let i = 0; i < rolls; i++) rollOnBranchSkills(ch, data);
       return;
     }
     case "rollOnSpecialistSchoolTable":
+      if (!effectWhenMatches(ch, effect)) return;
       rollOnSpecialistSchool(ch, data, schoolName);
       return;
     case "rollOnServiceSkillsTable": {
+      if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
       for (let i = 0; i < rolls; i++) rollOnServiceSkills(ch, data);
       return;
@@ -153,6 +157,44 @@ function runEffect(
       ch.history.push(`${schoolName}: unhandled effect ${effect.type}`);
       return;
   }
+}
+
+interface EffectWhen {
+  rankBelow?: { letter: string; n: number };
+  rankAtLeast?: { letter: string; min: number };
+}
+
+function effectWhenMatches(ch: Character, effect: Effect): boolean {
+  // Effects may include a structured `when` (preferred) or a legacy
+  // free-text `condition`. Missing means "always applies".
+  const when = (effect.when as EffectWhen | undefined) ?? null;
+  const code = ch.acgState?.rankCode ?? "";
+  if (when) {
+    if (when.rankBelow) {
+      const { letter, n } = when.rankBelow;
+      const m = code.match(new RegExp(`^${letter}(\\d+)$`));
+      if (!m) return true; // not in that band; legacy semantics
+      return parseInt(m[1]!, 10) < n;
+    }
+    if (when.rankAtLeast) {
+      const { letter, min } = when.rankAtLeast;
+      const m = code.match(new RegExp(`^${letter}(\\d+)$`));
+      if (!m) return false;
+      return parseInt(m[1]!, 10) >= min;
+    }
+    return true;
+  }
+  const condition = effect.condition as string | undefined;
+  if (!condition) return true;
+  const m = condition.match(/^rank below ([A-Za-z]+)(\d+)$/);
+  if (m) {
+    const letter = m[1]!;
+    const n = parseInt(m[2]!, 10);
+    const codeM = code.match(new RegExp(`^${letter}(\\d+)$`));
+    if (!codeM) return true;
+    return parseInt(codeM[1]!, 10) < n;
+  }
+  return true;
 }
 
 function runSkillBatch(

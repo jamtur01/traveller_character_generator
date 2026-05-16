@@ -4362,8 +4362,8 @@
           "ageLimit": 38,
           "effects": [
             { "type": "ocsCommission" },
-            { "type": "rollOnServiceSkillsTable", "rolls": 2, "condition": "rank below E8" },
-            { "type": "rollOnMosTable", "rolls": 1, "condition": "rank below E8" }
+            { "type": "rollOnServiceSkillsTable", "rolls": 2, "when": { "rankBelow": { "letter": "E", "n": 8 } } },
+            { "type": "rollOnMosTable", "rolls": 1, "when": { "rankBelow": { "letter": "E", "n": 8 } } }
           ]
         },
         "Intelligence School": {
@@ -5412,8 +5412,8 @@
           "ageLimit": 38,
           "effects": [
             { "type": "ocsCommission" },
-            { "type": "rollOnServiceSkillsTable", "rolls": 2, "condition": "rank below E8" },
-            { "type": "rollOnBranchSkillsTable", "rolls": 1, "condition": "rank below E8" }
+            { "type": "rollOnServiceSkillsTable", "rolls": 2, "when": { "rankBelow": { "letter": "E", "n": 8 } } },
+            { "type": "rollOnBranchSkillsTable", "rolls": 1, "when": { "rankBelow": { "letter": "E", "n": 8 } } }
           ]
         },
         "Intelligence School": {
