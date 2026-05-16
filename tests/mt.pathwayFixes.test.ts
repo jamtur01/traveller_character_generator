@@ -61,6 +61,7 @@ describe("Merchant: Free Trader assignment column maps correctly", () => {
 
 describe("Merchant: Free Trader Owner gets ship benefit at muster", () => {
   it("Rank O5+ Free Trader gets Free Trader benefit on musterOutPay", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
     c.acgState!.isOfficer = true;
