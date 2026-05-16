@@ -15,6 +15,7 @@ import type {
   Skill,
 } from "./types";
 import { DRAFT_SERVICES, SERVICES, s } from "./services";
+import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
 const SKILL_TABLE_NAMES = [
@@ -242,48 +243,10 @@ export class Character {
     this.age += 4;
     this.verboseHistory("--------------------------------------------");
     this.verboseHistory(`Term ${this.terms} age ${this.age}`);
-
-    const svc = this.service;
-    if (
-      svc === "scouts" || svc === "belters" || svc === "doctors" ||
-      svc === "rogues" || svc === "scientists" || svc === "hunters"
-    ) {
-      this.skillPoints += 2;
-    } else if (this.terms === 1) {
-      this.skillPoints += 2;
-    } else {
-      this.skillPoints += 1;
-    }
-
-    // TTB p. 24 checklist order: survival → commission → promotion → skills.
-    if (!s[this.service].checkSurvival(this)) {
-      this.history.push("Death in service.");
-      this.deceased = true;
-      this.activeDuty = false;
-      return;
-    }
-
-    if (this.drafted && this.terms === 1) {
-      this.verboseHistory("Skipping commission because of draft.");
-    } else if (!this.commissioned) {
-      if (s[this.service].checkCommission(this)) {
-        this.commissioned = true;
-        this.rank += 1;
-        this.skillPoints += 1;
-        s[this.service].doPromotion(this);
-        this.history.push(
-          `Commissioned during ${intToOrdinal(this.terms)} term of service as ${s[this.service].ranks[this.rank]}.`,
-        );
-      }
-    }
-    if (this.commissioned && this.rank < 6) {
-      if (s[this.service].checkPromotion(this)) {
-        this.rank += 1;
-        this.skillPoints += 1;
-        s[this.service].doPromotion(this);
-        this.history.push(`Promoted to ${s[this.service].ranks[this.rank]}.`);
-      }
-    }
+    // Delegate the step sequence to the engine runner, which reads the
+    // active edition's lifecycle.terms declaration from JSON. Adding
+    // edition-specific steps (MT specialDuty, etc.) requires no change here.
+    runTermSteps(this);
   }
 
   // ---------- reenlistment ----------

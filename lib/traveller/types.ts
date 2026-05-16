@@ -64,4 +64,10 @@ export interface ServiceDef {
   musterCash: Record<number, number>;
   musterBenefits: (ch: Character, dm: number) => void;
   acquireSkill: (ch: Character) => void;
+  /**
+   * MT-style explicit "skills per term" count. When undefined, the engine
+   * falls back to CT semantics (scouts/CotI-rankless = 2, first term = 2,
+   * other terms = 1). When set, the engine uses this directly.
+   */
+  skillsPerTerm?: number;
 }

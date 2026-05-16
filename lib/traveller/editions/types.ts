@@ -98,11 +98,24 @@ export interface BenefitDetail {
   basis?: string;
 }
 
+export interface LifecycleStep {
+  /** Step id — must match a key in the engine's step registry. */
+  id: string;
+  /** Step-specific config, passed to the step function as ctx.config. */
+  config?: Record<string, unknown>;
+}
+
+export interface LifecycleSpec {
+  /** Ordered sequence of steps run once per term in service. */
+  terms: LifecycleStep[];
+}
+
 export interface CanonData {
   schemaVersion: number;
   edition: EditionMeta;
   services: Record<ServiceKey, ServiceData>;
   benefitDetails: Record<string, BenefitDetail>;
+  lifecycle?: LifecycleSpec & Record<string, unknown>;
 }
 
 /**
