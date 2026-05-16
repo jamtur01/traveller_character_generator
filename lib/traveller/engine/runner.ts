@@ -21,11 +21,12 @@ export function runTermSteps(character: Character): void {
       `Edition ${edition.meta.id} has no lifecycle.terms — cannot run term steps`,
     );
   }
-  // ACG characters use lifecycle.acgTerms if the edition declares it; the
-  // basic sequence is the fallback for plain characters.
-  const sequence = character.useAcg && lifecycle.acgTerms
-    ? lifecycle.acgTerms
-    : lifecycle.terms;
+  if (character.useAcg) {
+    throw new Error(
+      "runTermSteps is for basic chargen only; ACG characters use runAcgYear",
+    );
+  }
+  const sequence = lifecycle.terms;
   const service = character.serviceDef();
   for (const step of sequence) {
     const fn = STEP_REGISTRY[step.id];

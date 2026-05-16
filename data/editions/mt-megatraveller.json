@@ -162,44 +162,6 @@
         }
       }
     ],
-    "acgTerms": [
-      {
-        "id": "allocateSkills",
-        "config": {
-          "term1Bonus": true
-        }
-      },
-      {
-        "id": "survival"
-      },
-      {
-        "id": "decorationCheck",
-        "config": {
-          "target": 10
-        }
-      },
-      {
-        "id": "commission",
-        "config": {
-          "doubleBonusOvershoot": 4
-        }
-      },
-      {
-        "id": "promotion",
-        "config": {
-          "doubleBonusOvershoot": 4
-        }
-      },
-      {
-        "id": "specialDuty",
-        "config": {
-          "doubleBonusOvershoot": 4
-        }
-      },
-      {
-        "id": "brownieAward"
-      }
-    ],
     "mtChecklist": [
       {
         "step": 1,

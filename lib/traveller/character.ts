@@ -21,7 +21,6 @@ import {
   getDraftServices, getEditionServices, getEnlistableServices,
 } from "./services";
 import { DEFAULT_EDITION_ID, getEdition } from "./editions";
-import { pathwayBaseService } from "./engine/acg";
 import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
@@ -329,19 +328,15 @@ export class Character {
   doEnlistment(method: string): ServiceKey {
     const enlistable = getEnlistableServices(this.editionId);
     const draftPool = getDraftServices(this.editionId);
-    let preferredService: ServiceKey;
-    // ACG path: the player selects a pathway (mercenary/navy/scout/
-    // merchantPrince) before enlistment; map it to the base service that
-    // the basic-flow engine runs. We also stamp acgBranch with the
-    // pathway name so the ACG record sheet renders correctly even before
-    // we implement true ACG branch/MOS rolls.
-    if (this.useAcg && this.acgPathway) {
-      preferredService = pathwayBaseService(this.acgPathway) as ServiceKey;
-      if (!this.acgBranch) this.acgBranch = this.acgPathway;
-      this.verboseHistory(
-        `ACG pathway "${this.acgPathway}" → base service "${preferredService}"`,
+    // ACG enlistment is handled by the ACG runner (Character.doAcgEnlist).
+    // Basic-flow doEnlistment is only called for non-ACG characters.
+    if (this.useAcg) {
+      throw new Error(
+        "doEnlistment is for basic chargen only; ACG characters should use the ACG runner",
       );
-    } else if (method && method !== "random") {
+    }
+    let preferredService: ServiceKey;
+    if (method && method !== "random") {
       preferredService = method as ServiceKey;
     } else {
       preferredService = enlistable[Math.floor(Math.random() * enlistable.length)]!;
