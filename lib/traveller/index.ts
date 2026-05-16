@@ -24,5 +24,9 @@ export {
   s, SERVICES, DRAFT_SERVICES, ENLISTABLE_SERVICES, serviceLabel,
 } from "./services";
 export {
+  DEFAULT_EDITION_ID, getEdition, listEditions,
+  type Edition, type EditionMeta,
+} from "./editions";
+export {
   formatCharacterSheet, formatBenefit, aggregateBenefits,
 } from "./sheet";

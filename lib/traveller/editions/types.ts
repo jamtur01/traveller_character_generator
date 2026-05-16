@@ -1,0 +1,118 @@
+// Types describing the JSON canonical-data shape and the runtime edition
+// object the engine consumes. One JSON file per edition lives under
+// data/editions/; this module models that shape.
+
+import type { Character } from "../character";
+import type { ServiceKey } from "../types";
+
+export interface EditionMeta {
+  id: string;
+  name: string;
+  displayName: string;
+  rulebooks: string[];
+  year?: number;
+}
+
+export interface DMRule {
+  /** Numeric DM, or a literal token interpreted by the DM evaluator. */
+  modifier: number | "termNumber";
+  attribute?: string;
+  min?: number;
+  max?: number;
+  description?: string;
+}
+
+export interface CheckData {
+  target: number | null;
+  dm?: DMRule[];
+  label?: string;
+  inverseToLeave?: boolean;
+  special?: string;
+}
+
+export interface AutoSkillEntry {
+  /** "service" = on enlistment; "rank" with rank=N = when rank reaches N. */
+  trigger: "service" | "rank";
+  rank?: number;
+  /** A skill name (literal or cascade label) granted at level. */
+  skill?: string;
+  level?: number;
+  /** Or an attribute change in cell syntax ("+1 Social", "+2 Educ"). */
+  effect?: string;
+}
+
+export interface ServiceData {
+  source: "ttb" | "coti";
+  bookPage: number;
+  displayName: string;
+  startAge: number;
+  draft: number | null;
+  checks: {
+    enlistment: CheckData;
+    survival: CheckData;
+    position: CheckData | null;
+    promotion: CheckData | null;
+    reenlistment: CheckData;
+  };
+  ranks: (string | null)[];
+  automaticSkills: AutoSkillEntry[];
+  /** Named-hook references for service-specific quirks not expressible in data. */
+  hooks?: {
+    doPromotion?: string;
+  };
+  skillTables: {
+    personalDevelopment: (string | null)[];
+    serviceSkills: (string | null)[];
+    advancedEducation: (string | null)[];
+    advancedEducation8Plus: (string | null)[];
+  };
+  musterOut: {
+    benefits: (string | null)[];
+    cash: (number | null)[];
+  };
+  notes?: string[];
+}
+
+export interface BenefitDetail {
+  shipType?: string;
+  firstReceiptMortgageYears?: number;
+  repeatReducesMortgageYears?: number;
+  repeat?: string;
+  cashValueCredits?: number;
+  resalePercent?: number;
+  revivalSave?: string;
+  description?: string;
+  valueCredits?: number;
+  typicalValueCredits?: number;
+  valuableValueRoll?: string;
+  choices?: string | string[];
+  repeatMayBecomeSkill?: boolean;
+  name?: string;
+  basis?: string;
+}
+
+export interface CanonData {
+  schemaVersion: number;
+  edition: EditionMeta;
+  services: Record<ServiceKey, ServiceData>;
+  benefitDetails: Record<string, BenefitDetail>;
+}
+
+/**
+ * Named-hook signatures. Each edition can supply implementations under
+ * keys referenced from the JSON. Hooks are the escape hatch for genuinely
+ * ad-hoc per-service mechanics that don't fit the data schema.
+ */
+export interface EditionHooks {
+  /**
+   * Service-specific post-promotion behavior. Runs after the rank is
+   * incremented and after automaticSkills with trigger="rank" have fired.
+   */
+  doPromotion?: Record<string, (ch: Character) => void>;
+}
+
+export interface Edition {
+  meta: EditionMeta;
+  data: CanonData;
+  hooks: EditionHooks;
+}
