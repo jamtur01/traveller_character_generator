@@ -95,6 +95,32 @@ export class Character {
    */
   pendingChoices: PendingChoice<string>[] = [];
 
+  // ---------- Advanced Character Generation (MT) ----------
+  /**
+   * Whether the character was rolled through Advanced Character Generation
+   * rather than the basic per-term flow. ACG produces additional state
+   * (branch, MOS, decorations, schools) that doesn't fit the basic sheet.
+   * The PDF renderer branches on this to draw the ACG record sheet.
+   */
+  useAcg = false;
+  /** Pathway name within the edition's ACG block (mercenary/navy/scout/
+   *  merchantPrince for MT). Null when useAcg is false. */
+  acgPathway: string | null = null;
+  /** Branch within the pathway (Navy: Line/Engineering/Gunnery/Flight/
+   *  Intelligence; etc.). Free-form string — editions define the set. */
+  acgBranch: string | null = null;
+  /** Military Occupational Specialty for Mercenary pathway characters.
+   *  Free-form string. */
+  acgMos: string | null = null;
+  /** Decorations earned (MCUF, MCG, SEH from the Decoration & Survival
+   *  table). */
+  decorations: string[] = [];
+  /** ACG brownie points — one-use DMs that can be spent post-roll. */
+  browniePoints = 0;
+  /** Specialist schools attended through ACG, e.g., "Combat Engineer
+   *  School", "Intelligence School". */
+  schoolsAttended: string[] = [];
+
   /**
    * Generic choice point. In auto mode, picks randomly from options and runs
    * the resolver immediately. In interactive mode, queues a PendingChoice
