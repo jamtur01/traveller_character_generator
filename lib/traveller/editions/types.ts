@@ -11,6 +11,13 @@ export interface EditionMeta {
   displayName: string;
   rulebooks: string[];
   year?: number;
+  /**
+   * "active" = engine fully supports this edition.
+   * "data-only" = canonical JSON is extracted but the engine doesn't yet
+   * implement the edition's mechanics; useful for previewing the data and
+   * marking the UI picker entry as disabled.
+   */
+  status?: "active" | "data-only";
 }
 
 export interface DMRule {

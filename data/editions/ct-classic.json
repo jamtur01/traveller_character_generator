@@ -5,7 +5,8 @@
     "name": "Classic Traveller",
     "displayName": "Classic Traveller (TTB + CotI)",
     "rulebooks": ["The Traveller Book", "Citizens of the Imperium"],
-    "year": 1981
+    "year": 1981,
+    "status": "active"
   },
   "title": "Classic Traveller character generation data",
   "extractionNotes": [

@@ -10,7 +10,11 @@
 import ctClassicData from "../../../data/editions/ct-classic.json" with {
   type: "json",
 };
+import mtMegatravellerData from "../../../data/editions/mt-megatraveller.json" with {
+  type: "json",
+};
 import { ctClassicHooks } from "./ct-classic/hooks";
+import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
 
 const REGISTRY: Record<string, Edition> = {
@@ -18,6 +22,11 @@ const REGISTRY: Record<string, Edition> = {
     meta: (ctClassicData as unknown as CanonData).edition,
     data: ctClassicData as unknown as CanonData,
     hooks: ctClassicHooks,
+  },
+  "mt-megatraveller": {
+    meta: (mtMegatravellerData as unknown as CanonData).edition,
+    data: mtMegatravellerData as unknown as CanonData,
+    hooks: mtMegatravellerHooks,
   },
 };
 
