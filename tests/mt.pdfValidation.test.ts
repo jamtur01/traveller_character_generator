@@ -128,20 +128,26 @@ describe("MT Players' Manual p. 47 — Court martial", () => {
   });
 
   it("Result rolled on 1D with DMs per manual", () => {
-    const r = getSpec<{ die: string; dms: Array<{ condition: string; dm: number }> }>(
-      common, ["courtMartial", "resultRoll"]);
+    const r = getSpec<{
+      die: string;
+      dms: Array<{
+        when?: {
+          rankBetween?: { letter: string; min: number; max: number };
+          rankAtLeast?: { letter: string; min: number };
+          currentAssignmentIs?: string;
+          currentlyInCommand?: boolean;
+        };
+        dm: number;
+      }>;
+    }>(common, ["courtMartial", "resultRoll"]);
     expect(r.die).toBe("1D");
-    const want: Array<[RegExp, number]> = [
-      [/E7 to E9/, 1],
-      [/combat assignment/i, 2],
-      [/training/i, -2],
-      [/O7\+/, -1],
-      [/command duty/i, 2],
-    ];
-    for (const [re, dm] of want) {
-      const found = r.dms.find((d) => re.test(d.condition));
-      expect(found?.dm).toBe(dm);
-    }
+    const findDm = (pred: (w: { rankBetween?: { letter: string; min: number; max: number }; rankAtLeast?: { letter: string; min: number }; currentAssignmentIs?: string; currentlyInCommand?: boolean }) => boolean) =>
+      r.dms.find((d) => d.when && pred(d.when))?.dm;
+    expect(findDm((w) => w.rankBetween?.letter === "E" && w.rankBetween?.min === 7 && w.rankBetween?.max === 9)).toBe(1);
+    expect(findDm((w) => w.currentAssignmentIs === "combat")).toBe(2);
+    expect(findDm((w) => w.currentAssignmentIs === "training")).toBe(-2);
+    expect(findDm((w) => w.rankAtLeast?.letter === "O" && w.rankAtLeast?.min === 7)).toBe(-1);
+    expect(findDm((w) => w.currentlyInCommand === true)).toBe(2);
   });
 });
 

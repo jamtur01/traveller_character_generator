@@ -3727,11 +3727,11 @@
         "resultRoll": {
           "die": "1D",
           "dms": [
-            { "condition": "rank E7 to E9", "dm": 1 },
-            { "condition": "combat assignment", "dm": 2 },
-            { "condition": "training assignment", "dm": -2 },
-            { "condition": "rank O7+", "dm": -1 },
-            { "condition": "command duty", "dm": 2 }
+            { "when": { "rankBetween": { "letter": "E", "min": 7, "max": 9 } }, "dm": 1 },
+            { "when": { "currentAssignmentIs": "combat" }, "dm": 2 },
+            { "when": { "currentAssignmentIs": "training" }, "dm": -2 },
+            { "when": { "rankAtLeast": { "letter": "O", "min": 7 } }, "dm": -1 },
+            { "when": { "currentlyInCommand": true }, "dm": 2 }
           ]
         },
         "dieResults": [

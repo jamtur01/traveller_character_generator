@@ -56,7 +56,19 @@ export function awardDecoration(
 }
 
 interface CourtMartialOutcome { roll: number; result: string }
-interface CourtMartialDm { condition: string; dm: number }
+interface CourtMartialDmWhen {
+  rankBetween?: { letter: string; min: number; max: number };
+  rankAtLeast?: { letter: string; min: number };
+  currentAssignmentIs?: "combat" | "training";
+  currentlyInCommand?: boolean;
+}
+interface CourtMartialDm {
+  /** Legacy free-text. */
+  condition?: string;
+  /** Structured form. */
+  when?: CourtMartialDmWhen;
+  dm: number;
+}
 interface CourtMartialSpec {
   trigger?: { rule: string };
   guilt?: {
@@ -115,7 +127,10 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   // Result roll.
   let dm = 0;
   for (const d of cm.resultRoll?.dms ?? []) {
-    if (resultDmApplies(ch, d.condition, assignment)) dm += d.dm;
+    const matches = d.when
+      ? resultDmWhenMatches(ch, d.when, assignment)
+      : resultDmApplies(ch, d.condition ?? "", assignment);
+    if (matches) dm += d.dm;
   }
   const dieN = cm.resultRoll?.die === "2D" ? 2 : 1;
   let dieTotal = 0;
@@ -138,6 +153,41 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   ch.verboseHistory(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`);
 
   applyCourtMartialResult(ch, result);
+}
+
+function resultDmWhenMatches(
+  ch: Character, when: CourtMartialDmWhen, assignment?: string,
+): boolean {
+  const rankCode = ch.acgState?.rankCode ?? "";
+  if (when.rankBetween) {
+    const { letter, min, max } = when.rankBetween;
+    const re = new RegExp(`^${letter}(\\d+)$`);
+    const m = rankCode.match(re);
+    if (!m) return false;
+    const n = parseInt(m[1]!, 10);
+    if (n < min || n > max) return false;
+  }
+  if (when.rankAtLeast) {
+    const { letter, min } = when.rankAtLeast;
+    const re = new RegExp(`^${letter}(\\d+)$`);
+    const m = rankCode.match(re);
+    if (!m) return false;
+    if (parseInt(m[1]!, 10) < min) return false;
+  }
+  if (when.currentAssignmentIs === "combat") {
+    if (!assignment) return false;
+    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+      Record<string, unknown> | undefined;
+    const pathway = ch.acgState?.pathway;
+    if (!acg || !pathway) return false;
+    const pw = acg[pathway] as { combatAssignments?: string[] } | undefined;
+    if (!pw?.combatAssignments?.includes(assignment)) return false;
+  }
+  if (when.currentAssignmentIs === "training") {
+    if (assignment !== "Training") return false;
+  }
+  if (when.currentlyInCommand === true && !ch.acgState?.inCommand) return false;
+  return true;
 }
 
 function resultDmApplies(
