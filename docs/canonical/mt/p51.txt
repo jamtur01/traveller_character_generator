@@ -1,0 +1,67 @@
+               Players’ Manual                                                                                                    Mercenary Characters
+               position. Electingnot to consult the table results in an automatic           assignment are sent to service schools or given unusual duty.
+               assignment to a staff position.                                              The Mercenary Special Assignments table shows these duties.
+                  Specific Assignments: The Mercenary Assignment table
+               determines the character’s specific assignment. These                        REENLISTMENT AND MUSTERING OUT
+               assignments may include any of the ones that follow: training,                   At the end of a four-year term, the character must either
+               internal security, police action, counterinsurgency, raid, ship’s            reenlist or muster out. If reenlistment is not successful, then
+               troops, and garrison. It is also possible to receive a special               the character must muster out.
+               assignment.                                                                      Army Reenlistment: Reenlistment in Army requires a throw
+                  Assignment Resolution: In each assignment, four aspects                   of 7+. Army enlisted characters receive DM + 2.
+               must be resolved: survival, decoration, promotion, and skills.                   Marine Reenlistment: Reenlistment in the Marines requires
+                  Survival: The throw for survival determines whether or not                a throw of 6 + . Marine personnel who are cross-trained in Ar-
+               the character survives the current year of assignment. Failing               tillery or Cavalry and announce their intention to reenlist into
+               the survival throw forces the character to end character genera-             either of those arms of service receive DM + 1,
+               tion and muster out (the optional survival rule may be im-                       Changing Combat Arms: Through differing processes,
+               plemented: a character who fails the survival throw is dead).                enlisted personnel and officers may change their combat arm.
+               If the indicated number is thrown exactly, the character has                     Enlisted characters may change their combat arm through
+               received a wound or injury; if the injury occurs while serving               cross-training or commando school. Once properly cross-
+               in a police action, counterinsurgency, or raid, it is officially             trained, a character may reenlist for a specific combat arm.
+               classed as a combat wound, and the character is awarded the                  Reenlistment may always specify a specific combat arm in
+               Purple Heart.                                                                which the character is properly cross-trained; if reenlistment
+                  A character may take a negative DM on survival and then                   is successful, the character serves the next four-year term in
+               apply it as an equal positive DM for decorationsduring the next              skill, combat arm. A character who attends commando school
+               step.                                                                        may transfer to the Commandos at the beginning of the next
+                  Decoration: Characters may receive decorations for their                  one-year assignment.
+               heroism. If a character rolls the indicated number or higher,                    Officers may change arms of service at the beginning of any
+               he is awarded the Meritorious Conduct under Fire (MCUF). If                  four-year term with the single exception that they may not
+               the character rolls a number at least three higher than the                  transfer to Commandos until after attending commando school.
+               stated number, he receives the Medal for Conspicuous Gallan-                     Mustering Out Benefits: At the conclusion of a player’s last
+               try (MCG) instead. If the player rolls at least six higher than              term, all mustering out benefits are received as described in
+               the number indicated, he receives the Starburst for Extreme                  basic character generation.
+               Heroism (SEH) instead.
+                   If a negative DM was taken on survival, an equal positive                SPECIAL RULES
+               DM may be used to attempt to win a decoration. For example,                     The following special rules apply to Army, Marine, and
+               a character might take a DM -2 for survival, increasing the                  Mercenary service.
+               chance for failure. If he survives nonetheless, then DM + 2 is                  Marine Tradition: Whenever a Marine receives Blade Com-
+               allowed when rolling for decorations.                                        bat, it must be taken as Large Blade (because Marines are
+                  The reverse of this procedure (positive DMs for survival;                 trained in Cutlass due to Marine tradition). A saving throw
+               negative DMs on decoration) is also possible, but if the decora-             against Marine tradition is possible: throw 9 + ; DM-3 if already
+               tion throw fails by six or more (for example, rolling a 4 when               Large Blade-1; DM-6 if already Large Blade-2 or higher.
+               10+ is needed), he must consult the Court-Martial Table.                        Combat Ribbons: A character’s resume should include
+                  Promotion: A character may receive a promotion by throw-                  details of combat experience. Each time that a character
+               ing the indicated number or greater (2D). Where a number is                  receives a combat assignment (police action, counterinsurgen-
+               listed in parentheses, officers may not roll for promotion.                  cy, or raid), a combat service ribbon is awarded. Each time
+                   Normally an officer may not receive more than one promo-                 an officer holds a command assignment in combat, he receives
+               tion per four-year term. However, the fact of receiving a com-               a command cluster on the combat ribbon. For example, a
+               mission (through OCS, for example) does not prohibit the                     character has three combat ribbons with two command
+               receipt of a promotion during a four-year term, and the                      clusters: he has had three one-year combat assignments, and
+               automatic promotion given a military attache does not prohibit               in two of them he was an officer in command.
+               the receipt of another promotion during the term.                               Marine Flight Officers: A character who has attended flight
+                   Enlisted characters may be promoted as often as once per                 school may always take a special assignment as a flight assign-
+               assignment. However, they may not be promoted beyond the                     ment. He is assigned to the flight branch of the Navy as a pilot
+               rank of E9 except though attendance at officer candidate school              in a Marine flight wing. The assignment is resolved according
+               (OCS).                                                                       to the Enhanced Naval Character generation rules.
+                   Skills: A character may receive skills as a result of his assign-           Draftees: Characters who are drafted into a service may not
+                ment. If the character rolls the indicated number or higher, then           attend officer candidate school (OCS) during their first four-
+               he or she becomes eligible for one skill to be determined im-                year term.
+               mediately. A character may roll for a skill on any skill column                 The Starburst for Extreme Heroism: Any character who
+               or table available to him.                                                   receives the SEH receives a technical promotion to the next
+                   Special Assignments: Characters who receive a special                    higher rank when he or she musters out.
+
+
+                                                                                       49
+
+
+James Turnbull (Order #51967781)
+

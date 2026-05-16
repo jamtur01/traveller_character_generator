@@ -1,0 +1,86 @@
+                                       ENHANCED NAVAL CHARACTERS
+                   ’    BACKGROUND INFORMATION                             COMMAND DUTY                                   ASSIGNMENT
+                                                                                                                                                      I
+                      A naval character must know:                 Officer Branch                   Throw         Die                 Assignment
+                       .The    technological code of the           Line                              7+            2                  Battle
+                    subsector he is in (usually the                Flight                            8+            3                  Frozen Watch
+                    technological code of the subsector            Gunnery                           9+            4                  Siege
+                    capital but never less than Early Stellar).    Engineering                      10+            5                  Strike
+                       .The planetary characteristicsof the        Medical                          11 +           6                  Patrol
+                    character’s homeworld.                         Technical                        12+            7                  Training
+                                                                   DMs:lf rank 02-, DM -2. If Rank 04-,            8                  Patrol
+                                     ENLISTMENT                  DM-1. If Int 7-, DM -1. If Edu 7-, DM -1.         9                  Strike
+                        Imperial Navy: Throw 8 + for enlist-       Note: This table is used only by of-           10                  Shore Duty
+                                                           +
+                    ment in the Imperial Navy; allow DM 1 ficers (rank 0 1 +).                                    11                   Special Duty
+                    if Int is 8 + , and also allow DM + 2 if Edu                                                  12                   Special Duty
+                    is 9 + .                                                                                     Note: If the College or Academy
+                                                 +
+                        Reserve Fleet: Throw 7 for enlist-                                                     graduate and rank E4-E9, DM + 1.
+                    ment in the Reserve Fleet; and also
+                                                                                            ASSIGNMENT RESOLUTION
+                    allow DM + 1 if Int is 8 + and DM + 2 if
+                                                                 Line/Crew       Training Shore Duty Patrol           Siege     Strike     Battle
+                    Edu is 9 + .
+                                                                 Survival        auto         4+              4+        5+       6  +        6+
+                        System Squadron: Throw 6 + to
+                                                                 Decoration none             12+             11 +      10+       7+          6+
+                    enlist in the homeworld System
+                                                                 Promotion         6+         7+              7+        8+       7  +        6+
+                    Squadron; allow DM + 1 if Int is 8 + , and
+                                                                 Skills            7+         7+              6+        6+       5+          5+
+                          +
+                    DM 2 if Educ is 9 + . If the homeworld
+                                                                   DMs: For survival, DM+ 1 if any MOS skill 2 + . For promotion, DM+ 1 if
+                    is less than Early Stellar, it has no
+                                                                 Edu 7 + .
+                    System Squadron.
+                        The character begins with rank E l . Flight               Training Shore Duty Patrol          Siege     Strike     Battle
+                        Naval Academy graduates are com- Survival                  3+         3+              3+        3+       3+          4+
+                    missioned with rank 0 1 in the Imperial Decoration none                  none            10+        9+       9+          8+
+                    Navy. NOTC graduates are commis- Promotion                   none        11 +            11 +      10+       9+          9+
+                    sioned with rank 0 1 in the Reserve Skills                     7+        none             7+        7+       6+          6+
+                    Fleet.                                                                  +
+                                                                   DMs: For promotion, DM 1 if Int 8 + .
+                        Enlistment commits the individual to
+                    a term of service of four years.             Gunnery          Training Shore Duty Patrol          Siege     Strike     Battle
+                        The Draft: If enlistment is unsuc- Survival              auto         3+              4+        5+       5+          6+
+                    cessful, the character throws 1D: a Decoration none                      12+             11 +      10+       9+          7+
+                    result of 1 drafts him into the Imperial Promotion             6+         6+              8+        8+       7+          6+
+                    Navy.                                        Skills            8+        none             7+        5+       6+          6+
+                                                                   DMs: For survival, DM + 1 if any MOS skill 2 + ; promotion, DM + 1 if End 8 + .
+                              BRANCH ASSIGNMENT
+                    Die        Enlisted         Officer          Engineering Training Shore Duty Patrol                Siege    Strike     Battle
+                    0          Technical        Technical        Survival        auto        auto             3+        4+       5+          5+
+                    1          Crew             Line             Decoration none             none            12+       11 +      7+          7+
+                    2          Crew             Line             Promotion         7+         7+              5+        8+       6+          6+
+                    3          Engineering Engineering           Skills            7+         8+              6+        7+       6+          5+
+                    4          Engineering Gunnery                 DMs:   For  promotion,   DM  + 1 if Int 8 + .
+                    5       Gunnery        Line
+                                                                  Technical/
+                    6       Gunnery        Flight
+                                                                  Medical      Training Shore Duty Patrol          Siege      Strike     Bartle
+                    7       Medical        Medical
+                                                                  Survival     auto     auto            3+          3+         3+         4+
+                      DMs: If Edu 9 + , DM + 2 ; if Int l o + ,
+                                                                  Decoration none       none           none        none       11+        10+
+                    DM +2. If Imperial Navy, DM -2. Note:
+                                                                  Promotion     7+       6+             7+          8+         6+         6+
+                    Automatic Medical if Medical School
+                                                                  Skills        8+       6+             7+          7+         7+         6+
+                    graduate or unsuccessful Medical
+                                                                    DMs: For promotion, DM + 1 if Int 8+.
+                    School. Automatic Flight if Flight School
+                    graduate. Choice if Social Standing 9 + .
+                                                                                      RETENTION IN ASSIGNMENT
+                              INITIAL TRAINING                  Throw  6 (1D) for the next  assignment to be the same as the previous one. A
+                       Enlisted persons receive two skills person cannot be retained in the same assignment more than once in succes-
+                    from the Branch Skills table; officers sion; he cannot be retained in the same assignment involuntarily after a four-year
+                    receive two skills from the Branch Skills term, even if he reenlists; retention cannot occur on special assignments.
+                   Jable or Officer Staff Skills table.
+                   I                                                                                                                                  II
+                                                                                  54
+
+
+James Turnbull (Order #51967781)
+

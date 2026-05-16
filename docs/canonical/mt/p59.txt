@@ -1,0 +1,66 @@
+               Players’ Manual                                                                                                           Scout Characters
+                  Because the Bureaucracy has rank and the Field does not,                 ordinary rank is not equal to or greater than his or her number
+               the Scout character immediately receives ordinary rank equal                of terms of service, then he or she will not be permitted to
+               to the number of terms served (a Scout in the fourth term of                reenlist.
+               service becomes rank IS-4).                                                    Changing Office Assignment: Characters may change their
+                  Special or War Missions: When a special or war mission is                office assignment. An office assignment remains in effect for
+               assigned, the Scout character has been sent on a dangerous                  the remainder of the term of service for the individual. In-
+               and important mission. The extra training and preparation for               dividuals are allowed to apply for reassignment to another of-
+               the assignment results in an extra skill taken from the special             fice (within the Bureaucracy or the Field) when they reenlist.
+               or war mission column, in addition to any other skills received             When reenlistment occurs, the character may roll again on the
+               for the year.                                                               Office Assignments table: if the result is different, or if reassign-
+                  Schools: Individualswho receive training as an assignment                ment is not desired, the individual may choose to remain in
+               are sent to a service school. The character should consult the              the current office.
+               School Assignment table to determine available schools and                     Members of the Bureaucracy are never reassigned to the
+               then roll one die. Once the school is determined, the individual            Field; members in the Field are never reassigned to the
+               may roll on the school table to determine the skills received               Bureaucracy (but they may be transferred).
+               by attendance. Certain schools confer two skills, while others                 MusteringOut Benefits: At the conclusion of a player’s last
+               confer only one, as noted below each column of the table.                   term, all mustering out benefits are received as described in
+                  It is possible to be assigned most schools more than once.               basic character generation.
+               Administrator school, however, may only be attended once;
+               the subsequent receipt of an assignment to administrator                    SPECIAL RULES
+               school calls for a reroll.                                                    The following special rules apply to the Scouts.
+                  Assignment Resolution: This step includes survival, pro-                    Draftees: Characterswho are drafted into a service may not
+               motion, and skills.                                                         attend administrator school during their first four-year service
+                  Survival: The throw for survival determines if the character             term.
+               survives the current year of assignment. Failing the survival                  Detached Duty: Any scout who is serving in the Detached
+               throw forces the character to end character generation and                  Duty division when he leaves the service is given permanent
+               muster out (the optional survival rule may be implemented: a                detached duty on a roll of 9 + (DM + number of terms served).
+               character who fails the survival throw is dead).                            Although the assignment has no responsibilities, the individual
+                  Promotions: Scouts serving in the Field do not receive pro-              receives a scoutkourier (if he has not already received one
+               motions: those in the Bureaucracy can achieve promotions to                 through mustering out) and a stipend (similar to, but not ex-
+               a variety of ranks. A character may receive a promotion by                  actly like, a pension) of Cr4000 per year.
+               throwing the indicated number or greater (20).
+                  Individuals who have not received administrator status may
+               receive promotions in ordinary rank (it is possible to receive
+               such a promotion each year, to a maximum of IS-9). Promo-
+               tions beyond IS-9 are not possible unless the individual attends
+               administrator school and receives administrator rank IS-10.
+                  Characters with administrator rank may receive up to one
+               promotion per four-year term.
+                  Each time a promotion is received, the individual is allowed
+               to receive one new skill. Ordinary rank allows a skill from the
+               appropriate office column or the scout life column of the skill
+               tables. Administrator rank allows a skill from the administrator
+               rank column.
+                  Skills: A character may receive skills as a result of his assign-
+               ment. If the character rolls the indicated number or higher, then
+               he or she becomes eligible for one skill to be determined im-
+               mediately. A character may roll for a skill on any skill column
+               or table available to him.
+
+               REENLISTMENT AND MUSTERING OUT
+                 At the end of a four-year term, the character must either
+               reenlist or muster out. If reenlistment is not successful, then
+               the character must muster out.
+                 Scout Reenlistment: Reenlistment in the Scouts requires
+               a throw of 3 +.
+                 The Scout Service maintains an up-or-out policy for ordinary
+               rank: If an individual does not receive continuing promotions,
+               then the individual is not allowed to reenlist. If a character’s
+
+
+                                                                                      57
+
+James Turnbull (Order #51967781)
+

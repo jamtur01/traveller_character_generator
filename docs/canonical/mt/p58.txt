@@ -1,0 +1,56 @@
+                   Any large interstellar government has a need for an exploratory service. An organized, continuing exploration of the frontiers
+                 of any territory is necessary in order to best exploit resources and to be warned of potential threats.
+                   General Background: The Imperial Interstellar Scout Service is the exploratory arm of the Imperium. It had its origins in
+                 the initial explorations of the Imperium’s frontiers. Long ago, however, the Scout Service expanded its responsibilities to cover
+                 more than mere exploration. It now maps the territory it once explored, and it is responsible for providing navigational charts
+                 and maps to the ships that now travel through that territory. In addition, the Scout Service provides long distance courier or
+                 postal services between points within the empire.
+                   To perform its diverse missions, the Scouts have two distinct needs for personnel: the highly independent and self-sufficient
+                 individual who can perform missions alone and without supervision; and the team player who can work on a group effort within
+                 a rigid organization. The Scout Service must train and use both types of individual.
+                   Scout Ranks: Ranks for characters in the Scouts are shown in the scout table of ranks. Ordinary rank corresponds to enlisted
+                 rank in the military: ranks IS-1 to IS-9correspond to military ranks E l to E9. Administrator rank corresponds to officer rank
+                 in the military: ranks IS-10 to IS-18 correspond to military ranks 0 1 to 09.
+                   Scouts: The general term for members of the Scout Service regardless of rank, combat arm, or any other factor is Scouts.
+
+                                                                                             dedicated to initial training. The character consults the Initial
+                 INITIAL ACTIVITIES                                                          Training table entry corresponding to his office assignment and
+                    Initial activities include pre-career options, enlistment, com-          receives the skill shown.
+                 bat arm selection, and initial training.
+                    Pre-Career Options: Characters intending a Scout career                  CAREER RESOLUTION
+                 may consider college and medical school.                                       Career resolution begins once a character graduates from
+                    Enlistment: All characters initiate their Scout careers by               all pre-career schools and has enlisted.
+                 enlisting. This procedure is essentially identical to that for stan-
+                 dard character generation. Successful enlistmentcommits the                 Assignments
+                 individual to a term of service of four years.                                 Each term, a character carries out four assignments (initial
+                    Throw 7 + to enlist in the Scouts; allow DM + 1 for Int 6 + ,            training constitutes the first assignment of the first term).
+                 and DM + 2 for Str 8 + . The character begins with rank IS-1.                  Each one-year assignment is resolved separately using a
+                    Draft: If an individual is unsuccessful in enlisting, he may             two-step procedure: the specific assignment is selected, and
+                 submit to the draft. A throw of 4 (1D) will result in being drafted         the assignment is resolved in terms of survival, promotion, and
+                 into the Scouts. Any other result prohibits the individual from             skills.
+                 Scout service and a new character must be generated if Scout                   Specific Assignments: The Duty Assignment table deter-
+                 service is desired.                                                         mines the character’s specific assignment. Possible
+                    Automatic Enlistment: Enlistment is automatic (if desired)               assignments include training, base operations, routine, mis-
+                 for characters who are have graduated college. The character                sion, special mission, and wartime mission. Scouts in the Field
+                 begins with rank IS-1. College honors graduates automatically               use one column; Scouts in the Bureaucracy use another.
+                 receive rank IS-10.                                                         Scouts in the Bureaucracy who hold administrator rank are
+                    Office Selection: The Scout Service is broadly divided in-               allowed a DM of + 2 on the duty assignment table, which allows
+                 to the Bureaucracy and the Field. College graduates are in                  them to avoid some training (the DM is voluntary). However,
+                 the Bureaucracy; all others are in the Field.                               a natural roll of 2 always means a war mission, regardless of
+                    Each division of the Scouts is composed of several offices:              the DM.
+                 the Field consists of Survey, Communications, and Explora-                     Transfers: A Scout in the Field may receive transfer as a du-
+                 tion; the Bureaucracy consists of Technical, Operations, Ad-                ty assignment. When this occurs, the individual has been per-
+                 ministration, and Detached Duty.                                            manently transferred to the Bureaucracy. Such a transfer may
+                    Individuals who join the Scouts are initially assigned to a              be declined, in which case the individual rolls again (if transfer
+                 specific office within the Scout Service structure and then                 is received on the reroll, it must be taken).
+                 receive initial training from that office. The Office Assignments              A transfer places the individual in the Scout Bureaucracy.
+                 table produces the assignment for each character. Office                    The character rolls on the Office Assignment table under the
+                 assignments remain in force for the complefe four-year term;                Bureaucracy to determine the office assignment. A roll on the
+                 reassignments are available when reenlisting.                               Duty Assignment table then determines the specific duty to be
+                    Initial Training: The initial year of service in the Scouts is           undertaken.
+
+
+                                                                                        56
+
+James Turnbull (Order #51967781)
+

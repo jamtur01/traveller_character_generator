@@ -1,0 +1,74 @@
+                                   ENHANCED MERCENARY CHARACTERS
+                 I
+                 ’       SPECIAL ASSIGNMENTS                        SPECIALIST SCHOOL                        SPECIAL ASSIGNMENTS
+                                                                                                                                              I   I
+
+
+                  Die Enlisted          Officer               Die Training          Schooling            Cross-Training: Select any combat
+                  1 Cross-Training Intelligence Sch           1     Mechanical      Academic          arm (not Commandos) for cross-training.
+                  2 Specialist Sch Command College            2     Electronic      Medical           Roll for one skill on the MOS table.
+                  3 Commando Sch Commando Sch                 3     Gravitic        Space                Specialist School: Throw 1D on the
+                  4 Protected Forces Staff College            4     Comm            Environ           Specialist School table.
+                  5 Recruiting Duty Recruiting Duty           5     Vehicle         Computer             Commando School: Cross-training in
+                  6 OCS                 AttachelAide          6     Ship’s Boat     Liaison                                  +
+                                                                                                      Commandos. Throw 5 (1D) for: Brawl-
+                  7 ocs                 Staff College           Note: The training column is for      ing, Gun Combat, Demolitions, Intru-
+                    DMs: Marine enlisted, DM + 1 if Edu       anyone, and the schooling column is     sion, Stealth, Survival, Recon, Vacc
+                                           +
+                  7 + . Army enlisted, DM 1 if End 7 +.       for when Int + Edu is more than 16.     Suit, Blade Combat and Instruction.
+                                                                                                         Protected Forces Training: Throw
+                                                    SERVICE SKILLS                                    3 + (1D) for: Vacc Suit, High-G Environ,
+                         Army         Marine        NCO          Command Staff           Ship-        Zero-G Environ.
+                  Die Life            Life          Skills       Skills      Skills      board           Recruiting: Receive Recruiting skill.
+                    1    Brawling Brawling Hvy Wpns + 1 End                  Mechanic Fwd Obs            OCS: Advance to rank 01 (rank E7
+                    2    + 1 Str      Vice          Mechanical Gun Cbt Fwd Obs Ship’s Boat advances to rank 02) in current or
+                    3    Vice         + 1 Str       Tactics      Vehicle     Computer Gunnery         cross-trained branch. Roll twice on the
+                    4      +1 Dex     + 1 Dex       Hvy Wpns Hvy Wpns Electronics Vacc Suit           Service Skills table and once on the
+                    5    + 1 End      + 1 End       Mechanical Leader        Medical     Gunnery      MOS table. Rank E8 and E9 are com-
+                    6    + 1 End Hand Cbt Tactics Tactics                    Instruction Vacc Suit    missioned to Rank 03, adding no skills.
+                    7    Handgun +1 Edu             Leader       Tactics     Admin       Sh Tactics   OCS is prohibited over age 38: Reroll on
+                    8    + 1 SOC      + 1 SOC Inborn             Inborn      Academic FI Tactics      the Special Assignments table, and if
+                    9    + 1 SOC + 1 SOC lnterpers -                         -           -            OCS is selected, a waiver allows
+                  DMs: + 1 i f O l + + 1 i f O l + + 1 ifE5       + l if04+ +1 if04+ +1 if02+         attendance.
+                         + 2 if 0 4 + + 2 if 0 4 + + 2 if E7 + 2 if 0 7 + + 2 if 07+ +2 if 0 4 +         IntelligenceSchool: Throw 4 + (1D)
+                         + 3 if 0 7 + + 3 if 0 7 + + 2 if E9                                          for: Forgery, Bribery, Streetwise, Inter-
+                     Note: Army Life is for the Army, Marine Life for Marines, NCO Skills for rank rogation, and Vice.
+                  E3 to E9, Command Skills for rank 0 1 + with Command Duty, Staff Skills for rank       Command College: Throw 4 + (1D)
+                  01 + without Command Duty, and Shipboard Skills for Marines on Ship’s Troops. for: Tactics, Leader, and Recon.
+                                                                                                                                 +
+                                                                                                         Staff College: Throw 4 (1D) for: Ad-
+                               MILITARY OCCUPATIONAL SPECIALTY (MOS) TABLE                            min, Combat Engineering, Computer,
+                  Die Artillery      Cavalry      lnfantrv     Support      Commando Ship’s Troops Robot Ops.
+                  1 FA Gunner Vehicle             Gun Cbt Vehicle           Gun Cbt Gun Cbt              Military AttachelAide: Roll 1D: 1-4
+                  2 FA Gunner Vehicle             Gun Cbt Combat Eng Gun Cbt Gun Cbt                  assigns duty as a military attache; 5-6,
+                  3 Vehicle          Vehicle      Hvy Wpns Vehicle          Hvy Wpns Zero-G Env       duty as aide to a general.
+                  4 Mechanical Hvy Wpns Hvy Wpns Mechanical Demolition Environ                           An attache receives promotion of one
+                  5 Fwd Obs Hvy Wpns Vehicle Electronic Environ                         High-G Env    grade and + 1 Social Standing.
+                  6 Computer Mechanical Environ Medical                     Recon       Fwd Obsv         An aide receives + 1 Social Standing
+                  7 Technical Technical Vacc Suit Technical Battle Drss Battle Drss                   and selects command duty or a special
+                     DMs: If homeworld is Avg Stellar + , DM + 1.                                     assignment (not military attache/aide).
+                     Note: Any Marine on Ship’s Troops assignment may select that column.
+                                                                                                                  REENLISTMENT
+                                                   TABLE OF RANKS                              Basic     At the end of a four-year term, the
+                  Rank Enlisted                  Rank      Officer                              Rank character must either reenlist or muster
+                  El      Private                  01      Second Lieutenant                        1 out. If reenlistment is not successful,
+                  E2      Lance Corporal           02      First Lieutenant                         1 then the character must muster out.
+                  E3      Corporal                 03      Captain                                  2    Army Reenlistment: Throw 7 + ; DM
+                  E4      Lance Sergeant           04      Major (Marine Force Commander            3 + 2 if rank E9 or less.
+                  E5      Sergeant                 05      Lieutenant Colonel                       4    Marine Reenlistment: Throw 6 + ;
+                  E6      Gunnery Sergeant 0 6             Colonel                                  5 DM + 1 if cross-trained in Artillery or
+                  E7       Leading Sergeant        07      Brigadier General                        6 Cavalry and reenlisting into either of
+                  E8       First Sergeant          08      Major General                            6 those arms of service.
+                  E9      Sergeant Major           09      Lieutenant General                       6
+                                                 010       General                                  6            MUSTERING OUT
+                     Note: Individuals with commissions (ranks 0 1 to 010) are officers; all others      At the conclusion of a player’s final
+                  (El to E9) are enlisted personnel. Noncommissioned officers are ranks E3 to E9; term, all mustering out benefits are
+                  ranks 0 1 to 0 3 are company grade officers; ranks 0 4 to 0 6 are field grade of- received as described in basic character
+                  ficers; ranks 07 to 010 are general officers.                                       generation.
+                                                                                                                                                  I
+                 I                                                                                                                                I
+                                                                               51
+
+
+James Turnbull (Order #51967781)
+

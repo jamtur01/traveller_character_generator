@@ -6,6 +6,7 @@ import { arnd, rndInt, roll } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
+import type { AcgState } from "./engine/acg/types";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
 import type {
@@ -106,20 +107,83 @@ export class Character {
   /** Pathway name within the edition's ACG block (mercenary/navy/scout/
    *  merchantPrince for MT). Null when useAcg is false. */
   acgPathway: string | null = null;
-  /** Branch within the pathway (Navy: Line/Engineering/Gunnery/Flight/
-   *  Intelligence; etc.). Free-form string — editions define the set. */
-  acgBranch: string | null = null;
-  /** Military Occupational Specialty for Mercenary pathway characters.
-   *  Free-form string. */
-  acgMos: string | null = null;
-  /** Decorations earned (MCUF, MCG, SEH from the Decoration & Survival
-   *  table). */
-  decorations: string[] = [];
-  /** ACG brownie points — one-use DMs that can be spent post-roll. */
-  browniePoints = 0;
-  /** Specialist schools attended through ACG, e.g., "Combat Engineer
-   *  School", "Intelligence School". */
-  schoolsAttended: string[] = [];
+  /** Full ACG state — pathway, role, rank, per-term cycle, resume fields.
+   *  Lazily initialized when ACG begins. */
+  acgState: AcgState | null = null;
+
+  // Accessor surfaces for the PDF renderer / UI — these read/write
+  // through acgState. The setters lazy-init acgState with a default
+  // mercenary pathway so existing callers that poke at acgBranch /
+  // acgMos / decorations / browniePoints / schoolsAttended don't crash.
+  // (The ACG runner overwrites acgState.pathway with the real pathway
+  // during enlistment, so the default is harmless.)
+  private ensureAcgState(): AcgState {
+    if (!this.acgState) {
+      // Inline default to avoid a circular import on freshAcgState.
+      this.acgState = {
+        pathway: (this.acgPathway as AcgState["pathway"]) ?? "mercenary",
+        rankCode: "E1",
+        isOfficer: false,
+        year: 1,
+        currentAssignment: null,
+        inCommand: false,
+        justRetained: false,
+        retainedAssignment: null,
+        promotedThisTerm: false,
+        injuredThisYear: false,
+        assignmentHistory: [],
+        combatRibbons: 0,
+        commandClusters: 0,
+        schoolsAttended: [],
+        decorations: [],
+        browniePoints: 0,
+        browniePointsSpent: 0,
+        decorationDmStrategy: 0,
+      };
+    }
+    return this.acgState;
+  }
+
+  get acgBranch(): string | null {
+    if (!this.acgState) return null;
+    return this.acgState.branch ?? this.acgState.combatArm ?? this.acgState.office
+      ?? this.acgState.department ?? null;
+  }
+  set acgBranch(v: string | null) {
+    if (v === null) {
+      if (this.acgState) delete this.acgState.branch;
+      return;
+    }
+    this.ensureAcgState().branch = v;
+  }
+  get acgMos(): string | null {
+    return this.acgState?.mos ?? null;
+  }
+  set acgMos(v: string | null) {
+    if (v === null) {
+      if (this.acgState) delete this.acgState.mos;
+      return;
+    }
+    this.ensureAcgState().mos = v;
+  }
+  get decorations(): string[] {
+    return this.acgState?.decorations ?? [];
+  }
+  set decorations(v: string[]) {
+    this.ensureAcgState().decorations = v;
+  }
+  get browniePoints(): number {
+    return this.acgState?.browniePoints ?? 0;
+  }
+  set browniePoints(v: number) {
+    this.ensureAcgState().browniePoints = v;
+  }
+  get schoolsAttended(): string[] {
+    return this.acgState?.schoolsAttended ?? [];
+  }
+  set schoolsAttended(v: string[]) {
+    this.ensureAcgState().schoolsAttended = v;
+  }
 
   /**
    * Generic choice point. In auto mode, picks randomly from options and runs

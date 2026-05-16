@@ -1,0 +1,69 @@
+                                    ENHANCED MERCENARY CHARACTERS
+                   I                                                                                                                                    II
+                                   ENLISTMENT                                                   ASSIGNMENT
+                       Army Enlistment: Throw 5 +          Die Artillery      Cavalry           Infantry          support           Commando
+                    to enlist in the Army; DM+ 1 if          2 Raid           Raid              Raid              Raid              Raid
+                    Dexterity is 6+ ,and DM + 2 if En-       3 Training       Training          Raid              Internal Security Raid
+                    durance is 5 +. The character            4 Ctrlns         Ctrlns            Ctrlns            Ctrlns            Ctrlns
+                    begins with rank E l .                   5 Police Action Police Action      Ctrlns            Garrison          Police Action
+                       A graduate of the Military            6 Garrison       Garrison          Garrison          Garrison          Police Action
+                    Academy or college OTC is rank           7 Garrison       Garrison          Garrison          Garrison          Internal Security
+                    0 1 in the Army.                         8 Training       Training          Training          Training          Training
+                       Marine Enlistment: Throw 9 +          9 Police Action Police Action      Police Action     Police Action     Ctrlns
+                                                  +
+                    to enlist in the Marines; DM 1 if       10 Ctrlns         Internal Security Internal Security Internal Security Raid
+                    Intelligence is 8 + , and DM + 2 if     11 Special Duty Special Duty        Special Duty      Special Duty      Special Duty
+                    Strength is 8+. The character           12 Special Duty Special Duty        Special Duty      Special Duty      Special Duty
+                    begins with rank E l .                   Note: Marines (of any combat arm) never serve on Counterinsurgency or Internal
+                       A graduate of the Naval             Security; if that assignment is thrown, they are assigned to Ship’s Troops instead.
+                    Academy or college NOTC is rank
+                    0 1 in the Marines.                                                  ASSIGNMENT RESOLUTION
+                       The Draft: If enlistment is not     Infantry
+                    successful, the character may          Cavalry,                      Internal      Police                             Ship ‘s
+                    submit to the draft. Throw 1D: a       Artillery      Training       Security      Action      Ctrlns      Raid       Troops
+                    result of 2 drafts the character in-   Survival       auto            4+            5+          5+          6+         4+
+                    to the Marines; a result of 3 drafts   Decoration     none           12+            9+         10+          6+        12+
+                    the character into the Army. Any       Promotion       6+              6+           8+          9+          6+         6+
+                    other result prohibits Mercenary       Skills          7+             none          7+           8+        5+        6+
+                    service, and a new character              DMs: For survival, DM   + 1 if any MOS skill 2 + . For promotion, DM + 1 if Edu 7+.
+                    must be generated if Mercenary
+                    service is desired.
+                       Drafted characters cannot                                       Internal    Police                            Ship’s
+                    receive a commission during the       support         Training     Security Action         Ctrlns    Raid        Troops
+                    first four-year term.                 Survival       auto           4+           4+         5+        6+          3+
+                                                          Decoration     none          none         10 +       11 +       7+         12+
+                           THE COMBAT ARMS                Promotion        6+           6+           9+        10+        7+          6+
+                        The Army and the Marines Skills                    8+          none          7+         7+        6+          6+
+                    have five combat arms that are          DMs: For promotion, DM + 1 if Int 8 + .
+                    identical: Infantry, Cavalry, Ar-
+                    tillery, Support, and Commando.
+                        A new character must select an                                   Internal    Police                           Ship ’s
+                    initial combat arm. Army Commando                      Training      Security    Action      Ctrlns    Raid       Troops
+                    characters may select any except Survival               3+            4+          4+           5+       6+         5+
+                    Commandos. Marine characters Decoration               none           none         9+           9+       5+        10+
+                    may select Infantry or Support. Promotion               8+            7+          8+           7+       6+         6+
+                                                          Skills            6+           none          7+          6+       5+         6+
+                             INITIAL TRAINING                                                                +                        +
+                                                            DMs: For survival, DM + 1 if any MOS skill 2 . For promotion, DM 1 if End 8 .           +
+                        The first year of service covers    Garrison Duty: Characters survive, with no decoration or skills earned. Enlisted per-
+                    the character’s initial training. The sonnel can be promoted on 7 +.
+                    character receives Gun Combat.
+                    He also receives one skill from                       SURVIVAL                                    DECORATIONS
+                    the MOS table.                          Failing the survival throw ends character       If a character rolls:
+                                                          generation and forces mustering out. (The         Decoration Throw or higher......MCUF
+                              COMMAND DUTY                optional survival rule may be implemented:        Decoration Throw +3 to +5......MCG
+                    Officer Branch         Army Marine A character who fails survival is dead.) If the                           +
+                                                                                                            Decoration Throw 6 or more....SEH
+                    Artillery                8+      9+   number is thrown exactly, the character is        With a negative survival DM, an equal
+                    Cavalry                  7+      7+   wounded or injured. An injury in a police ac- positive DM can be taken for decoration.
+                    Infantry                 7+      7+ tion, counterinsurgency, ship’s troops, or
+                    support                 10 + 10 +     raid is a combat wound and is awarded the                     PROMOTION
+                    Commando                 6+      7+   Purple Heart. A character may take a              An officer may be promoted once per
+                        Note: This table is used only by negative DM for survival and apply it as an term; enlisted personnel, once per assign-
+                    officers (rank 0 1 +).                equal positive DM for decorations.              ment (not beyond E9 except though OCS).
+                                                                                                                                                         I
+                                                                                    50
+
+
+James Turnbull (Order #51967781)
+

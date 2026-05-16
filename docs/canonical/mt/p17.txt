@@ -1,0 +1,67 @@
+                Players’ Handbook                                                                                                                   Characters
+                   Skills are acquired by rolling on the Acquired Skills table once          tion of a specific skill as a result. (Gun Combat is an example
+                for each skill allowed, using one die. There are four tables, each           of a cascade skill.) The player should select from the skills
+                containing different general types of skills. One of the tables              available. Some cascade skill lists contain skills that are
+                is chosen before the die is rolled, and the single die roll deter-           themselves cascade skills and call for further selection.
+                mines the specific skill acquired.                                              Included Skills: Some skills include other skills within them.
+                   Of the four Acquired Skill tables, the first three may be used            No additional choice is required; the character is treated as
+                by any character. The fourth is available only through advanced              having all the skills. Handgun is an example of an included skill.
+                education and may be used only by characters who have an                        Skill Limitations: No character can (at any time) have more
+                Education characteristic of 8 + .                                            skills (or combined total levels of skills) than the sum of In-
+                   During the character’s first term of service, he becomes eligi-           telligence and Education. If the character has reached this limit,
+                ble for two term skills; during each additional term of service,             he may voluntarily reduce any current skill as needed to make
+                the character becomes eligible for one term skill. Upon receiv-              room for a new skill or an increased skill level in an existing skill.
+                ing a commissionlposition, he becomes eligible for one addi-                    After making the skill rolls for the term, make sure a
+                tional skill. Upon being promoted, the character becomes eligi-              character’s limits have not been exceeded. If they have, reduce
+                ble for one additionalskill. If the character receives special duty,         any skill levels (at the player’s discretion) to meet the restriction.
+                he becomes eligible for one additional skill.                                   Homeworld Limitations: Certain skills are not available on
+                   If any throw (including DMs) for commission/position, pro-                the character’s homeworld. Vehicle skills are limited by the
+                motion, or special duty is at least 4 or greater than the required           character’s homeworld tech code, and weapon skills are limited
+                throw, then two extra skills are received instead of one. For                by the character’s homeworld tech code and law code.
+                example, a character who joins the Navy, receives a commis-                     Law Enforcers, Pirates, and Rogues may select weapon skills
+                sion, receives a promotion during the initial term of service,               one law code lower than their homeworld’s law code.
+                and receives a special duty roll of 9 or better becomes eligible                A character may override the homeworld limitation and ac-
+                for six skills in his first term. The same character, in the next            quire a skill not normally available by rolling 2D for 7 + . If that
+                term, is eligible for only one skill if he does not receive another          fails, he forfeits the skill attempt. For example, if a character
+                promotion or any special duty.                                               from an Early Stellar tech code got Vehicle skill on a skill roll
+                   Some skills are automatically acquired by characters (without             and wanted to try for Grav Belt skill (Avg Stellar), he must roll
+                using eligibility) by virtue of rank or service. The Rank and Ser-           2D. If the roll is less than 7, he loses his Vehicle skill roll.
+                vice Skills table lists them. When characters achieve the in-                   Nobles are not subject to any homeworld skill limitations.
+                dicated rank or service, they get the indicated skill.
+                   Belters, Doctors, Hunters, Rogues, Scientists, and Scouts                 AGING
+                are an exception to the normal eligibilities. Because these                     At the end of a term, add four years to a character’s age.
+                careers have no rank or promotion (only special duty) such                      When a character reaches age 34 (the end of the fourth
+                characters do not become eligible for promotion-related extra                term), aging begins to take its toll. The Aging table (page 47)
+                skills during their careers. Instead, Belters, Doctors, Hunters,             must be consulted then and at each subsequent term’s end.
+                Rogues, Scientists, and Scouts each receive two term skills                  This table shows the characteristics affected (Strength, Dex-
+                for each term of service, including the first.                               terity, Endurance, and eventually Intelligence)and the throws
+                   The Acquired Skills tables provide characteristic alterations             necessary to avoid the effects of aging. Upon failing a specific
+                (like + 1 Strength) and skills acquisition results.                          saving throw, the indicated reduction is applied to the
+                   Characteristic Alterations: These are expressed as an ad-                 characteristic.
+                dition to (or subtraction from) ability. Alterations usually affect
+                Strength, Dexterity, or Endurance (but some services can af-
+                fect other abilities). These alterations are applied immediately                               THE IMPERIAL CALENDAR
+                and require no further attention. An example is + 1 Dexterity.                    The Imperial calendar was established at the creation
+                   Characteristic alterations reflect physical (or other) training             of the Third Imperium as a universal calendar reform. Im-
+                while in the service. A result of + 1 Strength, for example, may               perial dates count from the year of the founding of the Im-
+                mean the service has required calisthenics, improving strength.                perium, the year “zero.” Dates before zero are negative,
+                   Acquisition of Skills: Upon the first acquisition of a skill,               after are positive. For example, Terra discovered the jump
+                the player writes the skill name, followed by a dash and the                   drive in -2431. The Imperium was founded in 0. The
+                number 1 (thus: Navigation-1).The second time the skill is ac-                 Emperor Strephon was assassinated in 1116.
+                quired, the number is increased to show greater expertise (thus,                  The year is divided into 365 standard days, which are
+                Navigation-2). Further acquisitions of the skill will increase this            grouped into 52 weeks of seven days each. The lengths
+                level. The higher the level, the greater the expertise in that skill.          of days and weeks is a legacy of Terran domination dur-
+                                                                                               ing the Second Imperium. Days are numbered con-
+                SKILL TYPES                                                                    secutively beginning with 1. The first day of the year is
+                  Skill types that can be acquired are: basic (like Navigation),               a holiday not part of any week. For example, the first day
+                cascade (like Gun Combat), and included (like Handgun).                        (Holiday) of the year 1116 is 001-1116. The emperor was
+                  Basic Skills: These are expressed as a general ability, such                 assassinated on 132-1116. The last day of the year is
+                as Navigation or Engineering. No further choice is needed.                     365-1 116.
+                  Cascade Skills: Cascade skills call for an immediate selec-
+
+
+                                                                                        15
+
+
+James Turnbull (Order #51967781)
+

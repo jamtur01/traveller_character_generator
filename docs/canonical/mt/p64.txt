@@ -1,0 +1,69 @@
+                                   ENHANCED MERCHANT CHARACTERS
+                    I                                                                                                                             II
+                                   ENLISTMENT                                        SPECIFIC ASSIGNMENT TABLES
+                                      Star- Line       To     Die    Large Line                Small Line              Free Trader
+                    Type of Line      port Size       Enlist   2     Transfer Down             Transfer Down            Transfer Up
+                    Megacorp          B       Large 9 +        3     Route"                    Route*                   Route*
+                    Sector-wide       C       Large 8+         4     Route"                    Route"                   Exploratory Trade
+                    Subsector-wide D          Small 7 +        5     Route"                    Route"                   Route'
+                    Interface         any Small 7 +            6     Route"                    Route*                   No Business
+                    Fledgling         any Small 7 +            7     Route*                    Charter                  Route'
+                    Free Trader       any -           7+       8     Route"                    Speculative Trade        No Business
+                       DMs: If Str 7+, DM +l.     If Int 6+, 9       Charter                   Speculative Trade        Charter
+                    DM + 2. Enlistment automatic if college 10       Speculative Trade         Exploratory Trade        Speculative Trade
+                    honors graduate.                          11     Exploratory Trade         Exploratory Trade        Exploratory Trade
+                      Note: Enlistment requires a 12                 Special                   Special                  Smuggling
+                    homeworld starport that is equal to or 13        Special                   Transfer Up              Piracy
+                    better than the minimum shown. Free         *Enlisted tested to rank 00. Large and Small Lines: If Edu 6-, DM -1; rank 04+,
+                    Traders are neither large or small lines: DM + 1. Free Traders: If SOC5-, DM + 1; Rank 06, reroll (unless No Business).
+                    they are a special case.
+                      Reenlistment: Throw 4 + to reenlist;                              ASSIGNMENT RESOLUTION
+                    DM +1 if r a n k O l + .                  Deck               Route          Charter       Exploratory Speculative
+                                                              Survival           Auto            3+             4+              3+
+                        DEPARTMENT ASSIGNMENT                 Skills               7+            7+             5+              6+
+                           Large             Small            Bonus              None           None           11 +            12+
+                    Die Merchant Line Merchant Line
+                    1      Purser            Purser           Engineerina        Route          Charter       Exploratory Speculative
+                    2      Purser            Purser           Survival           Auto           Auto            4+              3+
+                    3      Purser            Purser           Skills               7+            6+             5+              6+
+                    4      Sales             Engineering      Bonus              None           None          12+              11 +
+                    5      Engineering       Engineering        DMs: For survival, DM + 1 if any department skill 2 + .
+                    6      Engineering       Engineering
+                    7      Engineering       Deck             Purser             Route          Charter       Exploratory Speculative
+                       Note: Characters in the Free Traders Survival             Auto           Auto            3+            Auto
+                    are automatically assigned to a multi- Skills                  6+            5+             8+              7+
+                    function department called the Free Bonus                    None           None           12+             11 +
+                    Trader, and they may not change             DMs: For bonus, DM + 1 if Steward-2+ .
+                    positions.
+                                                              Administration Route              Charter       Exploratory Speculative
+                              INITIAL TRAINING                Survival           Auto           Auto            3+              3+
+                      There is no initial training in the Skills                   6+            5+             8+              7+
+                    Merchants.                                Bonus              None           None          12+              11 +
+                                                                DMs: For survival, skills, and bonus, DM + 1 if any department skill 2+.
+                           AVAILABLE POSITIONS
+                                        Large Small             Sales            Route           Charter        Exploratory Speculative
+                    Department          Line      Line          Survival         Auto            Auto            4+            3+
+                    Deck                9+         10+          Skills            7+              6+             5+            5+
+                    Engineering           8+        8+          Bonus            None            11 +           10+            8+
+                    Purser                7+        6+            DMs: For survival, skills, and bonus, DM + 1 if Broker-:!+ or Trader-2+ .
+                    Administration        8+        9+
+                    Sales                 6+        6+          Free Trader      Route           Charter        Exploratory Speculative
+                      DMs: If Int 9+, DM+1. If Edu 9 + , Survival                 3+              4+             5+            5+
+                    DM +l.                                      Skills            7+              6+             5+            5+
+                      Free Traders: Throw 8 + to deter- Bonus                    11 +            10+             8+            7+
+                    mine position availability, DM + 1 if Int     DMs: For survival, DM + 1 if Pilot-2+ ; for bonus, DM + 1 if Trader-2+.
+                    9+.
+                      Note: If a position is not available, the Free Trader      Smuggling       Piracy         No Business
+                    individual must serve at one rank lower. Survival             6+              7+             3+
+                    Free Trader officers must serve as Skills                     5+              4+             3+
+                    enlisted personnel when a position is not Bonus               6+              5+            None
+                    available.
+                    I
+                                                                  DMs: For survival, DM + 1 if Pilot-2+ ; for bonus DM + 1 if Trader-2+ .
+                                                                                                                                                  ,I
+                                                                                                                                                  I
+                                                                                62
+
+
+James Turnbull (Order #51967781)
+

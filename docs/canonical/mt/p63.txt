@@ -1,0 +1,67 @@
+               Players’ Manual                                                                                           Merchant Prince Characters
+                  Transfers down occur in this order: Megacorporation to                     Promotion: Promotions are received by passing an examina-
+               Sector-Wide Line to Subsector-Wide Line to Interface Line to               tion, which may be taken only if the individual has the required
+               Fledgling Line to Free Trader.                                             qualifications and is serving in a position consistent with his
+                  When an individual transfers to a new merchant line (up or              rank.
+               down), his current department does not change. However, in-
+               dividuals transferring to Free Traders enter the Free Trader               REENLISTMENT AND MUSTERING OUT
+               Department; individuals transferring from Free Traders to a                   At the end of a four-year term, the character must either suc-
+               higher line consult the Department Assignment table.                       cessfully reenlist or muster out.
+                  Any character rank 0 4 + transferring between merchant                     Merchant Reenlistment: Reenlistment in Merchants re-
+               lines also transfers to the Deck Department (even if the                   quires a throw of 4 + ; DM + 1 if rank 0 1 +.
+               character has served less than one full term in rank 04).                     Transfers between Departments: Both enlisted and officer
+                  Available Position: Once an assignment is received, officers            characters may transfer to a new department at the end of a
+               determine if they are serving in a position consistent with their          four-year term of service if they have ever attended a school
+               rank. It is possible that the officer will be forced to serve in a         or training for that department. Officers automatically transfer
+               position one rank lower than his rank would call for. For ex-              to the Deck Department after one full term in rank 04.
+               ample, a Merchant assistant engineer (rank 02) might find no                  Mustering Out Benefits: At the end of a last term, muster-
+               openings available for him; he must work as a drive hand (rank             ing out benefits are received. It is possible to receive a ship
+               01) for the current assignment.                                            as a mustering out benefit from some merchant lines; Free
+                  Individuals in rank 0 0 who cannot find an available position           Trader OwnerKaptains automatically have a free trader. Far
+               must serve as enlisted personnel for the current year. In-                 Traders are jump2 trading ships. Fat Traders are larger capaci-
+               dividuals in the Free Traders, rank 01, serve as enlisted if they          ty jump-1 trading ships. Receipt of a ship provides possession
+               do not find an available position.                                         of it; additional receipts indicate 10 years of payments.
+                  Only officers serving in a position normallyfilled by their rank
+               are eligible to take the test for promotion (the department test           SPECIAL RULES
+               is an exception to this rule).                                                The following special rules apply to Merchant service.
+                  Assignment Resolution: The Assignment Resolution Tables                    Draftees: Characterswho are drafted may not attend officer
+               indicate the types of assignments possible within each depart-             candidate school (OCS) during their first four-year term.
+               ment. In the proper column, throws are provided for survival,                 Reduced Passage: Individualsformerly employed by a mer-
+               skills learned, and bonuses received.                                      chant line may purchase stand-by middle passages at half price
+                  Survival: If the throw is successful, the individual has sur-           if the ship has empty staterooms available.
+               vived and continues with resolution of the assignment.
+                  Skills: A character may receive skills as a result of a specific
+               duty assignment. If the character rolls the indicated number                              IMPERIAL MERCHANT LINES
+               or higher, then he or she receives one skill. The skill received                Trade is an especially important part of Imperial socie-
+               must be taken from one of the skill table columns available.                 ty. Some of the companies that handle trade include:
+                  Bonuses: During an assignment it is possible that the com-                   Makhidkarun: A megacorporation providing passenger
+               pany will share its profits with the character in the form of a              and freight service to all of the Imperium. Operations are
+               bonus. If the throw for bonus is successful, the individualmakes             confined to the established trade routes.
+               one throw on the Cash Mustering Out table and receives one-                     Tukera: A megacorporation providing passenger and
+               half the amount shown.                                                       freight service, supplemented by trade speculation along
+                  Special Duty: Individuals who receive special duty as an                  the major trade routes. Tukera is an aggressive company
+               assignment consult the Special Duty Table.                                   with a reputation for eliminating competition.
+                  Schools are available for commissioned officers; training is                 AI Morai: A sector-wide line serving Imperial worlds in
+               available for enlisted personnel. Both require a transfer to a               the Spinward Marches. With headquarters on Mora, the
+               specific department upon completion (except transfers do not                 company also provides service in the Mora subsector.
+               take place for individuals rank 05+). No transfer takes place                   Sinzarmes: A subsector-wide line serving the Regina
+               if the individual is already in the department concerned.                    subsector; it provides feeder service from subsector worlds
+               Schools and training may be received any number of times.                    to the trade route worlds.
+                                                                                               Oberlindes Lines: An interface line with scheduled ser-
+               PROMOTION                                                                    vice within the Regina and Aramis subsectors supporting
+                 Enlisted personnel are promoted every four years. For ex-                  extensive trade across the Imperial border with the Vargr.
+               ample, an enlisted merchant would have rank E2 after eight                      UTP: A fledgling line of five free traders who have
+               years of service.                                                            agreed to work together. UTP (Uakye Transport Partners)
+                 Commissions: Merchant Academy graduates are                                concentrates on operations between Efate and Regina.
+               automatically commissioned rank 0 1 in the service. Special                     Jamison Factors: A free trader operating as a tramp
+               Duty may provide a commission. Enlisted characters receive                   in the Spinward Marches. The crew of the Empress
+               a commission if they pass the examination for promotion (which               Nicholle works for a share of the profits. The ship is
+               they may be able to take if they are serving on a Route                      registeredout of Wand but has not been there in 20 years.
+               assignment).
+
+
+                                                                                     61
+
+
+James Turnbull (Order #51967781)
+

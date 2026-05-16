@@ -1,0 +1,59 @@
+                                                                                                              Navy Characters
+
+                    The force that rules the space between the stars controls both transportation and communication and, as a result, controls
+                 all intercourse between worlds. The instrument of such control is the Navy.
+                    General Background: An interstellar community operates under many unique restrictions-it consists of many island-planets
+                 adrift in an ocean of space. Communication between the worlds absolutely depends on technology. Ships flying between the
+                 worlds are vulnerable to pirates and raiders; the worlds themselves are vulnerable to attacks from unfriendly governments. To
+                 control such an ocean of stars, society must depend on its starfaring Navy.
+                    Most interstellar states (whether individual nations on a world, independent worlds, small groups of worlds, or vast interstellar
+                 empires) maintain navies. These navies are organized to provide the most possible protection for their territory. In large groups
+                 of worlds (such as the Third Imperium and most of its interstellar neighbors), the Navy is organized with a three-tiered structure:
+                 the major forces of the Navy are the fleets (which together comprise the Imperial Navy); the local province$ (subsectors) main-
+                 tain reserve fleets; worlds of high enough technology maintain their own system squadrons. The fleets are composed of the
+                 latest and best in warship technology; reserve fleets are usually with second line, obsolescent (but not obsolete) ships handed
+                 down from the fleets; system squadrons, supported by the tax base of only one world, are suited only for defense of that world.
+                 The distinctions between these forces are primarily based on size, resources, and duties.
+                    Naval Ranks: Ranks for characters in the Navy are shown in the Naval Table of Ranks. Ranks 0 1 to 010 are called officers
+                 or commissionedofficers. Ranks E l to E9 are enlisted personnel; within the enlisted ranks, ranks E3 to E9 are petty officers.
+                    Spacers: The general term for Navy personnel, regardless of rank, branch, type of Navy, or any other factor is spacers.
+
+                                                                                            characters who are commissioned as a result of the Naval
+                 INITIAL ACTIVITIES                                                         Academy or NOTC. Naval Academy graduates are commis-
+                    Initial activities include pre-career options, enlistment, com-         sioned with rank 0 1 in the Imperial Navy. NOTC graduates
+                 bat arm selection, and initial training. A beginning naval                 are commissioned with rank 0 1 in the Reserve Fleet.
+                 character must be aware of two facts-the tech code of the                     Branch Selection: A branch is a Naval division that deals
+                 subsector he is in (usually taken as the tech code of the capital          with one aspect of naval operations. The five branches are
+                 of the subsector, but always no less than Early Stellar) and               Flight, Engineering, Medical, Gunnery, Technical Services, and
+                 the world codes of the character’s homeworld. These factors                the Line. The Line is a generalized duty branch for officers,
+                 influence which naval forces are available to the characters.              equivalent to Crew for enlisted personnel. The Technical Ser-
+                    Pre-Career Options: Options for Navy persons include col-               vices branch exists only in the Imperial Navy and spans com-
+                 lege, the Naval Academy, and medical and flight school.                    plex equipment maintenance, computer programming, and in-
+                    Enlistment: All characters initiate their Navy careers by               telligence gathering. Characters are assigned a branch upon
+                 enlisting. If all enlistment attempts fail, the character may not          joining. Consult the Branch Assignment table (1D).
+                 undertake naval service. Successful enlistment commits the                    Medical school graduates are assigned to the Medical branch
+                 individual to a term of service of four years.                             and flight school graduates to the flight branch. A character
+                    Throw 8 + to enlist in the Imperial Navy; allow DM + 1 if Int           with Social Standing 9 + may select any branch.
+                 is 8 + , and DM+2 if Educ is 9 + .                                            Initial Training: The first year is dedicated to initial training.
+                    Throw 7 + to enlist in the Reserve Fleet; allow DM + 1 if Int           An enlisted character rolls for two skills on the Branch Skills
+                 is 8 + , and DM + 2 if Educ is 9 + . The reserve fleet has a tech          table. An officer undergoes officer training and rolls for two skills
+                 code equal to the tech code of the subsector capital.                      on the Branch Skills table or the Officer Staff Skills table (of-
+                    Throw 6+ to enlist in the character’s homeworld’s System                ficers with commissions from OCS do not undergo this training).
+                 Squadron; allow DM + 1 if Int is 8 + , and DM + 2 if Educ is 9 + .
+                 A homeworld will have a System Squadron only if its tech code              CAREER RESOLUTION
+                 is Early Stellar + . If the homeworld is less than Early Stellar,             Career resolution begins once a character graduates from
+                 there is no System Squadron, and this option is not available.             all pre-career schools and has enlisted.
+                    The character begins with rank E l .
+                    Draft: If an individual is unsuccessful in enlisting, he may            Assignments
+                 submit to the draft. A throw of 1 (1D) will result in being drafted           Each term, a character carries out four assignments (initial
+                 into the Imperial Navy. Any other result prohibits the individual          or officer training is the first assignment of the first term).
+                 from naval service, and a new character must be generated                     Each one-year assignment is resolved separately using a
+                 if naval service is desired.                                               three-step procedure: officers determine if they will hold a com-
+                    Automatic Enlistment: Enlistment is not necessary for                   mand in the current assignment; the specific assignment is
+
+
+                                                                                       52
+
+
+James Turnbull (Order #51967781)
+

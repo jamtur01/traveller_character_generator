@@ -1,0 +1,66 @@
+                                   ENHANCED SCOUT CHARACTERS
+                 I
+                                            SCHOOL ASSIGNMENT                                                      SCHOOLS
+                  Die Adrnin   Operation Technical Detached Dtv Survey Explore Cornm                  Individualswho receive training as an
+                   1 Special Special Special Special            Special Special Special            assignment are sent to a service school.
+                   2 Special Special Special Special            Int Sch Special Special            Consult the School Assignment table to
+                   3 Special Ship        Tech      Special      Special Contact Ship               determine which schools are available,
+                   4 Ship      Ship      Tech      Int Sch      Fld Train Contact Ship             and then roll one die. Once the school
+                   5 Fld Train Fld Train Tech      Int Sch      Fld Train Fld Train Fld Train      is determined, the individual may roll on
+                   6 Admin     Admin     Admin     Fld Train    Fld Train Fld Train Fld Train      the Scout Schools table to determine
+                                                                                                   the skills received by attendance. Cer-
+                                                                                                   tain schools confer two skills, while
+                                                                                                   others confer only one, as noted below
+                                               SCOUT SCHOOLS                                       each column of the table.
+                        Ship       Intelligence Technology Specialist Field     Contact               It is possible to be assigned to most
+                  Die School       School       School     School     Training School              schools more than once.
+                   1    Pilot      Disguise Computer Medical          Vehicle   Survey                Administrator School: Attendance
+                   2    Navigation Streetwise Electronics Mech        Grav Belt Liaison            transfers the individual to the
+                   3    Engineer Hand Cbt Gravitics Robot Ops Recon             Linguistics        Bureaucracy. Roll on the Office Assign-
+                   4    Gunnery Vice            Mech       Gunnery    Survival Streetwise          ment table. The character is promoted
+                   5    Space      Gun Cbt Naval Arch Sensor Ops Navigation Survival               to rank IS-10. Draftees may not attend
+                   6    Space      Survival     Technical Academic Survey       Gun Cbt            administrator school during their first
+                  Note: Roll twice Roll twice Roll once Roll once Roll once Roll twice             four-year term.
+
+                                                                                                   REENLISTMENT
+                                                                                                      At the end of a four-year term, the
+                                                SKILL TABLES                                       character must either reenlist or muster
+                          scout                                      Special or Field              out.
+                  Die     Life       Exploration Cornrn    Survey    War Mission Service              Scout Reenlistment: Reenlistment in
+                   1       + 1 Str Grav Vehicle Zero-G En Inborn Hunting          Tech             the Scouts requires a throw of 3 + .
+                   2      Gambling Vehicle       Pilot     Pilot     Bribery       + 1 Educ           The Scout Service maintains an up-
+                   3      Gun Cbt Gun Cbt        Ship’s Bt Vacc Suit Animal Hnd Gun Cbt            or-out policy for ordinary rank: if an in-
+                   4      Carousing Vacc Suit    Vacc Suit Vacc Suit Artisan      Carousing        dividual does not receive continuing pro-
+                   5      Gun Cbt Recon          Comm      Survey    Vice         Gun Cbt          motions, the individual is not allowed to
+                   6      HandCbt Space          Space     Space     Liaison      Gambling         reenlist. If a character’s ordinary rank is
+                   7       + 1 Educ Survival     Survival Environ Survival         + 1 Educ        not equal to or greater than his or her
+                   8      Physical Inborn        Pilot     Navig     Gun Cbt      Inborn           number of terms of service, reenlistment
+                   9      Physical Vehicle       Navig     Engineer Space         Streetwise       is not permitted.
+                  10      Physical Gun Cbt       Navig     Survey    + 1 SOC      Mental              Changing Office Assignment:
+                  DM + 4: if Str 9 + terms 3 +   terms 3 + terms 3 + rank IS-10 + terms 3 +        Characters may change their office
+                                                                                                   assignment. An office assignment re-
+                                                                                                   mains in effect for the remainder of the
+                                                                                                   term of service for the individual. In-
+                                                               Detached Adrnin        Bureau-      dividuals may apply for reassignment
+                  Die     Adrnin        Operation Technical Duty          Rank        cracy        (within the Bureaucracy or the Field)
+                   1       Electronics Mech        Sensor Ops Electronics Admin       + 1 Int      when they reenlist. The character may
+                   2      Admin         Gun Cbt Mech           Admin      Admin       Gambling     roll again on the Office Assignments
+                   3      Comm          Vehicle Vehicle        Comm       Computer Carousing       table: if the result is different, or if
+                  4       Computer Engineer Vacc Suit Computer Vacc Suit + 1 Edu                   reassignment is not desired, the in-
+                  5        Robot Ops Computer Electronic Robot Ops Gun Cbt Computer                dividual remains in the current office.
+                  6        Broker       Navigate Technical Gun Cbt Space              Vehicle         Members of the Bureaucracy are
+                   7       + 1 Int      Pilot      Engineer Artisan       Liaison     + 1 Int      never reassigned to the Field; members
+                   8       + 1 Edu Ship’s Bt Academic Brawling Academic + 1 Edu                    in the Field are never reassigned to the
+                   9       Liaison      Gunnery Technical Streetwise Leader           Streetwise   Bureaucracy (but may be transferred).
+                 10        Academic Ship Tcts Medical          Vice        + l SOC + 1 Int
+                 DM+4: IS-lO+           IS-lO+     EdU9+       IS-lO+     IS-13+      IS-lo+          MUSTERING OUT BENEFITS
+                    Note: Scout Life is available to any Scout character. Special or War Mission    At the conclusion of a player’s last
+                 is available if a character is on Special or War Mission this year. Admin Rank term, all mustering out benefits are
+                 is available to individuals rank IS-lo+. Bureaucracy is available if a character received as described in basic (initial)
+                I
+                 is a member of the Bureaucracy.                                                  character generation.
+                I
+                                                                            59
+
+James Turnbull (Order #51967781)
+

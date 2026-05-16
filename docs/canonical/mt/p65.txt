@@ -1,0 +1,78 @@
+                                   ENHANCED MERCHANT CHARACTERS
+                                                           TABLE OF RANKS AND PROMOTIONS
+                                                                                                                                             II
+                                                          Required                                                     Reauired
+                      Rank Title          Exam            Qualifications                 Rank Title               Exam Qualifications
+                      00
+                      01
+                           Apprentice
+                           4th Officer
+                                          6+
+                                          6+
+                                                          Route Assignment
+                                                          Navigation-1
+                                                                                     p
+                                                                                    .-L 00 01 Asst  Drive Hand    5+                 -
+                                                                                                                       Route Assianment
+                                                                                              Drive Hand          8+   Elec-1 or Grav-1
+                      02   3rd Officer    6+              Admin-1                    $ 0 2 Asst Engineer          7+   Engineering-1
+                   5 0 3 2nd Officer      7+              Ship’s Boat-1            *p   03    Engineer            7+   Engineering-2
+                   p” 0 4 1st Officer     7+              Pilot-1                   w 04      Chief Engineer      9+   Engineering-3
+                      05   Captain        9+              Legal-1                       00    Clerk               5+   Route Assignment
+                      06   Senior Captain 8+              -                         .-E 0 1 Asst Manager          6+   Admin-1
+                      07   Line Commodore 8 +             -                          E 02     Manager             7+   Admin-2
+                      00   Steward        5+              Route Assignment         2    03    Asst Station Head   6+   Admin-3
+                      01   Junior Purser  5+              Steward-1                     04    Station Head        7+   Liaison-2
+                   $ 02    Asst Purser    5+              Steward-2                     01    4th Officer         6+               .
+                                                                                                                       Route Assianment
+                     $02   Asst  Medic    6+              Medical-1                     02    3rd Officer         6+   Engineering-1
+                      0 3 Purser          6+              Liaison-1                I-2 0 3    2nd Officer         7+   Navigation-1
+                      03   Medic          6+              Medical-2                     04    1st Officer         7+   Pilot-1
+                      04   Chief Purser   7+              Admin-1                   L2! 0 5 Captain               9+   Legal-1
+                      00   Apprentice     4+              Route Assignment              06    Senior Captain      8+      -
+                   u) 0 1  Clerk          5+              Trader-1
+                   3  02   Asst Broker    6+              Broker-1                                   SPECIAL DUTY RESOLUTION
+                   v) 0 3  Broker         7+              Broker-2                             Business School: Throw 5 + for: Admin, Com-
+                      04   Senior Broker  8+              Broker-3                          puter, Legal, Liaison. Confers DM + 1 on the ex-
+                                                                                            am for 0 6 + . Transfer to Sales.
+                                                                                               Command School: Throw 5+ for: Admin,
+                                                    SKILL TABLES                            Leader, Legal, Ship Tactics. Transfer to Deck.
+                             Merchant Shipboard      Officer     Merchant Master               Commission: Receive rank 00 (rank 0 1 in the
+                  Die        Life      Life          Skills      Skills     Skills          Free Traders) and Department Assignment (deter-
+                   1         Brawling Gambling       Brawling    Streetwise Admin           mine normally). Must pass exam for 01 within 4
+                   2         Carousing Blade Cbt     Vehicle     Broker     Computer        years or revert to enlisted rank.
+                   3         Gambling Vacc Suit      Ship’s Boat Trader     Navigation         Deck School: Throw 5 + for: Communication,
+                   4         Trader    Zero-G Cbt    Gun Cbt     Liaison    Pilot           Computer, Gunnery. Transfer to Deck.
+                   5         + 1 Edu Commo           Liaison     Admin      Leader             Department Test: May take Department test
+                   6         Carousing Jack-o-T      Liaison     Legal      Bribery         without regard for skill requirements.
+                                                                                               Drive Training/EngineeringSchool: Throw 5 +
+                             Deck        Engineer    Purser     Medic    Admin              for: Electronics, Engineering, Gravitics,
+                  Die        Skills      Skills      Skills     Skills   Skills             Mechanical. Transfer to Engineering.
+                   1         Navig       Mechanical Steward     Steward Admin                  Helm Training: Throw 5 + for: Navigation, Pilot,
+                   2         Admin       Electronic  Medical    Medical Liaison             Sensor Op, Ship’s Boat. Transfer to Deck.
+                   3         Pilot       Engineering Liaison    Medical Bribery               Security Training: Throw 4 + for: Zero-G
+                   4         Legal       Admin       Gunnery    Medical Admin               Environ, Vacc Suit, Brawling, Computer.
+                   5         Ship’s Bt   Engineering Steward    Computer Admin                Steward Training/Purser School: Throw 4 +
+                   6         Leader      Gravitics   Liaison    Medical Streetwise          for: Admin, Liason, Steward. Transfer to Purser.
+                                                                                              Trade Station: Throw 4 + for: Broker, Liason,
+                           Sales      Planet                   Free Trader                  Trader. Transfer to Admin.
+                  Die      Life       Life         Life          Service    Business
+                   1       Trader     Gun Cbt       + 1 Dex Steward Enaineerina
+                                                                              I        -                        SPECIAL DUTY
+                   2       Broker     Streetwise Brawling        Trader     Navigation      Die   Deck Hands             Officers
+                   3       Computer Vacc Suit      Streetwise Broker        Steward           1   Security Trng          Trade Station
+                   4       Liaison    Vacc Suit    Forgery       Admin      Legal            2    Trade Station          Command School
+                   5       Trader     Gun Cbt      Bribery       Gunnery Pilot               3    Helm Trng              Deck School
+                   6       Broker     Brawling     Legal         Leader     Broker           4    Drive Trng             Engineering School
+                    Skill Table Notes: Skill columns are available to members of the         5    Steward Trng           Purser School
+                  specified departments. Sales: only Sales. Planet Life: Admin and Sales.    6    Commission             Business School
+                  Free Trader: All Free Traders. Merchant Life: All characters. Shipboard    7    Commission             Department Test
+                  Life: Except Sales and Admin. Officer skills: Rank 0 0 + . Merchantile       DMs: If Edu 9 + , DM + 1. If rank 0 4 + and not
+                  skills: Except Engineering. Master skills: Deck Department rank 0 4 + .   in Deck Department, DM + 1.
+
+                 I                                                                                                                           II
+                                                                             63
+
+
+James Turnbull (Order #51967781)
+

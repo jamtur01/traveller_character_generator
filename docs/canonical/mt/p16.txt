@@ -1,0 +1,67 @@
+                Characters                                                                                                                               GDW
+                                                                                                Default Skills: Certain characters automatically receive
+                ACQUIRING SKILLS AND EXPERTISE                                              default skills of level 0. A level of 0 for a skill indicates that
+                    A newly generated character may attempt to enlist in an!                the individual can undertake ordinary activities but is not ex-
+                career allowed by his homeworld. The Prior Service table list!              perienced enough to try dangerous activities or fancy actions.
+                throws. Throwing those numbers or higher on two dice allow!                 A skill level 0 is sufficient to prevent a task from increasing
+                enlistment. Most careers allow die modifications if the characte            in difficulty because of lack of skill, although a skill level 0 pro-
+                has one or two characteristics of a certain level or higher. I              vides no skill DM.
+                both are in the required level, the modification is cumulative                  Default skills are conferred automatically as follows:
+                    For example, the Navy throw is 8 + ; DM + 1 is allowed fo                   Characters enlisting in the Navy, Marines, Flyers, Scouts,
+                Intelligence of 8 or more, and DM + 2 for Education of 9 o                  Merchants, or Pirates automatically receive Vacc Suit-0.
+                more. If a character, Hylan Vincent, 8946A8 (Intelligence6 ant                  All characters, except Barbarians, automatically receive Gun
+                Education 10)wants to enlist in the Navy, he has a DM +:                    Combat-0 (Gun Combat is a cascade skill).
+                (for Education). If he rolls a 3 on two dice and adds his Dh                    Characters from a world with a tech code of Early Stellar +
+                 +2,he gets 5,which is insufficient (he needs 8 +). The Nav                 automatically receive Computer-0.
+                rejects him.                                                                    Characters from a world with a tech code of Average
+                    Only one enlistment attempt is permitted per character. I               Stellar + automatically receive Grav Vehicle-0; characters from
+                rejected for enlistment, he must submit to the draft.                       a world with a tech code of Industrial to Early Stellar
+                    The Draft: If an enlistment attempt fails, the character mus            automatically receive Wheeled Vehicle-0.
+                submit to the draft. Each of the six military services (Navy, Ai                Survival: Each career term involves some danger; during
+                my, Marines, Scouts, Flyers, and Sailors) has a draft numbei                each term, a character must successfully throw the career’s
+                the draftee rolls one die, entering the service with that numbei            survival number or better to avoid injury in the line of duty. Each
+                    Note that it is possible for a character to be drafted into thl         service also has DMs which may apply.
+                very service which had just previously rejected an enlistmeni                   Failure to successfully achieve the survival throw forces the
+                 It is also possible to be drafted into a service which an ir               character to leave the service after having served only two
+                dividual’s homeworld restrictions would normally disallow.                   years of the four-year term. The short term is not counted for
+                    A draftee is not eligible for a commission during his first terr         mustering out benefits.
+                of service; he becomes eligible during the second and subse                     However, the character may still roll for special duty and take
+                quent terms of service if he reenlists.                                      the indicated skill rolls if successful. The character may not
+                    Terms of Service: Upon enlistment (or upon being draftec                 roll for commission/positionor promotionduring the short term.
+                 a character embarks on a four-year term of service. This add                   Optional Survival Rule: The referee or player may decide
+                four years to the character’s age. Each time he reenlists, it i              that failure of the survival throw results in death and that a new
+                for a four-year term of service. The Terms Table lists                       character must be generated.
+                 character’s beginning and ending age for each term of servicc                  CommissionslPositions and Promotions: Each service has
+                                                                                             a commissionlposition number; in order to be given a
+                                         TERMS TABLE                                         commission/position, the character must throw the stated
+                                   Starting                         Ending Age               number. DMs may apply to the throw. If the
+                    Term           Age         Half-term            Full-term                commission/positionis achieved, the character receives rank
+                      1             18               20              22                      1 in the career. A character may attempt to acquire a
+                       2            22               24              26                      commission/positiononce per term of service until successful,
+                       3            26               28              30                      but a draftee may not attempt to acquire a commission in the
+                       4            30               32              34                      first term of service.
+                       5            34               36              38                         In the same term of service that a commission is received
+                       6            38               40              42                      and in each subsequent term of service, a character may at-
+                       7            42               44              46                      tempt to be promoted. Each service has a promotion number
+                       8            46               48              50                      and DMs affecting that promotion throw. If a promotion is
+                       9            50               52              54                      achieved, the character advances to the next higher rank in
+                     10             54               56              58                      the service. A character is eligible for one promotion per term
+                     11             58               60              62                      of service. Commissions/positions or promotions are not
+                     12             62               64              66                      available to Belters, Doctors, Hunters, Rogues, Scientists, or
+                     13             66               68              70                      scouts.
+                     14             70               72              74                         Special Duty: Each service has a special duty number. To
+                     15             74               76              78                       be given special duty the character must throw the stated
+                     16             78               80              82                       number. If special duty is achieved, the character gets an ex-
+                     17             82               84              86                      tra skill throw for the term.
+                     18             86               88              90                         Skills and Training: During each term of service, a character
+                     19             90               92              94                       has the opportunity to acquire personal skills and expertise.
+                     20             94               96              98                      Allowances are made for the character’s acquisition of new
+                     21             98              100             102                      skills based on service, special duty, commissionlposition,and
+                                                                                             promotion.
+
+
+                                                                                       14
+
+
+James Turnbull (Order #51967781)
+

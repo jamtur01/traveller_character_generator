@@ -1,0 +1,68 @@
+                                   ENHANCED CHARACTER GENERATION
+                 I Generate the six basic characteristics                                                                                                    II
+                                                                             AGING TABLE
+                  using 2D: Strength, Dexterity, En-                       LosslSaving Throw           End of                    Aging: Age is the
+                  durance, Intelligence, Education, and        Age Str      Dex       End     Int       Term                   character’s physical
+                  Social Standing.                             34  - 1 (8+) - 1 (7+) -1 (8+) -             4                   age (apparent age if
+                                                               38  - 1 (8+) - 1 (7+) - 1 (8+) -            5                   using anagathics).
+                               COLLEGE                         42  - 1 (8+) - 1 (7+) - 1 (8+) -            6                   End of term is when
+                  Admission 9 +     DM+2 if Edu 9 +            46  - 1 (8+) - 1 (7+) - 1 (8+) -            7                   the character nor-
+                  Success     7+    DM+2 if Int 8 +            50  - 1 (9+) - 1 (8+) - 1 (9+) -            8                   mally makes the sav-
+                  OTC         8+    DM+1 if SOC8 +             54  - 1 (9+) - 1 (8+) - 1 (9+) -            9                   ing throw shown.
+                  NOTC        9+    DM+1 if Soc 10+            58  - 1 (9+) - 1 (8+) - 1 (9+) -           10                   End of term is correct
+                  Education 1D-2 DM+1 if Int 9+                62  - 1 (9+) - 1 (e+) - 1 (9+) -           11                   only if not using
+                  Honors      10+ DM+1 if Int 10+              66+ - 2 (9+) - 2 (9+) - 2 (9+) - 1 (9+)    12                   anagathics.
+                    Honors graduates receive Edu 10 or
+                  current Edu + 1, whichever is greater.              COURT-MARTIAL TABLE                              BROWNIE POINTS
+                                                               Die Result                                       Brownie points are special DMs that
+                             NAVAL ACADEMY                      -1 Case dismissed.                           a character receives for significant ef-
+                  Admission 10+ DM+2 if SOC10+                   0 Reprimand (-1 to next promotion).         forts. Brownie points may be used (at
+                  Success      9 + DM+2 if Edu 8 +               1 Reprimand (-3 to next promotion).         any time) as a DM on any die roll after
+                  Education 1D-3 DM+ 1 if Int 9 +                2 Reduce rank -1.                           it has been rolled. Once expended,
+                  Honors       9 + DM+ 1 if Int 9 +              3 Reduce rank -2.                           brownie points are lost. Any number of
+                     Skills: Graduates roll 4 + on 1D for        4 Jail (2D months), reduce rank -2.         brownie points may be used on a given
+                  each of these skills: Vacc Suit, Naviga-       5 Jail (1D years), DD.                      roll. Brownie points may be ac-
+                  tion, Engineering.                             6 Jail (2D years), DD.                      cumulated for as long as is necessary
+                                                                 7 Jail (2D years), DD.                      and then used whenever they are
+                           MILITARY ACADEMY                      8 Death. Escape; KCrlO reward.              needed.
+                  Admission 10 + DM + 2 if Str 10+               9 Death. Escape; KCrlO reward.                 A character receives brownie points
+                  Success        9 + DM + 2 if Edu 8 +          10 Death. Escape, killing 1D guards;         as follows:
+                  Education 1D-3 DM+ 1 if Int 9 +                    KCrl00 reward.                             Finish of each 4-year term ..........1
+                  Honors         9+    DM+ 1 if Int 9 +          DMs: + 1 is rank E7 to E9, + 2 if com-         Graduation from College.............1
+                     Skills: All graduates receive Combat      bat assignment, -2 if training, -1 if rank         Service Academy ..................... 1
+                  Rifleman. Graduates throw 4 + on 1D          0 7 + , + 2 if command duty.                       Medical School........................     1
+                  for each of these skills: Tactics, Leader,                                                      Flight School............................ 1
+                  Admin, Heavy Weapons, Forward                   DECORATION AND SURVIVAL                       For honors.................................. 1
+                  Observer, Computer.                            When a character becomes eligible to           For a special assignment............1
+                                                               receive a decoration, he must make a             Per MCUF received..................... 1
+                          MERCHANTACADEMY                      decoration roll.                                 Per MCG received....................... 2
+                  Admission 9 + DM + 2 if Edu 10 +               Poltroonery:A character may elect to           Per SEH received........................     3
+                  Success      9 + DM+2 if Int 8 +             take a + DM on his survival roll (cowar-         Per Purple Heart received...........0
+                  Education 1D-3 DM+ 1 if Int 9 +              dice) in return for a -DM on the roll for
+                  Honors       9 + DM+1 if Int 9+              decoration. If he fails the decoration roll                    RESUMES
+                     Skills: Graduates select one of the       by six or more (for example, rolling 4           Each character should have a
+                  five Merchant departments and throw          when 10 + is needed), he will be court-       resume with pertinent information
+                  for three department skills.                 martialed. Roll 1D on the Court Martial       available.
+                                                               Table.                                           1. General: Include age, branch of
+                           MEDICAL SCHOOL                        Guilt: Enlisted men are automatically       service (army or marines), terms
+                  Admission 9 + DM + 2 if Edu 10+              guilty. Officers throw 10+ to avoid a         served, combat service arm, transfers,
+                  Success     8 + DM+2 if Edu 8 +              court-martial, DM + 1 per level of Admin.     and final rank.
+                  Honors       11+ DM+1 if Edu 11+             Brownie points may be used. Court-               2. Special Assignments: List each
+                    Skills: All graduates receive + 1          martial results are not necessarily truth.    special assignment.
+                  Education, Medical-3, and Admin.               Dishonorable Discharge (DD): The               3. Awards, Decorations, or
+                  Honors graduates receive Medical and         character loses 3 rolls for mustering out     Bonuses: List all special rewards.
+                  Computer.                                    benefits and does not receive a pension.         4. Equipment Qualified On: List
+                                                                 Jail: Jail sentence (2D months) serves      each type of equipment on which the
+                             FLIGHT SCHOOL                     as the next year of service. The other jail   character has at least one skill level.
+                  Admission 9 +       DM+ 1 if Dex 9 +         sentences increase a character’s age             UPPs or exact skill levels of poten-
+                  Success      7 + DM+1 if Int 8 +             and result in mustering out.                  tial non-player employees are not on
+                    Skills: Graduates receive Ship’s Boat        Death PenaltylEscape: The character         initial resumes. The player’s character
+                  and Navigation, and 1D-3 (minimum of         has a price on his head, and receives no      sheet lists the character’s full UPP and
+                  1) levels of Pilot.                          mustering out benefits or pensions.           skill levels.
+                 I                                                                                                                                           I
+                                                                                                                                                             I   I
+                                                                                  47
+
+
+James Turnbull (Order #51967781)
+

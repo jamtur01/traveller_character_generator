@@ -1,0 +1,70 @@
+                                            ENHANCED SCOUT CHARACTERS
+                   I
+                                     ENLISTMENT                                                       ASSIGNMENT RESOLUTION
+                       Throw 7 + to enlist in the Scouts;                     Survey   Training Base          Routine Mission Spl Msn War Msn
+                    DM + 1 if Int 6+, DM+2 if Str 8+. Star-                   Survival 3 +         3+         3+          4+          5+          6+
+                    ting rank is IS-1.                                        Skills   School      8+         7+          6+          6+          7+
+                       College graduates may choose                             DMs: For survival, DM + 1 if End 9 + . For skills, DM + 1 if terms 3 + .
+                    automatic enlistment. Starting rank is
+                    IS-1, IS-10 for honors graduates.                         Commo Training Base             Routine Mission Spl Msn War Msn
+                       The Draft: If enlistment is unsuc-                     Survival 3 +         4+         4+          5+          6+           6+
+                    cessful, the character may throw 1D: a                    Skills   School      None       7+          7+          6+           6+
+                    4 (1D) drafts him into the Scouts.                                                                                            +
+                                                                                DMs: For survival, DM + 1 if End 9 + . For skills, DM + 1 if Pilot-3 .
+
+                              OFFICE ASSIGNMENT                               Explore Training Base           Routine Mission Spl Msn War Msn
+                    Die Field               Bureaucracy                       Survival 3+          3+         4+          5+          7+           6+
+                     2 Survey               Detached Duty                     Skills   School      None       8+          7+          5+           6+
+                     3 Survey               Detached Duty                       DMs: For survival, DM + 1 if End 9 + . For skills, DM + 1 if Int 9 + .
+                     4 Survey               Technical
+                     5 Survey               Technical                         Admin     Training Base          Routine     Mission   Spl Msn    War Msn
+                     6 Communications Operations                              Survival Auto        Auto        Auto        3+        3+         5+
+                     7 Communications Operations                              Promotion No         7+          7+          7+        6+         5+
+                     8 Communications Operations                              Skills    School     7+          7+          7+        7+         7+
+                     9 Communications Administration                            DMs: For survival, DM + 1 if Int 9+.
+                    10 Exploration          Administration
+                    11 Exploration          Administration                    Operation Training Base          Routine Mission SPI Msn War Msn
+                    12 Exploration          Administration                    Survival Auto        Auto        Auto        3+        4+          5+
+                      Note: Honors graduates choose their                     Promotion 8 +        9+          8+          7+        6+          4+
+                    office assignment (not reassignments).                    Skills    School     8+          8+          6+        5+          4+
+                                                                                DMs: For survival, DM + 1 if Pilot-2+ . For promotion, DM + 1 if Int 9 + .
+                                   INITIAL TRAINING
+                    Office Assignment                                 Skill   Technical Training Base         Routine      Mission   SPI Msn    War Msn
+                    Survey ......................................... Pilot    Survival Auto        Auto       Auto         3+        5+         6+
+                    Exploration.................................. Pilot       Promotion 10 +       9+         9+           8+        7+         6+
+                    Communications..........................          Pilot   Skills    School     7+         7+           6+        7+         6+
+                    Detached Duty......................... Admin                DMs: For survival, DM + 1 if Edu l o + .
+                    Technical ............................ Computer
+                    Operations...............................       Leader
+                                                           Detached Training Base            Routine Mission Spl Msn War Msn
+                    Administration .......................... Admin
+                                                           Survival Auto          Auto       Auto         4+         6+          7+
+                                                           Promotion No           No         8+           7+         5+          5+
+                              DUTY ASSIGNMENT              Skills      School     No         7+           6+         6+          3+
+                    Die Field             Bureaucracy        DMs: For survival, DM + 1 if rank 0 1 + .
+                     2 Wartime Mission Wartime Mission       Notes: Auto = survival is automatic; no throw is needed. None = no skills re-
+                     3 Training           Training         ceived. No= no promotion is possible. School = skills are receivedfrom a school.
+                     4 Training           Base               Promotions: Administrator rank receives a maximum one promotion per four-
+                     5 Base               Training         year term; ordinary rank may receive up to one promotion per year. Characters
+                      6 Routine           Routine          in the Field do not have rank or promotions.
+                      7 Routine           Routine
+                     8 Mission            Base                                           TABLE OF RANKS
+                     9 Mission            Mission          Rank        Enlisted                 Rank         Officer                   Basic
+                    10 Special Mission Mission             E l IS-1    Recruit                  01 IS-10 Admin Trainee                 1
+                    11 Special Mission Mission             E2 IS-2 Apprentice, Clerk            0 2 IS-11 Jr Administrator             1
+                    12 Transfer           Special Mission E3 IS-3 Journeyman                    0 3 IS-12 Administrator                2
+                       DMs: If rank IS-lO+, DM+2 (but E4 IS-4 Skilled Worker                    0 4 IS-13 Group Administrator          3
+                    natural 2 = 2).                        E5 IS-5 Asst Team Leader             0 5 IS-14 Senior Administrator         4
+                       Transfer: If transferred to the E6 IS-6 Team Leader                      0 6 IS-15 Scout Commander              5
+                    Bureaucracy, a person may decline and E7 IS-7 Asst Supervisor               0 7 IS-16 Scout Leader                 5
+                    reroll once. Use the Office Assignment E8 IS-8     Supervisor               0 8 IS-17 Senior Scout Leader          6
+                    table for assignments and Duty Assign- E9 IS-9 Senior Supervisor            0 9 IS-18 Senior Scout Leader          6
+                    ment table for duties. Characters        Ranks IS-1 to IS-9 are ordinary (the equivalent of enlisted rank); IS-10 to IS-18
+                    receive rank equal to their terms.     are administrator (the equivalent of officer rank).
+                   I
+                   I
+                                                                                                5a
+
+
+James Turnbull (Order #51967781)
+

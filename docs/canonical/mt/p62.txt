@@ -1,0 +1,58 @@
+                                                                           Merchant Prince Characters
+
+                   The immense network of merchant companies provides an opportunity for individuals to travel and to make their living.
+                   General Background: There are six types of merchant lines divided into three general classes. Merchant megacorporations
+                 and sector-widelines are large merchant lines. Merchant subsector-widelines, interface lines, and fledgling lines are small lines.
+                 The free traders are a special case; they are neither small nor large.
+                   Merchant Ranks: There are two types of ranks in Merchant service: enlisted and commissioned.
+                   Enlisted Rank: Enlisted Merchant characters receive enlisted rank based on seniority; the individual E-rank number is the
+                 number of the current term of service. In the first term of service, the character is rank E l . Enlisted rank is an indication of
+                 seniority. Individuals who transfer to other companies retain their E-rank based on their current term of service. There are no
+                 names for enlisted ranks. Rank is stated by department and rank (for example, Engineering E l , or Deck E4).
+                   Commissioned Ranks: The Table of Ranks and Promotions shows the various officer ranks. The titles vary by department.
+                   Merchants: The general term for members of the Merchant service, regardless of rank or any other factor is merchants.
+
+                                                                                              is resolved in terms of survival, skills, and bonus.
+                 INITIAL ACTIVITIES                                                              Duty Assignment Definitions: The specific types of duty
+                    Initial activities include pre-career options, enlistment, com-           assignments possible are:
+                 bat arm selection, and initial training.                                        Route is duty on a merchant ship serving an established
+                   Pre-Career Options: Characters intending a Merchant                        trade route consistent with the size of the merchant line.
+                 career may consider college, the Merchant Academy (available                    Chatter is duty on a merchant ship which has been chartered
+                 after enlistment), and medical school.                                       to a specific company or individual.
+                    Enlistment: Each of the six types of merchant lines has a                    Speculative Trade is duty on a merchant ship which is buy-
+                 throw to enlist. If the throw is successful (taking into account             ing goods in cheap markets and transporting them on specula-
+                 DMs), the individual has enlisted. Successful enlistment com-                tion to markets where they can be sold at large profits.
+                 mits the individual to a term of service of four years.                         Exploratory Trade is duty on a merchant ship which is open-
+                    Starport Restrictions: Each merchant line indicates a                     ing new markets (within known territory or unknown territory).
+                 minimum starport type. If the character’s homeworld has a                       Smuggling is a Free Trader pursuit in which the ship cap-
+                 starport type less than that shown, the individual may not enlist            tain transports goods illegally in order to make large profits.
+                 in that merchant line.                                                          Piracy is a Free Trader pursuit in which the ship captain ac-
+                    Draft: The draft does not send characters into the Merchant               tively attacks and raids other shipping.
+                 services. If initial enlistment fails to allow the character to enter           No Business is a Free Trader situation in which there is no
+                 the Merchant services, the character cannot enter the Mer-                   available merchant activity; the lack of funds forces the
+                 chant services.                                                              character to remain on the planet looking for work.
+                    Automatic Enlistment: A college honors graduate may                          Special Duty allows consultation of the Special Duty Table.
+                 automatically enlist in a megacorporation.                                      Transfers Up or Down: It is possible to receive a transfer
+                    Department Assignment: Merchant lines (except the Free                    to another merchant line as an assignment. It is remotely possi-
+                 Traders) are divided into departments. Characters consult the                ble for a character to receive several transfers within the same
+                 Department Assignment table when they enter the service.                     year of service.
+                 Free Traders are placed in a department called Free Trader.                     Transfer Up indicates that the Merchant character has been
+                    When an individual receives a commission, it is in the                    recruited by the next higher type of merchant line and may
+                 department in which the individual is currently serving.                     transfer to that line immediately.The character then rerolls on
+                    Initial Training: There is no initial training in the Merchants.          the specific Assignments table for the assignment for the cur-
+                                                                                              rent year within this new merchant line.
+                 CAREER RESOLUTION                                                               Transfers up occur in this order: Free Traders to Fledgling
+                    Career resolution begins once a character graduates from                  Line to Interface Line to Subsector-Wide Line to Sector-Wide
+                 all pre-career schools and has enlisted.                                     Line. It is not possible to transfer up to a megacorporation.
+                                                                                                 Transfer Down indicates that the Merchant character has
+                 Assignments                                                                  been let go by his or her current employer, has been recruited
+                    Each term, a character carries out four assignments.                      by the next lower type of merchant line, and may transfer to
+                    Each one-year assignment is resolved separately using a                   that line immediately. The character then rerolls on the specific
+                 three-step procedure: the specific assignment is selected; of-               Assignments table for the assignment for the current year within
+                 ficers determine if a position is available; and that assignment             this new merchant line.
+
+
+                                                                                         60
+
+James Turnbull (Order #51967781)
+

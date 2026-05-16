@@ -1,0 +1,71 @@
+               Plavers’ Manual                                                                                                        Navv Characters
+                                                                      ~~
+
+
+
+
+               selected; and that assignment is resolved in terms of survival,             mediately. A character may roll for a skill on any skill column
+               decorations, promotions, and skills.                                        or table available to him.
+                  Command Determination (Officers Only): Any officer may                      Retention In Assignment: At the end of each assignment,
+               consult the Naval Command Duty table to be placed in acom-                  roll one die-if the result is a 6, then the next assignment will
+               mand position. For each branch, success places the officer                  be the same as the previous one. However, no one can be re-
+               in a command position; failure places him in a staff position.              tained in the same assignment more than once in succession;
+               Not consultingthe table results in assignment to a staff position.          he cannot be retained in the same assignment involuntarily
+                  Specific Assignments: The Naval Assignment table deter-                  at the end of a four-year term, even if he reenlists; retention
+               mines the character’s specific assignment. These assignments                does not occur on a special assignment.
+               may be: shore duty, training, battle, siege, strike, and patrol.
+               It is also possible to receive a special assignment.                        REENLISTMENT AND MUSTERING OUT
+                  Special Assignments: Characters who receive a special                       At the end of a four-year term, the character must either
+               assignment are sent to service schools or given unusual duty.               reenlist or muster out. If reenlistment is not successful, then
+                  Assignment Resolution: In each specific assignment, four                 the character must muster out.
+               aspects must be resolved: survival, decoration, promotion, and                 Imperial Navy Reenlistment: Reenlistment in Imperial Navy
+               skills.                                                                     requires a throw of 6 + . Petty officers (rank E4+) or commis-
+                  Survival: The survival throw determines if the character sur-            sioned officers (rank 01 +) receive DM + 1.
+               vives the assignment year. Failing the throw forces ending                     Reserve Fleet Reenlistment: Reenlistment in the Reserve
+               character generation and mustering out (the optional survival               Fleet requires a throw of 6+. Petty officers (rank E4+) or com-
+               rule may be implemented: a character who fails the survival                 missioned officers (rank 0 1 +) receive DM +2.
+               throw is dead). If the number is thrown, the character has                     System Squadron Reenlistment: Reenlistment in the
+               received a wound or injury; if the injury occurs while serving              System Squadron requires a throw of 5 + . Commissioned of-
+               in a battle, siege, or strike, it is a combat wound, and the                ficers (rank 0 1 +) receive DM +2.
+               character receives the Purple Heart.                                           Changing Branch: Characters may reenlist for a different
+                  A character may elect to take a negative DM on his survival              branch at the beginning of a four-year term. The reenlistment
+               roll and then apply it as an equal positive DM for decorations              must be successful, and the character must have received
+               in the next step.                                                           cross-training in the new branch at some time prior to
+                  Decoration: Characters may receive decorations for their                 reenlistment.
+               heroism. If a character rolls the indicated number or higher,                  Changing Navy: It is not possible to transfer between the
+               he is awarded the Meritorious Conduct under Fire (MCUF). If                 System Squadron, the Reserve Fleet, and the Imperial Navy.
+               the character rolls a number at least three higher than the                    Mustering Out Benefits: At the conclusion of a player’s last
+               stated number, he receives the Medal for Conspicuous Gallan-                term, all mustering out benefits are received as described in
+               try (MCG) instead. If the player rolls at least six higher than             basic character generation.
+               the number indicated, he receives the Starburst for Extreme
+               Heroism (SEH) instead.                                                      SPECIAL RULES
+                  If a negative DM was taken on survival, an equal positive                   The following special rules apply to the Navy.
+               DM may be used to attempt to win a decoration. For example,                    Combat Ribbons: A character’s resume should include
+               a character might take DM -2 for survival, thus increasing the              details of combat experience. Each time that a character
+               chance that the throw will not be achieved. If he survives, then            receives a combat assignment (battle, siege, or strike), a com-
+               DM + 2 is allowed when rolling for decorations.                             bat service ribbon is awarded. Each time an officer holds acom-
+                  The reverse of this procedure (positive DMs for survival;                mand assignment in combat, he receives a command cluster
+               negative DMs on decoration) is also possible, but if the decora-            on the combat ribbon. For example, a character has three com-
+               tion throw fails by six or more (for example, rolling a 4 when              bat ribbons with two command clusters: he has had three one-
+                10+ is required), consult the Court-Martial Table.                         year combat assignments, and in two of them he was an of-
+                  Promotion: A character may receive a promotion by throw-                 ficer in command.
+               ing the indicated number or greater (ZD). Where a number is                    Draftees: Characters who are drafted may not attend officer
+               listed in parentheses, officers may not roll for promotion.                 candidate school (OCS) during their first four-year term.
+                  Normally, an officer may not receive more than one promo-                   The Frozen Watch: Some Imperial Navy ships carry reserve
+               tion per term. However, receiving a commission (through OCS,                crewmembers in cold sleep as potential replacements for bat-
+               for example) does not prohibit another promotion during a four-             tle casualties. Characters selected for Frozen Watch (a special
+               year term, and the automatic promotion given a military attache             assignment) are carried for one year in suspended animation:
+               does not prohibit another promotion during the term.                        they are one year older chronologicallythan they are physically
+                   Enlisted characters may be promoted as often as once per                (for each year spent on Frozen Watch). No skills are learned
+               assignment. They may not be promoted beyond the rank of                     on this assignment.
+                E9 except though attendance at officer candidate school (OCS).                Rank Limits: The size of a Navy restricts the maximum rank
+               The table of ranks indicates the levels promotion will bring.               possible for officers. The highest rank available in a System
+                  Skills: A character may receive skills as a result of his assign-        Squadron is commodore. The highest rank available in the
+                ment. If the character rolls the indicated number or higher, then          Reserve Fleet is fleet admiral. The highest rank available in
+                he or she becomes eligible for one skill to be determined im-              the Imperial Navy is grand admiral.
+
+
+                                                                                      53
+
+James Turnbull (Order #51967781)
+

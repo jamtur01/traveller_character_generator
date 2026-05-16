@@ -1,0 +1,84 @@
+                  I                        HOMEWORLD GENERATION
+                          Star-               HOMEWORLD DESCRIPTION CODES                                              STARPORT CODES
+                                                                                                                                                   II
+                   Die port Size        Atrnos       Hydro        Population Law Code Tech Code                   A: Excellent quality installation.
+                     2 A      Asteroid Vacuum        Desert World Low Pop No Law           Pre-Industrial         B: Good quality installation.
+                     3 A      Small Vacuum           Desert World Low Pop Low Law Industrial                      C: Routine quality installation.
+                     4 A      Small Thin             Dry World    Mod Pop Low Law Industrial                      D: Poor quality installation.
+                     5 A      Small Thin             Dry World    Mod Pop Mod Law Pre-Stellar                     E: Frontier installation.
+                     6 A      Small Standard Wet World Mod Pop Mod Law Pre-Stellar                                X: No starport.
+                     7 B      Medium Standard Wet World Mod Pop Mod Law Early Stellar
+                     8 B      Medium Standard Wet World High Pop Mod Law Early Stellar                                WORLD SIZE CODES
+                     9 6      Medium Dense           Wet World High Pop Mod Law Avg Stellar                       Asteroid: Dia below 200 km.
+                   10 C Large Dense                  Wet World High Pop High Law Avg Stellar                      Small: Dia 200-7199 km.
+                   11 C       Large Exotic           Wet World High Pop High Law High Stellar                     Medium: Dia 7200-11,999 km.
+                   12 D-X Large Exotic               Water World High Pop Ext Law          High Stellar           Large: Dia 12,000-16,800 km.
+                   on D-X:              DMs:         DMs:                      DMs:        DMs:
+                   Roll 1D;             If Size =    If Size =                 If Pop =   Starport A, + 3            ATMOSPHERECODES
+                   1-3=D                Asteroid, -9 Small, -2                 Lo Pop,-1 Starport B, + 2            Vacuum: Very little (if any) at-
+                   4-5 = E              Small,Q      Large, + 2                Hi Pop,    Starport C, + 1         mosphere (pressurebelow 0.43)
+                   6=X                  Large, + 2                             +1         Starport X, - 2           Thin: Thin nitrogen-oxygen at-
+                      Roll 2D on each column of the table to determine the homeworld Asteroid, + 1                mosphere (pressure 0.43-0.7)
+                   description. The exact Traveller world characteristic for each code Water World, + 1             Standard: Standard nitrogen-
+                   is on the table below.                                                  Low Pop, + 1           oxygen (pressure 0.71-1.49)
+                                                                                          High Pop, + 2             Dense: Dense nitrogen-
+                                            WORLD PROFILE CODE EQUIVALENTS                                        oxygen (pressure 1.5-2.5)
+                   Value Size         A tmos        Hydro           Pop            Law Code Tech Code               Exotic: Unusual, dangerous.
+                     0    Asteroid Vacuum           Desert          Low            No Law       Pre-Industrial
+                     1    Small       Vacuum        Dry             Low            Low          Pre-Industrial       HYDROSPHERE CODES
+                     2    Small       Vacuum        Dry             Low            Low          Pre-Industrial      Hydrosphere is water unless
+                     3    Small       Vacuun        Wet             Low            Low          Pre-Industrial    atmosphere is exotic.
+                     4    Small       Thin          Wet             Mod            Mod          Industrial          Desert World: Water covers
+                     5    Medium Thin               Wet             Mod            Mod          Industrial        under 5 percent of the surface.
+                     6    Medium Standard Wet                       Mod            Mod          Pre-Stellar         Dry World: Water covers 5-24
+                     7    Medium Standard Wet                       Mod            Mod          Pre-Stellar       percent of the surface.
+                     8    Large       Dense         Wet             Mod            High         Pre-Stellar         Wet World: Water covers
+                     9    Large       Dense         Wet             High           High         Early Stellar     25-94 percent of the surface.
+                   10     Large       Exotic        Water           High           High         Early Stellar       Water World: Water covers
+                   11                 Exotic                                       Ext         Avg Stellar        95-100 percent of the surface.
+                   12                 Exotic                                       Ext         Avg Stellar
+                   13                 Exotic                                       Ext         Avg Stellar        WORLD POPULATION CODES
+                   14                 Exotic                                       Ext          High Stellar       Lo Pop: Less than 10,000.
+                   15                 Exotic                                       Ext          High Stellar       Mod Pop: 10,000 to 1 billion.
+                      Consult the Referee’s Manual and world generation for more on the world profile codes.       Hi Pop: 1 billion or more.
+                   This table reflects where travelling characters are likely to be from. They are likely to be
+                   from a moderate to high population world with a good starport, and a technology level           WORLD LAW LEVEL CODES
+                   of early stellar or higher.                                                                      No Law: No prohibitions.
+                                                                                                                    Lo Law: Machineguns,
+                                                       DEFAULT SKILLS                                             Autorifles, Energy Weapons, and
+                      Navy, Marines, Flyers, Scouts, Merchants, or Pirates: Vacc Suit-0.                          Body Pistols prohibited. Legal
+                      All Characters Except Barbarians: Gun Combat-0.                                             weapons*: Battle Dress, Car-
+                      Early Stellar + : Computer-0.                                                               bine, Laser Pistol, Laser Rifle,
+                                                                                                                  Pistol, Revolver, Rifle.
+                      Average Stellar + : Grav Vehicle-0.
+                                                                                                                    Mod Law: Firearms pro-
+                      Industrial, Pre-Stellar, or Early Stellar: Wheeled Vehicle-0.                               hibited. Legal weapons*:
+                                                                                                                  Bayonet, Boomerang, Bow, Ear-
+                                                   WORLD TECH CODES                                               ly Firearms, Halberd, Neural
+                     Pre-Industrial: From the stone age to just prior to internal-combustion engines.             Pistol, Neural Rifle, Pike, Spear.
+                     Industrial: Internal combustion engines, mass production, nuclear power, and miniatur-         High Law: Weapons pro-
+                   ized electronics.                                                                              hibited outside the home. Legal
+                     Pre-Stellar: Personal super-computers, interplanetary travel, and early anti-gravity.        weapons*: Battle Axe, Blowgun,
+                     Early Stellar: Fusion power, interstellar jump drive, and anti-grav vehicles.                Bola, Broadsword, Crossbow,
+                     Avg Stellar: Sophisticated robots, large jump-capable starships, holocrystaldata storage,    Cutlass, Foil, Sword.
+                                                                                                                    Extreme Law: Weapons pro-
+                   personal anti-grav belts, and extensive terraforming.
+                                                                                                                  hibited. Legal weapons: Blade,
+                     Hi Stellar: Man-portable fusion power plants, anti-grav suspended cities, huge jump-         Cudgel, Dagger, Hand Axe,
+                   capable starships, convincing pseudo-human robots, and age-retarding medicine                  Sling.
+
+
+                  I
+                   (anagathics) commonplace.
+
+
+                                                                                 13
+                                                                                                                  c
+                                                                                                                  I
+                                                                                                                     *And ones from hiuher codes.
+
+
+
+
+James Turnbull (Order #51967781)
+

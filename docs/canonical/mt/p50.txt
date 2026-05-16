@@ -1,0 +1,59 @@
+                                                                                               Mercenary Characters
+
+                     One area of personal endeavor for travellers is in the fighting profession of the mercenary.
+                     The combat environment across the many rival states of the now-divided Imperium is one of limited war. Not only do worlds
+                  continue the local wars they have always fought; now all worlds must balance more than ever the considerations of how much
+                  force is required to win a local conflict with how much force is likely to trigger more widespread war.
+                     Small, poor states threatened with invasion or encroachment will hire professional soldiers as cadres to drill and lead their
+                  citizen militias. Larger states can often afford to hire and equip complete mercenary contingents as strikers, or spearhead troops.
+                  Small commando units will be in demand as industrial espionage is waged between megacorporations virtually states unto
+                  themselves. In addition, hired soldiers will always be in demand as security or bodyguard troops because force remains the
+                  only true protection against force.
+                     The stock in trade of the mercenary is experience, and the regular army is the best source of experience available. The primary
+                  (and almost sole) source of mercenary soldiers is the Army.
+                     Most worlds and interstellar governments divide their Army into three major force commands: the Close Orbit and Airspace
+                  Control Force, the Nautical Force (often called the wet navy) and the Ground Force. Mercenary characters are from the Army
+                  Ground Force or the Marines.
+                     Mercenary Ranks: Ranks for characters in the Army, Marines, and in Mercenary service are shown in the Mercenary Table
+                  of Ranks. Ranks 0 1 to 010 are called officers or commissioned officers. Ranks E l to E9 are enlisted personnel. Within the
+                  enlisted ranks, ranks E3 to E9 are noncommissioned officers (NCOs).
+                     Troopers: The general term for Army and Marine soldiers, regardless of rank, combat arm, or any other factor is troopers.
+
+                                                                                             reinforce, complement, and supplement each other. Both the
+                  INITIAL ACTIVITIES                                                         Army and the Marines are divided into Infantry, Cavalry, Ar-
+                     Initial activities include pre-career options, enlistment, com-         tillery, Support, and Commandos.
+                  bat arm selection, and initial training.                                       Characters entering the service must select one of the com-
+                     Pre-Career Options: Characters intending an Army,                       bat arms available to that service. Army characters may select
+                  Marine, or Mercenary career may consider College, the Military             any combat arm except Commandos. Marine characters may
+                  Academy, the Naval Academy (for a Marine commission), and                  select Infantry or Support. Commando, however, cannot be
+                  Medical School. Naval Academy graduates who select the                     selected initially by anyone except a Military Academy honors
+                  Marines may try for Flight School.                                         graduate. Combat arms may be changed later in the career.
+                     Enlistment: All characters initiate their Army or Marine                    Initial Training: The first year of service is dedicated to in-
+                  careers by enlisting. This procedure is essentially identical to           itial training. The character receives Gun Combat and one skill
+                  that for standard character generation. Successful enlistment              by throwing 1D and consulting the Military Occupational
+                  commits the individual to a term of service of four years.                 Specialty (MOS) table of the character’s chosen combat arm.
+                     Throw 5 + to enlist in the Army; allow DM + 1 if Dexterity
+                  is 6 + , and DM + 2 if Endurance is 5 + . The character begins             CAREER RESOLUTION
+                  with rank E l .                                                               Career resolution begins once a character graduates from
+                     Throw 9 + to enlist in the Marines; allow DM + 1 if In-                 all pre-career schools and has enlisted.
+                  telligence is 8 + , and DM + 2 if Strength is 8 +. The character
+                  begins with rank E l .                                                     Assignments
+                     Draft: If an individual is unsuccessful in enlisting, he may               Each term, a character carries out four assignments (initial
+                  submit to the draft. A throw of 3 (1D) will result in being drafted        training constitutes the first assignment of the first term).
+                  into the Army; a throw of 2 (1D) will result in being drafted in-             Each one-year assignment is resolved separately using a
+                  to the Marines. Any other result prohibits the individual from             three-step procedure: officers determine if they will hold a com-
+                  Mercenary service, and a new character must be generated                   mand in the current assignment; the specific assignment is
+                  if Mercenary service is desired.                                           selected; and that assignment is resolved in terms of survival,
+                     Automatic Enlistment: Enlistment is not necessary for                   decorations, promotions, and skills.
+                  characters who are commissioned into a service as a result                    Command Determination (officers only): Any officer may
+                  of an academy or OTC/NOTC.                                                 (but is not required to) consult the Mercenary Command Duty
+                     Combat Arm Selection: A combat arm is one of several                    table in an attempt to be placed in a command position. For
+                  divisions within the Army (or Marines). Each combat arm is                 each arm, the throw shown (if successful) places the officer
+                  dedicated to a specific type of combat; often the different arms           in a command position; failure places the officer in a staff
+
+
+                                                                                        48
+
+
+James Turnbull (Order #51967781)
+

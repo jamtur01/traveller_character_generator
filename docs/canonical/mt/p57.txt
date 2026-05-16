@@ -1,0 +1,66 @@
+                                     ENHANCED NAVAL CHARACTERS
+                 I------                                                                                                                            II
+                          SPECIAL ASSIGNMENTS                        SPECIALIST SCHOOL                        SPECIAL ASSIGNMENTS
+                  Die Enlisted      Officer                    Die      Training         Schooling        Cross-Training: Select any branch;
+                  1 Cross-Training Cross-Training              1        Mechanical       Academic      the individual is now cross-trained in it.
+                  2 Specialist Sch Intelligence Sch            2        Electronic       Medical       Roll for one skill on that branch table.
+                  3 Recruiting      Recruiting                 3        Gravitic         Space Tech       Specialist School: Throw 1D on the
+                  4 Gunnery School Naval Attache               4        Comm             Space         Specialist School table.
+                  5 Engineer Sch    Command Coll               5        Engineering      Computer         Recruiting: Receive Recruiting skill.
+                  6 OCS             Staff Coll                 6        Ship’s Boat      Liaison          Gunnery School: Make four throws
+                  7 ocs             Staff Coll                   Note: Training is for anyone; school- (1D) and on each 5 + receive Gunnery.
+                    DMs: DM+1 if Edu 8 + .                     ing is for when Int + Edu more than 16.    Engineering School: Throw 5 + (1D)
+                                                                                                       for: Mechanical, Electronics, Gravitics,
+                                                   SERVICE SKILLS                                      and Engineering.
+                  Die Navy Life Shipboard Shore Duty Petty Off                 Cmd Off    Staff Off       OCS: Advance to rank 0 1 (enlisted
+                  1      Brawling Gambling Vice                  Vacc Suit Vehicle        Computer     characters rank E7 advance to rank 02)
+                  2       + 1 Str     + 1 Dex      Vehicle       Blade Cbt + 1 Endur Electronic        in current or any cross-trained branch.
+                  3      Carousing HandCbt FwdObs GunCbt                       GunCbt GunCbt           Roll twice on the Service Skills table and
+                  4      Gambling Mechanic Vacc Suit Mechanic Ship’s Bt Academic                       once on the Branch Skills table. Rank
+                  5       + 1 Endur Ship’s Bt Liaison Medical Pilot                       Bribery      E8 and E9 receive direct commissions
+                  6       + 1 Dex Vacc Suit Vacc Suit Vehicle Leader Ship Tcts                         to rank 03. They receive no new skills.
+                  7       + 1 Endur Zero-G En Fwd Obs Zero-G En Leader Fleet Tcts                         OCS is prohibited over age 38; reroll
+                  8       + 1 Educ Comm            Environ       + 1 Educ + 1 Social + 1 Int           on the Special Assignments table; if
+                  9      Inborn       Admin        Vacc Suit Instruction Inborn           Ship Tcts    OCS is selected, a waiver allows
+                  10 Vacc Suit Inborn              Battle Drs lnterpers Ship Tcts Fleet Tcts           attendance.
+                  DMs: + 4 if 0 1 + + 4 if 0 1 + + 1 if 0 4 + + 2 if 0 5 + + 2 if 0 4 + + 2 if 0 4 +      Intelligence School: Throw 4 + (on
+                                                   + 4 if 0 7 + + 4 if 0 7 + + 4 if 0 7 +              one die) for: Forgery, Gun Combat,
+                     Note: Navy Life is available to any Navy character; Shore Duty, during training Bribery, Streetwise, and Interrogation.
+                  or shore duty; Shipboard, when not on training or shore duty; Petty Officer, for        Naval AttachelAide: Roll 1D: 1-4
+                  rank E4 to E9; Command Officer, for rank 0 1 + with Command Duty; Staff Of- assigns duty as a naval attache; 5-6
+                  ficer, for rank 0 1 + without Command Duty.                                          assigns duty as aide to an admiral.
+                                                                                                          An attache receives promotion of one
+                                                   BRANCH SKILLS                                       grade and + 1 Social Standing.
+                  Die LinelCrew Flight             Gunnery Engineer            Medical     Technical      An aide receives + 1 Social Standing
+                  1       Mechanic Vacc Suit Fwd Obs Mechanic Admin                       Mechanic     and for his next assignment may select
+                  2       Electronic Admin         Gun Cbt Electronic Technical Mechanic               command duty or any special assign-
+                  3       Gun Cbt Gun Cbt          Comm          Engineer Electronic Electronic        ment (other than Naval attachelaide).
+                  4       Navigation Comm          Computer Mechanic Admin                 Electronic     Command College: Throw 4 + (1D)
+                  5      Computer Ship’s Boat Sens Ops Vacc Suit Medical                  Computer     for: Ship Tactics, Fleet Tactics, Leader,
+                  6       lnterpers Space          Spl Cbt       Sp Tech       Computer Computer       and Admin.
+                  7      Zero-G En Pilot           Gunnery Engineer Medical               Gravitics       Staff College: Throw 4+ (1D) for:
+                  8      Vacc Suit Pilot           Gunnery Engineer Medical               Technical    Fleet Tactics, Admin, Liaison, Com-
+                     DMs: If Reserve Fleet, DM + 1. If Imperial Navy, DM + 2.                          puter, and Robot Ops.
+
+                                                    TABLE OF RANKS                            Basic                REENLISTMENT
+                  Rank Enlisted                          Rank Officer                          Rank        Navy Reenlistment: Reenlistment in
+                  El         Spacehand Recruit            01   Ensign                             1     the Navy requires a throw of 6 + ; DM
+                  E2         Spacehand Apprentice         02   Sublieutenant                      1      + 1 if rank E4+ or rank 0 1 +.
+                  E3         Able Spacehand               0 3 Lieutenant                          2        Reenlistment in a Different Branch:
+                  E4         Petty Officer Third Class    04   Lieutenant Commander               3     Characters may not reenlist in a dif-
+                  E5         Petty Officer Second Class 0 5 Commander                             4     ferent branch unless cross-trained in the
+                  E6         Petty Officer First Class    0 6 Captain                             5     desired branch. If cross-trained, the in-
+                  E7         Chief Petty Officer          0 7 Commodore                           5     dividual may reenlist at the beginning of
+                  E8         Senior Chief Petty Officer   08   Fleet Admiral                      6     the new four-year term of service.
+                  E9         Master Chief Petty Officer 0 9 Sector Admiral                        6
+                                                         010 Grand Admiral                        6                MUSTERING OUT
+                      Officers (ranks 0 1 to 010) have commissions; all other ranks are enlisted per-     At the conclusion of a character’s last
+                  sonnel. Ranks 0 7 to 010 are flag ranks, E3 to E9 are noncommissioned officers.       term, all mustering out benefits are
+                      The maximum officer rank is commodore (07) in a System Squadron, fleet ad-        receivedas described in basic character
+                 p i r a l (08) in a Reserve Fleet, and grand admiral (010) in the Imperial Navy.       generation.
+                                                                                                                                                    I
+                                                                                                                                                    I   I
+                                                                                55
+
+James Turnbull (Order #51967781)
+
