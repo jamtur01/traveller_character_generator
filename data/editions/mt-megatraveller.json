@@ -39,6 +39,13 @@
     { "key": "social", "label": "Social Standing", "uppPosition": 6, "initialRoll": "2d6" }
   ],
   "lifecycle": {
+    "terms": [
+      { "id": "allocateSkills", "config": { "term1Bonus": true } },
+      { "id": "survival" },
+      { "id": "commission", "config": { "doubleBonusOvershoot": 4 } },
+      { "id": "promotion", "config": { "doubleBonusOvershoot": 4 } },
+      { "id": "specialDuty", "config": { "doubleBonusOvershoot": 4 } }
+    ],
     "mtChecklist": [
       { "step": 1, "id": "rollCharacteristics", "uses": ["attributes"] },
       { "step": 2, "id": "rollHomeworld", "uses": ["mtExtensions.homeworld"] },

@@ -37,6 +37,12 @@
     { "key": "social", "label": "Social Standing", "uppPosition": 6, "initialRoll": "2d6" }
   ],
   "lifecycle": {
+    "terms": [
+      { "id": "allocateSkills" },
+      { "id": "survival" },
+      { "id": "commission" },
+      { "id": "promotion" }
+    ],
     "ttbChecklist": [
       { "step": 1, "id": "rollCharacteristics", "uses": ["attributes", "hexadecimalNotation"] },
       { "step": 2, "id": "selectServiceAndEnlist", "uses": ["services.*.checks.enlistment"] },
