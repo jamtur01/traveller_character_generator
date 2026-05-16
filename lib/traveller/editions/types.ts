@@ -114,8 +114,12 @@ export interface LifecycleStep {
 }
 
 export interface LifecycleSpec {
-  /** Ordered sequence of steps run once per term in service. */
+  /** Ordered sequence of steps run once per term in basic chargen. */
   terms: LifecycleStep[];
+  /** Optional sequence of steps run per term for ACG chargen. When the
+   *  active edition has Advanced Character Generation and the character
+   *  set useAcg=true, the runner uses this sequence instead of `terms`. */
+  acgTerms?: LifecycleStep[];
 }
 
 export interface CanonData {

@@ -30,7 +30,11 @@ export {
 } from "./editions";
 export {
   editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
+  pathwayBaseService,
 } from "./engine/acg";
+export {
+  benefitDmFor, cashDmFor, maxCashRolls,
+} from "./engine/musterDm";
 export type { AcgData, AcgPathway } from "./editions/types";
 export {
   formatCharacterSheet, formatBenefit, aggregateBenefits,
