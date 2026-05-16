@@ -67,7 +67,16 @@ export function buildServiceDef(
   const inverseReenlist = serviceData.checks.reenlistment.inverseToLeave;
 
   const checkSurvival = (ch: Character): boolean => {
-    const dm = evaluateDM(serviceData.checks.survival.dm, ch);
+    let dm = evaluateDM(serviceData.checks.survival.dm, ch);
+    // PM p. 15: anagathics user takes -1 survival DM (-2 for Nobles, since
+    // "society generally frowns on nobles who take anagathics"). The DM
+    // applies for every term in which the character desires anagathics,
+    // whether or not the supply was secured.
+    if (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm) {
+      const penalty = ch.service === "nobles" ? -2 : -1;
+      dm += penalty;
+      ch.verboseHistory(`Anagathics survival DM ${penalty}`);
+    }
     const sv = roll(2);
     ch.verboseHistory(`Survival roll ${sv} + ${dm} vs ${survivalThrow}`);
     return sv + dm >= survivalThrow;

@@ -123,6 +123,15 @@ export class Character {
   /** Count of terms in which anagathics was active — those terms forfeit
    *  the muster-out benefit roll (PM p. 15). */
   anagathicsBenefitForfeitedTerms = 0;
+  /** Per-term flag: player has declared intent to use anagathics this term.
+   *  Set before survival; cleared at the start of each term. When true,
+   *  survival receives the -1 (-2 for nobles) DM whether or not the supply
+   *  is later found. The pre-survival hook reads this and calls tryAnagathics. */
+  wantsAnagathicsThisTerm = false;
+  /** Persistent player preference: re-assert anagathics intent each term
+   *  once eligible. The pre-survival hook copies this into
+   *  wantsAnagathicsThisTerm at the start of each term. */
+  anagathicsStandingOrder = false;
   /**
    * The edition this character was rolled under. Determines which service
    * map, cascade pools, and edition hooks apply. Stays fixed for the
@@ -786,6 +795,12 @@ export class Character {
     // A mandatory reenlistment is consumed by serving the term it forced.
     this.mandatoryReenlistment = false;
     this.shortTermThisTerm = false;
+    // Reset per-term anagathics flags; intent for this term is set below
+    // from anagathicsStandingOrder (or by an explicit pre-survival call).
+    this.anagathicsActiveThisTerm = false;
+    this.anagathicsWithdrawalThisTerm = false;
+    this.wantsAnagathicsThisTerm = false;
+    this.preSurvivalAnagathicsHook();
     this.verboseHistory("--------------------------------------------");
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
@@ -919,6 +934,22 @@ export class Character {
       this.onAnagathics = false;
     }
     return success;
+  }
+
+  /** Pre-survival anagathics hook (PM p. 15). Reads anagathicsStandingOrder
+   *  and, if set + eligible, sets wantsAnagathicsThisTerm and attempts to
+   *  locate a supply via tryAnagathics. Called at the start of every term
+   *  before survival is rolled. Idempotent if eligibility fails or the
+   *  standing order is off. */
+  preSurvivalAnagathicsHook(): void {
+    if (!this.anagathicsStandingOrder) return;
+    // Eligibility: age ≥ 30 at end of third term. tryAnagathics enforces
+    // this and is a no-op when the threshold isn't met; calling here is
+    // still safe but we gate to avoid the extra history line for the
+    // common pre-eligibility case.
+    if (this.age < 30 || this.terms < 3) return;
+    this.wantsAnagathicsThisTerm = true;
+    this.tryAnagathics();
   }
 
   /** Voluntarily stop taking anagathics. The character reverts to normal
