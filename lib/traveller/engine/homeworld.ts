@@ -26,12 +26,45 @@ interface HomeworldData {
   dmsByColumn: Record<string, Array<{ condition: string; dm: number }>>;
   defaultSkills: Array<{ condition: string; skill: string; level: number }>;
   careerAvailability: Array<{
+    /** Legacy form: deny services if homeworld tech is in this list. */
     denyIfTechIn?: string[];
+    /** Legacy form: deny services if homeworld tech is NOT in this list. */
     denyIfTechNotIn?: string[];
+    /** Legacy form. */
     denyIfSocialBelow?: number;
+    /** PM p. 12 form: require homeworld tech ≥ this code. */
+    requiresTechAtLeast?: string;
+    /** PM p. 12 form: require homeworld tech equals exactly this code
+     *  (Barbarians require Pre-Industrial). */
+    requiresTechExactly?: string;
+    /** Require population code ≥ this value (e.g. Mod Pop). */
+    requiresPopulationAtLeast?: string;
+    /** Require law code ≥ this value (e.g. Low Law). */
+    requiresLawAtLeast?: string;
+    /** Require atmosphere code ≥ this value (e.g. Thin). */
+    requiresAtmosphereAtLeast?: string;
+    /** Require hydrosphere ≥ this code (e.g. Wet World). */
+    requiresHydrosphereAtLeast?: string;
+    /** Require Social Standing ≥ this value (Nobles 10+). */
+    requiresSocialAtLeast?: number;
     services: string[];
   }>;
   techCodeOrder: string[];
+}
+
+const POPULATION_ORDER = ["Low Pop", "Mod Pop", "High Pop"];
+const LAW_ORDER = ["No Law", "Low Law", "Mod Law", "High Law", "Ext Law"];
+const ATMOSPHERE_ORDER = ["Vacuum", "Thin", "Standard", "Dense", "Exotic"];
+const HYDROSPHERE_ORDER = ["Desert", "Dry", "Wet World", "Water World"];
+
+function meetsOrder(
+  value: string | undefined, threshold: string, order: string[],
+): boolean {
+  if (!value) return false;
+  const have = order.indexOf(value);
+  const want = order.indexOf(threshold);
+  if (have < 0 || want < 0) return false;
+  return have >= want;
 }
 
 function dataFor(editionId: string): HomeworldData | null {
@@ -145,9 +178,38 @@ export function availableServicesForHomeworld(
   const denied = new Set<string>();
   for (const rule of data.careerAvailability) {
     let triggers = false;
+    // Legacy deny-list form.
     if (rule.denyIfTechIn?.includes(hw.tech)) triggers = true;
     if (rule.denyIfTechNotIn && !rule.denyIfTechNotIn.includes(hw.tech)) triggers = true;
     if (rule.denyIfSocialBelow !== undefined && ch.attributes.social < rule.denyIfSocialBelow) {
+      triggers = true;
+    }
+    // PM p. 12 requirement form: deny when any "requires" condition fails.
+    if (rule.requiresTechAtLeast &&
+        !meetsOrder(hw.tech, rule.requiresTechAtLeast, data.techCodeOrder)) {
+      triggers = true;
+    }
+    if (rule.requiresTechExactly && hw.tech !== rule.requiresTechExactly) {
+      triggers = true;
+    }
+    if (rule.requiresPopulationAtLeast &&
+        !meetsOrder(hw.population, rule.requiresPopulationAtLeast, POPULATION_ORDER)) {
+      triggers = true;
+    }
+    if (rule.requiresLawAtLeast &&
+        !meetsOrder(hw.law, rule.requiresLawAtLeast, LAW_ORDER)) {
+      triggers = true;
+    }
+    if (rule.requiresAtmosphereAtLeast &&
+        !meetsOrder(hw.atmosphere, rule.requiresAtmosphereAtLeast, ATMOSPHERE_ORDER)) {
+      triggers = true;
+    }
+    if (rule.requiresHydrosphereAtLeast &&
+        !meetsOrder(hw.hydrosphere, rule.requiresHydrosphereAtLeast, HYDROSPHERE_ORDER)) {
+      triggers = true;
+    }
+    if (rule.requiresSocialAtLeast !== undefined &&
+        ch.attributes.social < rule.requiresSocialAtLeast) {
       triggers = true;
     }
     if (triggers) {
