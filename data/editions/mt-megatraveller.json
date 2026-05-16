@@ -4102,8 +4102,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if any MOS skill 2+",
-            "Promotion DM +1 if Edu 7+"
+            { "rollType": "survival", "anyMosSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "promotion", "attribute": "education", "min": 7, "dm": 1 }
           ],
           "notes": []
         },
@@ -4156,7 +4156,7 @@
             }
           ],
           "dms": [
-            "Promotion DM +1 if Int 8+"
+            { "rollType": "promotion", "attribute": "intelligence", "min": 8, "dm": 1 }
           ],
           "notes": []
         },
@@ -4209,8 +4209,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if any MOS skill 2+",
-            "Promotion DM +1 if End 8+"
+            { "rollType": "survival", "anyMosSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "promotion", "attribute": "endurance", "min": 8, "dm": 1 }
           ],
           "notes": []
         },
@@ -4544,11 +4544,19 @@
           }
         ],
         "dms": [
-          "Army/Marine Life DM +1 if O1+, +2 if O4+, +3 if O7+",
-          "NCO Skills DM +1 if E5, +2 if E7, +2 if E9",
-          "Command/Staff/Shipboard DMs as shown by rank thresholds"
+          { "column": "armyLife", "rankAtLeast": "O1", "dm": 1 },
+          { "column": "armyLife", "rankAtLeast": "O4", "dm": 1 },
+          { "column": "armyLife", "rankAtLeast": "O7", "dm": 1 },
+          { "column": "marineLife", "rankAtLeast": "O1", "dm": 1 },
+          { "column": "marineLife", "rankAtLeast": "O4", "dm": 1 },
+          { "column": "marineLife", "rankAtLeast": "O7", "dm": 1 },
+          { "column": "ncoSkills", "rankAtLeast": "E5", "dm": 1 },
+          { "column": "ncoSkills", "rankAtLeast": "E7", "dm": 1 },
+          { "column": "ncoSkills", "rankAtLeast": "E9", "dm": 0, "note": "max NCO Skills DM +2 (E7 already grants the second +1)" }
         ],
-        "notes": []
+        "notes": [
+          "Per manual p. 51: Command/Staff/Shipboard DM columns apply at rank thresholds — see per-row entries when wired into roll site."
+        ]
       },
       "mos": {
         "columns": [
@@ -4626,7 +4634,7 @@
           }
         ],
         "dms": [
-          "DM +1 if homeworld is Average Stellar+"
+          { "homeworldTechAtLeast": "Avg Stellar", "dm": 1, "note": "homeworld Avg Stellar+" }
         ],
         "notes": []
       },
@@ -4726,13 +4734,18 @@
         "army": {
           "target": 7,
           "dms": [
-            "+2 if rank E9 or less"
+            { "rankAtMost": "E9", "dm": 2, "note": "rank E9 or less" }
           ]
         },
         "marines": {
           "target": 6,
           "dms": [
-            "+1 if cross-trained in Artillery or Cavalry and reenlisting into either arm"
+            {
+              "crossTrainedInAny": ["Artillery", "Cavalry"],
+              "currentCombatArmIn": ["Artillery", "Cavalry"],
+              "dm": 1,
+              "note": "cross-trained in Artillery or Cavalry and reenlisting into either arm"
+            }
           ]
         }
       }
@@ -5037,8 +5050,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if any MOS skill 2+",
-            "Promotion DM +1 if Edu 7+"
+            { "rollType": "survival", "anyMosSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "promotion", "attribute": "education", "min": 7, "dm": 1 }
           ],
           "notes": []
         },
@@ -5091,7 +5104,7 @@
             }
           ],
           "dms": [
-            "Promotion DM +1 if Int 8+"
+            { "rollType": "promotion", "attribute": "intelligence", "min": 8, "dm": 1 }
           ],
           "notes": []
         },
@@ -5144,8 +5157,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if any MOS skill 2+",
-            "Promotion DM +1 if End 8+"
+            { "rollType": "survival", "anyMosSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "promotion", "attribute": "endurance", "min": 8, "dm": 1 }
           ],
           "notes": []
         },
@@ -5198,7 +5211,7 @@
             }
           ],
           "dms": [
-            "Promotion DM +1 if Int 8+"
+            { "rollType": "promotion", "attribute": "intelligence", "min": 8, "dm": 1 }
           ],
           "notes": []
         },
@@ -5251,7 +5264,7 @@
             }
           ],
           "dms": [
-            "Promotion DM +1 if Int 8+"
+            { "rollType": "promotion", "attribute": "intelligence", "min": 8, "dm": 1 }
           ],
           "notes": []
         }

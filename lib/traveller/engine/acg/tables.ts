@@ -322,6 +322,20 @@ export interface StructuredDm {
   anyDepartmentSkillAtLeast?: number;
   /** Homeworld tech-code ≥ a named code in the tech-code-order. */
   homeworldTechAtLeast?: string;
+  /** At least one of these combat arms is in acgState.crossTrainedArms. */
+  crossTrainedInAny?: string[];
+  /** Character's current combat arm is one of these. */
+  currentCombatArmIn?: string[];
+  /** Character's current branch is one of these. */
+  currentBranchIn?: string[];
+  /** Character's current department is one of these. */
+  currentDepartmentIn?: string[];
+  /** Character's number of terms is ≥ N. */
+  termsAtLeast?: number;
+  /** Optional column qualifier for tables whose DMs apply per-column
+   *  (mercenary/navy serviceSkills). Callers that don't filter by column
+   *  see every entry. */
+  column?: string;
   /** When set, restricts this DM to one of survival/promotion/decoration/
    *  skills/bonus. applyDmRules filters by this; applyStructuredDms ignores
    *  it (callers without a rollType context see every entry). */
@@ -385,6 +399,20 @@ function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
   if (r.anyDepartmentSkillAtLeast !== undefined) {
     if (!anyDepartmentSkillAtLeast(ch, r.anyDepartmentSkillAtLeast)) return false;
   }
+  if (r.crossTrainedInAny) {
+    const xtrain = ch.acgState?.crossTrainedArms ?? [];
+    if (!r.crossTrainedInAny.some((a) => xtrain.includes(a))) return false;
+  }
+  if (r.currentCombatArmIn) {
+    if (!r.currentCombatArmIn.includes(ch.acgState?.combatArm ?? "")) return false;
+  }
+  if (r.currentBranchIn) {
+    if (!r.currentBranchIn.includes(ch.acgState?.branch ?? "")) return false;
+  }
+  if (r.currentDepartmentIn) {
+    if (!r.currentDepartmentIn.includes(ch.acgState?.department ?? "")) return false;
+  }
+  if (r.termsAtLeast !== undefined && ch.terms < r.termsAtLeast) return false;
   if (r.homeworldTechAtLeast) {
     const order = (getEdition(ch.editionId).data as {
       homeworld?: { techCodeOrder?: string[] };
