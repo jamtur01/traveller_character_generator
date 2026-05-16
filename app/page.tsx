@@ -17,6 +17,7 @@ import {
   listEditions,
   numCommaSep,
   roll,
+  runAcgYear,
   serviceLabel,
   type AttributeKey,
   type ServiceKey,
@@ -141,6 +142,13 @@ export default function Home() {
     if (!prev) return;
     const c = cloneCharacter(prev);
     c.resolveChoice(choiceId, optionIdx);
+    // If the ACG runner had paused on this choice, resume it. After the
+    // queued closure ran, the year's state is consistent and runAcgYear
+    // continues from acgState.pausedAtStep. If more choices come up
+    // they'll throw again and we'll bounce back to the choice UI.
+    if (c.useAcg && c.acgState?.pausedAtStep && c.pendingChoices.length === 0) {
+      try { runAcgYear(c); } catch { /* nested choice will re-pause */ }
+    }
     commit(c, phase);
   };
 

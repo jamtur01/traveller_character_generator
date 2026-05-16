@@ -9,8 +9,38 @@
 
 import type { Character } from "../../character";
 import { getEdition } from "../../editions";
+import { ChoicePendingError } from "../choices";
 import { awardBrownie } from "./awards";
 import type { AcgPathwayImpl } from "../../editions/types";
+
+/** Names for the sub-steps inside a single one-year assignment cycle.
+ *  The runner walks these in order; the index is recorded in acgState.yearStep
+ *  so an interactive choice that throws ChoicePendingError can be resumed
+ *  by re-invoking runAcgYear after the choice resolves. */
+const YEAR_STEPS = [
+  "commandDuty",
+  "rollAssignment",
+  "resolveAssignment",
+  "ageAndCount",
+  "retention",
+] as const;
+type YearStep = typeof YEAR_STEPS[number];
+
+function runStep(
+  ch: Character, stepName: YearStep, fn: () => void,
+): boolean {
+  try {
+    fn();
+    return true;
+  } catch (e) {
+    if (e instanceof ChoicePendingError) {
+      // Preserve where we paused so resumption picks the right step.
+      ch.acgState!.pausedAtStep = stepName;
+      return false;
+    }
+    throw e;
+  }
+}
 
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
   if (!ch.acgState) throw new Error("Character has no acgState; not on ACG path");
@@ -28,51 +58,95 @@ function getPathwayImpl(ch: Character): AcgPathwayImpl {
 /** Run a single one-year assignment. Each term contains four such years.
  *  Age is incremented per year so characters invalided / jailed / killed
  *  mid-term retain only the years they actually served (PM p. 15 — each
- *  assignment is a year of service). */
+ *  assignment is a year of service).
+ *
+ *  Interactive-mode resumption: when a pathway substep calls
+ *  ch.pickOrDefer, ChoicePendingError propagates here. We catch it via
+ *  runStep, record acgState.pausedAtStep, and return without advancing
+ *  the year. The UI calls resolveChoice (which runs the queued closure),
+ *  then re-invokes runAcgYear, which resumes from the recorded step.
+ */
 export function runAcgYear(ch: Character): void {
   if (ch.deceased || !ch.activeDuty) return;
   if (!ch.acgState) throw new Error("Cannot run ACG year on non-ACG character");
   const p = getPathwayImpl(ch);
+  const acg = ch.acgState;
 
   // First year of the first term is initial training (no normal cycle).
-  if (ch.terms === 0 && ch.acgState.year === 1 && p.initialTraining) {
-    p.initialTraining(ch);
+  if (ch.terms === 0 && acg.year === 1 && p.initialTraining &&
+      !acg.initialTrainingDone) {
+    const ok = runStep(ch, "commandDuty", () => p.initialTraining!(ch));
+    if (!ok) return;
+    acg.initialTrainingDone = true;
     ch.age += 1;
-    ch.acgState.yearsServed = (ch.acgState.yearsServed ?? 0) + 1;
-    ch.acgState.year += 1;
+    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
+    acg.year += 1;
+    acg.pausedAtStep = null;
     return;
   }
 
-  // Officer command duty (no-op for enlisted).
-  if (p.commandDuty && !ch.acgState.justRetained) {
-    p.commandDuty(ch);
-  }
+  // Pick up where we left off, if a previous run paused on a choice.
+  const startIdx = acg.pausedAtStep
+    ? Math.max(0, YEAR_STEPS.indexOf(acg.pausedAtStep as YearStep))
+    : 0;
 
-  // Roll assignment (or use retained).
-  const assignment = p.rollAssignment(ch);
-  ch.acgState.currentAssignment = assignment;
-
-  if (assignment === "Special Duty" || assignment.toLowerCase() === "specialduty") {
-    if (p.specialAssignment) {
-      p.specialAssignment(ch);
+  // Step 0: command duty (no-op for enlisted; skipped after retention).
+  if (startIdx <= 0) {
+    if (p.commandDuty && !acg.justRetained) {
+      const ok = runStep(ch, "commandDuty", () => p.commandDuty!(ch));
+      if (!ok) return;
     }
-  } else {
-    p.resolveAssignment(ch, assignment);
   }
 
-  // Year of service counted regardless of activeDuty outcome — the year
-  // happened. Age advances after the assignment is resolved so any age-
-  // limit checks during the assignment (e.g. OCS age 38) use the value at
-  // the start of the year.
-  ch.age += 1;
-  ch.acgState.yearsServed = (ch.acgState.yearsServed ?? 0) + 1;
-
-  // Retention roll (if alive and still serving).
-  if (p.retention && ch.activeDuty && !ch.deceased) {
-    p.retention(ch, assignment);
+  // Step 1: roll the year's assignment.
+  let assignment = acg.currentAssignment ?? null;
+  if (startIdx <= 1) {
+    let rolled: string | null = null;
+    const ok = runStep(ch, "rollAssignment", () => {
+      rolled = p.rollAssignment(ch);
+    });
+    if (!ok) return;
+    assignment = rolled;
+    acg.currentAssignment = assignment;
+  }
+  if (!assignment) {
+    // Defensive: nothing to resolve. Treat as a no-op year.
+    ch.age += 1;
+    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
+    acg.year += 1;
+    acg.pausedAtStep = null;
+    return;
   }
 
-  ch.acgState.year += 1;
+  // Step 2: resolve the assignment (or route through specialAssignment).
+  if (startIdx <= 2) {
+    const ok = runStep(ch, "resolveAssignment", () => {
+      if (assignment === "Special Duty" || assignment!.toLowerCase() === "specialduty") {
+        if (p.specialAssignment) p.specialAssignment(ch);
+      } else {
+        p.resolveAssignment(ch, assignment!);
+      }
+    });
+    if (!ok) return;
+  }
+
+  // Step 3: age + years bookkeeping.
+  if (startIdx <= 3) {
+    ch.age += 1;
+    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
+  }
+
+  // Step 4: retention (if alive and still serving).
+  if (startIdx <= 4) {
+    if (p.retention && ch.activeDuty && !ch.deceased) {
+      const ok = runStep(ch, "retention", () => p.retention!(ch, assignment!));
+      if (!ok) return;
+    }
+  }
+
+  acg.year += 1;
+  acg.currentAssignment = null;
+  acg.pausedAtStep = null;
 }
 
 /** Run a full four-year term. Time is accounted per year inside runAcgYear,

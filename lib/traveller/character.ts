@@ -4,7 +4,7 @@
 
 import { arnd, rndInt, roll } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
-import { genChoiceId } from "./engine/choices";
+import { genChoiceId, ChoicePendingError } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
 import type { AcgState } from "./engine/acg/types";
 import {
@@ -253,7 +253,14 @@ export class Character {
       req.onResolve(this, arnd(pool));
       return;
     }
-    this.pendingChoices.push({ id: genChoiceId(), ...req });
+    // Interactive mode: queue the choice and signal the runner to pause.
+    // The ACG runner catches ChoicePendingError, preserves the current
+    // yearStep, and bails. The UI resolves the choice via resolveChoice
+    // (which runs the queued closure), then re-invokes the runner to
+    // continue the year from where it paused.
+    const id = genChoiceId();
+    this.pendingChoices.push({ id, ...req });
+    throw new ChoicePendingError(id);
   }
 
   /** Service definition for this character's current service key, looked up
@@ -380,6 +387,11 @@ export class Character {
       ...(carryRank?.preCareerBranch !== undefined ? { preCareerBranch: carryRank.preCareerBranch } : {}),
     };
     if (carryRank) this.commissioned = true;
+    // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
+    // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
+    // the character's pendingChoices stand. The UI resolves them and the
+    // pause-and-resume machinery in runAcgYear handles subsequent flow.
+    try {
     switch (pathway) {
       case "mercenary":
         mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
@@ -398,6 +410,10 @@ export class Character {
         merchantEnlist(this, options.lineType ?? "Free Trader");
         this.service = "merchants" as ServiceKey;
         break;
+    }
+    } catch (err) {
+      if (!(err instanceof ChoicePendingError)) throw err;
+      // Pending choice queued — UI will resolve it.
     }
   }
 

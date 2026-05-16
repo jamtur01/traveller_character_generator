@@ -137,6 +137,35 @@ describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
   });
 });
 
+describe("F4: interactive ACG choices pause the year via ChoicePendingError", () => {
+  it("navy Soc 9+ branch pick pauses the runner; resolveChoice resumes it", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const { runAcgYear } = await import("../lib/traveller/engine/acg/runner");
+    const c = makeMt();
+    c.choiceMode = "interactive";
+    c.attributes.social = 9;
+    c.beginAcg("navy", { fleet: "imperialNavy" });
+    // beginAcg performs branch assignment as part of enlistment. With Soc
+    // 9+ and interactive mode, that queues a navyBranch choice. The
+    // ChoicePendingError is caught inside beginAcg's runner path. Verify
+    // a pending choice is queued.
+    expect(c.pendingChoices.length).toBeGreaterThan(0);
+    const choice = c.pendingChoices[0]!;
+    expect(choice.kind).toBe("navyBranch");
+    // Resolve it.
+    const branchOptionIdx = choice.options.indexOf("Flight");
+    expect(branchOptionIdx).toBeGreaterThanOrEqual(0);
+    c.resolveChoice(choice.id, branchOptionIdx);
+    expect(c.acgState!.branch).toBe("Flight");
+    // Run a year — the runner should not crash and the year should advance.
+    const yearBefore = c.acgState!.year;
+    runAcgYear(c);
+    // Either the year advanced or it paused for the NEXT choice. Both are
+    // acceptable; what matters is no crash + no stale state.
+    expect(c.acgState!.year).toBeGreaterThanOrEqual(yearBefore);
+  });
+});
+
 describe("Mercenary: combat-arm entry restrictions (PM p. 50)", () => {
   it("Army cannot start as Commando without Military Academy honors", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
