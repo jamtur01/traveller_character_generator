@@ -129,6 +129,29 @@ export interface CanonData {
   rules?: Record<string, unknown>;
   /** Aging table — rows keyed by end-of-term number. */
   aging?: Record<string, unknown>;
+  /** MegaTraveller Advanced Character Generation data. Editions without
+   *  an advanced chargen system omit this block; editions that have it
+   *  declare it under this key. The engine exposes `editionHasAcg(id)` /
+   *  `listAcgPathways(id)` over this block. */
+  advancedCharacterGeneration?: AcgData;
+}
+
+export interface AcgData {
+  source?: string;
+  coverage?: Record<string, number[]>;
+  common: Record<string, unknown>;
+  /** Pathways are named entries — MT has mercenary, navy, scout,
+   *  merchantPrince. Each is a self-contained chargen branch. */
+  [pathway: string]: unknown;
+}
+
+export interface AcgPathway {
+  sourcePrintedPages?: number[];
+  checklist?: unknown;
+  enlistment?: unknown;
+  ranks?: { enlisted?: unknown[]; officer?: unknown[] };
+  reenlistment?: unknown;
+  [k: string]: unknown;
 }
 
 /**

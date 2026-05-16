@@ -193,6 +193,51 @@ for (const ed of EDITIONS) {
 }
 
 // ---------------------------------------------------------------------------
+// ACG structural checks — verify every pathway has the required keys
+// ---------------------------------------------------------------------------
+
+const ACG_REQUIRED_KEYS = ["enlistment", "reenlistment"];
+
+for (const ed of EDITIONS) {
+  const acg = (ed.data as { advancedCharacterGeneration?: Record<string, unknown> })
+    .advancedCharacterGeneration;
+  if (!acg) continue;
+  describe(`${ed.id}: ACG structural`, () => {
+    it("declares a 'common' block with the four shared tables", () => {
+      const common = acg.common as Record<string, unknown>;
+      expect(common).toBeDefined();
+      expect(common.preCareerOptions).toBeDefined();
+      expect(common.courtMartial).toBeDefined();
+      expect(common.browniePoints).toBeDefined();
+      expect(common.decorationAndSurvival).toBeDefined();
+    });
+
+    const pathways = Object.keys(acg).filter(
+      (k) => k !== "common" && k !== "source" && k !== "coverage",
+    );
+
+    it("has at least one named pathway", () => {
+      expect(pathways.length).toBeGreaterThan(0);
+    });
+
+    for (const pname of pathways) {
+      describe(`pathway ${pname}`, () => {
+        const p = acg[pname] as Record<string, unknown>;
+        for (const required of ACG_REQUIRED_KEYS) {
+          it(`has required key "${required}"`, () => {
+            expect(p[required]).toBeDefined();
+          });
+        }
+        it("declares a sourcePrintedPages list", () => {
+          expect(Array.isArray(p.sourcePrintedPages)).toBe(true);
+          expect((p.sourcePrintedPages as number[]).length).toBeGreaterThan(0);
+        });
+      });
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Cell-attribute sanity (catches typo cells like "+1 Foo")
 // ---------------------------------------------------------------------------
 

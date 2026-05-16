@@ -441,6 +441,109 @@ function drawSupplement(doc: jsPDF, c: Character) {
   doc.setFont(BOLD, "normal");
 }
 
+/** Renderer for the MT Advanced Character Generation supplement page.
+ *  Drawn as an additional page after TAS Form 2 (and the basic supplement
+ *  if present) when c.useAcg is true. Mirrors the MT Players' Manual
+ *  Player Record Card style: shows pathway, branch, MOS, decorations,
+ *  brownie points, and specialist schools alongside the standard fields.
+ *
+ *  Drawn as a separate page rather than overlaid on TAS Form 2 to avoid
+ *  reflowing the basic sheet for ACG-specific fields that don't apply to
+ *  CT or basic-MT characters. */
+function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
+  doc.addPage();
+  doc.setLineWidth(LINE);
+  let y = MARGIN;
+
+  // Header bar
+  sectionBar(doc, X0, y, W, 28, "ADVANCED CHARACTER GENERATION — RECORD CARD");
+  y += 28;
+
+  // Row: Pathway | Branch | MOS
+  const r1H = 36;
+  const colW = W / 3;
+  doc.rect(X0, y, colW, r1H);
+  fieldLabel(doc, X0 + 4, y + 10, "1. Pathway");
+  fieldValue(doc, X0 + 6, y + 28, c.acgPathway ?? "—", colW - 8);
+
+  doc.rect(X0 + colW, y, colW, r1H);
+  fieldLabel(doc, X0 + colW + 4, y + 10, "2. Branch / Office");
+  fieldValue(doc, X0 + colW + 6, y + 28, c.acgBranch ?? "—", colW - 8);
+
+  doc.rect(X0 + 2 * colW, y, colW, r1H);
+  fieldLabel(doc, X0 + 2 * colW + 4, y + 10, "3. MOS / Specialty");
+  fieldValue(doc, X0 + 2 * colW + 6, y + 28, c.acgMos ?? "—", colW - 8);
+  y += r1H;
+
+  // Row: Brownie Points | Decorations
+  const r2H = 56;
+  const bpW = 140;
+  doc.rect(X0, y, bpW, r2H);
+  fieldLabel(doc, X0 + 4, y + 10, "4. Brownie Points");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(24);
+  doc.text(String(c.browniePoints), X0 + bpW / 2 - 6, y + 40);
+  doc.setFont(BOLD, "normal");
+
+  doc.rect(X0 + bpW, y, W - bpW, r2H);
+  fieldLabel(doc, X0 + bpW + 4, y + 10, "5. Decorations and Awards");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+  const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
+  const decLines = doc.splitTextToSize(decorationsText, W - bpW - 12);
+  let dy = y + 26;
+  for (const line of decLines.slice(0, 3)) {
+    doc.text(line, X0 + bpW + 6, dy);
+    dy += 12;
+  }
+  doc.setFont(BOLD, "normal");
+  y += r2H;
+
+  // Schools / Training History
+  const r3H = 120;
+  doc.rect(X0, y, W, r3H);
+  fieldLabel(doc, X0 + 4, y + 10, "6. Specialist Schools and Training");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+  let sy = y + 26;
+  const schoolLimit = y + r3H - 12;
+  if (c.schoolsAttended.length === 0) {
+    doc.text("—", X0 + 6, sy);
+  } else {
+    for (const school of c.schoolsAttended) {
+      if (sy > schoolLimit) break;
+      doc.text(`• ${school}`, X0 + 6, sy);
+      sy += 14;
+    }
+  }
+  doc.setFont(BOLD, "normal");
+  y += r3H;
+
+  // Notes section
+  const r4H = 80;
+  doc.rect(X0, y, W, r4H);
+  fieldLabel(doc, X0 + 4, y + 10, "7. Notes");
+  doc.setFont("courier", "italic");
+  doc.setFontSize(8);
+  doc.text(
+    "ACG produces additional state beyond basic chargen. Branch and MOS",
+    X0 + 6, y + 26,
+  );
+  doc.text(
+    "are recorded above; decoration awards reflect Decoration and Survival",
+    X0 + 6, y + 38,
+  );
+  doc.text(
+    "table results; brownie points are one-use DMs from completed terms,",
+    X0 + 6, y + 50,
+  );
+  doc.text(
+    "academies, and decorations.",
+    X0 + 6, y + 62,
+  );
+  doc.setFont(BOLD, "normal");
+}
+
 /** Footer drawn on every page of the sheet, identifying the edition that
  *  produced the character. Critical for multi-edition repos: an MT sheet
  *  and a CT sheet look broadly similar at the basic level, so the edition
@@ -463,6 +566,9 @@ export function buildCharacterSheetPdf(c: Character): jsPDF {
   drawTasForm2(doc, c);
   if (c.history.length > 0 || c.benefits.length > 0 || c.credits > 0) {
     drawSupplement(doc, c);
+  }
+  if (c.useAcg) {
+    drawAcgRecordSheet(doc, c);
   }
   drawEditionFooter(doc, c);
   return doc;

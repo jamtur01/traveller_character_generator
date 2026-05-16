@@ -29,5 +29,9 @@ export {
   type Edition, type EditionMeta,
 } from "./editions";
 export {
+  editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
+} from "./engine/acg";
+export type { AcgData, AcgPathway } from "./editions/types";
+export {
   formatCharacterSheet, formatBenefit, aggregateBenefits,
 } from "./sheet";
