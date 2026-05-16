@@ -2142,9 +2142,10 @@
       "skillsPerTerm": 1,
       "checks": {
         "enlistment": {
-          "target": 2,
+          "target": null,
           "dm": [],
-          "special": "Available only to characters with Social Standing 10+"
+          "automaticIf": { "attribute": "social", "min": 10 },
+          "special": "Characters with Social Standing 10+ are eligible for Noble service; enlistment is automatic. Initial rank derives from Social Standing once Position is achieved."
         },
         "survival": {
           "target": 4,
