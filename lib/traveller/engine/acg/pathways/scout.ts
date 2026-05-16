@@ -25,6 +25,7 @@ import {
 } from "../tables";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
+import { applyScoutSchool } from "../schools";
 
 const PATHWAY = "scout";
 
@@ -48,7 +49,10 @@ interface ScoutData {
     rows: Array<Record<string, unknown>>;
     dms?: Array<string | StructuredDm>;
   }>;
-  schoolAssignment?: Record<string, unknown>;
+  schoolAssignment?: {
+    columns: string[];
+    rows: Array<Record<string, unknown>>;
+  };
   schools?: { columns: string[]; rows: Array<Record<string, unknown>> };
   skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>> }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>> } };
   ranks: { ordinary: Array<[string, string]>; administrator: Array<[string, string, number]> };
@@ -103,9 +107,20 @@ function scoutAssignOffice(ch: Character): void {
   ch.verboseHistory(`Scout office: ${ch.acgState!.office} (${division})`);
 }
 
+/** Scout initial training (PM p. 56): "The initial year of service in the
+ *  Scouts is dedicated to initial training. The character consults the
+ *  Initial Training table entry corresponding to his office assignment and
+ *  receives the skill shown." */
 export function scoutInitialTraining(ch: Character): void {
-  ch.history.push("Initial Training in the Scout Service");
-  scoutRollSkill(ch);
+  const data = dataFor(ch);
+  const office = ch.acgState!.office ?? "Survey";
+  const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
+  if (typeof skill === "string") {
+    ch.history.push(`Initial Training (${office}): ${skill}-1`);
+    ch.addSkill(skill, 1);
+  } else {
+    ch.history.push(`Initial Training (${office}): no skill specified in data`);
+  }
 }
 
 function scoutRollSkill(ch: Character): void {
@@ -198,6 +213,14 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     scoutResolveAssignment(ch, next);
     return;
   }
+  // Training assignment routes through the School Assignment table (PM
+  // p. 57): "Individuals who receive training as an assignment are sent
+  // to a service school."
+  if (assignment === "Training" && data.schoolAssignment) {
+    routeScoutToSchool(ch);
+    ch.acgState!.assignmentHistory.push(assignment);
+    return;
+  }
   // Resolution sub-table keyed by office.
   const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
@@ -208,6 +231,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
     ch.verboseHistory(`Scout: assignment "${assignment}" not in resolution columns`);
+    ch.acgState!.assignmentHistory.push(assignment);
     return;
   }
   const res = lookupResolution(resTable, assignment);
@@ -247,12 +271,44 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     if (sk.success) scoutRollSkill(ch);
   }
 
-  // Special/War mission → extra skill.
+  // Special/War mission → extra skill from the dedicated column (PM p. 57:
+  // "the extra training and preparation for the assignment results in an
+  // extra skill taken from the special or war mission column").
   if (assignment === "Special Mission" || assignment === "Wartime Mission") {
-    scoutRollSkill(ch);
+    scoutRollSkillFromColumn(ch, "specialOrWarMission");
   }
 
   ch.acgState!.assignmentHistory.push(assignment);
+}
+
+function scoutRollSkillFromColumn(ch: Character, column: string): void {
+  const data = dataFor(ch);
+  const division = ch.acgState!.division ?? "field";
+  const table = data.skillTables[division];
+  if (!table.columns.includes(column)) {
+    // Fallback to the office's normal column if the manual column isn't
+    // present in JSON (defensive).
+    scoutRollSkill(ch);
+    return;
+  }
+  const r = roll(1);
+  const row = table.rows.find((row) => row.die === r);
+  if (!row) return;
+  const v = row[column];
+  if (typeof v === "string") applyAcgSkillCell(ch, v);
+}
+
+function routeScoutToSchool(ch: Character): void {
+  const data = dataFor(ch);
+  if (!data.schoolAssignment) return;
+  const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
+  const r = roll(1);
+  const row = data.schoolAssignment.rows.find((row) => row.die === r);
+  if (!row) return;
+  const school = row[officeKey];
+  if (typeof school !== "string") return;
+  ch.history.push(`Training → ${school}`);
+  applyScoutSchool(ch, school);
 }
 
 function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
@@ -297,12 +353,18 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
 function promoteScout(ch: Character): void {
   const data = dataFor(ch);
   // Ordinary rank can climb to IS-9; beyond that requires admin school.
+  // Per PM p. 57: "Each time a promotion is received, the individual is
+  // allowed to receive one new skill. Ordinary rank allows a skill from the
+  // appropriate office column or the scout life column; administrator rank
+  // allows a skill from the administrator rank column."
   if (!ch.acgState!.isOfficer) {
     const codes = data.ranks.ordinary.map((r) => r[0]);
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.history.push(`Promoted to ${data.ranks.ordinary[idx + 1]![1]}.`);
+      // Ordinary promotion: one skill from office column or scout life.
+      scoutRollSkill(ch);
     }
   } else {
     const codes = data.ranks.administrator.map((r) => r[0]);
@@ -311,8 +373,34 @@ function promoteScout(ch: Character): void {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.acgState!.promotedThisTerm = true;
       ch.history.push(`Promoted to ${data.ranks.administrator[idx + 1]![1]}.`);
+      // Administrator promotion: one skill from administrator rank column.
+      scoutRollSkillFromColumn(ch, "administratorRank");
     }
   }
+}
+
+/** Detached Duty benefit at muster (PM p. 57): "Any scout who is serving
+ *  in the Detached Duty division when he leaves the service is given
+ *  permanent detached duty on a roll of 9+ (DM + number of terms served).
+ *  Although the assignment has no responsibilities, the individual receives
+ *  a scout/courier (if he has not already received one through mustering
+ *  out) and a stipend ... of Cr4000 per year." */
+export function scoutFinalizeMuster(ch: Character): void {
+  if (!ch.acgState) return;
+  if (ch.acgState.office !== "Detached Duty") return;
+  const r = roll(2);
+  const dm = ch.terms;
+  if (r + dm < 9) {
+    ch.verboseHistory(`Detached Duty roll ${r} + ${dm} vs 9+ — no permanent detached duty.`);
+    return;
+  }
+  ch.history.push("Awarded permanent Detached Duty (PM p. 57).");
+  const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
+  if (!hasScout) {
+    ch.benefits.push("Scout/Courier (Detached Duty)");
+  }
+  ch.retirementPay = (ch.retirementPay ?? 0) + 4000;
+  ch.benefits.push("Cr4,000/yr Detached Duty stipend");
 }
 
 /** Retention is Navy-only in MT. Kept as a no-op for back-compat. */

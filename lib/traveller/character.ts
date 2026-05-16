@@ -18,6 +18,7 @@ import {
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
 import { merchantEnlist, merchantFinalizeMuster } from "./engine/acg/pathways/merchantPrince";
+import { scoutFinalizeMuster } from "./engine/acg/pathways/scout";
 import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
@@ -897,6 +898,10 @@ export class Character {
     // ACG Merchant Free Trader Owner/Captain auto-benefit.
     if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
       merchantFinalizeMuster(this);
+    }
+    // ACG Scout Detached Duty permanent-assignment benefit.
+    if (this.useAcg && this.acgState?.pathway === "scout") {
+      scoutFinalizeMuster(this);
     }
   }
 
