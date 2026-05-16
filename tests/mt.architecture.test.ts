@@ -2,7 +2,7 @@
 // rules out of TypeScript into the edition JSON, and that switched the ACG
 // pathway runtime to a hooks-based registry.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Character } from "../lib/traveller/character";
@@ -204,9 +204,37 @@ describe("Navy fleet-specific reenlistment uses per-fleet targets from JSON", ()
 });
 
 describe("MT survival rule declares non-death failure", () => {
-  it("rules.survival.onFailure is 'musterOut' for MT", () => {
+  it("rules.survival.onFailure is 'shortTerm' for MT (PM p. 16)", () => {
     const rules = json.rules as { survival?: { onFailure?: string } };
-    expect(rules.survival?.onFailure).toBe("musterOut");
+    expect(rules.survival?.onFailure).toBe("shortTerm");
+  });
+
+  it("MT survival failure: 2-year short term, no muster benefits, commission/promotion skipped", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.showHistory = "none";
+    c.attributes = {
+      strength: 2, dexterity: 2, endurance: 2,
+      intelligence: 2, education: 2, social: 2,
+    };
+    c.service = "army";
+    const ageBefore = c.age;
+    // Force survival failure by setting roll to absolute minimum.
+    const spy = vi
+      .spyOn(Math, "random")
+      .mockReturnValue(0); // all rolls = 1, lowest possible
+    c.doServiceTermStep();
+    expect(c.shortTermsCount).toBe(1);
+    expect(c.shortTermThisTerm).toBe(true);
+    // Term is added but only 2 years pass.
+    expect(c.age).toBe(ageBefore + 2);
+    expect(c.terms).toBe(1);
+    expect(c.activeDuty).toBe(false);
+    // No commission attempt (which would set commissioned=true).
+    expect(c.commissioned).toBe(false);
+    // Muster-out rolls exclude this short term entirely.
+    expect(c.musterOutRolls()).toBe(0);
+    spy.mockRestore();
   });
   it("CT lacks the survival rules block (defaults to death)", () => {
     const ct = getEdition("ct-classic");
