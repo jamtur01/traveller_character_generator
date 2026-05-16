@@ -558,7 +558,7 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   fieldLabel(doc, X0 + 4, y + 10, "10. Specialist Schools and Training");
   doc.setFont("courier", "normal");
   doc.setFontSize(10);
-  let sy = y + 26;
+  const sy = y + 26;
   const schoolLimit = y + r5H - 12;
   if (c.schoolsAttended.length === 0) {
     doc.text("—", X0 + 6, sy);
