@@ -195,6 +195,16 @@ export interface AcgState {
   /** Equipment qualified on: weapons/vehicles the character has at least
    *  one skill level in, suitable for resume output. Derived but cached. */
   equipmentQualifiedOn?: string[];
+
+  // Interactive-mode runner resumption state.
+  /** When a substep of runAcgYear queued an interactive choice and threw
+   *  ChoicePendingError, the runner records the substep name here so the
+   *  next runAcgYear call resumes from the right place. Null when the
+   *  year isn't paused. */
+  pausedAtStep?: string | null;
+  /** Set true after the one-shot initial training fires (first year of
+   *  first term). Prevents replay on resumption. */
+  initialTrainingDone?: boolean;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
