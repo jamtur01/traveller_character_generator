@@ -93,8 +93,24 @@ export function getDraftServices(editionId: string): ServiceKey[] {
   return computeDraft(editionId);
 }
 
-/** UI-facing enlistment list — alias for SERVICES for now. */
-export const ENLISTABLE_SERVICES: ServiceKey[] = SERVICES;
+/** UI-facing enlistment list — union of every registered edition's
+ *  enlistable services. Pickers that show the full cross-edition catalog
+ *  should use this list and resolve labels per the chosen edition via
+ *  serviceLabel(key, editionId). Single-edition pickers should call
+ *  getEnlistableServices(editionId) directly. */
+export const ENLISTABLE_SERVICES: ServiceKey[] = (() => {
+  const seen = new Set<ServiceKey>();
+  const out: ServiceKey[] = [];
+  for (const meta of listEditions()) {
+    for (const k of computeEnlistable(meta.id)) {
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(k);
+      }
+    }
+  }
+  return out;
+})();
 
 export function serviceLabel(key: ServiceKey, editionId?: string): string {
   const map = editionId ? getEditionServices(editionId) : s;

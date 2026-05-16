@@ -2,41 +2,25 @@
 // the Advanced Character Generation path. Replaces the basic-flow
 // `runTermSteps` for ACG characters.
 //
-// The runner delegates pathway-specific logic to pathway modules.
+// Pathway factories are supplied by each edition's hooks.acgPathways map
+// (see lib/traveller/editions/<id>/hooks.ts). Adding a new pathway: drop a
+// pathway module, declare its JSON block, register the factory in hooks.
+// No edits to this file are required.
 
 import type { Character } from "../../character";
+import { getEdition } from "../../editions";
 import { awardBrownie } from "./awards";
-import { getMercenaryPathway } from "./pathways/mercenary";
-import { getNavyPathway } from "./pathways/navy";
-import { getScoutPathway } from "./pathways/scout";
-import { getMerchantPrincePathway } from "./pathways/merchantPrince";
-import type { AcgPathwayId } from "./types";
+import type { AcgPathwayImpl } from "../../editions/types";
 
-interface PathwayImpl {
-  pathway: string;
-  enlist: (ch: Character, ...args: unknown[]) => void;
-  initialTraining?: (ch: Character) => void;
-  commandDuty?: (ch: Character) => void;
-  rollAssignment: (ch: Character) => string;
-  resolveAssignment: (ch: Character, assignment: string) => void;
-  specialAssignment?: (ch: Character) => void;
-  retention?: (ch: Character, assignment: string) => void;
-  reenlist: (ch: Character) => boolean;
-  startOfTerm?: (ch: Character) => void;
-}
-
-const REGISTRY: Record<AcgPathwayId, () => PathwayImpl> = {
-  mercenary: getMercenaryPathway as () => PathwayImpl,
-  navy: getNavyPathway as () => PathwayImpl,
-  scout: getScoutPathway as () => PathwayImpl,
-  merchantPrince: getMerchantPrincePathway as () => PathwayImpl,
-};
-
-function getPathwayImpl(ch: Character): PathwayImpl {
+function getPathwayImpl(ch: Character): AcgPathwayImpl {
   if (!ch.acgState) throw new Error("Character has no acgState; not on ACG path");
-  const factory = REGISTRY[ch.acgState.pathway];
+  const hooks = getEdition(ch.editionId).hooks;
+  const factory = hooks.acgPathways?.[ch.acgState.pathway];
   if (!factory) {
-    throw new Error(`No ACG pathway implementation for "${ch.acgState.pathway}"`);
+    throw new Error(
+      `No ACG pathway implementation for "${ch.acgState.pathway}" in edition "${ch.editionId}". ` +
+      `Register the factory in editions/${ch.editionId}/hooks.ts under acgPathways.`,
+    );
   }
   return factory();
 }
@@ -79,7 +63,10 @@ export function runAcgYear(ch: Character): void {
   ch.acgState.year += 1;
 }
 
-/** Run a full four-year term. */
+/** Run a full four-year term. Resolves end-of-term reenlistment so the
+ *  caller can read ch.activeDuty / ch.mandatoryReenlistment to decide UI
+ *  flow. (Pre-fix: reenlistment was never invoked from this path, so ACG
+ *  characters never naturally mustered out.) */
 export function runAcgTerm(ch: Character): void {
   if (!ch.acgState) throw new Error("Cannot run ACG term on non-ACG character");
   if (ch.deceased || !ch.activeDuty) return;
@@ -91,10 +78,16 @@ export function runAcgTerm(ch: Character): void {
     if (ch.deceased || !ch.activeDuty) break;
     runAcgYear(ch);
   }
-  if (!ch.deceased && ch.activeDuty) {
-    awardBrownie(ch, 1, "Completed four-year term");
-    ch.terms += 1;
-    ch.age += 4;
+  if (ch.deceased || !ch.activeDuty) return;
+
+  awardBrownie(ch, 1, "Completed four-year term");
+  ch.terms += 1;
+  ch.age += 4;
+
+  // End-of-term reenlistment check.
+  const keep = p.reenlist(ch);
+  if (!keep) {
+    ch.activeDuty = false;
   }
 }
 

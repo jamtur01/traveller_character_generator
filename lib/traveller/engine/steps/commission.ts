@@ -3,9 +3,8 @@
 // fire via the service's doPromotion hook.
 //
 // config.doubleBonusOvershoot (MT): if the commission roll exceeded the
-// target by N+ (re-rolled here for fidelity to the JS source), grant a
-// second bonus skill point. Note: this re-rolls; for that reason MT and
-// CT runs are not bit-identical even with the same RNG seed.
+// target by N+, grant a second bonus skill point. Uses the same roll's
+// margin (not a re-roll), per MT PM p. 17.
 
 import { intToOrdinal } from "../../formatting";
 import { roll } from "../../random";
@@ -21,25 +20,23 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   }
   if (service.commissionThrow === undefined) return;
 
-  if (!service.checkCommission(character)) return;
+  const data = edition.data.services[character.service];
+  const dm = data?.checks.position
+    ? evaluateDM(data.checks.position.dm, character)
+    : 0;
+  const r = roll(2);
+  const total = r + dm;
+  character.verboseHistory(`Commission roll ${r} + ${dm} vs ${service.commissionThrow}`);
+  if (total < service.commissionThrow) return;
+
   character.commissioned = true;
   character.rank += 1;
   character.skillPoints += 1;
 
-  // MT double-bonus on overshoot: re-roll commission against target+N to
-  // decide if a second bonus skill applies. Implemented as a second
-  // independent check rather than tracking the original roll's margin.
   const overshootN = config.doubleBonusOvershoot as number | undefined;
-  if (overshootN && service.commissionThrow !== undefined) {
-    const data = edition.data.services[character.service];
-    const dm = data?.checks.position
-      ? evaluateDM(data.checks.position.dm, character)
-      : 0;
-    const r = roll(2);
-    if (r + dm >= service.commissionThrow + overshootN) {
-      character.skillPoints += 1;
-      character.verboseHistory(`Commission overshoot +${overshootN}: +1 bonus skill`);
-    }
+  if (overshootN && total >= service.commissionThrow + overshootN) {
+    character.skillPoints += 1;
+    character.verboseHistory(`Commission overshoot +${overshootN}: +1 bonus skill`);
   }
 
   service.doPromotion(character);

@@ -11,12 +11,12 @@ import {
   aggregateBenefits,
   editionHasAcg,
   extendedHex,
+  getEditionServices,
   intToOrdinal,
   listAcgPathways,
   listEditions,
   numCommaSep,
   roll,
-  s,
   serviceLabel,
   type AttributeKey,
   type ServiceKey,
@@ -156,11 +156,28 @@ export default function Home() {
 
     if (c.deceased) {
       commit(c, "end");
-    } else if (c.skillPoints > 0) {
-      commit(c, pickSkillPhase(c));
-    } else {
-      commit(c, "term");
+      return;
     }
+    if (c.skillPoints > 0) {
+      commit(c, pickSkillPhase(c));
+      return;
+    }
+    // ACG: runAcgTerm flips activeDuty to false at end-of-term when the
+    // reenlistment roll fails, so the UI must route involuntary musters
+    // here rather than dropping back into another term loop.
+    if (!c.activeDuty) {
+      c.musteredOut = true;
+      c.musterRolls = c.musterOutRolls();
+      if (c.musterRolls === 0) {
+        c.musterOutPay();
+        c.history.push("======= End Generation =======");
+        commit(c, "end");
+      } else {
+        commit(c, "muster");
+      }
+      return;
+    }
+    commit(c, "term");
   };
 
   const attemptMusterOut = () => {
@@ -215,7 +232,7 @@ export default function Home() {
       c.forceTable = true;
       c.forceTableIndex = table;
     }
-    s[c.service].acquireSkill(c);
+    getEditionServices(c.editionId)[c.service]!.acquireSkill(c);
     c.skillPoints -= 1;
 
     if (c.skillPoints > 0) {
@@ -551,7 +568,7 @@ const ATTR_LABELS: { key: AttributeKey; short: string }[] = [
 ];
 
 function CharacterSummary({ character }: { character: Character }) {
-  const def = s[character.service];
+  const def = getEditionServices(character.editionId)[character.service]!;
   const rankText = def.ranks[character.rank] || "";
   const titleText =
     character.attributes.social > 10 ? character.getNobleTitle() : "";
@@ -826,11 +843,9 @@ function StartPhase({
                 Use Advanced Character Generation
               </span>
               <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-                MT&apos;s ACG produces an enhanced character record with
-                pathway, branch, brownie points, and decorations. Current
-                implementation reuses the basic per-term flow and overlays
-                ACG state — full branch / specialist school / MOS rolls
-                are future work.
+                MT&apos;s ACG runs a per-year assignment cycle with branch /
+                MOS rolls, specialist schools, command duty, brownie points,
+                and decorations.
               </span>
             </span>
           </label>
@@ -1012,7 +1027,7 @@ function CareerPhase({
   onEnlist: () => void;
 }) {
   const targetSvc = preferredService === "random" ? null : preferredService;
-  const def = targetSvc ? s[targetSvc] : null;
+  const def = targetSvc ? getEditionServices(character.editionId)[targetSvc] ?? null : null;
   const dm = def ? def.enlistmentDM(character.attributes) : 0;
   const target = def ? def.enlistmentThrow : 0;
 
@@ -1067,7 +1082,7 @@ function TermPhase({
 }) {
   const termNum = character.terms + 1;
   const nextAge = character.age + 4;
-  const def = s[character.service];
+  const def = getEditionServices(character.editionId)[character.service]!;
 
   const canMusterOut =
     character.terms >= 1 && !character.mandatoryReenlistment;

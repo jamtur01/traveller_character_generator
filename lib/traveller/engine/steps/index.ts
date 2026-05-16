@@ -3,6 +3,7 @@
 // lifecycle.terms array.
 
 import { allocateSkillsStep } from "./allocateSkills";
+import { autoSkillTermStep } from "./autoSkillTerm";
 import { commissionStep } from "./commission";
 import { promotionStep } from "./promotion";
 import { specialDutyStep } from "./specialDuty";
@@ -11,6 +12,7 @@ import type { StepRegistry } from "./types";
 
 export const STEP_REGISTRY: StepRegistry = {
   allocateSkills: allocateSkillsStep,
+  autoSkillTerm: autoSkillTermStep,
   survival: survivalStep,
   commission: commissionStep,
   promotion: promotionStep,

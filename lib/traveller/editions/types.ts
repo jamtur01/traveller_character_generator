@@ -46,9 +46,12 @@ export interface CheckData {
 }
 
 export interface AutoSkillEntry {
-  /** "service" = on enlistment; "rank" with rank=N = when rank reaches N. */
-  trigger: "service" | "rank";
+  /** "service" = on enlistment; "rank" with rank=N = when rank reaches N;
+   *  "term" with term=N = at the start of term N (MT Belter Zero-G is the
+   *  canonical example). */
+  trigger: "service" | "rank" | "term";
   rank?: number;
+  term?: number;
   /** A skill name (literal or cascade label) granted at level. */
   skill?: string;
   level?: number;
@@ -157,6 +160,31 @@ export interface AcgPathway {
 }
 
 /**
+ * ACG pathway implementation supplied by the edition's hooks. The runner
+ * dispatches per-year / per-term work through these callbacks. Editions
+ * that don't have ACG omit the block entirely.
+ */
+// Enlist signatures vary across pathways (mercenary takes service+combatArm;
+// navy takes fleet; merchantPrince takes lineType; scout takes nothing). The
+// type uses an `any`-typed rest parameter so concrete factories — which have
+// well-typed signatures locally — can be assigned without a cast.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AcgEnlist = (ch: Character, ...args: any[]) => void;
+
+export interface AcgPathwayImpl {
+  pathway: string;
+  enlist: AcgEnlist;
+  initialTraining?: (ch: Character) => void;
+  commandDuty?: (ch: Character) => void;
+  rollAssignment: (ch: Character) => string;
+  resolveAssignment: (ch: Character, assignment: string) => void;
+  specialAssignment?: (ch: Character) => void;
+  retention?: (ch: Character, assignment: string) => void;
+  reenlist: (ch: Character) => boolean;
+  startOfTerm?: (ch: Character) => void;
+}
+
+/**
  * Named-hook signatures. Each edition can supply implementations under
  * keys referenced from the JSON. Hooks are the escape hatch for genuinely
  * ad-hoc per-service mechanics that don't fit the data schema.
@@ -167,6 +195,13 @@ export interface EditionHooks {
    * incremented and after automaticSkills with trigger="rank" have fired.
    */
   doPromotion?: Record<string, (ch: Character) => void>;
+  /**
+   * ACG pathway factories, keyed by pathway name (matching the JSON key
+   * under advancedCharacterGeneration.<name>). Required when the edition's
+   * JSON declares pathways. Adding a new pathway = drop a JSON block and
+   * register a factory here.
+   */
+  acgPathways?: Record<string, () => AcgPathwayImpl>;
 }
 
 export interface Edition {

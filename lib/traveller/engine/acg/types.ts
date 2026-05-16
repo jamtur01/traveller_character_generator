@@ -85,6 +85,54 @@ export interface AcgState {
    * survival, negative on decoration) are also legal but uncommon.
    */
   decorationDmStrategy: number;
+
+  /** Set when pre-career (Military/Naval/Merchant Academy graduation or
+   *  successful OTC/NOTC) commissioned the character before ACG enlist.
+   *  beginAcg() preserves rank O1 instead of resetting to E1 when this is
+   *  true. (Manual: academy graduates auto-enlist at rank O1.) */
+  preCareerCommission?: boolean;
+  preCareerBranch?: "army" | "marines" | "navy" | "merchants" | null;
+
+  /** Combat arms or branches the character has been cross-trained into via
+   *  special-assignment schools. Drives the Marine cross-training reenlist
+   *  DM (PM p. 51) and similar branch-eligibility rules. */
+  crossTrainedArms?: string[];
+
+  // Merchant Prince specific: promotion-exam state.
+  /** True when the character has earned the right to take the department
+   *  promotion exam without regard for skill requirements (Special Duty
+   *  "Department Test" result). Consumed on next exam attempt. */
+  canTakeDeptTest?: boolean;
+  /** Per-term DM modifier accumulated from Special Duty schools (e.g.
+   *  Business School: +1 on exam for O6+). */
+  examDm?: number;
+  /** Free Trader Owner/Captain (rank O5+) at muster-out gets an automatic
+   *  Free Trader ship. Set when the rank reaches that threshold. */
+  freeTraderShipEarned?: boolean;
+  /** Temporary rank-down for skill-column selection when the available-
+   *  position throw failed (Merchant officer, no position available).
+   *  Cleared at the start of each year. */
+  effectiveRankCode?: string | null;
+
+  // Court-martial / discipline consequences propagated to final muster.
+  /** -N to the next promotion roll (court-martial Reprimand outcome). */
+  nextPromotionPenalty?: number;
+  /** True if dishonorably discharged. Pension and mustering-out reductions
+   *  are computed separately. */
+  dishonorablyDischarged?: boolean;
+  /** Pre-muster adjustment to mustering-out roll count (e.g. -3 for DD). */
+  musterRollPenalty?: number;
+  /** True if pension is forfeit (DD or worse). */
+  pensionForfeit?: boolean;
+  /** True if a court-martial death sentence was imposed (with or without
+   *  escape). When true, no mustering-out benefits and no pension. */
+  deathSentence?: boolean;
+  /** Accumulated months of in-service jail; not currently consumed beyond
+   *  the prose record, but observable for sheet/UI output. */
+  jailMonthsThisYear?: number;
+  /** SEH recipients get an automatic +1 rank at muster (manual p. 46).
+   *  Set true the first time an SEH is awarded; consumed at muster. */
+  sehPromotionPending?: boolean;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {

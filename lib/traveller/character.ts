@@ -17,7 +17,7 @@ import {
 } from "./engine/acg/preCareer";
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
-import { merchantEnlist } from "./engine/acg/pathways/merchantPrince";
+import { merchantEnlist, merchantFinalizeMuster } from "./engine/acg/pathways/merchantPrince";
 import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
@@ -311,10 +311,21 @@ export class Character {
   ): void {
     this.useAcg = true;
     this.acgPathway = pathway;
+    // Pre-career may have set acgState already with a commission (academy
+    // graduate, OTC/NOTC). Preserve commission state instead of resetting.
+    const carryRank = this.acgState?.preCareerCommission
+      ? { rankCode: this.acgState.rankCode, isOfficer: this.acgState.isOfficer,
+          preCareerCommission: true,
+          preCareerBranch: this.acgState.preCareerBranch ?? null,
+          browniePoints: this.acgState.browniePoints,
+          browniePointsSpent: this.acgState.browniePointsSpent,
+          schoolsAttended: this.acgState.schoolsAttended,
+          decorations: this.acgState.decorations }
+      : null;
     this.acgState = {
       pathway,
-      rankCode: "E1",
-      isOfficer: false,
+      rankCode: carryRank?.rankCode ?? "E1",
+      isOfficer: carryRank?.isOfficer ?? false,
       year: 1,
       currentAssignment: null,
       inCommand: false,
@@ -325,12 +336,15 @@ export class Character {
       assignmentHistory: [],
       combatRibbons: 0,
       commandClusters: 0,
-      schoolsAttended: [],
-      decorations: [],
-      browniePoints: 0,
-      browniePointsSpent: 0,
+      schoolsAttended: carryRank?.schoolsAttended ?? [],
+      decorations: carryRank?.decorations ?? [],
+      browniePoints: carryRank?.browniePoints ?? 0,
+      browniePointsSpent: carryRank?.browniePointsSpent ?? 0,
       decorationDmStrategy: 0,
+      ...(carryRank?.preCareerCommission ? { preCareerCommission: true } : {}),
+      ...(carryRank?.preCareerBranch !== undefined ? { preCareerBranch: carryRank.preCareerBranch } : {}),
     };
+    if (carryRank) this.commissioned = true;
     switch (pathway) {
       case "mercenary":
         mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
@@ -744,7 +758,36 @@ export class Character {
 
   // ---------- muster out ----------
 
+  /** Map ACG rank state into the basic character.rank field used by muster
+   *  DMs and rank bands. Officer O1..O6 → rank 1..6; O7+ caps at 6. Enlisted
+   *  ranks remain 0 (basic chargen has no enlisted rank concept).
+   *  Also applies the SEH automatic +1 rank if pending. Idempotent: safe
+   *  to call before muster regardless of pathway. */
+  finalizeAcgRankForMuster(): void {
+    if (!this.useAcg || !this.acgState) return;
+    // SEH automatic +1 rank at muster (manual p. 46). Consume the flag so
+    // repeated calls don't re-apply.
+    if (this.acgState.sehPromotionPending && this.acgState.isOfficer) {
+      const m = this.acgState.rankCode.match(/^O(\d+)$/);
+      if (m) {
+        const next = Math.min(10, parseInt(m[1]!, 10) + 1);
+        this.acgState.rankCode = `O${next}`;
+        this.history.push(`SEH automatic promotion: rank ${this.acgState.rankCode}.`);
+      }
+      this.acgState.sehPromotionPending = false;
+    }
+    if (this.acgState.isOfficer) {
+      const m = this.acgState.rankCode.match(/^O(\d+)$/);
+      if (m) {
+        const n = parseInt(m[1]!, 10);
+        this.rank = Math.min(6, n);
+        this.commissioned = true;
+      }
+    }
+  }
+
   musterOutRolls(): number {
+    this.finalizeAcgRankForMuster();
     // Reads rules.musterOutRolls from the active edition.
     //   perTerm × terms (default 1) + the additionalRolls of whichever
     //   rankBand contains this character's rank.
@@ -760,6 +803,11 @@ export class Character {
     let r = perTerm * this.terms;
     const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
     if (band) r += band.additionalRolls;
+    // ACG court-martial outcomes reduce mustering-out rolls (DD = -3,
+    // death sentence zeros benefits via a very negative penalty).
+    if (this.useAcg && this.acgState?.musterRollPenalty) {
+      r = Math.max(0, r + this.acgState.musterRollPenalty);
+    }
     return r;
   }
 
@@ -811,7 +859,10 @@ export class Character {
   }
 
   musterOutPay() {
-    if (this.terms >= 5 && this.service !== "scouts" && this.service !== "other") {
+    // Court-martial DD or death-sentence forfeits pension (PM p. 47).
+    const pensionForfeit = !!(this.useAcg && this.acgState?.pensionForfeit);
+    if (!pensionForfeit && this.terms >= 5 &&
+        this.service !== "scouts" && this.service !== "other") {
       switch (this.terms) {
         case 5: this.retirementPay = 4000; break;
         case 6: this.retirementPay = 6000; break;
@@ -823,6 +874,12 @@ export class Character {
       this.benefits.push(
         `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
       );
+    } else if (pensionForfeit && this.terms >= 5) {
+      this.history.push("Pension forfeit due to dishonorable discharge or death sentence.");
+    }
+    // ACG Merchant Free Trader Owner/Captain auto-benefit.
+    if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
+      merchantFinalizeMuster(this);
     }
   }
 

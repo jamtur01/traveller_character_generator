@@ -16,7 +16,16 @@ export type ChoiceKind =
   | "cascade"
   | "weaponType"
   | "skillTable"
-  | "musterRoll";
+  | "musterRoll"
+  // ACG-specific player decision points (MT Players' Manual).
+  | "navyBranch"           // Soc 9+ picks any branch on enlistment
+  | "navyOfficerSkillTable" // officer initial training: Branch vs Officer Staff
+  | "commandDutyOptIn"      // officer may decline command-duty roll
+  | "decorationDmTradeoff"  // -N survival ↔ +N decoration
+  | "scoutTransferDecline"  // Scout Field → Bureaucracy transfer
+  | "scoutAdminDm"          // Scout administrator voluntary +2 DM on duty roll
+  | "merchantDepartment"    // Merchant Academy: pick one of five depts
+  | "merchantSkillTable";   // Merchant: service / department / life
 
 export interface ChoiceRequest<T = string> {
   kind: ChoiceKind;

@@ -230,61 +230,159 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   return out;
 }
 
-/** Skills awarded by each option's table on graduation. Per manual p. 47. */
+/** Skills awarded by each option's table on graduation. All data is read
+ *  from common.preCareerOptions in the edition JSON. Per manual p. 47. */
 function applyOptionSpecifics(
   ch: Character,
   opt: PreCareerOption,
   out: PreCareerResult,
 ): void {
-  switch (opt) {
-    case "navalAcademy": {
-      // Roll 4+ on 1D for each of Vacc Suit, Navigation, Engineering.
-      for (const skill of ["Vacc Suit", "Navigation", "Engineering"]) {
-        if (roll(1) >= 4) out.skills.push([skill, 1]);
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const pco = (acg?.common as { preCareerOptions?: Record<string, unknown> } | undefined)
+    ?.preCareerOptions?.[opt] as Record<string, unknown> | undefined;
+  if (!pco) return;
+
+  // Automatic skills granted to all graduates (e.g. Combat Rifleman for
+  // Military Academy; Medical-3/Admin/+1 Edu for Medical School).
+  applyAutomaticSkills(out, pco.automaticSkills as unknown);
+
+  // 1D throw for each listed skill (Naval/Military Academy).
+  const sk = pco.skills as
+    | { throw?: string; skills?: string[]; rule?: string }
+    | string[]
+    | undefined;
+  if (sk && !Array.isArray(sk) && Array.isArray(sk.skills) && sk.throw) {
+    const target = parseSkillThrowTarget(sk.throw);
+    for (const skill of sk.skills) {
+      if (parseDieExpression(skill) !== null) {
+        // Dynamic skill spec (e.g. "1D-3 levels of Pilot, minimum 1").
+        out.skills.push(parseDynamicSkill(skill));
+      } else if (roll(1) >= target) {
+        out.skills.push([skill, 1]);
       }
-      return;
     }
-    case "militaryAcademy": {
-      // All graduates receive Combat Rifleman. 4+ on 1D for each of
-      // Tactics, Leader, Admin, Heavy Weapons, Forward Observer, Computer.
-      out.skills.push(["Combat Rifleman", 1]);
-      for (const skill of ["Tactics", "Leader", "Admin", "Heavy Weapons",
-        "Forward Observer", "Computer"]) {
-        if (roll(1) >= 4) out.skills.push([skill, 1]);
-      }
-      return;
-    }
-    case "merchantAcademy": {
-      // Throw for three department skills — simplified: 4+ for each of
-      // the canonical merchant skills.
-      for (const skill of ["Steward", "Liaison", "Trader"]) {
-        if (roll(1) >= 4) out.skills.push([skill, 1]);
-      }
-      return;
-    }
-    case "medicalSchool": {
-      // All graduates: +1 Education, Medical-3, Admin. Honors adds
-      // Medical and Computer.
-      out.attributeChanges.education = (out.attributeChanges.education ?? 0) + 1;
-      out.skills.push(["Medical", 3]);
-      out.skills.push(["Admin", 1]);
-      if (out.honors) {
-        out.skills.push(["Medical", 1]);
-        out.skills.push(["Computer", 1]);
-      }
-      return;
-    }
-    case "flightSchool": {
-      // Ship's Boat, Navigation, 1D-3 (min 1) Pilot.
-      out.skills.push(["Ship's Boat", 1]);
-      out.skills.push(["Navigation", 1]);
-      const pilot = Math.max(1, roll(1) - 3);
-      out.skills.push(["Pilot", pilot]);
-      return;
-    }
-    default:
-      return;
   }
+
+  // Plain skill list with no throw (Flight School: Ship's Boat, Navigation,
+  // and a dynamic "1D-3 levels of Pilot, minimum 1").
+  if (sk && !Array.isArray(sk) && Array.isArray(sk.skills) && !sk.throw) {
+    for (const skill of sk.skills) {
+      if (parseDieExpression(skill) !== null) {
+        out.skills.push(parseDynamicSkill(skill));
+      } else {
+        out.skills.push([skill, 1]);
+      }
+    }
+  }
+  if (Array.isArray(sk)) {
+    for (const skill of sk) {
+      if (parseDieExpression(skill) !== null) {
+        out.skills.push(parseDynamicSkill(skill));
+      } else {
+        out.skills.push([skill, 1]);
+      }
+    }
+  }
+
+  // Merchant Academy: "Select one Merchant department and throw for three
+  // department skills." This requires the Merchant Prince skill tables.
+  if (sk && !Array.isArray(sk) && sk.rule && /department/i.test(sk.rule)) {
+    applyMerchantDepartmentSkills(ch, out);
+  }
+
+  // Honors-only skills (e.g. Medical School honors → Medical + Computer).
+  if (out.honors) {
+    applyAutomaticSkills(out, pco.honorsSkills as unknown);
+  }
+}
+
+/** Apply a list of skill descriptors. Each entry is "<Skill>", "<Skill>-<N>",
+ *  or "+N <Attribute>" / "+<N> <Attribute>". */
+function applyAutomaticSkills(out: PreCareerResult, raw: unknown): void {
+  if (!Array.isArray(raw)) return;
+  for (const entry of raw as string[]) {
+    const attrMatch = entry.match(/^\+(\d+)\s+(.+)$/);
+    if (attrMatch) {
+      const delta = parseInt(attrMatch[1]!, 10);
+      const attr = mapAttr(attrMatch[2]!);
+      if (attr) {
+        out.attributeChanges[attr] = (out.attributeChanges[attr] ?? 0) + delta;
+      }
+      continue;
+    }
+    const sklMatch = entry.match(/^(.+?)-(\d+)$/);
+    if (sklMatch) {
+      out.skills.push([sklMatch[1]!, parseInt(sklMatch[2]!, 10)]);
+      continue;
+    }
+    out.skills.push([entry, 1]);
+  }
+}
+
+function parseSkillThrowTarget(throwStr: string): number {
+  const m = throwStr.match(/(\d+)\+/);
+  return m ? parseInt(m[1]!, 10) : 4;
+}
+
+/** Recognise embedded die expressions in skill strings (e.g. "1D-3"). */
+function parseDieExpression(s: string): number | null {
+  const m = s.match(/(\d+)D([-+]\d+)?/);
+  if (!m) return null;
+  const offset = m[2] ? parseInt(m[2], 10) : 0;
+  return roll(1) + offset;
+}
+
+/** Parse a dynamic skill spec like "1D-3 levels of Pilot, minimum 1". */
+function parseDynamicSkill(s: string): [string, number] {
+  const die = parseDieExpression(s) ?? 1;
+  const minMatch = s.match(/minimum\s+(\d+)/i);
+  const min = minMatch ? parseInt(minMatch[1]!, 10) : 1;
+  const value = Math.max(min, die);
+  // Extract the skill name — strip die expr and 'levels of' and 'minimum N'.
+  const cleaned = s
+    .replace(/\d+D[-+]?\d*\s*/g, "")
+    .replace(/levels\s+of\s+/i, "")
+    .replace(/,\s*minimum\s+\d+/i, "")
+    .trim();
+  return [cleaned, value];
+}
+
+/** Merchant Academy: select one of five Merchant departments and throw 4+
+ *  on 1D three times on that department's skill column (manual p. 47, with
+ *  data sourced from advancedCharacterGeneration.merchantPrince.skillTables.department).
+ */
+function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): void {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const mp = acg?.merchantPrince as { skillTables?: { department?: {
+    columns: string[]; rows: Array<Record<string, unknown>>;
+  } } } | undefined;
+  const dept = mp?.skillTables?.department;
+  if (!dept) return;
+  const departments = dept.columns.filter((c) => c !== "die");
+  if (departments.length === 0) return;
+  const apply = (choice: string): void => {
+    out.notes.push(`Merchant department: ${choice}`);
+    for (let i = 0; i < 3; i++) {
+      if (roll(1) >= 4) {
+        const r = roll(1);
+        const row = dept.rows.find((row) => row.die === r);
+        const skill = row?.[choice];
+        if (typeof skill === "string") out.skills.push([skill, 1]);
+      }
+    }
+  };
+  if (ch.choiceMode === "interactive") {
+    ch.pickOrDefer({
+      kind: "merchantDepartment",
+      label: "Merchant Academy: choose your department.",
+      options: departments,
+      onResolve: (_c, choice) => apply(choice),
+    });
+    return;
+  }
+  apply(departments[Math.floor(Math.random() * departments.length)]!);
 }
 
 /** Apply a pre-career result to the character. Mutates state. */
@@ -310,5 +408,20 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   }
   if (r.honors) {
     awardBrownie(ch, 1, `Honors graduate of ${opt}`);
+  }
+  // Pre-career commission carries into ACG enlistment: subsequent beginAcg
+  // honors this rank by skipping the default E1 reset.
+  if (r.commissioned && ch.acgState) {
+    ch.acgState.isOfficer = true;
+    ch.acgState.rankCode = "O1";
+    ch.acgState.preCareerCommission = true;
+    ch.acgState.preCareerBranch = r.branch ?? null;
+  }
+  // Record graduations on acgState so pathways can detect them (e.g. Navy
+  // medical/flight school graduates get auto-branch).
+  if (r.graduated && ch.acgState) {
+    if (!ch.acgState.schoolsAttended.includes(opt)) {
+      ch.acgState.schoolsAttended.push(opt);
+    }
   }
 }

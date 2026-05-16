@@ -117,6 +117,18 @@ function scoutRollSkill(ch: Character): void {
   }
 }
 
+/** Scout administrators (IS-10..IS-18) may voluntarily apply DM +2 to the
+ *  Duty Assignment roll (manual p. 57: "Scouts in the Bureaucracy who hold
+ *  administrator rank are allowed a DM of +2 on the duty assignment table,
+ *  which allows them to avoid some training (the DM is voluntary).
+ *  However, a natural roll of 2 always means a war mission, regardless of
+ *  the DM."). Auto-mode applies the DM; interactive mode asks the player. */
+function isScoutAdministratorRank(rankCode: string): boolean {
+  const m = rankCode.match(/^IS-(\d+)$/);
+  if (!m) return false;
+  return parseInt(m[1]!, 10) >= 10;
+}
+
 export function scoutRollAssignment(ch: Character): string {
   const data = dataFor(ch);
   if (ch.acgState!.justRetained && ch.acgState!.retainedAssignment) {
@@ -126,17 +138,30 @@ export function scoutRollAssignment(ch: Character): string {
     return retained;
   }
   const division = ch.acgState!.division ?? "field";
-  // Bureaucracy admin rank → DM +2 (voluntary). For now we apply it
-  // automatically since the player would normally take it.
-  let dm = 0;
-  if (division === "bureaucracy" && ch.acgState!.rankCode.startsWith("IS-1") &&
-      ch.acgState!.rankCode !== "IS-1") {
-    // crude: IS-10+ → admin rank → +2
-    dm += 2;
+  const adminEligible = division === "bureaucracy" &&
+    isScoutAdministratorRank(ch.acgState!.rankCode);
+  // Default to taking the DM; interactive mode exposes the choice.
+  let useAdminDm = adminEligible;
+  if (adminEligible && ch.choiceMode === "interactive") {
+    // Resolve synchronously by short-circuit: pickOrDefer auto-mode applies
+    // immediately; interactive mode queues and we proceed without the DM
+    // for this year (the player's decision applies next year).
+    let decided = false;
+    ch.pickOrDefer({
+      kind: "scoutAdminDm",
+      label: "Take administrator DM +2 on the duty roll? (Natural 2 still forces war mission.)",
+      options: ["Take DM +2", "Roll without DM"],
+      onResolve: (_c, choice) => {
+        useAdminDm = choice === "Take DM +2";
+        decided = true;
+      },
+    });
+    if (!decided) useAdminDm = false;
   }
-  const r = Math.max(2, Math.min(12, roll(2) + dm));
-  // Natural 2 = wartime mission regardless of DM.
-  const dieKey = (r === 2 ? 2 : r);
+  const dm = useAdminDm ? 2 : 0;
+  const baseRoll = roll(2);
+  // Natural 2 always means war mission regardless of any DM.
+  const dieKey = baseRoll === 2 ? 2 : Math.max(2, Math.min(12, baseRoll + dm));
   const row = data.dutyAssignment.rows.find((row) => row.die === dieKey);
   if (!row) return "Routine";
   const v = row[division];
@@ -145,6 +170,25 @@ export function scoutRollAssignment(ch: Character): string {
 
 export function scoutResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
+  // Transfer assignment (Field → Bureaucracy, per manual p. 56). The Scout
+  // may decline; if declined, reroll once. If transfer is on the reroll, it
+  // is mandatory. In auto mode we accept the transfer.
+  if (assignment === "Transfer" && ch.acgState!.division === "field") {
+    const accept = scoutDecideTransfer(ch, /*onReroll*/ false);
+    if (accept) {
+      applyScoutTransferToBureaucracy(ch);
+      return;
+    }
+    // Declined → reroll once.
+    const next = scoutRollAssignment(ch);
+    if (next === "Transfer") {
+      // Forced.
+      applyScoutTransferToBureaucracy(ch);
+      return;
+    }
+    scoutResolveAssignment(ch, next);
+    return;
+  }
   // Resolution sub-table keyed by office.
   const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
@@ -200,6 +244,45 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   }
 
   ch.acgState!.assignmentHistory.push(assignment);
+}
+
+function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
+  if (onReroll) return true; // mandatory on reroll
+  if (ch.choiceMode !== "interactive") return true; // auto accepts
+  let accept = true;
+  let decided = false;
+  ch.pickOrDefer({
+    kind: "scoutTransferDecline",
+    label: "Accept transfer from Field to Bureaucracy? (Mandatory on reroll if declined.)",
+    options: ["Accept transfer", "Decline (reroll once)"],
+    onResolve: (_c, choice) => {
+      accept = choice === "Accept transfer";
+      decided = true;
+    },
+  });
+  if (!decided) accept = true;
+  return accept;
+}
+
+function applyScoutTransferToBureaucracy(ch: Character): void {
+  const data = dataFor(ch);
+  ch.acgState!.division = "bureaucracy";
+  // Reroll office assignment under the Bureaucracy division.
+  const r = Math.max(2, Math.min(12, roll(2)));
+  const row = data.officeAssignment.rows.find((row) => row.die === r);
+  const off = row?.bureaucracy;
+  ch.acgState!.office = typeof off === "string" ? off : "Technical";
+  // Bureaucracy has rank; ordinary rank becomes terms served.
+  const termsServed = Math.max(1, ch.terms);
+  ch.acgState!.rankCode = `IS-${Math.min(9, termsServed)}`;
+  ch.history.push(
+    `Transferred to Scout Bureaucracy; office ${ch.acgState!.office}, rank ${ch.acgState!.rankCode}.`,
+  );
+  // Resolve a fresh assignment in the new division.
+  const nextAssign = scoutRollAssignment(ch);
+  if (nextAssign !== "Transfer") {
+    scoutResolveAssignment(ch, nextAssign);
+  }
 }
 
 function promoteScout(ch: Character): void {
