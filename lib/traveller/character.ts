@@ -7,6 +7,10 @@ import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices"
 import { genChoiceId } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
 import type { AcgState } from "./engine/acg/types";
+import {
+  applyHomeworldSkills, availableServicesForHomeworld, editionHasHomeworld,
+  generateAndApplyHomeworld, type Homeworld,
+} from "./engine/homeworld";
 import { mercenaryEnlist } from "./engine/acg/pathways/mercenary";
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
@@ -88,6 +92,13 @@ export class Character {
    * accumulated skills and benefits.
    */
   editionId: string = DEFAULT_EDITION_ID;
+  /**
+   * The character's homeworld profile, for editions (MT) that have a
+   * homeworld step. Set by generateHomeworld() during character creation.
+   * Tech code gates which careers are available; default skills are
+   * granted based on tech and (later) service.
+   */
+  homeworld: Homeworld | null = null;
   /**
    * Choice mode. "auto" (default) preserves the original random-everywhere
    * behavior used by tests and the streamlined UI flow. "interactive" makes
@@ -225,6 +236,16 @@ export class Character {
       );
     }
     return def;
+  }
+
+  /**
+   * Generate a homeworld for the character per MT pp. 12-13. No-op for
+   * editions (CT) that don't have a homeworld block. Should be called
+   * AFTER attribute rolls but BEFORE enlistment / beginAcg.
+   */
+  generateHomeworld(): void {
+    if (!editionHasHomeworld(this.editionId)) return;
+    generateAndApplyHomeworld(this);
   }
 
   /**
@@ -463,11 +484,23 @@ export class Character {
         "doEnlistment is for basic chargen only; ACG characters should use the ACG runner",
       );
     }
+    // Gate the enlistable list by homeworld tech / social rules (MT
+    // only; CT returns the full list unchanged).
+    const gated = this.homeworld
+      ? availableServicesForHomeworld(this, this.homeworld, enlistable)
+      : enlistable;
     let preferredService: ServiceKey;
     if (method && method !== "random") {
       preferredService = method as ServiceKey;
+      if (this.homeworld && !gated.includes(preferredService)) {
+        this.history.push(
+          `Cannot enlist in ${preferredService}: homeworld tech ${this.homeworld.tech} forbids it.`,
+        );
+        // Force pick from gated list.
+        preferredService = gated[Math.floor(Math.random() * gated.length)]!;
+      }
     } else {
-      preferredService = enlistable[Math.floor(Math.random() * enlistable.length)]!;
+      preferredService = gated[Math.floor(Math.random() * gated.length)]!;
     }
 
     // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
@@ -490,6 +523,11 @@ export class Character {
     if (en + dm >= pref.enlistmentThrow) {
       this.history.push("Enlistment accepted.");
       this.applyServiceStartAge(preferredService);
+      // Now that service is set, apply service-conditioned homeworld
+      // default skills (Vacc Suit-0 for Navy/Marines/etc; Gun Combat-0
+      // for non-barbarians). MT only — CT has no homeworld.
+      this.service = preferredService;
+      if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
       const skills = pref.getServiceSkills(this);
       for (const sk of skills) this.addSkill(sk);
       return preferredService;
@@ -500,6 +538,8 @@ export class Character {
       draftPool[Math.floor(Math.random() * draftPool.length)]!;
     this.history.push(`Drafted into ${draftService}.`);
     this.applyServiceStartAge(draftService);
+    this.service = draftService;
+    if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
     const skills = this.editionService(draftService).getServiceSkills(this);
     for (const sk of skills) this.addSkill(sk);
     return draftService;
