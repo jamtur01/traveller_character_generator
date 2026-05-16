@@ -25,7 +25,10 @@ function getPathwayImpl(ch: Character): AcgPathwayImpl {
   return factory();
 }
 
-/** Run a single one-year assignment. Each term contains four such years. */
+/** Run a single one-year assignment. Each term contains four such years.
+ *  Age is incremented per year so characters invalided / jailed / killed
+ *  mid-term retain only the years they actually served (PM p. 15 — each
+ *  assignment is a year of service). */
 export function runAcgYear(ch: Character): void {
   if (ch.deceased || !ch.activeDuty) return;
   if (!ch.acgState) throw new Error("Cannot run ACG year on non-ACG character");
@@ -34,6 +37,8 @@ export function runAcgYear(ch: Character): void {
   // First year of the first term is initial training (no normal cycle).
   if (ch.terms === 0 && ch.acgState.year === 1 && p.initialTraining) {
     p.initialTraining(ch);
+    ch.age += 1;
+    ch.acgState.yearsServed = (ch.acgState.yearsServed ?? 0) + 1;
     ch.acgState.year += 1;
     return;
   }
@@ -55,6 +60,13 @@ export function runAcgYear(ch: Character): void {
     p.resolveAssignment(ch, assignment);
   }
 
+  // Year of service counted regardless of activeDuty outcome — the year
+  // happened. Age advances after the assignment is resolved so any age-
+  // limit checks during the assignment (e.g. OCS age 38) use the value at
+  // the start of the year.
+  ch.age += 1;
+  ch.acgState.yearsServed = (ch.acgState.yearsServed ?? 0) + 1;
+
   // Retention roll (if alive and still serving).
   if (p.retention && ch.activeDuty && !ch.deceased) {
     p.retention(ch, assignment);
@@ -63,10 +75,10 @@ export function runAcgYear(ch: Character): void {
   ch.acgState.year += 1;
 }
 
-/** Run a full four-year term. Resolves end-of-term reenlistment so the
- *  caller can read ch.activeDuty / ch.mandatoryReenlistment to decide UI
- *  flow. (Pre-fix: reenlistment was never invoked from this path, so ACG
- *  characters never naturally mustered out.) */
+/** Run a full four-year term. Time is accounted per year inside runAcgYear,
+ *  so a character invalided/jailed/discharged mid-term keeps the years they
+ *  actually served. Pathway endStateAtTerm completes the term with the
+ *  partial-term info still visible. */
 export function runAcgTerm(ch: Character): void {
   if (!ch.acgState) throw new Error("Cannot run ACG term on non-ACG character");
   if (ch.deceased || !ch.activeDuty) return;
@@ -74,15 +86,24 @@ export function runAcgTerm(ch: Character): void {
   if (p.startOfTerm) p.startOfTerm(ch);
   ch.acgState.year = 1;
   ch.acgState.promotedThisTerm = false;
+  const yearsAtTermStart = ch.acgState.yearsServed ?? 0;
   for (let y = 0; y < 4; y++) {
     if (ch.deceased || !ch.activeDuty) break;
     runAcgYear(ch);
   }
+  const yearsThisTerm = (ch.acgState.yearsServed ?? 0) - yearsAtTermStart;
+  // Always advance terms by 1 if the character started the term, even if
+  // they didn't complete all four years — the term counter records terms
+  // entered. A short term (< 4 years) is observable via yearsServed and
+  // is not counted toward muster benefits (handled in musterOutRolls).
+  if (yearsThisTerm > 0 && yearsThisTerm < 4) {
+    ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
+    ch.terms += 1;
+  } else if (yearsThisTerm === 4 && !ch.deceased && ch.activeDuty) {
+    awardBrownie(ch, 1, "Completed four-year term");
+    ch.terms += 1;
+  }
   if (ch.deceased || !ch.activeDuty) return;
-
-  awardBrownie(ch, 1, "Completed four-year term");
-  ch.terms += 1;
-  ch.age += 4;
 
   // End-of-term reenlistment check.
   const keep = p.reenlist(ch);

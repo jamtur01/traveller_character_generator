@@ -815,7 +815,8 @@ export class Character {
       }
     ).musterOutRolls;
     const perTerm = rules?.perTerm ?? 1;
-    const qualifyingTerms = Math.max(0, this.terms - this.shortTermsCount);
+    const acgPartial = this.acgState?.partialTerms ?? 0;
+    const qualifyingTerms = Math.max(0, this.terms - this.shortTermsCount - acgPartial);
     let r = perTerm * qualifyingTerms;
     const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
     if (band) r += band.additionalRolls;

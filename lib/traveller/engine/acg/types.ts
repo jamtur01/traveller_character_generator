@@ -133,6 +133,15 @@ export interface AcgState {
   /** SEH recipients get an automatic +1 rank at muster (manual p. 46).
    *  Set true the first time an SEH is awarded; consumed at muster. */
   sehPromotionPending?: boolean;
+
+  /** Total years served across all terms — incremented per year inside
+   *  runAcgYear. Distinct from terms (which counts terms entered) because
+   *  a character invalided/jailed mid-term gets a partial term that doesn't
+   *  contribute the full 4 years. */
+  yearsServed?: number;
+  /** Count of terms that were started but not completed (4 years). Used
+   *  by musterOutRolls to discount benefits from short terms. */
+  partialTerms?: number;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
