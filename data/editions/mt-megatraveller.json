@@ -573,27 +573,34 @@
       "repeatReducesMortgageYears": 10
     },
     "Scout Ship": {
-      "shipType": "Scout/Courier"
+      "shipType": "Scout/Courier",
+      "ownership": "Loaned/detached duty; effectively possessed but cannot be sold.",
+      "repeat": "No additional benefit; roll wasted."
     },
     "Corsair": {
       "shipType": "Corsair",
-      "repeat": "no benefit"
+      "ownership": "Owned by character.",
+      "repeat": "No additional benefit; one ship maximum."
     },
     "Seeker": {
       "shipType": "Seeker",
-      "repeat": "no benefit"
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
     },
     "Yacht": {
       "shipType": "Yacht",
-      "repeat": "no benefit"
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
     },
     "Lab Ship": {
       "shipType": "Lab Ship",
-      "repeat": "no benefit"
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
     },
     "Safari Ship": {
       "shipType": "Safari Ship",
-      "repeat": "no benefit"
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
     },
     "Instruments": {
       "description": "Medical instrument set"
@@ -608,6 +615,8 @@
       "description": "Letter of Marque (Pirate)"
     },
     "Weapon": {
+      "firstReceipt": "Select and receive any weapon.",
+      "repeat": "May select same weapon again, a different weapon, or one level of skill in a weapon previously taken as a mustering-out benefit.",
       "choices": [
         "Blade",
         "Gun"
