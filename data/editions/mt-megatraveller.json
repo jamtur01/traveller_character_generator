@@ -5829,21 +5829,21 @@
           "imperialNavy": {
             "target": 6,
             "dms": [
-              { "condition": "rankE4orAbove", "dm": 1 },
-              { "condition": "officer", "dm": 1 }
+              { "when": { "enlistedRankAtLeast": 4 }, "dm": 1 },
+              { "when": { "officer": true }, "dm": 1 }
             ]
           },
           "reserveFleet": {
             "target": 6,
             "dms": [
-              { "condition": "rankE4orAbove", "dm": 2 },
-              { "condition": "officer", "dm": 2 }
+              { "when": { "enlistedRankAtLeast": 4 }, "dm": 2 },
+              { "when": { "officer": true }, "dm": 2 }
             ]
           },
           "systemSquadron": {
             "target": 5,
             "dms": [
-              { "condition": "officer", "dm": 2 }
+              { "when": { "officer": true }, "dm": 2 }
             ]
           }
         },
