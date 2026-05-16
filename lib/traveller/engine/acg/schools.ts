@@ -275,7 +275,9 @@ function promoteOfficer(ch: Character, data: PathwayData): void {
  *  determine the awarded skill. */
 /** Scout schools that grant 2 skills per attendance (manual p. 57:
  *  "Certain schools confer two skills, while others confer only one"). */
-const TWO_ROLL_SCOUT_SCHOOLS = new Set(["Ship School", "Intelligence School"]);
+const TWO_ROLL_SCOUT_SCHOOLS = new Set([
+  "Ship School", "Intelligence School", "Contact School",
+]);
 
 /** Administrator School: may only be attended once per character; only
  *  characters in the Bureaucracy may attend. A subsequent assignment to
