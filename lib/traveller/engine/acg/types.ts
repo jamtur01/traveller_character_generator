@@ -105,6 +105,10 @@ export interface AcgState {
    *  true. (Manual: academy graduates auto-enlist at rank O1.) */
   preCareerCommission?: boolean;
   preCareerBranch?: "army" | "marines" | "navy" | "merchants" | null;
+  /** Pre-career options the character graduated with honors. Honors gates
+   *  Commando entry (Mil Academy honors), Medical/Flight School admission,
+   *  Scout IS-10 (college honors), and Merchant Academy department choice. */
+  honorsGraduations?: string[];
 
   /** Combat arms or branches the character has been cross-trained into via
    *  special-assignment schools. Drives the Marine cross-training reenlist

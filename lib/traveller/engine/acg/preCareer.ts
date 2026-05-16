@@ -432,10 +432,18 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
     ch.acgState.preCareerBranch = r.branch ?? null;
   }
   // Record graduations on acgState so pathways can detect them (e.g. Navy
-  // medical/flight school graduates get auto-branch).
+  // medical/flight school graduates get auto-branch). Honors is tracked
+  // separately because it gates Commando entry, Medical/Flight School
+  // admission, Scout IS-10, and Merchant Academy department choice.
   if (r.graduated && ch.acgState) {
     if (!ch.acgState.schoolsAttended.includes(opt)) {
       ch.acgState.schoolsAttended.push(opt);
+    }
+    if (r.honors) {
+      ch.acgState.honorsGraduations = ch.acgState.honorsGraduations ?? [];
+      if (!ch.acgState.honorsGraduations.includes(opt)) {
+        ch.acgState.honorsGraduations.push(opt);
+      }
     }
   }
 }
