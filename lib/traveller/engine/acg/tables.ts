@@ -130,16 +130,24 @@ export function labelToColumnKey(label: string): string {
  *  JSON) for a given roll type. These are free-form strings in the
  *  manual; the parser handles a handful of canonical forms. */
 export function applyDmRules(
-  dms: string[] | undefined,
+  dms: Array<string | StructuredDm> | undefined,
   ch: Character,
   rollType: "survival" | "promotion" | "decoration" | "skills" | "bonus",
 ): number {
   if (!dms) return 0;
   let total = 0;
   for (const rule of dms) {
-    const lc = rule.toLowerCase();
-    if (!lc.includes(rollType.toLowerCase())) continue;
-    total += parseDmRule(rule, ch);
+    if (typeof rule === "string") {
+      const lc = rule.toLowerCase();
+      if (!lc.includes(rollType.toLowerCase())) continue;
+      total += parseDmRule(rule, ch);
+      continue;
+    }
+    // Structured DM: filter by rollType if the entry specifies one. Entries
+    // without rollType are general (apply to every roll type), matching the
+    // semantics already used by structured DMs on branchAssignment etc.
+    if (rule.rollType !== undefined && rule.rollType !== rollType) continue;
+    if (matchesStructuredDm(rule, ch)) total += rule.dm;
   }
   return total;
 }
@@ -309,6 +317,17 @@ export interface StructuredDm {
   service?: string | string[];
   fleet?: string;
   skillAtLeast?: { skill: string; level: number };
+  /** Specific skill names are matched against ch.skills directly. */
+  anyMosSkillAtLeast?: number;
+  anyDepartmentSkillAtLeast?: number;
+  /** Homeworld tech-code ≥ a named code in the tech-code-order. */
+  homeworldTechAtLeast?: string;
+  /** When set, restricts this DM to one of survival/promotion/decoration/
+   *  skills/bonus. applyDmRules filters by this; applyStructuredDms ignores
+   *  it (callers without a rollType context see every entry). */
+  rollType?: "survival" | "promotion" | "decoration" | "skills" | "bonus";
+  /** Optional human-readable note retained from manual prose. */
+  note?: string;
   dm: number;
 }
 
@@ -359,6 +378,22 @@ function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
     let lvl = 0;
     for (const [n, l] of ch.skills) if (n === r.skillAtLeast.skill) lvl = l;
     if (lvl < r.skillAtLeast.level) return false;
+  }
+  if (r.anyMosSkillAtLeast !== undefined) {
+    if (!anyMosSkillAtLeast(ch, r.anyMosSkillAtLeast)) return false;
+  }
+  if (r.anyDepartmentSkillAtLeast !== undefined) {
+    if (!anyDepartmentSkillAtLeast(ch, r.anyDepartmentSkillAtLeast)) return false;
+  }
+  if (r.homeworldTechAtLeast) {
+    const order = (getEdition(ch.editionId).data as {
+      homeworld?: { techCodeOrder?: string[] };
+    }).homeworld?.techCodeOrder;
+    const hwTech = ch.homeworld?.tech;
+    if (!order || !hwTech) return false;
+    const want = order.indexOf(r.homeworldTechAtLeast);
+    const have = order.indexOf(hwTech);
+    if (want < 0 || have < 0 || have < want) return false;
   }
   return true;
 }
