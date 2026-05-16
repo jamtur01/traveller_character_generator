@@ -203,6 +203,9 @@ export default function Home() {
     // No skills to pick — proceed straight to aging + reenlistment for
     // basic chargen. ACG handles aging + reenlistment inside runAcgTerm
     // already, so we skip the duplicate aging call here for ACG characters.
+    // The Int+Edu cap is still enforced in case homeworld defaults pushed
+    // the total over (rare, but possible at low Int/Edu).
+    if (!c.useAcg) c.enforceSkillCap();
     if (!c.useAcg && !c.deceased) c.doAging();
     if (c.deceased) {
       commit(c, "end");
@@ -271,7 +274,9 @@ export default function Home() {
       return;
     }
 
-    // PM checklist: after the last skill pick, age, then run reenlistment.
+    // PM checklist: after the last skill pick, enforce the Int+Edu skill
+    // cap (PM p. 39), then age, then run reenlistment.
+    c.enforceSkillCap();
     if (!c.deceased) c.doAging();
     if (c.deceased) {
       commit(c, "end");

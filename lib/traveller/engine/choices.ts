@@ -25,7 +25,8 @@ export type ChoiceKind =
   | "scoutTransferDecline"  // Scout Field → Bureaucracy transfer
   | "scoutAdminDm"          // Scout administrator voluntary +2 DM on duty roll
   | "merchantDepartment"    // Merchant Academy: pick one of five depts
-  | "merchantSkillTable";   // Merchant: service / department / life
+  | "merchantSkillTable"    // Merchant: service / department / life
+  | "reduceSkill";          // Int+Edu skill cap: pick a skill to reduce by 1
 
 export interface ChoiceRequest<T = string> {
   kind: ChoiceKind;

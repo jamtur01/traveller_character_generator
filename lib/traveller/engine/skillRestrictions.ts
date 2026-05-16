@@ -1,0 +1,115 @@
+// Homeworld skill restrictions per MT Players' Manual p. 39.
+//
+// Two distinct rules:
+//   1. Vehicle skills are limited by the character's homeworld tech code.
+//      A skill rolled / chosen that exceeds the homeworld's tech ceiling
+//      may be attempted via a 2D 7+ override roll; failure forfeits the
+//      skill roll entirely.
+//   2. Weapon skills are limited by homeworld tech code AND law code.
+//      (The PM's legal-weapons-per-law-code table is currently not mapped
+//      into JSON — the inverse "what law codes does this weapon need?"
+//      mapping requires additional rule clarification. The data block in
+//      mt-megatraveller.json leaves weaponSkillTech / weaponSkillMaxLaw
+//      empty; the engine reads them when populated.)
+//
+// Noble service is exempt from all homeworld skill limitations.
+//
+// Override roll on failure forfeits the skill roll (no skill added,
+// no consolation). On success the skill is added normally.
+
+import { roll } from "../random";
+import type { Character } from "../character";
+import { getEdition } from "../editions";
+
+interface RestrictionsData {
+  rule?: string;
+  source?: string;
+  overrideTarget: number;
+  exemptServices: string[];
+  vehicleSkillTech: Record<string, string>;
+  weaponSkillTech: Record<string, string>;
+  weaponSkillMaxLaw: Record<string, string>;
+}
+
+interface HomeworldData {
+  techCodeOrder: string[];
+}
+
+function dataFor(ch: Character): {
+  r: RestrictionsData;
+  techOrder: string[];
+} | null {
+  const ed = getEdition(ch.editionId);
+  const rules = (ed.data as {
+    rules?: { homeworldSkillRestrictions?: RestrictionsData };
+    homeworld?: HomeworldData;
+  }).rules;
+  const hw = (ed.data as { homeworld?: HomeworldData }).homeworld;
+  if (!rules?.homeworldSkillRestrictions || !hw?.techCodeOrder) return null;
+  return { r: rules.homeworldSkillRestrictions, techOrder: hw.techCodeOrder };
+}
+
+const LAW_ORDER = ["No Law", "Low Law", "Mod Law", "High Law", "Ext Law"];
+
+/** Decide whether a skill is restricted by homeworld and return the
+ *  required override roll target, or null when no override is needed. */
+export function skillRequiresOverride(
+  ch: Character,
+  skillName: string,
+): number | null {
+  const d = dataFor(ch);
+  if (!d) return null;
+  if (!ch.homeworld) return null;
+  if (d.r.exemptServices.includes(String(ch.service))) return null;
+
+  const techOrder = d.techOrder;
+  const hwTechIdx = techOrder.indexOf(ch.homeworld.tech);
+
+  const vehicleReq = d.r.vehicleSkillTech[skillName];
+  if (vehicleReq !== undefined) {
+    const reqIdx = techOrder.indexOf(vehicleReq);
+    if (reqIdx > hwTechIdx) return d.r.overrideTarget;
+  }
+
+  const weaponTechReq = d.r.weaponSkillTech[skillName];
+  if (weaponTechReq !== undefined) {
+    const reqIdx = techOrder.indexOf(weaponTechReq);
+    if (reqIdx > hwTechIdx) return d.r.overrideTarget;
+  }
+
+  const weaponMaxLaw = d.r.weaponSkillMaxLaw[skillName];
+  if (weaponMaxLaw !== undefined) {
+    const maxIdx = LAW_ORDER.indexOf(weaponMaxLaw);
+    const hwLawIdx = LAW_ORDER.indexOf(ch.homeworld.law);
+    if (hwLawIdx > maxIdx) return d.r.overrideTarget;
+  }
+
+  return null;
+}
+
+/** Roll the 2D override for a restricted skill. Returns true on 7+
+ *  (skill goes through), false on failure (skill roll forfeited). */
+export function rollSkillOverride(
+  ch: Character,
+  skillName: string,
+  target: number,
+): boolean {
+  const r = roll(2);
+  const passed = r >= target;
+  ch.verboseHistory(
+    `Homeworld restricts ${skillName}; override 2D ≥ ${target}: rolled ${r} → ${passed ? "acquired" : "forfeited"}`,
+  );
+  return passed;
+}
+
+/** Convenience: if the skill is restricted, roll the override and return
+ *  whether the skill should be added. If unrestricted, returns true.
+ *  The caller should skip addSkill when this returns false. */
+export function acquireSkillWithRestrictionCheck(
+  ch: Character,
+  skillName: string,
+): boolean {
+  const target = skillRequiresOverride(ch, skillName);
+  if (target === null) return true;
+  return rollSkillOverride(ch, skillName, target);
+}

@@ -370,6 +370,25 @@
       "rule": "Successful bonus throw lets the character roll once on the Cash mustering-out table and receive half the indicated amount.",
       "halfOfCashTable": true,
       "cashTableSource": "services.merchants.musterOut.cash"
+    },
+    "skillCap": {
+      "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
+      "source": "MT PM p. 39"
+    },
+    "homeworldSkillRestrictions": {
+      "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely. Weapon law-code restriction is data-driven and currently empty (PM's legal-weapons table maps law code to permissible weapons; the inverse mapping for skill availability would require additional rule clarification).",
+      "source": "MT PM p. 39",
+      "overrideTarget": 7,
+      "exemptServices": ["nobles"],
+      "vehicleSkillTech": {
+        "Wheeled Vehicle": "Industrial",
+        "Tracked Vehicle": "Industrial",
+        "Grav Vehicle": "Avg Stellar",
+        "Grav Belt": "Avg Stellar",
+        "Ship's Boat": "Early Stellar"
+      },
+      "weaponSkillTech": {},
+      "weaponSkillMaxLaw": {}
     }
   },
   "cascadeSkills": {

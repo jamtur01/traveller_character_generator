@@ -522,6 +522,73 @@ export class Character {
     }
   }
 
+  /** Sum of all skill levels. PM p. 39: this may not exceed Int+Edu. */
+  totalSkillLevels(): number {
+    let sum = 0;
+    for (const [, lvl] of this.skills) sum += lvl;
+    return sum;
+  }
+
+  /** Int+Edu — the MT cap on total skill levels. */
+  skillCap(): number {
+    return this.attributes.intelligence + this.attributes.education;
+  }
+
+  /**
+   * Enforce the Int+Edu skill cap (PM p. 39). Called after each term's
+   * skill rolls. In auto mode, reduces the most-recently-acquired skill
+   * level repeatedly until the total fits the cap. In interactive mode,
+   * queues a `reduceSkill` choice for the player to pick which skill
+   * level to drop; recurses until under cap.
+   *
+   * No-op for editions without a homeworld rules block (CT).
+   */
+  enforceSkillCap(): void {
+    const ed = getEdition(this.editionId);
+    const hasCap = !!(ed.data as { rules?: { skillCap?: unknown } }).rules?.skillCap;
+    if (!hasCap) return;
+    const cap = this.skillCap();
+    const total = this.totalSkillLevels();
+    if (total <= cap) return;
+    const excess = total - cap;
+    if (this.choiceMode === "auto") {
+      let remaining = excess;
+      while (remaining > 0 && this.skills.length > 0) {
+        const last = this.skills[this.skills.length - 1]!;
+        if (last[1] > 1) {
+          last[1] -= 1;
+          this.verboseHistory(`Reduced ${last[0]} to level ${last[1]} (Int+Edu cap)`);
+        } else {
+          this.skills.pop();
+          this.verboseHistory(`Forfeited ${last[0]} (Int+Edu cap)`);
+        }
+        remaining -= 1;
+      }
+      return;
+    }
+    const options = this.skills.map(([n, l]) => `${n}-${l}`);
+    this.pickOrDefer({
+      kind: "reduceSkill",
+      label: `Skill total ${total} exceeds Int+Edu cap ${cap}. Pick a skill to reduce by 1 (${excess} reduction${excess === 1 ? "" : "s"} needed).`,
+      options,
+      context: { source: "skillCap", excess, cap, total },
+      onResolve: (c, chosen) => {
+        const name = chosen.replace(/-\d+$/, "");
+        const i = c.checkSkill(name);
+        if (i < 0) return;
+        const entry = c.skills[i]!;
+        if (entry[1] > 1) {
+          entry[1] -= 1;
+          c.verboseHistory(`Reduced ${name} to level ${entry[1]} (Int+Edu cap)`);
+        } else {
+          c.skills.splice(i, 1);
+          c.verboseHistory(`Forfeited ${name} (Int+Edu cap)`);
+        }
+        c.enforceSkillCap();
+      },
+    });
+  }
+
   improveAttribute(attrib: AttributeKey, delta = 1) {
     this.attributes[attrib] += delta;
     // TTB p. 17: characteristic values may not exceed 15 for player characters.
