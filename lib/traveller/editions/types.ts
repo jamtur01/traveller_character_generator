@@ -18,6 +18,14 @@ export interface EditionMeta {
    * marking the UI picker entry as disabled.
    */
   status?: "active" | "data-only";
+  /**
+   * Whether the interactive choice flow (pause for cascade / weapon-type
+   * picks) makes sense for this edition. CT chargen is rolled procedurally
+   * per the rulebook — the only meaningful player choice during a term is
+   * which skill table to roll on, which the existing UI already supports.
+   * Editions like MT that add more decision points opt in by setting true.
+   */
+  supportsInteractive?: boolean;
 }
 
 export interface DMRule {

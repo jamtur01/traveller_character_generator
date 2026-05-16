@@ -162,6 +162,25 @@
     { "hex": "E", "social": 14, "titles": ["Count", "Countess", "Contessa"] },
     { "hex": "F", "social": 15, "titles": ["Duke", "Duchess"] }
   ],
+  "pdfExtraction": {
+    "pdfFiles": [
+      "CT_TTB_The_Traveller_Book.pdf",
+      "Classic_Traveller_CT_S04_Supplement_04_Citizens_of_the_Imperium.pdf"
+    ],
+    "textExtraction": "pdftotext -layout",
+    "imageVerification": "pdftoppm at 600–700 DPI for cell-by-cell verification of disputed entries",
+    "printedPagesVerified": {
+      "ttb": [17, 18, 19, 24, 25, 26, 29],
+      "coti": [2, 6, 8, 11, 12, 13, 14]
+    },
+    "canonicalTextLocation": "docs/canonical/ — pdftotext outputs of each chargen page checked into the repo for audit",
+    "auditFindings": [
+      "Scouts Personal Development row 6 was +1 Social in the JS source; TTB p. 26 prints Gun Cbt (confirmed via 600 DPI render). Fixed.",
+      "Marines rank 3 was 'Force Comdr' in the JS; TTB p. 25 prints 'Force Cmdr'. Fixed.",
+      "Diplomats ranks 1-2 were '3rd Secretary'/'2nd Secretary' in the JS; CotI p. 11 prints '3d Secretary'/'2d Secretary'. Fixed."
+    ],
+    "generatedAt": "2026-05-16"
+  },
   "cascadeSkills": {
     "aircraft": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter"],
     "bladeCombat": ["Dagger", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"],

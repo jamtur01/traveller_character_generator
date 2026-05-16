@@ -65,7 +65,13 @@ export default function Home() {
     const c = new Character();
     c.editionId = edition;
     c.showHistory = verbose ? "verbose" : "simple";
-    c.choiceMode = interactiveMode ? "interactive" : "auto";
+    // Only enable interactive mode if the active edition opts in (CT does
+    // not). This makes the chosen edition's metadata the authority — the
+    // checkbox is disabled in that case but we double-guard the flag here.
+    const editionMeta = listEditions().find((e) => e.id === edition);
+    c.choiceMode = (interactiveMode && editionMeta?.supportsInteractive)
+      ? "interactive"
+      : "auto";
     commit(c, "career");
   };
 
@@ -243,7 +249,15 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <PageHeader verbose={verbose} onToggleVerbose={toggleVerbose} />
+      <PageHeader
+        verbose={verbose}
+        onToggleVerbose={toggleVerbose}
+        editionLabel={
+          listEditions().find(
+            (e) => e.id === (character?.editionId ?? edition),
+          )?.displayName ?? edition
+        }
+      />
 
       <Stepper phase={phase} />
 
@@ -369,17 +383,22 @@ const SECTION_LABEL =
 function PageHeader({
   verbose,
   onToggleVerbose,
+  editionLabel,
 }: {
   verbose: boolean;
   onToggleVerbose: (v: boolean) => void;
+  editionLabel: string;
 }) {
   return (
     <header className="flex flex-col gap-3 border-b border-zinc-200 pb-5 dark:border-zinc-800">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-mono text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
-            Classic Traveller Character Generator
+            Traveller Character Generator
           </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Edition: <span className="font-semibold text-zinc-700 dark:text-zinc-200">{editionLabel}</span>
+          </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <input
@@ -676,19 +695,24 @@ function StartPhase({
       <label className="flex items-start gap-2 text-sm">
         <input
           type="checkbox"
-          checked={interactiveMode}
+          checked={interactiveMode && selected?.supportsInteractive === true}
+          disabled={selected?.supportsInteractive !== true}
           onChange={(e) => setInteractiveMode(e.target.checked)}
           className="mt-0.5"
         />
         <span>
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+          <span className={
+            "font-semibold " +
+            (selected?.supportsInteractive
+              ? "text-zinc-700 dark:text-zinc-300"
+              : "text-zinc-400 dark:text-zinc-600")
+          }>
             Interactive choices
           </span>
           <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-            When ticked, the engine pauses for player decisions — which blade
-            or gun a weapon benefit becomes, which specific blade/gun a
-            cascade resolves to, etc. Off = the original auto-everything
-            flow.
+            {selected?.supportsInteractive
+              ? "When ticked, the engine pauses for player decisions — which blade or gun a weapon benefit becomes, which specific blade/gun a cascade resolves to, etc. Off = the original auto-everything flow."
+              : `Classic Traveller chargen rolls procedurally per the rulebook; the only player choice each term (which skill table to roll on) is already supported in the main flow. Interactive mode is available on editions that opt in (currently: MegaTraveller).`}
           </span>
         </span>
       </label>

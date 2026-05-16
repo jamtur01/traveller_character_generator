@@ -1,8 +1,13 @@
-# Classic Traveller Character Generator
+# Traveller Character Generator
 
-A step-by-step web app that rolls up a Classic Traveller (1981 / _The Traveller Book_) RPG character through the canonical procedure: UPP, enlistment, terms of service, commission and promotion, skill picks, aging, muster-out cash and benefits, and a final TAS Form 2 PDF.
+A step-by-step web app that rolls up an RPG character through the canonical Traveller procedure: UPP, enlistment, terms of service, commission and promotion, skill picks, aging, muster-out cash and benefits, and a final TAS Form 2 PDF.
 
-Inspired by [Paul Gorman's 2015 JS generator](https://github.com/pgorman/travellercharactergenerator), and every rules table re-derived from the original _The Traveller Book_ and _Citizens of the Imperium_ supplement pages.
+Supports multiple editions side-by-side, currently:
+
+- **Classic Traveller** (1981 / _The Traveller Book_ + _Citizens of the Imperium_)
+- **MegaTraveller** (1987 / _MegaTraveller Players' Manual_)
+
+Every rules table is data-driven from the original rulebook pages; each edition's JSON file lives under `data/editions/`. Inspired by [Paul Gorman's 2015 JS generator](https://github.com/pgorman/travellercharactergenerator) for the CT layer.
 
 ## Stack
 

@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Classic Traveller Character Generator",
+  title: "Traveller Character Generator",
   description:
-    "Step-by-step Classic Traveller RPG character generator — port of Paul Gorman's original.",
+    "Step-by-step character generator for the Traveller RPG — supports Classic Traveller and MegaTraveller editions, data-driven from the original rulebook tables.",
 };
 
 export default function RootLayout({
