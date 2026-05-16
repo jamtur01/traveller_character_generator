@@ -199,6 +199,111 @@ describe("ACG PDF renderer", () => {
     expect(text).toContain("Combat Engineer School");
   });
 
+  it("ACG sheet shows rank, combat ribbons, command clusters, BP spent", () => {
+    const c = freshAcgChar();
+    c.acgState = {
+      pathway: "mercenary", rankCode: "O4", isOfficer: true,
+      year: 4, currentAssignment: "Raid", inCommand: true,
+      justRetained: false, retainedAssignment: null,
+      promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: ["Training", "Raid", "Counterinsurgency", "Garrison"],
+      combatRibbons: 2, commandClusters: 1,
+      schoolsAttended: ["Command College"],
+      decorations: ["MCG"],
+      browniePoints: 3, browniePointsSpent: 5,
+      decorationDmStrategy: 0,
+      combatArm: "Infantry", branch: "Marines", mos: "Gun Combat",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Rank");
+    expect(text).toContain("O4");
+    expect(text).toContain("Combat Ribbons");
+    expect(text).toContain("Command Clusters");
+    expect(text).toContain("Officer Status");
+    expect(text).toContain("Commissioned");
+    expect(text).toContain("spent");
+    expect(text).toContain("Combat Arm");
+    expect(text).toContain("Assignment History");
+    expect(text).toContain("Raid");
+  });
+
+  it("ACG sheet labels adapt to pathway (Navy fleet/branch)", () => {
+    const c = freshAcgChar();
+    c.acgPathway = "navy";
+    c.acgState = {
+      pathway: "navy", rankCode: "O3", isOfficer: true,
+      year: 1, currentAssignment: null, inCommand: false,
+      justRetained: false, retainedAssignment: null,
+      promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: [], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      fleet: "imperialNavy", branch: "Line",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Fleet");
+    expect(text).toContain("imperialNavy");
+  });
+
+  it("ACG sheet labels adapt to pathway (Scout division/office)", () => {
+    const c = freshAcgChar();
+    c.acgPathway = "scout";
+    c.acgState = {
+      pathway: "scout", rankCode: "IS-5", isOfficer: false,
+      year: 1, currentAssignment: null, inCommand: false,
+      justRetained: false, retainedAssignment: null,
+      promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: [], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      division: "field", office: "Survey",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Division");
+    expect(text).toContain("field");
+    expect(text).toContain("Office");
+    expect(text).toContain("Survey");
+  });
+
+  it("ACG sheet labels adapt to pathway (Merchant Prince line type/department)", () => {
+    const c = freshAcgChar();
+    c.acgPathway = "merchantPrince";
+    c.acgState = {
+      pathway: "merchantPrince", rankCode: "O1", isOfficer: true,
+      year: 1, currentAssignment: null, inCommand: false,
+      justRetained: false, retainedAssignment: null,
+      promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: [], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      lineType: "Megacorp", department: "Engineering",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Line Type");
+    expect(text).toContain("Megacorp");
+    expect(text).toContain("Department");
+    expect(text).toContain("Engineering");
+  });
+
+  it("ACG sheet shows the homeworld block for MT characters", () => {
+    const c = freshAcgChar();
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "Mod Pop", law: "Mod Law",
+      tech: "Early Stellar",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Homeworld");
+    expect(text).toContain("Starport A");
+    expect(text).toContain("Wet World");
+    expect(text).toContain("Early Stellar");
+  });
+
   it("ACG character produces one more page than the same character without ACG", () => {
     const acg = freshAcgChar();
     const basic = freshAcgChar();
@@ -228,6 +333,35 @@ describe("ACG PDF renderer", () => {
     const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
     const text = Buffer.from(bytes).toString("latin1");
     expect(text).toContain("MegaTraveller");
+  });
+
+  it("MT character's homeworld appears in TAS Form 2 Birthworld field", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.name = "Spacer";
+    c.service = "scouts";
+    c.homeworld = {
+      starport: "B", size: "Large", atmosphere: "Dense",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("Birthworld");
+    expect(text).toContain("BLD");
+    expect(text).toContain("Avg Stellar");
+  });
+
+  it("CT character with no homeworld leaves Birthworld blank (no MT data)", () => {
+    const c = new Character();
+    c.editionId = "ct-classic";
+    c.service = "navy";
+    c.terms = 1;
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    // No homeworld → no tech / starport text on the basic sheet.
+    expect(text).not.toContain("Early Stellar");
+    expect(text).not.toContain("Avg Stellar");
   });
 
   it("edition footer identifies CT on a CT character's PDF", () => {

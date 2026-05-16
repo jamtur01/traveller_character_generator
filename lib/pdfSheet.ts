@@ -165,6 +165,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 360, y, 180, r4H);
   fieldLabel(doc, X0 + 364, y + 10, "8. Birthworld");
+  if (c.homeworld) {
+    const hw = c.homeworld;
+    fieldValue(doc, X0 + 366, y + 23,
+      `${hw.starport}${hw.size[0]}${hw.atmosphere[0]} ${hw.tech}`, 172, 8);
+  }
   y += r4H;
 
   // ─── SERVICE HISTORY header row ───
@@ -454,12 +459,13 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   doc.addPage();
   doc.setLineWidth(LINE);
   let y = MARGIN;
+  const st = c.acgState;
 
   // Header bar
   sectionBar(doc, X0, y, W, 28, "ADVANCED CHARACTER GENERATION — RECORD CARD");
   y += 28;
 
-  // Row: Pathway | Branch | MOS
+  // Row 1: Pathway | Rank | Combat Arm / Fleet / Division / Line Type
   const r1H = 36;
   const colW = W / 3;
   doc.rect(X0, y, colW, r1H);
@@ -467,81 +473,153 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   fieldValue(doc, X0 + 6, y + 28, c.acgPathway ?? "—", colW - 8);
 
   doc.rect(X0 + colW, y, colW, r1H);
-  fieldLabel(doc, X0 + colW + 4, y + 10, "2. Branch / Office");
-  fieldValue(doc, X0 + colW + 6, y + 28, c.acgBranch ?? "—", colW - 8);
+  fieldLabel(doc, X0 + colW + 4, y + 10, "2. Rank");
+  fieldValue(doc, X0 + colW + 6, y + 28, st?.rankCode ?? "—", colW - 8);
 
   doc.rect(X0 + 2 * colW, y, colW, r1H);
-  fieldLabel(doc, X0 + 2 * colW + 4, y + 10, "3. MOS / Specialty");
-  fieldValue(doc, X0 + 2 * colW + 6, y + 28, c.acgMos ?? "—", colW - 8);
+  // Label depends on pathway: combat arm (merc), fleet (navy), division
+  // (scout), line type (merchant prince).
+  const subLabel =
+    c.acgPathway === "navy" ? "3. Fleet" :
+    c.acgPathway === "scout" ? "3. Division" :
+    c.acgPathway === "merchantPrince" ? "3. Line Type" :
+    "3. Combat Arm";
+  const subValue =
+    c.acgPathway === "navy" ? (st?.fleet ?? "—") :
+    c.acgPathway === "scout" ? (st?.division ?? "—") :
+    c.acgPathway === "merchantPrince" ? (st?.lineType ?? "—") :
+    (st?.combatArm ?? "—");
+  fieldLabel(doc, X0 + 2 * colW + 4, y + 10, subLabel);
+  fieldValue(doc, X0 + 2 * colW + 6, y + 28, subValue, colW - 8);
   y += r1H;
 
-  // Row: Brownie Points | Decorations
-  const r2H = 56;
-  const bpW = 140;
-  doc.rect(X0, y, bpW, r2H);
-  fieldLabel(doc, X0 + 4, y + 10, "4. Brownie Points");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(24);
-  doc.text(String(c.browniePoints), X0 + bpW / 2 - 6, y + 40);
-  doc.setFont(BOLD, "normal");
+  // Row 2: Branch / Office / Department | MOS | Officer status
+  const r2H = 36;
+  doc.rect(X0, y, colW, r2H);
+  const branchLabel =
+    c.acgPathway === "navy" ? "4. Branch" :
+    c.acgPathway === "scout" ? "4. Office" :
+    c.acgPathway === "merchantPrince" ? "4. Department" :
+    "4. Branch / Service";
+  fieldLabel(doc, X0 + 4, y + 10, branchLabel);
+  fieldValue(doc, X0 + 6, y + 28, c.acgBranch ?? "—", colW - 8);
 
-  doc.rect(X0 + bpW, y, W - bpW, r2H);
-  fieldLabel(doc, X0 + bpW + 4, y + 10, "5. Decorations and Awards");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(10);
-  const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
-  const decLines = doc.splitTextToSize(decorationsText, W - bpW - 12);
-  let dy = y + 26;
-  for (const line of decLines.slice(0, 3)) {
-    doc.text(line, X0 + bpW + 6, dy);
-    dy += 12;
-  }
-  doc.setFont(BOLD, "normal");
+  doc.rect(X0 + colW, y, colW, r2H);
+  fieldLabel(doc, X0 + colW + 4, y + 10, "5. MOS / Specialty");
+  fieldValue(doc, X0 + colW + 6, y + 28, c.acgMos ?? "—", colW - 8);
+
+  doc.rect(X0 + 2 * colW, y, colW, r2H);
+  fieldLabel(doc, X0 + 2 * colW + 4, y + 10, "6. Officer Status");
+  fieldValue(doc, X0 + 2 * colW + 6, y + 28,
+    st?.isOfficer ? "Commissioned" : "Enlisted", colW - 8);
   y += r2H;
 
-  // Schools / Training History
-  const r3H = 120;
-  doc.rect(X0, y, W, r3H);
-  fieldLabel(doc, X0 + 4, y + 10, "6. Specialist Schools and Training");
+  // Row 3: Brownie Points (current + spent) | Combat Ribbons + Clusters
+  const r3H = 60;
+  const bpW = 180;
+  doc.rect(X0, y, bpW, r3H);
+  fieldLabel(doc, X0 + 4, y + 10, "7. Brownie Points");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(20);
+  doc.text(`${c.browniePoints}`, X0 + 10, y + 38);
+  doc.setFontSize(8);
+  doc.text(`spent: ${st?.browniePointsSpent ?? 0}`, X0 + 60, y + 38);
+  doc.setFont(BOLD, "normal");
+
+  doc.rect(X0 + bpW, y, W - bpW, r3H);
+  fieldLabel(doc, X0 + bpW + 4, y + 10, "8. Combat Service");
   doc.setFont("courier", "normal");
   doc.setFontSize(10);
-  let sy = y + 26;
-  const schoolLimit = y + r3H - 12;
-  if (c.schoolsAttended.length === 0) {
-    doc.text("—", X0 + 6, sy);
-  } else {
-    for (const school of c.schoolsAttended) {
-      if (sy > schoolLimit) break;
-      doc.text(`• ${school}`, X0 + 6, sy);
-      sy += 14;
-    }
-  }
+  doc.text(`Combat Ribbons: ${st?.combatRibbons ?? 0}`, X0 + bpW + 6, y + 26);
+  doc.text(`Command Clusters: ${st?.commandClusters ?? 0}`, X0 + bpW + 6, y + 40);
+  doc.text(`Terms served: ${c.terms}`, X0 + bpW + 6, y + 54);
   doc.setFont(BOLD, "normal");
   y += r3H;
 
-  // Notes section
-  const r4H = 80;
+  // Row 4: Decorations
+  const r4H = 44;
   doc.rect(X0, y, W, r4H);
-  fieldLabel(doc, X0 + 4, y + 10, "7. Notes");
-  doc.setFont("courier", "italic");
-  doc.setFontSize(8);
-  doc.text(
-    "ACG produces additional state beyond basic chargen. Branch and MOS",
-    X0 + 6, y + 26,
-  );
-  doc.text(
-    "are recorded above; decoration awards reflect Decoration and Survival",
-    X0 + 6, y + 38,
-  );
-  doc.text(
-    "table results; brownie points are one-use DMs from completed terms,",
-    X0 + 6, y + 50,
-  );
-  doc.text(
-    "academies, and decorations.",
-    X0 + 6, y + 62,
-  );
+  fieldLabel(doc, X0 + 4, y + 10, "9. Decorations and Awards");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+  const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
+  const decLines = doc.splitTextToSize(decorationsText, W - 12);
+  let dy = y + 26;
+  for (const line of decLines.slice(0, 2)) {
+    doc.text(line, X0 + 6, dy);
+    dy += 12;
+  }
   doc.setFont(BOLD, "normal");
+  y += r4H;
+
+  // Row 5: Specialist Schools and Training
+  const r5H = 90;
+  doc.rect(X0, y, W, r5H);
+  fieldLabel(doc, X0 + 4, y + 10, "10. Specialist Schools and Training");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+  let sy = y + 26;
+  const schoolLimit = y + r5H - 12;
+  if (c.schoolsAttended.length === 0) {
+    doc.text("—", X0 + 6, sy);
+  } else {
+    // Two-column layout for schools.
+    const half = W / 2 - 12;
+    let col = 0;
+    let rowY = sy;
+    for (const school of c.schoolsAttended) {
+      if (rowY > schoolLimit) break;
+      const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
+      doc.text(`• ${school}`, x, rowY);
+      col = (col + 1) % 2;
+      if (col === 0) rowY += 12;
+      void half;
+    }
+  }
+  doc.setFont(BOLD, "normal");
+  y += r5H;
+
+  // Row 6: Assignment History
+  const r6H = 90;
+  doc.rect(X0, y, W, r6H);
+  fieldLabel(doc, X0 + 4, y + 10, "11. Assignment History");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(9);
+  const ah = st?.assignmentHistory ?? [];
+  if (ah.length === 0) {
+    doc.text("—", X0 + 6, y + 26);
+  } else {
+    // Pack assignments comma-separated, wrapping.
+    const txt = ah.join(", ");
+    const wrapped = doc.splitTextToSize(txt, W - 12);
+    let ahY = y + 26;
+    for (const line of wrapped.slice(0, 5)) {
+      doc.text(line, X0 + 6, ahY);
+      ahY += 11;
+    }
+  }
+  doc.setFont(BOLD, "normal");
+  y += r6H;
+
+  // Row 7: Homeworld (also visible on TAS Form 2, repeated here for the
+  // ACG record card since the sheet is often printed standalone)
+  if (c.homeworld) {
+    const r7H = 40;
+    doc.rect(X0, y, W, r7H);
+    fieldLabel(doc, X0 + 4, y + 10, "12. Homeworld");
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+    const hw = c.homeworld;
+    doc.text(
+      `Starport ${hw.starport} · ${hw.size} · ${hw.atmosphere} atmosphere · ${hw.hydrosphere}`,
+      X0 + 6, y + 24,
+    );
+    doc.text(
+      `${hw.population} · ${hw.law} · Tech ${hw.tech}`,
+      X0 + 6, y + 36,
+    );
+    doc.setFont(BOLD, "normal");
+  }
 }
 
 /** Footer drawn on every page of the sheet, identifying the edition that
