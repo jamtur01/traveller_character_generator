@@ -6823,9 +6823,11 @@
           }
         ],
         "dms": [
-          "DM +1 if Str 7+",
-          "DM +2 if Int 6+",
-          "Automatic if college honors graduate"
+          { "attribute": "strength", "min": 7, "dm": 1 },
+          { "attribute": "intelligence", "min": 6, "dm": 2 }
+        ],
+        "specialRules": [
+          { "type": "autoEnlist", "condition": "collegeHonorsGraduate" }
         ],
         "notes": [
           "Homeworld starport must meet or exceed minimum. Free Traders are a special case, neither large nor small."
@@ -6834,7 +6836,7 @@
       "reenlistment": {
         "target": 4,
         "dms": [
-          "+1 if rank O1+"
+          { "rankAtLeast": "O1", "dm": 1 }
         ]
       },
       "departmentAssignment": {
@@ -6919,8 +6921,8 @@
           }
         ],
         "dms": [
-          "DM +1 if Int 9+",
-          "DM +1 if Edu 9+"
+          { "attribute": "intelligence", "min": 9, "dm": 1 },
+          { "attribute": "education", "min": 9, "dm": 1 }
         ],
         "notes": [
           "Free Traders throw 8+ with DM +1 if Int 9+."
@@ -7008,9 +7010,15 @@
           }
         ],
         "dms": [
-          "Enlisted tested to rank O0",
-          "Large/Small Lines: DM -1 if Edu 6-, DM +1 if rank O4+",
-          "Free Traders: DM +1 if Social 5-; rank O6 rerolls unless No Business"
+          { "column": "largeLine", "attribute": "education", "max": 6, "dm": -1 },
+          { "column": "smallLine", "attribute": "education", "max": 6, "dm": -1 },
+          { "column": "largeLine", "rankAtLeast": "O4", "dm": 1 },
+          { "column": "smallLine", "rankAtLeast": "O4", "dm": 1 },
+          { "column": "freeTrader", "attribute": "social", "max": 5, "dm": 1 }
+        ],
+        "specialRules": [
+          { "type": "rerollUnless", "condition": "rankAtLeast O6 in Free Traders", "unlessAssignment": "No Business" },
+          { "type": "enlistedTestedToRank", "rank": "O0" }
         ],
         "notes": []
       },
@@ -7081,7 +7089,7 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if any department skill 2+"
+            { "rollType": "survival", "anyDepartmentSkillAtLeast": 2, "dm": 1 }
           ],
           "notes": []
         },
@@ -7117,7 +7125,7 @@
             }
           ],
           "dms": [
-            "Bonus DM +1 if Steward-2+"
+            { "rollType": "bonus", "skillAtLeast": { "skill": "Steward", "level": 2 }, "dm": 1 }
           ],
           "notes": []
         },
@@ -7153,7 +7161,9 @@
             }
           ],
           "dms": [
-            "DM +1 for survival, skills, and bonus if any department skill 2+"
+            { "rollType": "survival", "anyDepartmentSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "skills", "anyDepartmentSkillAtLeast": 2, "dm": 1 },
+            { "rollType": "bonus", "anyDepartmentSkillAtLeast": 2, "dm": 1 }
           ],
           "notes": []
         },
@@ -7189,7 +7199,12 @@
             }
           ],
           "dms": [
-            "DM +1 for survival, skills, and bonus if Broker-2+ or Trader-2+"
+            { "rollType": "survival", "skillAtLeast": { "skill": "Broker", "level": 2 }, "dm": 1 },
+            { "rollType": "survival", "skillAtLeast": { "skill": "Trader", "level": 2 }, "dm": 1 },
+            { "rollType": "skills", "skillAtLeast": { "skill": "Broker", "level": 2 }, "dm": 1 },
+            { "rollType": "skills", "skillAtLeast": { "skill": "Trader", "level": 2 }, "dm": 1 },
+            { "rollType": "bonus", "skillAtLeast": { "skill": "Broker", "level": 2 }, "dm": 1 },
+            { "rollType": "bonus", "skillAtLeast": { "skill": "Trader", "level": 2 }, "dm": 1 }
           ],
           "notes": []
         },
@@ -7225,8 +7240,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if Pilot-2+",
-            "Bonus DM +1 if Trader-2+"
+            { "rollType": "survival", "skillAtLeast": { "skill": "Pilot", "level": 2 }, "dm": 1 },
+            { "rollType": "bonus", "skillAtLeast": { "skill": "Trader", "level": 2 }, "dm": 1 }
           ],
           "notes": []
         },
@@ -7258,8 +7273,8 @@
             }
           ],
           "dms": [
-            "Survival DM +1 if Pilot-2+",
-            "Bonus DM +1 if Trader-2+"
+            { "rollType": "survival", "skillAtLeast": { "skill": "Pilot", "level": 2 }, "dm": 1 },
+            { "rollType": "bonus", "skillAtLeast": { "skill": "Trader", "level": 2 }, "dm": 1 }
           ],
           "notes": []
         }
@@ -7726,8 +7741,8 @@
           }
         ],
         "dms": [
-          "DM +1 if Edu 9+",
-          "DM +1 if rank O4+ and not in Deck Department"
+          { "attribute": "education", "min": 9, "dm": 1 },
+          { "rankAtLeast": "O4", "currentDepartmentNotIn": ["Deck"], "dm": 1 }
         ],
         "notes": []
       },

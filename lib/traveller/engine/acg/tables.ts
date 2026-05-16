@@ -330,6 +330,8 @@ export interface StructuredDm {
   currentBranchIn?: string[];
   /** Character's current department is one of these. */
   currentDepartmentIn?: string[];
+  /** Character's current department is NOT one of these. */
+  currentDepartmentNotIn?: string[];
   /** Character's number of terms is ≥ N. */
   termsAtLeast?: number;
   /** Optional column qualifier for tables whose DMs apply per-column
@@ -415,6 +417,9 @@ function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
   }
   if (r.currentDepartmentIn) {
     if (!r.currentDepartmentIn.includes(ch.acgState?.department ?? "")) return false;
+  }
+  if (r.currentDepartmentNotIn) {
+    if (r.currentDepartmentNotIn.includes(ch.acgState?.department ?? "")) return false;
   }
   if (r.termsAtLeast !== undefined && ch.terms < r.termsAtLeast) return false;
   if (r.attendedAnyOf) {
