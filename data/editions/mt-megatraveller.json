@@ -3171,11 +3171,11 @@
       ]
     },
     "defaultSkills": [
-      { "condition": "service in [navy, marines, flyers, scouts, merchants, pirates]", "skill": "Vacc Suit", "level": 0, "source": "MT p. 13" },
-      { "condition": "service not in [barbarians]", "skill": "Gun Combat", "level": 0, "source": "MT p. 13" },
-      { "condition": "tech >= Early Stellar", "skill": "Computer", "level": 0, "source": "MT p. 13" },
-      { "condition": "tech >= Avg Stellar", "skill": "Grav Vehicle", "level": 0, "source": "MT p. 13" },
-      { "condition": "tech in [Industrial, Pre-Stellar, Early Stellar]", "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
+      { "when": { "serviceIn": ["navy", "marines", "flyers", "scouts", "merchants", "pirates"] }, "skill": "Vacc Suit",       "level": 0, "source": "MT p. 13" },
+      { "when": { "serviceNotIn": ["barbarians"] },                                                "skill": "Gun Combat",      "level": 0, "source": "MT p. 13" },
+      { "when": { "techAtLeast": "Early Stellar" },                                                "skill": "Computer",        "level": 0, "source": "MT p. 13" },
+      { "when": { "techAtLeast": "Avg Stellar" },                                                  "skill": "Grav Vehicle",    "level": 0, "source": "MT p. 13" },
+      { "when": { "techIn": ["Industrial", "Pre-Stellar", "Early Stellar"] },                      "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
     ],
     "careerAvailability": [
       { "requiresTechAtLeast": "Pre-Stellar",   "services": ["army", "marines", "navy", "scientists"] },

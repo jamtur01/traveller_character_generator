@@ -28,7 +28,18 @@ interface HomeworldData {
     when?: DmConditionWhen;
     dm: number;
   }>>;
-  defaultSkills: Array<{ condition: string; skill: string; level: number }>;
+  defaultSkills: Array<{
+    condition?: string;
+    when?: {
+      serviceIn?: string[];
+      serviceNotIn?: string[];
+      techAtLeast?: string;
+      techIn?: string[];
+    };
+    skill: string;
+    level: number;
+    source?: string;
+  }>;
   careerAvailability: Array<{
     /** Legacy form: deny services if homeworld tech is in this list. */
     denyIfTechIn?: string[];
@@ -159,34 +170,48 @@ export function applyHomeworldSkills(ch: Character, hw: Homeworld): void {
   const data = dataFor(ch.editionId);
   if (!data) return;
   for (const entry of data.defaultSkills) {
-    if (!evalDefaultSkillCondition(entry.condition, hw, ch)) continue;
+    if (!evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) continue;
     if (ch.checkSkill(entry.skill) >= 0) continue; // already known
     ch.addSkill(entry.skill, entry.level);
     ch.verboseHistory(`Homeworld grants ${entry.skill}-${entry.level}`);
   }
 }
 
-function evalDefaultSkillCondition(condition: string, hw: Homeworld, ch: Character): boolean {
-  // "service in [navy, marines, flyers, scouts, merchants, pirates]"
+function evalDefaultSkillCondition(
+  entry: HomeworldData["defaultSkills"][number],
+  hw: Homeworld,
+  ch: Character,
+  techCodeOrder: string[],
+): boolean {
+  // Structured form preferred.
+  if (entry.when) {
+    const w = entry.when;
+    if (w.serviceIn && !w.serviceIn.includes(String(ch.service))) return false;
+    if (w.serviceNotIn && w.serviceNotIn.includes(String(ch.service))) return false;
+    if (w.techAtLeast &&
+        techCodeOrder.indexOf(hw.tech) < techCodeOrder.indexOf(w.techAtLeast)) {
+      return false;
+    }
+    if (w.techIn && !w.techIn.includes(hw.tech)) return false;
+    return true;
+  }
+  // Legacy string form.
+  const condition = entry.condition;
+  if (!condition) return false;
   const serviceIn = condition.match(/^service\s+in\s+\[([^\]]+)\]/);
   if (serviceIn) {
     const list = serviceIn[1]!.split(",").map((s) => s.trim());
     return list.includes(String(ch.service));
   }
-  // "service not in [barbarians]"
   const serviceNotIn = condition.match(/^service\s+not\s+in\s+\[([^\]]+)\]/);
   if (serviceNotIn) {
     const list = serviceNotIn[1]!.split(",").map((s) => s.trim());
     return !list.includes(String(ch.service));
   }
-  // "tech >= Early Stellar"
   const techGte = condition.match(/^tech\s+>=\s+(.+)$/);
   if (techGte) {
-    const data = dataFor(ch.editionId)!;
-    const order = data.techCodeOrder;
-    return order.indexOf(hw.tech) >= order.indexOf(techGte[1]!.trim());
+    return techCodeOrder.indexOf(hw.tech) >= techCodeOrder.indexOf(techGte[1]!.trim());
   }
-  // "tech in [Industrial, Pre-Stellar, Early Stellar]"
   const techIn = condition.match(/^tech\s+in\s+\[([^\]]+)\]/);
   if (techIn) {
     const list = techIn[1]!.split(",").map((s) => s.trim());
@@ -262,9 +287,16 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
   // Default skills depend on the service; here we apply only the
   // tech-based ones since service isn't yet selected. The service-based
   // skills are applied at enlistment time.
-  for (const entry of dataFor(ch.editionId)!.defaultSkills) {
-    if (!/^tech\b/.test(entry.condition)) continue;
-    if (evalDefaultSkillCondition(entry.condition, hw, ch)) {
+  const data = dataFor(ch.editionId)!;
+  for (const entry of data.defaultSkills) {
+    // Filter to tech-conditional entries only (legacy: condition string
+    // starts with "tech"; structured: when.techAtLeast or when.techIn).
+    const isTechOnly = entry.when
+      ? (entry.when.techAtLeast !== undefined || entry.when.techIn !== undefined) &&
+        entry.when.serviceIn === undefined && entry.when.serviceNotIn === undefined
+      : /^tech\b/.test(entry.condition ?? "");
+    if (!isTechOnly) continue;
+    if (evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) {
       if (ch.checkSkill(entry.skill) < 0) {
         ch.addSkill(entry.skill, entry.level);
         ch.verboseHistory(`Homeworld grants ${entry.skill}-${entry.level}`);
