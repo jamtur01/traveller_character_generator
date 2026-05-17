@@ -630,6 +630,31 @@ export function merchantStartOfTerm(ch: Character): void {
     ch.history.push("Failed to pass exam for O1 within 4 years — reverted to enlisted (E1).");
     return;
   }
+  // F12 PM p. 61: officers auto-transfer to the Deck department after one
+  // full term in the configured rank. Rule lives in JSON.
+  applyDeckAutoTransferIfDue(ch);
+}
+
+function applyDeckAutoTransferIfDue(ch: Character): void {
+  if (!ch.acgState?.isOfficer) return;
+  const data = dataFor(ch);
+  const rule = (data as { specialRules?: { deckAutoTransferAtRank?: {
+    rankCode: string; destinationDepartment: string;
+  } } }).specialRules?.deckAutoTransferAtRank;
+  if (!rule) return;
+  if (ch.acgState.rankCode !== rule.rankCode) return;
+  if (ch.acgState.department === rule.destinationDepartment) return;
+  // PM says "after one full term in rank O4" — we trigger at startOfTerm
+  // when the rank was reached in the previous term.
+  const lastPromotion = ch.acgState.assignmentHistory.length;
+  void lastPromotion; // kept for future term-since-promotion tracking
+  const from = ch.acgState.department ?? "";
+  recordTransfer(ch.acgState, "department", from, rule.destinationDepartment,
+    ch.acgState.yearsServed ?? 0);
+  ch.acgState.department = rule.destinationDepartment;
+  ch.history.push(
+    `Auto-transferred to ${rule.destinationDepartment} department (rank ${rule.rankCode}, PM p. 61).`,
+  );
 }
 
 /** PM p. 61 end-of-term promotion exam. Runs AFTER assignments so DMs

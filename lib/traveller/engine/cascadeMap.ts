@@ -12,49 +12,12 @@
 import { getEdition } from "../editions";
 
 /** Printed cell label → cascade key in JSON cascadeSkills. */
-const LABEL_TO_KEY: Record<string, string> = {
-  // Combat cascades — CT and MT share these aliases, but the pools differ.
-  "blade cbt": "bladeCombat",
-  "blade combat": "bladeCombat",
-  "blade": "bladeCombat",
-  "gun cbt": "gunCombat",
-  "gun combat": "gunCombat",
-  "gun": "gunCombat",
-  "bow cbt": "bowCombat",
-  "bow combat": "bowCombat",
-  "bow": "bowCombat",
-  // Vehicle family.
-  "vehicle": "vehicle",
-  "air craft": "aircraft",
-  "aircraft": "aircraft",
-  "water craft": "watercraft",
-  "watercraft": "watercraft",
-  // MT-specific cascades.
-  "physical": "physical",
-  "mental": "mental",
-  "vice": "vice",
-  "hand cbt": "handCombat",
-  "hand combat": "handCombat",
-  "inborn": "inborn",
-  "space": "space",
-  "space cbt": "spaceCombat",
-  "space combat": "spaceCombat",
-  "space tech": "spaceTech",
-  "special cbt": "specialCombat",
-  "special combat": "specialCombat",
-  "technical": "technical",
-  "interpersonal": "interpersonal",
-  "science": "science",
-  "academic": "academic",
-  "exploratory": "exploratory",
-  "environ": "environ",
-  "economic": "economic",
-  "archaic weapons": "archaicWeapons",
-  "animal handling": "animalHandling",
-  "gunnery": "gunnery",
-  "field artillery gunnery": "fieldArtilleryGunnery",
-  "fa gunnery": "fieldArtilleryGunnery",
-};
+/** Aliases come from the active edition's `cascadeAliases` JSON block. */
+function aliasesFor(editionId: string): Record<string, string> {
+  return (getEdition(editionId).data as {
+    cascadeAliases?: Record<string, string>;
+  }).cascadeAliases ?? {};
+}
 
 /** Resolve a cell label to the cascade pool defined by the edition.
  *  Returns undefined if the label isn't a recognized cascade alias OR the
@@ -63,7 +26,7 @@ export function cascadePoolForLabel(
   label: string,
   editionId: string,
 ): readonly string[] | undefined {
-  const key = LABEL_TO_KEY[label.toLowerCase().trim()];
+  const key = aliasesFor(editionId)[label.toLowerCase().trim()];
   if (!key) return undefined;
   const edition = getEdition(editionId);
   const cascades = (edition.data as { cascadeSkills?: Record<string, readonly string[]> })
@@ -71,16 +34,17 @@ export function cascadePoolForLabel(
   return cascades?.[key];
 }
 
-/** Is this label a cascade alias at all (independent of edition)? Used by
- *  the resolver to distinguish "unknown cascade for this edition — error"
+/** Is this label a cascade alias in the given edition? Used by the
+ *  resolver to distinguish "unknown cascade for this edition — error"
  *  from "literal skill name". */
-export function isCascadeLabel(label: string): boolean {
-  return LABEL_TO_KEY[label.toLowerCase().trim()] !== undefined;
+export function isCascadeLabel(label: string, editionId: string): boolean {
+  return aliasesFor(editionId)[label.toLowerCase().trim()] !== undefined;
 }
 
-/** Resolve a cell label to its cascade JSON key (or null). Edition-independent. */
-export function cascadeKeyForLabel(label: string): string | null {
-  return LABEL_TO_KEY[label.toLowerCase().trim()] ?? null;
+/** Resolve a cell label to its cascade JSON key (or null) for the
+ *  given edition. */
+export function cascadeKeyForLabel(label: string, editionId: string): string | null {
+  return aliasesFor(editionId)[label.toLowerCase().trim()] ?? null;
 }
 
 /** Get the named cascade pool for the given edition. Used by Character

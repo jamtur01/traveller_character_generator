@@ -277,6 +277,21 @@
       "belterTerm3ZeroG": "Belter automatically gains Zero-G Environ-1 at start of term 3."
     }
   },
+  "skillTableMeta": {
+    "$comment": "Declarative ordering and display labels for the four MT acquired-skills tables (PM p. 22-26). The `order` array drives the index → tableKey lookup; `displayNames` give the player-facing labels for the skill-table choice picker.",
+    "order": [
+      "personalDevelopment",
+      "serviceSkills",
+      "advancedEducation",
+      "advancedEducation8Plus"
+    ],
+    "displayNames": {
+      "personalDevelopment": "Personal Development",
+      "serviceSkills": "Service Skills",
+      "advancedEducation": "Advanced Education",
+      "advancedEducation8Plus": "Advanced Education (Edu 8+)"
+    }
+  },
   "rules": {
     "dice": {
       "characteristics": "2d6 each",
@@ -458,6 +473,16 @@
       }
     }
   },
+  "attributeAbbreviations": {
+    "$comment": "PM-printed abbreviations on skill-table cells (e.g. '+1 Intel', '-2 Soc') map to the engine's internal attribute key. Same set across CT and MT.",
+    "Stren": "strength",
+    "Dext": "dexterity",
+    "Endur": "endurance",
+    "Intel": "intelligence",
+    "Educ": "education",
+    "Social": "social",
+    "Soc": "social"
+  },
   "skillLabelRenames": {
     "$comment": "Map abbreviated/typo cell labels to the canonical engine skill name. Cells in the PM acquired-skills tables sometimes use abbreviations or alternate spellings (e.g. 'Engnrng' for Engineering, 'Electronics' for Electronic, 'Fwd Obsv' for Fwd Obsvr).",
     "Engnrng": "Engineering",
@@ -481,6 +506,47 @@
     "Polearm": ["Bayonet", "Halberd", "Pike", "Spear"],
     "Rifleman": ["Autorifle", "Carbine", "Rifle", "Shotgun"],
     "Small Blade": ["Blade", "Dagger"]
+  },
+  "cascadeAliases": {
+    "$comment": "Printed cell label (lowercased) → cascade JSON key in cascadeSkills. Lets the resolver accept both the abbreviated form ('Blade Cbt') and the long form ('Blade Combat') printed in PM tables.",
+    "blade cbt": "bladeCombat",
+    "blade combat": "bladeCombat",
+    "blade": "bladeCombat",
+    "gun cbt": "gunCombat",
+    "gun combat": "gunCombat",
+    "gun": "gunCombat",
+    "bow cbt": "bowCombat",
+    "bow combat": "bowCombat",
+    "bow": "bowCombat",
+    "vehicle": "vehicle",
+    "air craft": "aircraft",
+    "aircraft": "aircraft",
+    "water craft": "watercraft",
+    "watercraft": "watercraft",
+    "physical": "physical",
+    "mental": "mental",
+    "vice": "vice",
+    "hand cbt": "handCombat",
+    "hand combat": "handCombat",
+    "inborn": "inborn",
+    "space": "space",
+    "space cbt": "spaceCombat",
+    "space combat": "spaceCombat",
+    "space tech": "spaceTech",
+    "special cbt": "specialCombat",
+    "special combat": "specialCombat",
+    "technical": "technical",
+    "interpersonal": "interpersonal",
+    "science": "science",
+    "academic": "academic",
+    "exploratory": "exploratory",
+    "environ": "environ",
+    "economic": "economic",
+    "archaic weapons": "archaicWeapons",
+    "animal handling": "animalHandling",
+    "gunnery": "gunnery",
+    "field artillery gunnery": "fieldArtilleryGunnery",
+    "fa gunnery": "fieldArtilleryGunnery"
   },
   "cascadeSkills": {
     "aircraft": [
@@ -6942,6 +7008,14 @@
       }
     },
     "merchantPrince": {
+      "specialRules": {
+        "$comment": "Rule-driven merchant transitions per PM p. 60-61.",
+        "deckAutoTransferAtRank": {
+          "$rule": "PM p. 61 line 3837: 'Officers automatically transfer to the Deck Department after one full term in rank O4.'",
+          "rankCode": "O4",
+          "destinationDepartment": "Deck"
+        }
+      },
       "assignmentColumnMap": {
         "$comment": "Display-name → assignment-resolution-column key. Free-trader-only assignments (No Business / Smuggling / Piracy) reuse the route / speculative columns because no separate resolution columns exist; PM p. 61 treats them as variations on the regular columns for survival/skills/bonus.",
         "Route": "route",
