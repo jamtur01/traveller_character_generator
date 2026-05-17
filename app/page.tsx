@@ -1088,17 +1088,21 @@ function PreCareerPhase({
   onApply: (opt: PreCareerOption | "skip") => void;
 }) {
   const attended = character.acgState?.schoolsAttended ?? [];
+  const honors = character.acgState?.honorsGraduations ?? [];
   const has = (k: string) => attended.includes(k);
-  const collegeGraduated = has("college");
+  const hasHonors = (k: string) => honors.includes(k);
   const navalAcademyGraduated = has("navalAcademy");
-  // Medical School (PM p. 47): available to college honors graduates (or to
-  // Naval Academy honors graduates per the manual's chained chain). We
-  // detect "graduated" via schoolsAttended; "honors" is held only on the
-  // returned result, but the manual permits the attempt after any of those
-  // schools — gate by graduation alone for the UI prompt.
+  const collegeHonorsCommissioned =
+    hasHonors("college") && character.acgState?.preCareerCommission === true;
+  // PM p. 47 honors gates:
+  //   Medical School: honors from college OR Naval Academy OR Military Academy.
+  //   Flight School: commissioned college honors graduate, OR any Naval
+  //     Academy graduate, OR commissioned Merchant Academy graduate.
   const medAvailable = !has("medicalSchool") &&
-    (collegeGraduated || navalAcademyGraduated || has("militaryAcademy"));
-  const flightAvailable = !has("flightSchool") && navalAcademyGraduated;
+    (hasHonors("college") || hasHonors("navalAcademy") || hasHonors("militaryAcademy"));
+  const flightAvailable = !has("flightSchool") &&
+    (collegeHonorsCommissioned || navalAcademyGraduated ||
+     (has("merchantAcademy") && character.acgState?.preCareerCommission === true));
   return (
     <PhaseCard
       title="Pre-career education (optional)"

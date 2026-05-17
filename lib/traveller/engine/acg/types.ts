@@ -109,6 +109,11 @@ export interface AcgState {
    *  Commando entry (Mil Academy honors), Medical/Flight School admission,
    *  Scout IS-10 (college honors), and Merchant Academy department choice. */
   honorsGraduations?: string[];
+  /** PM p. 47: pre-career failure forces a short (3-year) first term. */
+  preCareerFirstTermShort?: boolean;
+  /** PM p. 47: pre-career failure may draft the character into a specific
+   *  service (Navy/Army) regardless of homeworld restrictions. */
+  preCareerDraftedInto?: "army" | "navy" | "marines";
 
   /** Combat arms or branches the character has been cross-trained into via
    *  special-assignment schools. Drives the Marine cross-training reenlist
