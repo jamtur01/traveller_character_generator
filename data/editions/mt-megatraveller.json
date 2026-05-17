@@ -3292,7 +3292,7 @@
     "careerAvailability": [
       { "requiresTechAtLeast": "Pre-Stellar",   "services": ["army", "marines", "navy", "scientists"] },
       { "requiresTechAtLeast": "Early Stellar", "services": ["scouts", "merchants", "belters", "pirates"] },
-      { "requiresTechAtLeast": "Industrial",    "services": ["lawenforcers", "doctors", "diplomats", "rogues"] },
+      { "requiresTechAtLeast": "Industrial",    "services": ["lawenforcers", "doctors", "diplomats", "rogues", "flyers"] },
       { "requiresTechExactly": "Pre-Industrial", "services": ["barbarians"] },
 
       { "requiresPopulationAtLeast": "Mod Pop", "services": ["bureaucrats", "flyers"] },
@@ -6520,6 +6520,23 @@
         ],
         "dms": [],
         "notes": []
+      },
+      "schoolMeta": {
+        "$comment": "PM p. 57 metadata for scout schools. columnKey maps display name to schools-table column. rollsPerAttendance: 1 or 2. onceOnly: Admin School may be attended only once. requiresDivision: required division to attend. promotesToRank: rank granted automatically.",
+        "Ship School":         { "rollsPerAttendance": 2, "columnKey": "shipSchool" },
+        "Intelligence School": { "rollsPerAttendance": 2, "columnKey": "intelligenceSchool" },
+        "Contact School":      { "rollsPerAttendance": 2, "columnKey": "contactSchool" },
+        "Technology School":   { "rollsPerAttendance": 1, "columnKey": "technologySchool" },
+        "Specialist School":   { "rollsPerAttendance": 1, "columnKey": "specialistSchool" },
+        "Field Training":      { "rollsPerAttendance": 1, "columnKey": "fieldTraining" },
+        "Admin School": {
+          "rollsPerAttendance": 1,
+          "onceOnly": true,
+          "requiresDivision": "bureaucracy",
+          "promotesToRank": "IS-10",
+          "promotesToOfficer": true,
+          "adminRankPattern": "^IS-1\\d$"
+        }
       },
       "schools": {
         "columns": [
