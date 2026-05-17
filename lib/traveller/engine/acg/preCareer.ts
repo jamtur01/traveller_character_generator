@@ -177,8 +177,22 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     }
   }
 
+  // Rrev4: Flight School admission is automatic for commissioned college
+  // honors graduates and Naval Academy honors graduates (PM p. 47:
+  // "Any commissioned college honors graduate or Naval Academy graduate
+  // with honors may attend flight school simply by applying"). Other
+  // Naval Academy graduates (without honors) and commissioned Merchant
+  // Academy graduates must roll for admission.
+  const flightAutoAdmit = opt === "flightSchool" && (() => {
+    const honors = ch.acgState?.honorsGraduations ?? [];
+    const hasCommission =
+      ch.acgState?.preCareerCommission === true || ch.commissioned;
+    return (honors.includes("college") && hasCommission) ||
+      honors.includes("navalAcademy");
+  })();
+
   // Admission.
-  if (spec.admission) {
+  if (spec.admission && !flightAutoAdmit) {
     const dm = applyDms(spec.admission.dms, ch);
     const r = roll(2);
     if (r + dm < spec.admission.target) {
@@ -205,6 +219,11 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     ch.verboseHistory(`${opt} admission passed (${r}+${dm} vs ${spec.admission.target}+)`);
   } else {
     out.admitted = true;
+    if (flightAutoAdmit) {
+      ch.verboseHistory(
+        `Flight School admission automatic (PM p. 47 — commissioned college honors / Naval Academy honors).`,
+      );
+    }
   }
 
   // Success.
@@ -245,6 +264,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     out.ageGainedYears += 4;
   } else if (opt === "flightSchool") {
     out.ageGainedYears += 1;
+    // PM p. 47: "when the character reports for duty, he or she begins
+    // serving a short term and enters basic officer training." Flight
+    // school graduates always serve a short first term in their pathway.
+    out.firstTermShort = true;
   }
 
   // OTC / NOTC (college only, voluntary).
