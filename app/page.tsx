@@ -879,8 +879,8 @@ function StartPhase({
             draft.
           </li>
           <li>
-            Each four-year term: commission, promotion, skills, survival, then
-            aging from age 34+.
+            Each four-year term: survival, then position/commission and
+            promotion, special duty, skills, with aging applied from age 34+.
           </li>
           <li>
             Muster out for cash and material benefits (ships, passages, weapons,
@@ -1333,7 +1333,7 @@ function TermPhase({
   } | undefined)?.survival;
   const failureIsDeath = (survivalRules?.onFailure ?? "death") === "death";
   const checklist = hasMtRules
-    ? "Survival, position/commission and promotion, skills, special duty, then aging from age 34. End-of-term: reenlistment, mustering out."
+    ? "Survival, position/commission and promotion, special duty, skills, then aging from age 34. End-of-term: reenlistment, mustering out."
     : "Survival, commission, promotion, skills, then aging from age 34. End-of-term: reenlistment, mustering out.";
 
   return (
