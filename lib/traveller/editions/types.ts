@@ -182,6 +182,7 @@ export interface AcgPathwayImpl {
   retention?: (ch: Character, assignment: string) => void;
   reenlist: (ch: Character) => boolean;
   startOfTerm?: (ch: Character) => void;
+  endOfTerm?: (ch: Character) => void;
 }
 
 /**
