@@ -103,16 +103,18 @@ describe("Mercenary ACG runtime", () => {
     expect(c.skills.length).toBeGreaterThanOrEqual(2); // Gun Combat + MOS
   });
 
-  it("Full 4-year term: termination, brownie point award, age advance", () => {
+  it("Full 4-year term with max rolls: term completes, age 22, 1+ brownie point", () => {
+    // Math.random=0.999 → every roll is the max. Survival, promotion,
+    // skill rolls all pass; the term completes normally.
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
     runAcgTerm(c);
-    if (c.activeDuty) {
-      expect(c.terms).toBe(1);
-      expect(c.age).toBe(22);
-      expect(c.browniePoints).toBeGreaterThanOrEqual(1); // term completion BP
-    }
+    expect(c.activeDuty).toBe(true);
+    expect(c.deceased).toBe(false);
+    expect(c.terms).toBe(1);
+    expect(c.age).toBe(22);
+    expect(c.browniePoints).toBeGreaterThanOrEqual(1); // term completion BP
   });
 
   it("Low rolls fail survival and invalid out of service", () => {
@@ -149,24 +151,11 @@ describe("Navy ACG runtime", () => {
     expect(c.acgState!.fleet).toBe("reserveFleet");
   });
 
-  it("System Squadron rank caps to commodore (O7)", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.999);
-    const c = freshAcgChar();
-    c.beginAcg("navy", { fleet: "systemSquadron" });
-    // Hammer many promotions; rank should not exceed O7.
-    // Force officer for the test by patching rank.
-    c.acgState!.isOfficer = true;
-    c.acgState!.rankCode = "O1";
-    // Run many years to attempt promotions.
-    for (let i = 0; i < 30; i++) {
-      if (!c.activeDuty) break;
-      try { runAcgYear(c); } catch { break; }
-    }
-    const rankNum = parseInt(c.acgState!.rankCode.replace("O", ""), 10);
-    if (!isNaN(rankNum)) {
-      expect(rankNum).toBeLessThanOrEqual(7);
-    }
-  });
+  // System Squadron rank-cap enforcement is covered exhaustively in
+  // tests/navyRankCaps.test.ts, which directly invokes navyResolveAssignment
+  // with a known-promoting assignment ("Battle"). Keeping that coverage there
+  // avoids depending on runAcgYear's assignment-roll randomness (max-roll
+  // forced random lands on "Special Duty" which doesn't promote).
 });
 
 // ---------------------------------------------------------------------------
@@ -347,11 +336,10 @@ describe("Merchant Prince ACG runtime", () => {
     expect(c.acgState!.rankCode).toBe("E1");
     runAcgTerm(c);
     runAcgTerm(c);
-    if (c.activeDuty) {
-      // After at least one completed term, the enlisted rank should have
-      // advanced via the startOfTerm hook.
-      expect(c.acgState!.rankCode).not.toBe("E1");
-    }
+    expect(c.activeDuty).toBe(true); // forced-max rolls keep them alive
+    // After at least one completed term, the enlisted rank should have
+    // advanced via the startOfTerm hook.
+    expect(c.acgState!.rankCode).not.toBe("E1");
   });
 });
 
@@ -360,35 +348,67 @@ describe("Merchant Prince ACG runtime", () => {
 // ---------------------------------------------------------------------------
 
 describe("ACG awards", () => {
-  it("Surviving with high decoration roll grants MCUF + 1 brownie point", () => {
+  it("Mercenary on a combat assignment (Raid) with max decoration roll earns SEH + BP", async () => {
+    // Max roll (Math.random=0.999 → 12) against Raid decoration target 6+
+    // = margin +6 → SEH (resolveDecorationTier: minMargin 6).
+    // SEH awards 3 brownie points per the JSON awards table.
     vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const { mercenaryResolveAssignment } = await import(
+      "../lib/traveller/engine/acg/pathways/mercenary"
+    );
     const c = freshAcgChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
-    runAcgYear(c); // initial training
-    runAcgYear(c); // assignment year
-    // High rolls should produce at least one decoration if a combat
-    // assignment came up. We assert non-empty decorations with high prob.
-    // For determinism, we instead check that the awards machinery worked
-    // when a decoration was actually awarded:
-    if (c.decorations.length > 0) {
-      const award = c.decorations[0]!;
-      expect(["MCUF", "MCG", "SEH", "Purple Heart"]).toContain(award);
-      // BP per award (MCUF=1, MCG=2, SEH=3, Purple Heart=0):
-      const bpFor: Record<string, number> = { MCUF: 1, MCG: 2, SEH: 3, "Purple Heart": 0 };
-      const decBps = c.decorations.reduce((acc, d) => acc + (bpFor[d] ?? 0), 0);
-      expect(c.browniePoints).toBeGreaterThanOrEqual(decBps);
-    }
+    const bpBefore = c.browniePoints;
+    mercenaryResolveAssignment(c, "Raid");
+    expect(c.decorations).toContain("SEH");
+    expect(c.browniePoints).toBe(bpBefore + 3);
   });
 
-  it("Completing a full term awards exactly 1 brownie point from the term", () => {
+  it("Mercenary on Raid with mid-tier roll earns MCG and 2 BP", async () => {
+    // Pin the rolls so decoration margin = +3 → MCG (minMargin 3).
+    // Raid resolution order: survival → promotion → decoration → skills.
+    // Setup with max rolls first so beginAcg's enlistment passes, then
+    // swap the mock to the controlled sequence right before invoking
+    // resolveAssignment.
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const { mercenaryResolveAssignment } = await import(
+      "../lib/traveller/engine/acg/pathways/mercenary"
+    );
+    const c = freshAcgChar();
+    c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
+    // Now control the rolls for the Raid resolution. Each rollVsTarget
+    // uses roll(2) = 2 Math.random calls. Promotion DM is +1 (edu 9 ≥ 7).
+    //   Survival:   2d6 = 12 (pass)
+    //   Promotion:  2d6 = 12 + 1 = 13 (pass)
+    //   Decoration: 2d6 = 9, margin +3 → MCG
+    //   Skills:     2d6 = 12 (pass)
+    let i = 0;
+    const seq = [
+      5 / 6 + 0.001, 5 / 6 + 0.001, // survival 12
+      5 / 6 + 0.001, 5 / 6 + 0.001, // promotion 12
+      4 / 6 + 0.001, 3 / 6 + 0.001, // decoration 5+4=9 → margin +3
+      5 / 6 + 0.001, 5 / 6 + 0.001, // skills 12
+    ];
+    vi.restoreAllMocks();
+    vi.spyOn(Math, "random").mockImplementation(() => seq[i++] ?? 0.999);
+    const bpBefore = c.browniePoints;
+    mercenaryResolveAssignment(c, "Raid");
+    expect(c.decorations).toContain("MCG");
+    expect(c.decorations).not.toContain("SEH");
+    expect(c.browniePoints).toBe(bpBefore + 2);
+  });
+
+  it("Completing a 4-year scout term awards exactly 1 brownie point (term completion)", () => {
+    // Scouts have no decorations (no decoration column in their resolution
+    // table), so BP must come from the term-completion award alone.
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("scout", { division: "field" });
-    // Scout has no decorations so brownie points come from term completion only.
+    const bpBefore = c.browniePoints;
     runAcgTerm(c);
-    if (c.activeDuty && !c.deceased) {
-      expect(c.browniePoints).toBeGreaterThanOrEqual(1);
-    }
+    expect(c.activeDuty).toBe(true);
+    expect(c.deceased).toBe(false);
+    expect(c.browniePoints).toBe(bpBefore + 1);
   });
 });
 
@@ -403,13 +423,11 @@ describe("doServiceTermStep dispatch", () => {
     c.beginAcg("scout", { division: "field" });
     expect(c.useAcg).toBe(true);
     expect(c.acgState).not.toBeNull();
-    // ACG characters' first call increments terms via the ACG runner.
     const startTerms = c.terms;
     c.doServiceTermStep();
-    // The ACG runner increments terms only on successful term completion.
-    if (c.activeDuty && !c.deceased) {
-      expect(c.terms).toBe(startTerms + 1);
-    }
+    expect(c.activeDuty).toBe(true);
+    expect(c.deceased).toBe(false);
+    expect(c.terms).toBe(startTerms + 1);
   });
 
   it("non-ACG character continues to use basic runTermSteps", () => {

@@ -46,20 +46,42 @@ describe("Marine Tradition (F5)", () => {
     vi.restoreAllMocks();
   });
 
-  it("Already-Large-Blade-1 gets DM-3 on the save", () => {
+  it("Already-Large-Blade-1 gets DM-3 on the save (11 + DM-3 = 8 fails)", () => {
+    // Roll 5,6 = 11. With DM-3 → 8, fails the 9+ save → forced Large Blade.
+    // Without the DM, 11 ≥ 9 would pass → cascade picks. The differing
+    // outcome between the two tests in this block (this one vs. the next)
+    // is what proves the DM is wired.
     const c = makeMarine();
     c.skills = [["Large Blade", 1]];
-    // Need 9+ with -3 DM → must roll 12 (12-3=9). 11 = 8 = fail.
-    vi.spyOn(Math, "random").mockImplementation(() => {
-      // Two dice for the save; 6/6 = 12-3 = 9 pass; 5/6 = 11-3 = 8 fail.
-      // First return 5/6=11 then verify the result.
-      return 0.999;
-    });
+    const sequence = [4 / 6 + 0.001, 5 / 6 + 0.001]; // d6=5, d6=6 → roll 11
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(
+      () => sequence[i++ % sequence.length]!,
+    );
     applyCell(c, "Blade Cbt", "skill");
-    // Even with the best save (12 → 9), this is a pass — tradition doesn't
-    // force; cascade picks something. The point of this test is to verify
-    // the DM is wired (without DM the save would always pass at 12).
-    expect(c.skills.length).toBeGreaterThan(0);
+    // Forced Large Blade: existing Large Blade-1 gets bumped to Large Blade-2.
+    expect(c.skills).toEqual([["Large Blade", 2]]);
+    expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it("No-Large-Blade Marine on the same roll (11) passes the save (no DM)", () => {
+    // Control case: same roll sequence (5,6 → 11), but no Large Blade
+    // skill so no DM. 11 + 0 = 11 ≥ 9 → save passes → cascade picks.
+    const c = makeMarine();
+    c.skills = []; // no Large Blade → no DM
+    const sequence = [
+      4 / 6 + 0.001, 5 / 6 + 0.001, // save dice: 5,6 = 11 (pass)
+      0, 0, 0, 0, // subsequent rolls for cascade pick
+    ];
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(
+      () => sequence[i++] ?? 0,
+    );
+    applyCell(c, "Blade Cbt", "skill");
+    // Save passed → cascade picked SOMETHING, but not forced Large Blade.
+    expect(c.skills.length).toBe(1);
+    expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(false);
     vi.restoreAllMocks();
   });
 
