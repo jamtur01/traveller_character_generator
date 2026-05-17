@@ -598,9 +598,49 @@ export function mercenaryReenlist(ch: Character): boolean {
   ch.verboseHistory(`Mercenary reenlist (${svc}): ${r} + ${dm} vs ${spec.target}`);
   if (r === 12) {
     ch.mandatoryReenlistment = true;
+    offerArmChange(ch, data);
     return true;
   }
-  return r + dm >= spec.target;
+  const keep = r + dm >= spec.target;
+  if (keep) offerArmChange(ch, data);
+  return keep;
+}
+
+/** PM p. 49: combat arm change at reenlist.
+ *  - Officers may change arms freely at the start of any 4-year term
+ *    (except Commando — requires Commando School first).
+ *  - Enlisted personnel must be cross-trained to change arm; reenlistment
+ *    may specify an arm they have been cross-trained into.
+ *  Auto mode: keep the current arm. Interactive mode: queue a choice. */
+function offerArmChange(ch: Character, data: MercenaryData): void {
+  if (!ch.acgState) return;
+  const current = ch.acgState.combatArm ?? "Infantry";
+  const arms = data.combatArms;
+  const isOfficer = ch.acgState.isOfficer === true;
+  const crossTrained = ch.acgState.crossTrainedArms ?? [];
+  const commandoEligible =
+    (ch.acgState.honorsGraduations ?? []).includes("militaryAcademy") ||
+    crossTrained.includes("Commando");
+  const eligibleArms = arms.filter((arm) => {
+    if (arm === current) return true;
+    if (arm === "Commando") return commandoEligible;
+    if (isOfficer) return true;
+    return crossTrained.includes(arm);
+  });
+  if (eligibleArms.length <= 1 || ch.choiceMode === "auto") return;
+  ch.pickOrDefer({
+    kind: "cascade",
+    label: `Change combat arm for next term (current: ${current})`,
+    options: eligibleArms,
+    preferred: [current],
+    context: { source: "reenlist", reenlistChangeArm: true },
+    onResolve: (c, chosen) => {
+      if (chosen !== current && c.acgState) {
+        c.acgState.combatArm = chosen;
+        c.history.push(`Reenlisted into ${chosen} combat arm.`);
+      }
+    },
+  });
 }
 
 /** Hook called by the runner before per-term processing.
