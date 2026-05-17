@@ -23,6 +23,7 @@ import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awar
 import { tryMitigate } from "../browniePoints";
 import { applySpecialAssignment } from "../schools";
 import { applyAcgSkillCell } from "./mercenary";
+import { event as ev } from "../../../history";
 
 const PATHWAY = "navy";
 
@@ -379,9 +380,7 @@ function navyRollCommandDuty(ch: Character): void {
   const dm = applyStructuredDms(data.commandDuty.dms, ch);
   const r = roll(2);
   const success = r + dm >= parsed.target;
-  ch.logRaw(
-    `Navy Command Duty (${branch}): ${r}${dm ? `${dm}` : ""} vs ${parsed.target} → ${success ? "command" : "staff"}`,
-  "verbose");
+  ch.log(ev.commandDuty(success, r, dm, parsed.target));
   ch.acgState!.inCommand = success;
 }
 
