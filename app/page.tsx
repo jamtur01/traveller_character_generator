@@ -1141,12 +1141,19 @@ function StartPhase({
               3. Advanced Character Generation
             </h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Pick a pathway, then configure its starting branch / role.
+              ACG is the optional rules-heavy chargen system in MT (PM
+              pp. 44-65). Each pathway is its own career book — Mercenary
+              (Army/Marines), Navy, Scout, or Merchant Prince — with its
+              own per-year assignment cycle. Pick a pathway, then choose
+              the starting branch / role for that path.
             </p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            <FormField label="Pathway">
+            <FormField
+              label="Pathway"
+              hint="Which ACG career book to follow. Each has its own enlistment table, assignments, schools, and ranks."
+            >
               <FormSelect value={acgPathway} onChange={setAcgPathway}>
                 <option value="" disabled>
                   Select a pathway…
@@ -1164,7 +1171,10 @@ function StartPhase({
             <div className="space-y-4">
               {acgPathway === "mercenary" && (
                 <>
-                  <FormField label="Service">
+                  <FormField
+                    label="Service"
+                    hint="Army (5+ to enlist, ground operations) or Marines (9+ to enlist, ship-board assignments available)."
+                  >
                     <FormSelect
                       value={acgService}
                       onChange={(v) => setAcgService(v as "army" | "marines")}
@@ -1491,8 +1501,10 @@ function PreCareerPhase({
   onApply: (opt: PreCareerOption | "skip") => void;
 }) {
   const attended = character.acgState?.schoolsAttended ?? [];
+  const attempted = character.acgState?.schoolsAttempted ?? [];
   const honors = character.acgState?.honorsGraduations ?? [];
   const has = (k: string) => attended.includes(k);
+  const tried = (k: string) => attempted.includes(k);
   const hasHonors = (k: string) => honors.includes(k);
   const navalAcademyGraduated = has("navalAcademy");
   const collegeHonorsCommissioned =
@@ -1501,9 +1513,9 @@ function PreCareerPhase({
   //   Medical School: honors from college OR Naval Academy OR Military Academy.
   //   Flight School: commissioned college honors graduate, OR any Naval
   //     Academy graduate, OR commissioned Merchant Academy graduate.
-  const medAvailable = !has("medicalSchool") &&
+  const medAvailable = !tried("medicalSchool") &&
     (hasHonors("college") || hasHonors("navalAcademy") || hasHonors("militaryAcademy"));
-  const flightAvailable = !has("flightSchool") &&
+  const flightAvailable = !tried("flightSchool") &&
     (collegeHonorsCommissioned || navalAcademyGraduated ||
      (has("merchantAcademy") && character.acgState?.preCareerCommission === true));
   return (
@@ -1512,21 +1524,21 @@ function PreCareerPhase({
       subtitle="College, service academies, medical, and flight school. Each option ages you and may grant skills, attributes, brownie points, or auto-enlist. Academy honors graduates may chain into Medical or Flight School. Skip to proceed straight to enlistment."
     >
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {!has("college") && (
+        {!tried("college") && (
           <PreCareerButton
             label="College"
             sub="2D6 admit 9+ (Edu 9+: +2 DM); 4 years; honors gates Medical."
             onClick={() => onApply("college")}
           />
         )}
-        {!has("navalAcademy") && (
+        {!tried("navalAcademy") && (
           <PreCareerButton
             label="Naval Academy"
             sub="Soc 6+ to apply. Graduates auto-enlist as O1 Imperial Navy."
             onClick={() => onApply("navalAcademy")}
           />
         )}
-        {!has("militaryAcademy") && (
+        {!tried("militaryAcademy") && (
           <PreCareerButton
             label="Military Academy"
             sub="Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines."

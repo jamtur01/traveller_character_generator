@@ -905,7 +905,12 @@ export class Character {
     this.anagathicsActiveThisTerm = false;
     this.anagathicsWithdrawalThisTerm = false;
     this.wantsAnagathicsThisTerm = false;
-    this.preSurvivalAnagathicsHook();
+    // Basic-chargen path runs the hook here. ACG runs its own copy at the
+    // start of runAcgTerm so the year-1 survival sees the correct DM;
+    // calling it here too would log "Found a supply of anagathics …" twice.
+    if (!(this.useAcg && this.acgState)) {
+      this.preSurvivalAnagathicsHook();
+    }
     this.verboseHistory("--------------------------------------------");
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
