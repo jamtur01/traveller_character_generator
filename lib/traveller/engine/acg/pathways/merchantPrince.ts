@@ -566,9 +566,45 @@ export function merchantReenlist(ch: Character): boolean {
   const r = roll(2);
   if (r === 12) {
     ch.mandatoryReenlistment = true;
+    offerMerchantDepartmentChange(ch, data);
     return true;
   }
-  return r + dm >= data.reenlistment.target;
+  const keep = r + dm >= data.reenlistment.target;
+  if (keep) offerMerchantDepartmentChange(ch, data);
+  return keep;
+}
+
+/** PM p. 65 Merchant checklist: at reenlistment the character may reenlist
+ *  into a different department ("Reenlist in Different Branch?"). The
+ *  available departments come from the line's department-assignment table
+ *  (FreeTrader is fixed to the Free Trader role). Interactive mode queues
+ *  a choice; auto mode keeps the current department. */
+function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
+  if (!ch.acgState || ch.choiceMode === "auto") return;
+  const size = lineSizeFor(data, ch.acgState.lineType ?? "");
+  if (size === "FreeTrader") return; // Free Traders don't change department
+  const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
+  const all = new Set<string>();
+  for (const row of data.departmentAssignment.rows) {
+    const v = row[lineCol];
+    if (typeof v === "string") all.add(v);
+  }
+  const current = ch.acgState.department ?? "";
+  const options = [current, ...[...all].filter((d) => d !== current)];
+  if (options.length <= 1) return;
+  ch.pickOrDefer({
+    kind: "cascade",
+    label: `Reenlist in different department (current: ${current})`,
+    options,
+    preferred: [current],
+    context: { source: "reenlist", reenlistChangeDepartment: true },
+    onResolve: (c, chosen) => {
+      if (chosen !== current && c.acgState) {
+        c.acgState.department = chosen;
+        c.history.push(`Reenlisted into ${chosen} department.`);
+      }
+    },
+  });
 }
 
 export function merchantStartOfTerm(ch: Character): void {
