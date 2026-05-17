@@ -35,6 +35,7 @@ import { awardBrownie } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { recordTransfer } from "../types";
+import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
 
 const PATHWAY = "merchantPrince";
 
@@ -160,8 +161,26 @@ export function merchantEnlist(
   ch.acgState!.rankCode = "E1";
   ch.acgState!.isOfficer = false;
 
-  // Department assignment.
-  merchantAssignDepartment(ch);
+  // PM p. 47: Merchant Academy is offered AFTER enlistment, BEFORE
+  // department assignment. Eligible only for Megacorporation and
+  // Sector-wide lines. Honors graduates pick their own department
+  // (handled inside attemptPreCareer's applyMerchantDepartmentSkills).
+  if (lineType === "Megacorp" || lineType === "Sector-wide") {
+    maybeAttemptMerchantAcademy(ch);
+  }
+
+  // Department assignment (skipped if the Academy already set it on
+  // honors — the Academy's applyMerchantDepartmentSkills records the
+  // pick in acgState.department, and honors graduates "may select the
+  // department to which he will be assigned" per the PM).
+  if (!ch.acgState!.department) {
+    merchantAssignDepartment(ch);
+  }
+}
+
+function maybeAttemptMerchantAcademy(ch: Character): void {
+  const result = attemptPreCareer(ch, "merchantAcademy");
+  applyPreCareerResult(ch, "merchantAcademy", result);
 }
 
 function merchantAssignDepartment(ch: Character): void {
