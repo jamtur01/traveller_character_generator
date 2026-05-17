@@ -88,6 +88,17 @@ function assignmentColumnMap(ch: Character): Record<string, string> {
   return mp?.assignmentColumnMap ?? {};
 }
 
+interface FreeTraderFlags {
+  skipBonus?: boolean;
+  narrative?: string;
+}
+function freeTraderAssignmentFlags(ch: Character): Record<string, FreeTraderFlags> {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const mp = acg?.merchantPrince as { freeTraderAssignmentFlags?: Record<string, FreeTraderFlags> } | undefined;
+  return mp?.freeTraderAssignmentFlags ?? {};
+}
+
 function lineSizeFor(data: MerchantData, lineType: string): "Large" | "Small" | "FreeTrader" {
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
   if (!row) return "Small";
@@ -303,6 +314,12 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     ch.verboseHistory(`Merchant: assignment "${assignment}" → column "${colKey}" not in ${deptKey}`);
     return;
   }
+  // F14: Free Trader pursuit narrative + mechanical overrides.
+  const freeTraderFlags = freeTraderAssignmentFlags(ch)[assignment];
+  if (freeTraderFlags?.narrative) {
+    ch.verboseHistory(`${assignment}: ${freeTraderFlags.narrative}`);
+  }
+  const skipBonus = freeTraderFlags?.skipBonus === true;
   // The merchant resolution rows are Survival / Skills / Bonus (not the
   // standard Survival/Decoration/Promotion/Skills shape). Parse directly.
   const survRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "survival");
@@ -349,7 +366,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     }
     if (skMargin >= 0) merchantRollSkill(ch);
   }
-  if (bonusRow) {
+  if (bonusRow && !skipBonus) {
     const target = parseResolutionTarget(bonusRow[colKey]).target;
     const bn = rollVsTarget(target, bonusDm);
     // Bonus rolls are like decorations in merchant service. Use the

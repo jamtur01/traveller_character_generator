@@ -7033,6 +7033,12 @@
         "Smuggling": "speculative",
         "Piracy": "speculative"
       },
+      "freeTraderAssignmentFlags": {
+        "$comment": "Per-assignment mechanical overrides for Free Trader columns. PM p. 60-61 describes the narrative meaning; the mechanical effect captured here is the bonus skip for No Business (no available merchant activity = no income).",
+        "No Business": { "skipBonus": true, "narrative": "no available merchant activity; character remains on-planet looking for work" },
+        "Smuggling":   { "narrative": "transports goods illegally for large profits" },
+        "Piracy":      { "narrative": "actively attacks and raids other shipping" }
+      },
       "sourcePrintedPages": [
         60,
         61,
