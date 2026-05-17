@@ -569,15 +569,15 @@ export class Character {
     return table;
   }
 
-  addSkill(skill: string, skillLevel = 1) {
+  addSkill(skill: string, skillLevel = 1, source?: string) {
     const i = this.checkSkill(skill);
     if (i >= 0) {
       const entry = this.skills[i]!;
       entry[1] += skillLevel;
-      this.log(ev.skillImproved(skill, entry[1]));
+      this.log(ev.skillImproved(skill, entry[1], source));
     } else {
       this.skills.push([skill, skillLevel]);
-      this.log(ev.skillLearned(skill, skillLevel));
+      this.log(ev.skillLearned(skill, skillLevel, source));
     }
   }
 
@@ -1223,8 +1223,9 @@ export class Character {
 
   ageAttribute(attrib: AttributeKey, req: number, reduction: number) {
     const r = roll(2);
-    this.logRaw(`Aging ${attrib} throw ${r} vs ${req}`, "verbose");
-    if (r < req) this.improveAttribute(attrib, reduction);
+    const passed = r >= req;
+    this.log(ev.roll(`Aging ${attrib}`, r, 0, req, passed));
+    if (!passed) this.improveAttribute(attrib, reduction);
   }
 
   doAging() {
@@ -1314,7 +1315,7 @@ export class Character {
         this.logRaw(
           `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`, "verbose");
         if (cr < crisisSave) {
-          this.logRaw("Died of illness.");
+          this.log(ev.endGeneration("deceased", "aging crisis"));
           this.deceased = true;
           this.activeDuty = false;
         } else {
@@ -1340,7 +1341,7 @@ export class Character {
       if (m) {
         const next = Math.min(10, parseInt(m[1]!, 10) + 1);
         this.acgState.rankCode = `O${next}`;
-        this.logRaw(`SEH automatic promotion: rank ${this.acgState.rankCode}.`);
+        this.log(ev.promoted(this.acgState.rankCode, "SEH"));
       }
       this.acgState.sehPromotionPending = false;
     }

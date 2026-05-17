@@ -257,8 +257,12 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   if (spec.admission && !flightAutoAdmit) {
     const dm = applyDms(spec.admission.dms, ch);
     const r = roll(2);
-    if (r + dm < spec.admission.target) {
-      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`, "verbose");
+    const succeeded = r + dm >= spec.admission.target;
+    ch.log(ev.roll(
+      `${preCareerLabel(opt, ch.editionId)} admission`,
+      r, dm, spec.admission.target, succeeded,
+    ));
+    if (!succeeded) {
       out.notes.push("Admission denied — may attempt another option or enlist normally.");
       // Rrev11: PM p. 47 distinguishes admission failure from success
       // failure. Admission failure = the school didn't accept you; you
@@ -268,7 +272,6 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.admitted = true;
-    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} admission passed (${r}+${dm} vs ${spec.admission.target}+)`, "verbose");
   } else {
     out.admitted = true;
     if (flightAutoAdmit) {
@@ -282,8 +285,12 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   if (spec.success) {
     const dm = applyDms(spec.success.dms, ch);
     const r = roll(2);
-    if (r + dm < spec.success.target) {
-      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} success FAILED (${r}+${dm} vs ${spec.success.target}+)`, "verbose");
+    const succeeded = r + dm >= spec.success.target;
+    ch.log(ev.roll(
+      `${preCareerLabel(opt, ch.editionId)} success`,
+      r, dm, spec.success.target, succeeded,
+    ));
+    if (!succeeded) {
       out.notes.push("Did not complete the course.");
       out.ageGainedYears += 1;
       // PM p. 47 success-failure outcomes:
@@ -300,7 +307,6 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.graduated = true;
-    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} success passed (${r}+${dm} vs ${spec.success.target}+)`, "verbose");
   } else {
     out.graduated = true;
   }

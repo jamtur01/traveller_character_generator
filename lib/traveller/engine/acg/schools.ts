@@ -150,8 +150,7 @@ function runEffect(
     case "fixedSkill": {
       const skill = String(effect.skill);
       const levels = (effect.levels as number) ?? 1;
-      ch.addSkill(skill, levels);
-      ch.logRaw(`${schoolName}: ${skill}-${levels}`);
+      ch.addSkill(skill, levels, schoolName);
       return;
     }
     case "ocsCommission":
@@ -214,14 +213,12 @@ function runSkillBatch(
   const awarded: string[] = [];
   for (const skill of skills) {
     if (roll(1) >= target) {
-      ch.addSkill(skill, 1);
+      ch.addSkill(skill, 1, schoolName);
       awarded.push(skill);
     }
   }
-  if (awarded.length > 0) {
-    ch.logRaw(`${schoolName}: ${awarded.join(", ")}`);
-  } else {
-    ch.logRaw(`${schoolName}: no skills rolled (all 1D < ${target}+)`);
+  if (awarded.length === 0) {
+    ch.logRaw(`${schoolName}: no skills rolled (all 1D < ${target}+)`, "verbose");
   }
 }
 
@@ -260,7 +257,9 @@ function rollOnSpecialistSchool(
   const col = useSchooling ? "schooling" : "training";
   const skill = row[col];
   if (typeof skill === "string") {
-    ch.logRaw(`${schoolName} (${col}): ${skill}-1`);
+    // applyAcgSkillCell ultimately calls addSkill which logs ev.skillLearned
+    // with source. We pass the school name through context as the source.
+    ch.logRaw(`${schoolName} (${col}) skill roll`, "verbose");
     applyAcgSkillCell(ch, skill);
   }
 }
@@ -311,10 +310,7 @@ function ocsCommission(ch: Character): void {
   if (!resolved) resolved = policy?.defaultToRank ?? "O1";
   ch.acgState.isOfficer = true;
   ch.acgState.rankCode = resolved;
-  if (skipsSkills) {
-    ch.logRaw(`OCS: promoted to ${resolved} (no skills due to senior rank)`);
-  }
-  ch.logRaw(`OCS graduation: rank ${ch.acgState.rankCode}`);
+  ch.log(ev.promoted(resolved, skipsSkills ? "OCS (no skills, senior rank)" : "OCS"));
 }
 
 interface OcsAdvancement {
@@ -423,9 +419,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
     const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
     if (!pattern || !ch.acgState.rankCode.match(pattern)) {
       ch.acgState.rankCode = meta.promotesToRank;
-      ch.logRaw(
-        `Promoted to administrator rank ${meta.promotesToRank} after ${school}.`,
-      );
+      ch.log(ev.promoted(meta.promotesToRank, school));
     }
     return;
   }
