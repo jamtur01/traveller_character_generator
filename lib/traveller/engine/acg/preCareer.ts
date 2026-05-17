@@ -328,13 +328,43 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     // PM p. 47: "He may apply for a direct commission (which is granted
     // automatically) as rank O3 in the Navy (Medical Branch), Army,
     // Scouts, or Merchants (Purser Department Medic). Marines have no
-    // medical officers; they are treated by Navy doctors." The branch
-    // defaults to Navy here; the player UI may override on enlistment.
+    // medical officers; they are treated by Navy doctors." Branch is
+    // a player choice; in interactive mode we queue a pendingChoice,
+    // in auto mode we default to Navy (Medical Branch).
     out.commissioned = true;
     out.commissionRank = "O3";
     out.medicalDirectCommission = true;
-    out.branch = "navy";
-    out.autoEnlistPathway = "navy";
+    if (ch.choiceMode === "interactive") {
+      ch.pickOrDefer({
+        kind: "cascade",
+        label: "Medical School direct commission — choose service branch",
+        options: ["Navy (Medical Branch)", "Army", "Scouts", "Merchants (Purser)"],
+        preferred: ["Navy (Medical Branch)"],
+        context: { source: "medicalCommission" },
+        onResolve: (c, chosen) => {
+          if (chosen === "Army") {
+            c.acgState!.preCareerBranch = "army";
+            c.acgPathway = "mercenary";
+          } else if (chosen === "Scouts") {
+            // Scout branch isn't a value in the union — store separately.
+            c.acgState!.preCareerBranch = null;
+            c.acgPathway = "scout";
+          } else if (chosen === "Merchants (Purser)") {
+            c.acgState!.preCareerBranch = "merchants";
+            c.acgPathway = "merchantPrince";
+          } else {
+            c.acgState!.preCareerBranch = "navy";
+            c.acgPathway = "navy";
+          }
+        },
+      });
+      // Default while choice is pending: navy.
+      out.branch = "navy";
+      out.autoEnlistPathway = "navy";
+    } else {
+      out.branch = "navy";
+      out.autoEnlistPathway = "navy";
+    }
   }
 
   return out;

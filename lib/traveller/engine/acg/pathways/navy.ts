@@ -120,11 +120,13 @@ export function navyEnlist(
   // Naval Academy / NOTC graduates auto-enlist at O1 (manual p. 52):
   //   - Naval Academy graduates commission into the Imperial Navy.
   //   - NOTC graduates commission into the Reserve Fleet.
+  //   - Medical School graduate (O3): joins Imperial Navy Medical Branch.
   // Enforce that fleet here: ignore the caller-provided fleet if it conflicts.
   if (ch.acgState!.preCareerCommission) {
     const schools = ch.acgState!.schoolsAttended;
     let forcedFleet: typeof fleet | null = null;
-    if (schools.includes("navalAcademy")) forcedFleet = "imperialNavy";
+    if (schools.includes("medicalSchool")) forcedFleet = "imperialNavy";
+    else if (schools.includes("navalAcademy")) forcedFleet = "imperialNavy";
     else if (ch.acgState!.preCareerBranch === "navy") forcedFleet = "reserveFleet"; // college NOTC
     if (forcedFleet && fleet !== forcedFleet) {
       ch.acgState!.fleet = forcedFleet;
@@ -134,10 +136,18 @@ export function navyEnlist(
     } else {
       ch.acgState!.fleet = forcedFleet ?? fleet;
     }
-    ch.history.push(
-      `Auto-enlisted in the ${ch.acgState!.fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`,
-    );
-    navyAssignBranch(ch);
+    // Medical School graduate joins the Medical Branch automatically.
+    if (schools.includes("medicalSchool")) {
+      ch.acgState!.branch = "Medical";
+      ch.history.push(
+        `Auto-enlisted in the Imperial Navy Medical Branch as ${ch.acgState!.rankCode} (medical school direct commission).`,
+      );
+    } else {
+      ch.history.push(
+        `Auto-enlisted in the ${ch.acgState!.fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`,
+      );
+      navyAssignBranch(ch);
+    }
     return;
   }
 

@@ -158,8 +158,18 @@ export function merchantEnlist(
     }
     ch.history.push(`Enlisted in ${lineType} merchant line.`);
   }
-  ch.acgState!.rankCode = "E1";
-  ch.acgState!.isOfficer = false;
+  // Preserve pre-career commission rank (e.g. Medical School O3 entering
+  // Merchants as Purser Department Medic per PM p. 47). Otherwise default
+  // to E1 enlisted.
+  if (!ch.acgState!.preCareerCommission) {
+    ch.acgState!.rankCode = "E1";
+    ch.acgState!.isOfficer = false;
+  } else if (ch.acgState!.schoolsAttended.includes("medicalSchool")) {
+    ch.acgState!.department = "Purser";
+    ch.history.push(
+      `Auto-enlisted in Merchants as Purser Department Medic at ${ch.acgState!.rankCode} (medical school direct commission).`,
+    );
+  }
 
   // PM p. 47: Merchant Academy is offered AFTER enlistment, BEFORE
   // department assignment. Eligible only for Megacorporation and
