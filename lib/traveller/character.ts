@@ -1512,5 +1512,11 @@ export function cloneCharacter(c: Character): Character {
   next.benefits = [...c.benefits];
   next.history = [...c.history];
   next.musterLog = [...c.musterLog];
+  // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate
+  // the clone (via pickOrDefer → pendingChoices.push) before committing.
+  // A shared reference leaks queued cascades back to the unrelated original
+  // when the handler bails on ChoicePendingError, stacking stale choices
+  // across stages.
+  next.pendingChoices = [...c.pendingChoices];
   return next;
 }
