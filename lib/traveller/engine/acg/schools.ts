@@ -347,11 +347,20 @@ const TWO_ROLL_SCOUT_SCHOOLS = new Set([
 
 /** Administrator School: may only be attended once per character; only
  *  characters in the Bureaucracy may attend. A subsequent assignment to
- *  Administrator School calls for a reroll (manual p. 57). */
+ *  Administrator School calls for a reroll (manual p. 57). F10: drafted
+ *  characters cannot attend during their first 4-year term (PM line
+ *  3588). The first-term restriction is the same flag as F4 / F17 for
+ *  consistency. */
 function scoutCanAttendAdminSchool(ch: Character): boolean {
   if (!ch.acgState) return false;
   if (ch.acgState.division !== "bureaucracy") return false;
   if (ch.acgState.schoolsAttended.includes("Administrator School")) return false;
+  const draftRules = (getEdition(ch.editionId).data as {
+    rules?: { draft?: { noCommissionFirstTerm?: boolean } };
+  }).rules?.draft;
+  if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
+    return false;
+  }
   return true;
 }
 
