@@ -578,6 +578,27 @@ export function merchantReenlist(ch: Character): boolean {
  *  available departments come from the line's department-assignment table
  *  (FreeTrader is fixed to the Free Trader role). Interactive mode queues
  *  a choice; auto mode keeps the current department. */
+/** F13 — PM p. 61 line 3851. Adds the Reduced Passage benefit string to
+ *  the character's benefits list at muster-out. Rule lives in JSON
+ *  (advancedCharacterGeneration.merchantPrince.specialRules.reducedPassage). */
+export function applyReducedPassageBenefit(ch: Character): void {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const mp = acg?.merchantPrince as { specialRules?: {
+    reducedPassage?: {
+      appliesAfterMuster?: boolean;
+      passage?: string;
+      pricePercent?: number;
+      conditions?: string;
+    };
+  } } | undefined;
+  const rp = mp?.specialRules?.reducedPassage;
+  if (!rp?.appliesAfterMuster) return;
+  const label = `Reduced Passage (${rp.passage ?? "Mid Psg"} at ${rp.pricePercent ?? 50}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
+  if (ch.benefits.includes(label)) return;
+  ch.benefits.push(label);
+}
+
 function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
   if (!ch.acgState || ch.choiceMode === "auto") return;
   const size = lineSizeFor(data, ch.acgState.lineType ?? "");

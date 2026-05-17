@@ -616,8 +616,12 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
       `Starport ${hw.starport} · ${hw.size} · ${hw.atmosphere} atmosphere · ${hw.hydrosphere}`,
       X0 + 6, y + 24,
     );
+    // F18: include subsector tech code if recorded (Navy ACG characters
+    // capture it per PM p. 52).
+    const subsector = c.acgState?.subsectorTechCode;
+    const subsectorSuffix = subsector ? ` · Subsector tech ${subsector}` : "";
     doc.text(
-      `${hw.population} · ${hw.law} · Tech ${hw.tech}`,
+      `${hw.population} · ${hw.law} · Tech ${hw.tech}${subsectorSuffix}`,
       X0 + 6, y + 36,
     );
     doc.setFont(BOLD, "normal");
