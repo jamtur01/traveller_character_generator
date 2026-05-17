@@ -6,7 +6,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { navyResolveAssignment } from "../lib/traveller/engine/acg/pathways/navy";
-import { getEdition } from "../lib/traveller/editions";
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -95,16 +94,6 @@ describe("Navy per-fleet officer rank caps (PM p. 55)", () => {
   });
 });
 
-describe("Navy rank-caps JSON citation (PM p. 55)", () => {
-  // Locks the JSON values against the PM. If someone edits the JSON away
-  // from the printed cap, this fails and forces them to justify against
-  // the source.
-  it("rankCaps: Imperial Navy 10, Reserve Fleet 8, System Squadron 7", () => {
-    const data = getEdition("mt-megatraveller").data;
-    const caps = (data.advancedCharacterGeneration as unknown as
-      { navy: { rankCaps: Record<string, number> } }).navy.rankCaps;
-    expect(caps.imperialNavy).toBe(10);
-    expect(caps.reserveFleet).toBe(8);
-    expect(caps.systemSquadron).toBe(7);
-  });
-});
+// The PM-citation lock for these rankCaps values lives in
+// tests/audit/mt.json.audit.test.ts — engine enforcement is what this
+// file proves, the JSON values are a data audit concern.

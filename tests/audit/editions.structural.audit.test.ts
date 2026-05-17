@@ -45,7 +45,7 @@ interface ServiceShape {
   };
 }
 
-const EDITIONS_DIR = resolve(__dirname, "../data/editions");
+const EDITIONS_DIR = resolve(__dirname, "../../data/editions");
 
 function loadEditions(): EditionFile[] {
   const files = readdirSync(EDITIONS_DIR).filter((f) => f.endsWith(".json"));

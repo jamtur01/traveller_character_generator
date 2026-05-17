@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
-} from "../lib/traveller";
+} from "../../lib/traveller";
 
 describe("cascade pools (TTB p. 25)", () => {
   it("BLADES contains the 10 TTB blades & polearms", () => {

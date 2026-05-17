@@ -11,7 +11,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:engine": "vitest run --exclude 'tests/audit/**'",
+    "test:audit": "vitest run tests/audit"
   },
   "dependencies": {
     "jspdf": "4.2.1",
