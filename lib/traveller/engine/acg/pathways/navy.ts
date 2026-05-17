@@ -38,6 +38,7 @@ interface NavyData {
   branchAssignment: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   branchResolution?: Record<string, string>;
   branches?: string[];
+  branchFleetRestrictions?: Record<string, string[]>;
   initialTraining?: string[];
   commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   assignment: {
@@ -198,39 +199,71 @@ function navyAssignBranch(ch: Character): void {
     return;
   }
   if (ch.attributes.social >= 9 && data.branches && ch.choiceMode === "interactive") {
+    // F7: Technical Services exists only in the Imperial Navy (PM p. 52
+    // line 3261). Filter the available branches accordingly.
+    const filtered = filterBranchesByFleet(ch, data.branches);
     ch.pickOrDefer({
       kind: "navyBranch",
       label: "Choose your Naval branch (Social 9+ may select).",
-      options: data.branches,
+      options: filtered,
       onResolve: (c, branch) => { c.acgState!.branch = branch; },
     });
     return;
   }
   const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.branchAssignment.dms, ch);
-  const r = Math.max(0, Math.min(7, roll(1) + dm));
-  const row = data.branchAssignment.rows.find((row) => row.die === r);
-  if (!row) {
-    ch.acgState!.branch = ch.acgState!.isOfficer ? "Line" : "Crew";
-    return;
+  let rolled: string | null = null;
+  // Re-roll if the rolled branch is Technical Services in a fleet that
+  // doesn't have it (cap at 8 attempts as a safety net — the table has
+  // multiple non-Tech-Services rows so re-roll converges quickly).
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const r = Math.max(0, Math.min(7, roll(1) + dm));
+    const row = data.branchAssignment.rows.find((row) => row.die === r);
+    const candidate = String(row?.[col] ?? "Line");
+    if (isBranchAllowedForFleet(ch, candidate)) {
+      rolled = candidate;
+      break;
+    }
   }
-  ch.acgState!.branch = String(row[col] ?? "Line");
+  ch.acgState!.branch = rolled ?? (ch.acgState!.isOfficer ? "Line" : "Crew");
   ch.verboseHistory(`Navy branch: ${ch.acgState!.branch}`);
+}
+
+/** F7: PM p. 52 — "The Technical Services branch exists only in the
+ *  Imperial Navy." Read the restriction from the edition JSON (no
+ *  hardcoded branch names in code). */
+function isBranchAllowedForFleet(ch: Character, branch: string): boolean {
+  const restrictions = dataFor(ch).branchFleetRestrictions ?? {};
+  const allowedFleets = restrictions[branch];
+  if (!allowedFleets) return true;
+  return allowedFleets.includes(ch.acgState?.fleet ?? "");
+}
+
+function filterBranchesByFleet(ch: Character, branches: string[]): string[] {
+  return branches.filter((b) => isBranchAllowedForFleet(ch, b));
 }
 
 /** Initial training: 2 skills on Branch Skills (enlisted) or Officer Staff
  *  Skills (officers). Officers may choose which table per manual p. 52.
- *  Drafted characters and OCS commissions skip initial training entirely. */
+ *  Drafted characters and OCS commissions skip Officer Staff Skills —
+ *  see the OCS gate below. */
 export function navyInitialTraining(ch: Character): void {
-  // OCS graduates from a previous term skip initial training (manual p. 52).
-  // We use `preCareerCommission` as the trigger because the only way an ACG
-  // navy character can have skipped initial training is academy/NOTC entry.
-  // Drafted characters get standard initial training, but the manual exempts
-  // OCS — that's handled when OCS fires mid-career, not at term 1.
+  // F6 PM p. 52 line 3272: "officers with commissions from OCS do not
+  // undergo this training." Initial training fires at the very start of
+  // term 1 year 1, so the natural ordering puts OCS commissions after
+  // this point (OCS is a special-duty result, which can only fire from
+  // term 1 year 2 onward — never before initial training).
+  //
+  // For defence-in-depth: if some future flow ever calls
+  // navyInitialTraining after an OCS-induced isOfficer=true with no
+  // preCareerCommission flag set, we still treat the character as
+  // ineligible for Officer Staff Skills.
   const data = dataFor(ch);
   ch.history.push("Initial Training in the Navy");
   if (!data.branchSkills) return;
-  if (ch.acgState!.isOfficer && ch.choiceMode === "interactive") {
+  const isAcademyOrNotcOfficer = ch.acgState!.isOfficer &&
+    ch.acgState!.preCareerCommission === true;
+  if (isAcademyOrNotcOfficer && ch.choiceMode === "interactive") {
     // Officers may choose Branch Skills or Officer Staff Skills for each
     // of the two initial-training rolls. Expose as a player choice.
     for (let i = 0; i < 2; i++) navyOfficerSkillChoice(ch);
@@ -608,7 +641,11 @@ function offerNavyBranchChange(ch: Character): void {
   if (!ch.acgState.isOfficer) return;
   const current = ch.acgState.branch ?? "";
   const crossTrained = ch.acgState.crossTrainedBranches ?? [];
-  const eligible = [current, ...crossTrained.filter((b) => b !== current)];
+  // F7: filter cross-trained branches by fleet eligibility too.
+  const filteredCrossTrained = crossTrained.filter(
+    (b) => b !== current && isBranchAllowedForFleet(ch, b),
+  );
+  const eligible = [current, ...filteredCrossTrained];
   if (eligible.length <= 1) return;
   ch.pickOrDefer({
     kind: "cascade",
