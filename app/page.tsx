@@ -664,11 +664,12 @@ const ATTR_LABELS: { key: AttributeKey; short: string }[] = [
 ];
 
 function CharacterSummary({ character }: { character: Character }) {
-  const def = getEditionServices(character.editionId)[character.service]!;
-  const rankText = def.ranks[character.rank] || "";
+  const def = getEditionServices(character.editionId)[character.service];
+  const rankText = def?.ranks[character.rank] || "";
   const titleText =
     character.attributes.social > 10 ? character.getNobleTitle() : "";
-  const memberText = character.service === "other" ? "" : def.memberName;
+  const memberText =
+    !def || character.service === "other" ? "" : def.memberName;
   const subtitleParts = [memberText, rankText, titleText].filter(Boolean);
 
   return (
@@ -704,7 +705,7 @@ function CharacterSummary({ character }: { character: Character }) {
       </div>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <Field label="Service" value={def.serviceName} />
+        <Field label="Service" value={def?.serviceName ?? ""} />
         <Field label="Age" value={String(character.age)} />
         <Field label="Terms" value={String(character.terms)} />
         <Field
