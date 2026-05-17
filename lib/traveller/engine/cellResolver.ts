@@ -23,7 +23,8 @@ import type { Character } from "../character";
 import type { AttributeKey } from "../types";
 import type { BenefitDetail } from "../editions/types";
 import { getEdition } from "../editions";
-import { cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
+import { roll } from "../random";
+import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 
 const ATTR_BY_ABBR: Record<string, AttributeKey> = {
@@ -63,6 +64,59 @@ const SKILL_LABEL_RENAMES: Record<string, string> = {
  *  skill — unlike a cascade, which is one player pick. Entries may be
  *  plain names (granted at level 1) or "Name-N" (granted at level N,
  *  e.g. "Laser Weapons-0" for High-G Environ). */
+/** F5: Marine Tradition. When a Marine character receives a Blade Combat
+ *  cascade, it must be taken as the forced skill (Large Blade) unless a
+ *  saving throw passes. Returns true if the tradition fired and handled
+ *  the cell; false if it didn't apply (caller continues normally). */
+function tryMarineTradition(ch: Character, label: string): boolean {
+  const rule = (getEdition(ch.editionId).data as {
+    rules?: {
+      marineTradition?: {
+        appliesToServices?: string[];
+        appliesToCascade?: string;
+        forcedSkill?: string;
+        savingThrow?: { target: number; die?: string };
+        dmIfAlreadySkillAtLeast?: Array<{ skill: string; level: number; dm: number }>;
+      };
+    };
+  }).rules?.marineTradition;
+  if (!rule || !rule.forcedSkill) return false;
+  if (!rule.appliesToServices?.includes(String(ch.service))) return false;
+  if (cascadeKeyForLabel(label) !== rule.appliesToCascade) return false;
+
+  // Saving throw: 2D vs target, with DMs if already skilled in the forced
+  // skill at the listed level.
+  const target = rule.savingThrow?.target ?? 9;
+  let dm = 0;
+  const tiers = (rule.dmIfAlreadySkillAtLeast ?? []).slice().sort(
+    (a, b) => b.level - a.level,
+  );
+  for (const tier of tiers) {
+    const idx = ch.skills.findIndex(([n]) => n === tier.skill);
+    if (idx >= 0 && (ch.skills[idx]?.[1] ?? 0) >= tier.level) {
+      dm = tier.dm;
+      break;
+    }
+  }
+  // Roll 2D; if it passes, the player escapes the tradition and the
+  // normal cascade flow runs.
+  const dieCount = rule.savingThrow?.die === "1D" ? 1 : 2;
+  const r = roll(dieCount);
+  ch.verboseHistory(
+    `Marine Tradition save: ${r} + ${dm} vs ${target}+ (Blade Combat)`,
+  );
+  if (r + dm >= target) {
+    ch.verboseHistory("Marine Tradition save passed — normal Blade Combat cascade.");
+    return false;
+  }
+  // Save failed — forced to receive the named skill at level 1.
+  ch.history.push(
+    `Marine Tradition: Blade Combat → ${rule.forcedSkill}.`,
+  );
+  ch.addSkill(rule.forcedSkill);
+  return true;
+}
+
 function includesExpansion(
   editionId: string, name: string,
 ): Array<{ skill: string; level: number }> | null {
@@ -102,6 +156,11 @@ export function applyCell(
     ch.improveAttribute(attr, delta);
     return;
   }
+
+  // F5 Marine Tradition: PM p. 49. When a Marine receives Blade Combat,
+  // it must be taken as Large Blade unless they pass a saving throw.
+  // Data-driven via rules.marineTradition.
+  if (mode === "skill" && tryMarineTradition(ch, label)) return;
 
   // Cascade label — resolve the pool via the character's edition.
   // A label might be a cascade alias in MT (e.g., "Gunnery" cascades to

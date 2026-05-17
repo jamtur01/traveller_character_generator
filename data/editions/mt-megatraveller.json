@@ -383,6 +383,18 @@
       "physicalAttributeAtMost": 1,
       "sumPhysicalAttributesAtMost": 10
     },
+    "marineTradition": {
+      "rule": "PM p. 49 (lines 3061-3065): whenever a Marine receives Blade Combat, it must be taken as Large Blade (Marines are trained in Cutlass due to Marine tradition). A saving throw against Marine tradition is possible: throw 9+; DM-3 if already Large Blade-1; DM-6 if already Large Blade-2 or higher.",
+      "source": "MT PM p. 49",
+      "appliesToServices": ["marines"],
+      "appliesToCascade": "bladeCombat",
+      "forcedSkill": "Large Blade",
+      "savingThrow": { "target": 9, "die": "2D" },
+      "dmIfAlreadySkillAtLeast": [
+        { "skill": "Large Blade", "level": 1, "dm": -3 },
+        { "skill": "Large Blade", "level": 2, "dm": -6 }
+      ]
+    },
     "homeworldSkillRestrictions": {
       "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Law Enforcers, Pirates, and Rogues may select weapon skills one law code lower than their homeworld's. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely.",
       "source": "MT PM p. 39",
