@@ -178,6 +178,12 @@ export type HistoryEvent =
       kind: "schoolAssigned";
       level: HistoryLevel;
       school: string; pathway?: string;
+    }
+  // Character was promoted into a new rank.
+  | {
+      kind: "promoted";
+      level: HistoryLevel;
+      rank: string; source?: string;
     };
 
 /** Constructors for the most common events. UI / engine emit via these
@@ -305,6 +311,10 @@ export const event = {
     kind: "schoolAssigned", level: "simple", school,
     ...(pathway !== undefined ? { pathway } : {}),
   }),
+  promoted: (rank: string, source?: string): HistoryEvent => ({
+    kind: "promoted", level: "simple", rank,
+    ...(source !== undefined ? { source } : {}),
+  }),
 };
 
 /** Render a HistoryEvent to a display string. Used by the HistoryPanel
@@ -424,6 +434,10 @@ export function formatEvent(e: HistoryEvent): string {
     case "schoolAssigned":
       return `School assignment: ${e.school}` +
         (e.pathway ? ` (${e.pathway})` : "") + ".";
+    case "promoted": {
+      const source = e.source ? ` (${e.source})` : "";
+      return `Promoted to ${e.rank}${source}.`;
+    }
   }
 }
 

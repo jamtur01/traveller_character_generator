@@ -451,7 +451,11 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
   const sv = rollVsTarget(res.survival, survDm);
-  ch.logRaw(`Navy ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`, "verbose");
+  ch.log(ev.roll(
+    "Survival", sv.roll, survDm,
+    typeof res.survival === "number" ? res.survival : 0,
+    sv.success, assignment,
+  ));
   if (!sv.success) {
     const mit = tryMitigate(ch, {
       rollName: "survival",
@@ -573,14 +577,14 @@ function promoteNavy(ch: Character): void {
     if (idx >= 0 && idx < targetIdx && targetIdx < codes.length) {
       ch.acgState!.rankCode = codes[targetIdx]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.logRaw(`Promoted to ${data.ranks.officer[targetIdx]![1]}.`);
+      ch.log(ev.promoted(data.ranks.officer[targetIdx]![1]));
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.logRaw(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
+      ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
     }
   }
 }
