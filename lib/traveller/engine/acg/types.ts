@@ -109,6 +109,11 @@ export interface AcgState {
    *  Commando entry (Mil Academy honors), Medical/Flight School admission,
    *  Scout IS-10 (college honors), and Merchant Academy department choice. */
   honorsGraduations?: string[];
+  /** Pre-career options the character has already attempted regardless of
+   *  outcome (admission denied, washed out, or graduated). Used by the UI
+   *  to remove a school from the picker after it's been tried — RAW
+   *  doesn't allow re-applying to the same school. */
+  schoolsAttempted?: string[];
   /** PM p. 47: pre-career failure forces a short (3-year) first term. */
   preCareerFirstTermShort?: boolean;
   /** PM p. 47: pre-career failure may draft the character into a specific

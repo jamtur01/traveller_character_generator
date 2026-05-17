@@ -590,6 +590,15 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
 
 /** Apply a pre-career result to the character. Mutates state. */
 export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: PreCareerResult): void {
+  // Record the attempt regardless of outcome so the picker UI can remove
+  // this option — RAW doesn't allow re-applying to the same school after
+  // admission failure / washout.
+  if (ch.acgState) {
+    ch.acgState.schoolsAttempted = ch.acgState.schoolsAttempted ?? [];
+    if (!ch.acgState.schoolsAttempted.includes(opt)) {
+      ch.acgState.schoolsAttempted.push(opt);
+    }
+  }
   ch.age += r.ageGainedYears;
   for (const [attr, delta] of Object.entries(r.attributeChanges)) {
     const a = attr as keyof Character["attributes"];
