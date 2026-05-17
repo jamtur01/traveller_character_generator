@@ -38,11 +38,13 @@ interface RestrictionsData {
 
 interface HomeworldData {
   techCodeOrder: string[];
+  lawOrder?: string[];
 }
 
 function dataFor(ch: Character): {
   r: RestrictionsData;
   techOrder: string[];
+  lawOrder: string[];
 } | null {
   const ed = getEdition(ch.editionId);
   const rules = (ed.data as {
@@ -51,10 +53,12 @@ function dataFor(ch: Character): {
   }).rules;
   const hw = (ed.data as { homeworld?: HomeworldData }).homeworld;
   if (!rules?.homeworldSkillRestrictions || !hw?.techCodeOrder) return null;
-  return { r: rules.homeworldSkillRestrictions, techOrder: hw.techCodeOrder };
+  return {
+    r: rules.homeworldSkillRestrictions,
+    techOrder: hw.techCodeOrder,
+    lawOrder: hw.lawOrder ?? [],
+  };
 }
-
-const LAW_ORDER = ["No Law", "Low Law", "Mod Law", "High Law", "Ext Law"];
 
 /** Decide whether a skill is restricted by homeworld and return the
  *  required override roll target, or null when no override is needed. */
@@ -84,8 +88,8 @@ export function skillRequiresOverride(
 
   const weaponMaxLaw = d.r.weaponSkillMaxLaw[skillName];
   if (weaponMaxLaw !== undefined) {
-    const maxIdx = LAW_ORDER.indexOf(weaponMaxLaw);
-    let hwLawIdx = LAW_ORDER.indexOf(ch.homeworld.law);
+    const maxIdx = d.lawOrder.indexOf(weaponMaxLaw);
+    let hwLawIdx = d.lawOrder.indexOf(ch.homeworld.law);
     // Law Enforcers, Pirates, Rogues effectively see law one step lower
     // for weapon-skill restriction purposes.
     if (d.r.weaponLawLowerServices?.includes(String(ch.service)) && hwLawIdx > 0) {

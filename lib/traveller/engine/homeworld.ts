@@ -18,6 +18,11 @@ export interface Homeworld {
 }
 
 interface HomeworldData {
+  populationOrder?: string[];
+  lawOrder?: string[];
+  atmosphereOrder?: string[];
+  hydrosphereOrder?: string[];
+  starportOrder?: string[];
   rollTable: {
     columns: string[];
     rows: Array<Record<string, string | number>>;
@@ -67,15 +72,11 @@ interface HomeworldData {
   techCodeOrder: string[];
 }
 
-const POPULATION_ORDER = ["Low Pop", "Mod Pop", "High Pop"];
-const LAW_ORDER = ["No Law", "Low Law", "Mod Law", "High Law", "Ext Law"];
-const ATMOSPHERE_ORDER = ["Vacuum", "Thin", "Standard", "Dense", "Exotic"];
-const HYDROSPHERE_ORDER = ["Desert", "Dry", "Wet World", "Water World"];
-
 function meetsOrder(
-  value: string | undefined, threshold: string, order: string[],
+  value: string | undefined, threshold: string,
+  order: string[] | undefined,
 ): boolean {
-  if (!value) return false;
+  if (!value || !order) return false;
   const have = order.indexOf(value);
   const want = order.indexOf(threshold);
   if (have < 0 || want < 0) return false;
@@ -248,19 +249,19 @@ export function availableServicesForHomeworld(
       triggers = true;
     }
     if (rule.requiresPopulationAtLeast &&
-        !meetsOrder(hw.population, rule.requiresPopulationAtLeast, POPULATION_ORDER)) {
+        !meetsOrder(hw.population, rule.requiresPopulationAtLeast, data.populationOrder)) {
       triggers = true;
     }
     if (rule.requiresLawAtLeast &&
-        !meetsOrder(hw.law, rule.requiresLawAtLeast, LAW_ORDER)) {
+        !meetsOrder(hw.law, rule.requiresLawAtLeast, data.lawOrder)) {
       triggers = true;
     }
     if (rule.requiresAtmosphereAtLeast &&
-        !meetsOrder(hw.atmosphere, rule.requiresAtmosphereAtLeast, ATMOSPHERE_ORDER)) {
+        !meetsOrder(hw.atmosphere, rule.requiresAtmosphereAtLeast, data.atmosphereOrder)) {
       triggers = true;
     }
     if (rule.requiresHydrosphereAtLeast &&
-        !meetsOrder(hw.hydrosphere, rule.requiresHydrosphereAtLeast, HYDROSPHERE_ORDER)) {
+        !meetsOrder(hw.hydrosphere, rule.requiresHydrosphereAtLeast, data.hydrosphereOrder)) {
       triggers = true;
     }
     if (rule.requiresSocialAtLeast !== undefined &&

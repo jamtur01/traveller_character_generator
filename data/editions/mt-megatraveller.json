@@ -458,6 +458,12 @@
       }
     }
   },
+  "skillLabelRenames": {
+    "$comment": "Map abbreviated/typo cell labels to the canonical engine skill name. Cells in the PM acquired-skills tables sometimes use abbreviations or alternate spellings (e.g. 'Engnrng' for Engineering, 'Electronics' for Electronic, 'Fwd Obsv' for Fwd Obsvr).",
+    "Engnrng": "Engineering",
+    "Electronics": "Electronic",
+    "Fwd Obsv": "Fwd Obsvr"
+  },
   "includesSkills": {
     "$comment": "PM Includes-skills, verified against MT_MegaTraveller_Players_Manual.pdf. Each entry expands to its constituent skill(s) at level 1 unless suffixed '-0'. Excluded: Small Watercraft (line 2393) and Wheeled Vehicle (line 2483) — both use the 'Includes' wording but with '-1' suffixes, which the PM treats as 'Serves as' (substitutes at one level lower), not as multi-skill grants. PM citations are line numbers in extracted text.",
     "ATV": ["Tracked Vehicle", "Wheeled Vehicle"],
@@ -660,12 +666,15 @@
   "benefitDetails": {
     "passages": {
       "High Psg": {
+        "displayName": "High Passage",
         "cashValueCredits": 10000
       },
       "Mid Psg": {
+        "displayName": "Mid Passage",
         "cashValueCredits": 8000
       },
       "Low Psg": {
+        "displayName": "Low Passage",
         "cashValueCredits": 1000
       }
     },
@@ -3303,6 +3312,11 @@
       { "requiresSocialAtLeast": 10,            "services": ["nobles"] }
     ],
     "techCodeOrder": ["Pre-Industrial", "Industrial", "Pre-Stellar", "Early Stellar", "Avg Stellar", "High Stellar"],
+    "populationOrder": ["Low Pop", "Mod Pop", "High Pop"],
+    "lawOrder": ["No Law", "Low Law", "Mod Law", "High Law", "Ext Law"],
+    "atmosphereOrder": ["Vacuum", "Thin", "Standard", "Dense", "Exotic"],
+    "hydrosphereOrder": ["Desert", "Dry", "Wet World", "Water World"],
+    "starportOrder": ["X", "E", "D", "C", "B", "A"],
     "starportTypes": {
       "A": "Excellent quality installation.",
       "B": "Good quality installation.",
@@ -6928,6 +6942,16 @@
       }
     },
     "merchantPrince": {
+      "assignmentColumnMap": {
+        "$comment": "Display-name → assignment-resolution-column key. Free-trader-only assignments (No Business / Smuggling / Piracy) reuse the route / speculative columns because no separate resolution columns exist; PM p. 61 treats them as variations on the regular columns for survival/skills/bonus.",
+        "Route": "route",
+        "Charter": "charter",
+        "Exploratory Trade": "exploratory",
+        "Speculative Trade": "speculative",
+        "No Business": "route",
+        "Smuggling": "speculative",
+        "Piracy": "speculative"
+      },
       "sourcePrintedPages": [
         60,
         61,
