@@ -117,6 +117,12 @@ export interface AcgState {
   /** Player's opt-in for Merchant Academy (PM p. 47: "may apply").
    *  Set by the UI before merchant enlistment runs. Default: skip. */
   attemptMerchantAcademy?: boolean;
+  /** Brownie-point auto-spend policy (PM p. 46 "any number"). "conservative"
+   *  caps lesser rolls; "aggressive" spends up to need on any roll. */
+  bpAutoPolicy?: "conservative" | "aggressive";
+  /** Last interactive BP review spend (rollName + spent). The pathway code
+   *  may read this to retroactively upgrade an outcome. */
+  lastBpExtraSpend?: { rollName: string; spent: number };
 
   /** Combat arms or branches the character has been cross-trained into via
    *  special-assignment schools. Drives the Marine cross-training reenlist

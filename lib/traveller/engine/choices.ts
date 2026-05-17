@@ -27,7 +27,8 @@ export type ChoiceKind =
   | "merchantDepartment"    // Merchant Academy: pick one of five depts
   | "merchantSkillTable"    // Merchant: service / department / life
   | "reduceSkill"           // Int+Edu skill cap: pick a skill to reduce by 1
-  | "repeatWeaponBenefit";  // Repeated weapon benefit (PM p. 20): same/different/category
+  | "repeatWeaponBenefit"   // Repeated weapon benefit (PM p. 20): same/different/category
+  | "bpSpend";              // Brownie-point spend prompt (PM p. 46)
 
 export interface ChoiceRequest<T = string> {
   kind: ChoiceKind;
