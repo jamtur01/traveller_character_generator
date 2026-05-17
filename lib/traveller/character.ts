@@ -895,14 +895,29 @@ export class Character {
 
   /** Try to obtain anagathics for the upcoming term (PM p. 15). Returns
    *  whether a supply was secured. Requires age ≥ 30 at end of third
-   *  term. Throws if called before the third term's end. Caller is
-   *  expected to call this before survival each term they want to use
-   *  anagathics. */
-  tryAnagathics(): boolean {
+   *  term. Caller is expected to call this before survival each term
+   *  they want to use anagathics. If the availability roll fails and
+   *  `allowRetry` is true (default), the character makes an extra
+   *  survival roll: on success a single retry is granted (PM "one retry
+   *  is allowed if the character rerolls another survival roll first");
+   *  on failure the character is short-term mustered out ("forced to
+   *  muster out"). */
+  tryAnagathics(allowRetry = true): boolean {
     if (this.age < 30 || this.terms < 3) {
       this.verboseHistory("Anagathics unavailable: must be at least age 30 and end of third term.");
       return false;
     }
+    const result = this.rollAnagathicsAvailability();
+    if (result) return true;
+    if (!allowRetry) return false;
+    // PM retry mechanic: extra survival roll gates one retry.
+    if (!this.rollAnagathicsRetrySurvival()) return false;
+    return this.rollAnagathicsAvailability();
+  }
+
+  /** Roll 2D + DMs for anagathics availability and apply the success/failure
+   *  side-effects. Returns whether a supply was found. */
+  private rollAnagathicsAvailability(): boolean {
     let dm = 0;
     const sp = this.homeworld?.starport;
     if (sp === "A") dm += 3;
@@ -917,8 +932,6 @@ export class Character {
     const success = r >= 12;
     if (success) {
       if (!this.onAnagathics) {
-        // First term on anagathics: still advance one line on the Aging
-        // Table per manual (so apparent age becomes current chronological).
         this.apparentAge = this.age;
       }
       this.onAnagathics = true;
@@ -934,6 +947,28 @@ export class Character {
       this.onAnagathics = false;
     }
     return success;
+  }
+
+  /** Extra survival roll gating the anagathics retry (PM p. 15). On
+   *  failure the character is forced into a short-term muster-out. */
+  private rollAnagathicsRetrySurvival(): boolean {
+    try {
+      const svc = this.serviceDef();
+      const passed = svc.checkSurvival(this);
+      this.history.push(
+        `Anagathics retry survival ${passed ? "passed" : "failed"}.`,
+      );
+      if (!passed) {
+        this.shortTermThisTerm = true;
+        this.shortTermsCount += 1;
+        this.activeDuty = false;
+        this.history.push("Forced to muster out after failed retry survival roll.");
+      }
+      return passed;
+    } catch {
+      // Pre-enlistment (no service yet) — retry not available.
+      return false;
+    }
   }
 
   /** Pre-survival anagathics hook (PM p. 15). Reads anagathicsStandingOrder
@@ -1012,8 +1047,24 @@ export class Character {
     // Anagathics withdrawal: double saving throws on each characteristic;
     // both must pass to avoid the listed reduction (PM p. 15).
     const withdrawal = this.anagathicsWithdrawalThisTerm;
-    for (const [attr, eff] of Object.entries(applicable.effects) as
-      [AttributeKey, { delta: number; save: number }][]) {
+    // Anagathics benefit (PM p. 15): on a maintained supply the character
+    // automatically succeeds at the aging saving throws for two
+    // characteristics of his or her choice (per term). Default policy in
+    // auto mode is the two with the highest save targets (most likely to
+    // fail), so the benefit lands where it helps most.
+    const effects = Object.entries(applicable.effects) as
+      [AttributeKey, { delta: number; save: number }][];
+    const autoSaves = new Set<AttributeKey>();
+    if (this.onAnagathics && !withdrawal && effects.length > 0) {
+      const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
+      const n = Math.min(2, ranked.length);
+      for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
+      this.verboseHistory(
+        `Anagathics auto-saves: ${[...autoSaves].join(", ")} (2 of ${effects.length})`,
+      );
+    }
+    for (const [attr, eff] of effects) {
+      if (autoSaves.has(attr)) continue;
       if (withdrawal) {
         const r1 = roll(2);
         const r2 = roll(2);

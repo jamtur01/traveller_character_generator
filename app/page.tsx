@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Character, cloneCharacter } from "@/lib/traveller/character";
 import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
-import { DEFAULT_EDITION_ID, listEditions } from "@/lib/traveller/editions";
+import { DEFAULT_EDITION_ID, getEdition, listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
 import {
@@ -437,6 +437,13 @@ export default function Home() {
               character={character}
               onRunTerm={runTerm}
               onMusterOut={attemptMusterOut}
+              onToggleAnagathics={(next) => {
+                const prev = characterRef.current;
+                if (!prev) return;
+                const c = cloneCharacter(prev);
+                c.anagathicsStandingOrder = next;
+                commit(c, "term");
+              }}
             />
           )}
 
@@ -1228,10 +1235,12 @@ function TermPhase({
   character,
   onRunTerm,
   onMusterOut,
+  onToggleAnagathics,
 }: {
   character: Character;
   onRunTerm: () => void;
   onMusterOut: () => void;
+  onToggleAnagathics: (next: boolean) => void;
 }) {
   const termNum = character.terms + 1;
   const nextAge = character.age + 4;
@@ -1239,6 +1248,14 @@ function TermPhase({
 
   const canMusterOut =
     character.terms >= 1 && !character.mandatoryReenlistment;
+
+  // Anagathics eligibility: MT only (rules.skillCap is a proxy for the MT
+  // ruleset), age 30+ at end of third term. Visible only when relevant.
+  const editionData = getEdition(character.editionId).data;
+  const hasMtRules =
+    Boolean((editionData.rules as { skillCap?: unknown })?.skillCap);
+  const anagathicsEligible =
+    hasMtRules && nextAge >= 30 && character.terms >= 3;
 
   return (
     <PhaseCard
@@ -1281,6 +1298,28 @@ function TermPhase({
           }
         />
       </dl>
+
+      {anagathicsEligible && (
+        <div className="rounded-md border border-slate-300 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={character.anagathicsStandingOrder}
+              onChange={(e) => onToggleAnagathics(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <strong className="font-semibold">Attempt anagathics this term.</strong>{" "}
+              -1 survival DM ({character.service === "nobles" ? "-2 for nobles" : ""}),
+              muster benefit roll forfeited for the term, permanent cap of 2 cash
+              rolls once ever taken. On a successful availability roll the
+              character auto-saves 2 aging characteristics. If the first
+              availability roll fails, an extra survival roll gates one retry —
+              failing that survival forces a short-term muster-out. PM p. 15.
+            </span>
+          </label>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2 pt-1">
         <PrimaryButton onClick={onRunTerm}>Run term →</PrimaryButton>
