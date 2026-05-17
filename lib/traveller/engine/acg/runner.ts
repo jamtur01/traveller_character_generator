@@ -220,6 +220,18 @@ export function runAcgTerm(ch: Character): void {
   ch.doAging();
   if (ch.deceased || !ch.activeDuty) return;
 
+  // F2/F3: PM p. 16 disability check happens after aging (which may have
+  // dropped a physical attribute to 1 or pushed the age past the cap).
+  const dis = ch.isDisabled();
+  if (dis.disabled) {
+    ch.activeDuty = false;
+    if (ch.isRetirementEligible()) ch.retired = true;
+    ch.history.push(
+      `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
+    );
+    return;
+  }
+
   // End-of-term reenlistment check.
   const keep = p.reenlist(ch);
   if (!keep) {
