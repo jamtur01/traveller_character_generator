@@ -7014,6 +7014,13 @@
           "$rule": "PM p. 61 line 3837: 'Officers automatically transfer to the Deck Department after one full term in rank O4.'",
           "rankCode": "O4",
           "destinationDepartment": "Deck"
+        },
+        "reducedPassage": {
+          "$rule": "PM p. 61 line 3851: 'Individuals formerly employed by a merchant line may purchase stand-by middle passages at half price if the ship has empty staterooms available.'",
+          "appliesAfterMuster": true,
+          "passage": "Mid Psg",
+          "pricePercent": 50,
+          "conditions": "stand-by; ship has empty staterooms"
         }
       },
       "assignmentColumnMap": {

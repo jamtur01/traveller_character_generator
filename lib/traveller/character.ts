@@ -17,7 +17,11 @@ import {
 } from "./engine/acg/preCareer";
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
-import { merchantEnlist, merchantFinalizeMuster } from "./engine/acg/pathways/merchantPrince";
+import {
+  applyReducedPassageBenefit,
+  merchantEnlist,
+  merchantFinalizeMuster,
+} from "./engine/acg/pathways/merchantPrince";
 import { scoutFinalizeMuster } from "./engine/acg/pathways/scout";
 import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
 import { generateGender, generateName } from "./names";
@@ -1431,6 +1435,9 @@ export class Character {
     // ACG Merchant Free Trader Owner/Captain auto-benefit.
     if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
       merchantFinalizeMuster(this);
+      // F13: Reduced Passage benefit per PM p. 61 line 3851 — ex-merchants
+      // may purchase stand-by middle passages at half price.
+      applyReducedPassageBenefit(this);
     }
     // ACG Scout Detached Duty permanent-assignment benefit.
     if (this.useAcg && this.acgState?.pathway === "scout") {
