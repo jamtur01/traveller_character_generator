@@ -550,14 +550,20 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
   if (!dept) return;
   const departments = dept.columns.filter((c) => c !== "die");
   if (departments.length === 0) return;
+  // Skill-attempt parameters from the Academy spec (JSON pco.skills).
+  const pco = (acg?.common as { preCareerOptions?: { merchantAcademy?: { skills?: unknown } } } | undefined)
+    ?.preCareerOptions?.merchantAcademy;
+  const skillsSpec = pco?.skills as { throwTarget?: number; rolls?: number } | undefined;
+  const skillsTarget = skillsSpec?.throwTarget ?? 4;
+  const skillsCount = skillsSpec?.rolls ?? 3;
   const apply = (choice: string): void => {
     out.notes.push(`Merchant department: ${choice}`);
     // PM p. 47: "may select the department to which he will be assigned"
     // — record the player's pick so the post-enlistment flow doesn't
     // re-roll department assignment.
     if (ch.acgState) ch.acgState.department = choice;
-    for (let i = 0; i < 3; i++) {
-      if (roll(1) >= 4) {
+    for (let i = 0; i < skillsCount; i++) {
+      if (roll(1) >= skillsTarget) {
         const r = roll(1);
         const row = dept.rows.find((row) => row.die === r);
         const skill = row?.[choice];
