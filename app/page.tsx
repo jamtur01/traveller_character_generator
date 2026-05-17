@@ -51,7 +51,9 @@ function pickSkillPhase(c: Character): Phase {
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("start");
   const [character, setCharacter] = useState<Character | null>(null);
-  const [verbose, setVerbose] = useState(false);
+  // Default to verbose history so the user sees every roll, skill grant,
+  // and choice resolution. The header checkbox lets power users opt out.
+  const [verbose, setVerbose] = useState(true);
   const [interactiveMode, setInteractiveMode] = useState(false);
   const [edition, setEdition] = useState<string>(DEFAULT_EDITION_ID);
   const [useAcg, setUseAcg] = useState(false);
@@ -153,7 +155,15 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     const c = cloneCharacter(prev);
-    c.resolveChoice(choiceId, optionIdx);
+    // resolveChoice may itself queue a nested cascade (e.g., resolving a
+    // skill-table pick rolls a cascade cell). Catch ChoicePendingError so
+    // we still commit and let the UI surface the next choice.
+    try {
+      c.resolveChoice(choiceId, optionIdx);
+    } catch (err) {
+      if (!(err instanceof ChoicePendingError)) throw err;
+    }
+
     // If the ACG runner had paused on this choice, resume it. After the
     // queued closure ran, the year's state is consistent and runAcgYear
     // continues from acgState.pausedAtStep. If more choices come up
@@ -162,12 +172,27 @@ export default function Home() {
       try {
         runAcgYear(c);
       } catch (err) {
-        // ChoicePendingError is expected — a nested interactive choice
-        // re-pauses the runner and we'll bounce back to the choice UI
-        // with the new pendingChoices entry. Anything else is a real
-        // engine error and should propagate so the developer sees it.
         if (!(err instanceof ChoicePendingError)) throw err;
       }
+    }
+
+    // More choices still pending — stay in the current phase.
+    if (c.pendingChoices.length > 0) {
+      commit(c, phase);
+      return;
+    }
+
+    // Basic-chargen: drive the workflow forward once the choice queue
+    // drains so the user sees a clean stage transition (skill → term-end,
+    // term → muster, muster → end). Without this, the user can complete
+    // a cascade and be left looking at a stale phase with no next action.
+    if (!c.useAcg && (phase === "skill_basic" || phase === "skill_adv")) {
+      if (c.skillPoints > 0) {
+        commit(c, pickSkillPhase(c));
+        return;
+      }
+      finishTerm(c);
+      return;
     }
     commit(c, phase);
   };
@@ -296,24 +321,9 @@ export default function Home() {
     }
   };
 
-  const pickSkill = (table: number) => {
-    const prev = characterRef.current;
-    if (!prev) return;
-    const c = cloneCharacter(prev);
-    if (table === 0) {
-      c.forceTable = false;
-    } else {
-      c.forceTable = true;
-      c.forceTableIndex = table;
-    }
-    getEditionServices(c.editionId)[c.service]!.acquireSkill(c);
-    c.skillPoints -= 1;
-
-    if (c.skillPoints > 0) {
-      commit(c, pickSkillPhase(c));
-      return;
-    }
-
+  /** End-of-term sequence: cap, aging, reenlistment, muster routing.
+   *  Called once skillPoints reach 0 and no cascade choices remain. */
+  const finishTerm = (c: Character) => {
     // PM checklist: after the last skill pick, enforce the Int+Edu skill
     // cap (PM p. 39), then age, then run reenlistment.
     c.enforceSkillCap();
@@ -349,6 +359,39 @@ export default function Home() {
     }
 
     commit(c, "term");
+  };
+
+  const pickSkill = (table: number) => {
+    const prev = characterRef.current;
+    if (!prev) return;
+    const c = cloneCharacter(prev);
+    if (table === 0) {
+      c.forceTable = false;
+    } else {
+      c.forceTable = true;
+      c.forceTableIndex = table;
+    }
+    // Spend the skill point up front. acquireSkill may queue a cascade
+    // (and throw ChoicePendingError) before the underlying skill grant
+    // resolves; that's still "this skill point", so don't double-spend
+    // on the cascade resolution.
+    c.skillPoints -= 1;
+    try {
+      getEditionServices(c.editionId)[c.service]!.acquireSkill(c);
+    } catch (err) {
+      if (!(err instanceof ChoicePendingError)) throw err;
+      // Cascade queued — commit so the UI surfaces it. The cascade
+      // resolution flows through resolvePending below.
+      commit(c, pickSkillPhase(c));
+      return;
+    }
+
+    if (c.skillPoints > 0) {
+      commit(c, pickSkillPhase(c));
+      return;
+    }
+
+    finishTerm(c);
   };
 
   const musterChoice = (kind: "cash" | "benefit") => {
