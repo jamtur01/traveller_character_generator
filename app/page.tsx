@@ -541,8 +541,9 @@ function PageFooter() {
           Paul Gorman&apos;s
         </a>{" "}
         original JS generator (2015). Rules data derived from{" "}
-        <em>The Traveller Book</em> (1981) and <em>Citizens of the Imperium</em>{" "}
-        (CT Supplement 4).
+        <em>The Traveller Book</em> (1981), <em>Citizens of the Imperium</em>{" "}
+        (CT Supplement 4), and the <em>MegaTraveller Players&apos; Manual</em>{" "}
+        (1987).
       </p>
       <p>
         <em>Traveller</em> is a trademark of Far Future Enterprises. The
