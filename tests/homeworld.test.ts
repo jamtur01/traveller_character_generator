@@ -331,19 +331,21 @@ describe("applyHomeworldSkills", () => {
 // ---------------------------------------------------------------------------
 
 describe("Character.generateHomeworld", () => {
-  it("MT character: rolls homeworld and applies tech-gated skills", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.6);
+  it("MT character: max rolls land on row 12 (Exotic / High Stellar) and apply Computer-0", () => {
+    // Math.random=0.999 → every d6=6 → 2d6=12 → homeworld row die=12.
+    // Row 12 per PM p. 12: Starport D-X / Large / Exotic / Water World /
+    // High Pop / Ext Law / High Stellar. High Stellar gates Computer-0
+    // and Grav Vehicle-0 (Avg Stellar+ in defaultSkills).
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
     c.skills = [];
     c.generateHomeworld();
     expect(c.homeworld).not.toBeNull();
-    // Tech-gated skill should be applied; service-gated isn't yet (service not set).
-    if (c.homeworld!.tech === "Early Stellar" || c.homeworld!.tech === "Avg Stellar" ||
-        c.homeworld!.tech === "High Stellar") {
-      expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-    }
+    expect(c.homeworld!.tech).toBe("High Stellar");
+    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
+    expect(c.checkSkill("Grav Vehicle")).toBeGreaterThanOrEqual(0);
   });
 
   it("CT character: no-op (no homeworld step in CT)", () => {

@@ -7,8 +7,6 @@ import { Character } from "../lib/traveller/character";
 import {
   spendBrowniePoints, tryMitigate,
 } from "../lib/traveller/engine/acg/browniePoints";
-import { runAcgYear } from "../lib/traveller/engine/acg/runner";
-
 afterEach(() => { vi.restoreAllMocks(); });
 
 function freshAcgChar(bp = 5): Character {
@@ -142,38 +140,42 @@ describe("spendBrowniePoints (explicit player spending)", () => {
 });
 
 describe("End-to-end: BP saves a character's life", () => {
-  it("Mercenary character with BPs survives a roll that would have killed them", () => {
-    // Force minimum rolls (Math.random = 0 → 2d6 = 2).
+  it("Mercenary fails Raid survival by 4, spends 4 BP to survive (margin → 0)", async () => {
+    // Mercenary "Raid" assignment has survival target 6+ on the
+    // infantryCavalryArtillery table. Force every d6=1 (Math.random=0)
+    // so the 2d6 survival roll is 2 → margin -4. The character has 10
+    // BPs; auto-policy spends 4 (life-or-death) to push margin to 0.
     vi.spyOn(Math, "random").mockReturnValue(0);
-    const c = freshAcgChar(5);
-    c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
-    // beginAcg's enlistment may fail at the lowest roll — let's
-    // force-set the rank state to bypass.
-    if (!c.acgState!.combatArm) {
-      c.acgState!.combatArm = "Infantry";
-      c.acgState!.branch = "Army";
-      c.acgState!.rankCode = "E1";
-      c.acgState!.isOfficer = false;
-    }
-    c.acgState!.browniePoints = 10; // top up
-    // Run a year that will fail survival.
-    // Initial training is harmless, so run year 2.
-    c.acgState!.year = 2;
-    // After running the assignment year, the character should still be
-    // alive if BPs were spent — or invalided if they weren't.
-    // (We can't precisely predict because of multiple rolls — we just
-    // check the BP counter dropped.)
-    const initialBp = c.acgState!.browniePoints;
-    // Run the actual year
-    runAcgYear(c);
-    // Survival failure auto-mitigates with BPs.
-    // Either the character survived (BP spent) or wasn't a combat year.
-    if (!c.activeDuty) {
-      // Got invalided despite BPs — must have failed by more than the BP pool.
-      expect(c.acgState!.browniePoints).toBe(initialBp);
-    } else {
-      // Survived — BPs may have been spent.
-      expect(c.acgState!.browniePoints).toBeLessThanOrEqual(initialBp);
-    }
+    const { mercenaryResolveAssignment } = await import(
+      "../lib/traveller/engine/acg/pathways/mercenary"
+    );
+    const c = freshAcgChar(0);
+    c.acgState!.browniePoints = 10;
+    c.acgState!.combatArm = "Infantry";
+    c.acgState!.branch = "Army";
+    c.activeDuty = true;
+    mercenaryResolveAssignment(c, "Raid");
+    // BP spent: margin was -4, auto-mitigate brings it to 0.
+    expect(c.acgState!.browniePoints).toBe(6); // 10 - 4 spent
+    expect(c.acgState!.browniePointsSpent).toBe(4);
+    // Character survives (not invalided).
+    expect(c.activeDuty).toBe(true);
+  });
+
+  it("Mercenary with only 2 BPs cannot afford to fully save margin -4 → invalided out", async () => {
+    // Same scenario but only 2 BPs available. Auto-mitigate sees it
+    // can't bring margin to 0 (needs 4, has 2) → spends 0, leaves character
+    // to be invalided out by the pathway.
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const { mercenaryResolveAssignment } = await import(
+      "../lib/traveller/engine/acg/pathways/mercenary"
+    );
+    const c = freshAcgChar(2);
+    c.acgState!.combatArm = "Infantry";
+    c.acgState!.branch = "Army";
+    c.activeDuty = true;
+    mercenaryResolveAssignment(c, "Raid");
+    expect(c.acgState!.browniePoints).toBe(2); // BPs untouched
+    expect(c.activeDuty).toBe(false);          // invalided
   });
 });

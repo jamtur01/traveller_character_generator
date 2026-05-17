@@ -7,6 +7,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { type ServiceKey } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+import { cascadePoolByKey } from "../lib/traveller/engine/cascadeMap";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -226,11 +227,15 @@ describe("blade cascade picks from the active edition's pool", () => {
   });
 
   it("CT blade pool and MT blade pool overlap only at Foil/Cudgel", () => {
-    const ct = new Set(["Dagger", "Foil", "Sword", "Cutlass", "Broadsword",
-      "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"]);
-    const mt = new Set(["Axe", "Cudgel", "Foil", "Large Blade", "Polearm",
-      "Small Blade"]);
-    const overlap = [...ct].filter((x) => mt.has(x));
+    // Pull pools from the engine (which reads them from edition JSON) and
+    // compute the overlap. Catches a regression where someone adds an
+    // MT-only blade like "Large Blade" to the CT pool or vice versa.
+    const ctPool = cascadePoolByKey("bladeCombat", "ct-classic");
+    const mtPool = cascadePoolByKey("bladeCombat", "mt-megatraveller");
+    expect(ctPool).toBeDefined();
+    expect(mtPool).toBeDefined();
+    const mtSet = new Set(mtPool!);
+    const overlap = ctPool!.filter((x: string) => mtSet.has(x));
     expect(overlap.sort()).toEqual(["Cudgel", "Foil"]);
   });
 });

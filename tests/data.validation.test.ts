@@ -394,28 +394,39 @@ describe("muster benefits vs JSON", () => {
 // Start age (Belters/Barbarians = 14 per CotI p. 2)
 // ---------------------------------------------------------------------------
 
-describe("startAge vs JSON", () => {
+describe("startAge: doEnlistment applies the JSON-declared value", () => {
+  // applyServiceStartAge is private, but doEnlistment invokes it on the
+  // accepted-service path. Force max enlistment rolls so every service
+  // accepts; the resulting c.age must equal the service's JSON startAge.
   for (const svc of SERVICES) {
     const j = DATA.services[svc]!;
-    it(`${svc}: startAge = ${j.startAge}`, () => {
-      // Code doesn't expose startAge directly; verify via a fresh enlistment.
+    if (j.startAge === undefined) continue;
+    if (svc === "nobles") continue; // nobles enter via the Soc 10+ auto-path; covered by sibling test below
+    it(`${svc}: doEnlistment sets age to ${j.startAge}`, () => {
+      vi.spyOn(Math, "random").mockReturnValue(0.999);
       const c = new Character();
       c.showHistory = "none";
+      // Soc <10 to avoid the auto-noble enrollment branch.
       c.attributes = {
         strength: 12, dexterity: 12, endurance: 12,
-        intelligence: 12, education: 12, social: 12,
+        intelligence: 12, education: 12, social: 9,
       };
-      c.service = svc;
-      // Drive the service-start-age path in character.ts.
-      // applyServiceStartAge is invoked from doEnlistment / draft.
-      // For audit purposes we replicate the logic by calling it directly if available.
-      // Otherwise just check that belters/barbarians = 14 in the file.
-      const expectedAge = j.startAge;
-      if (svc === "belters" || svc === "barbarians") {
-        expect(expectedAge).toBe(14);
-      } else {
-        expect(expectedAge).toBe(18);
-      }
+      c.doEnlistment(svc);
+      expect(c.service).toBe(svc);
+      expect(c.age).toBe(j.startAge);
     });
   }
+
+  it("nobles: Soc 10+ auto-enrollment sets age to nobles' startAge", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = new Character();
+    c.showHistory = "none";
+    c.attributes = {
+      strength: 12, dexterity: 12, endurance: 12,
+      intelligence: 12, education: 12, social: 11,
+    };
+    c.doEnlistment(""); // random method → triggers auto-noble path at Soc 10+
+    expect(c.service).toBe("nobles");
+    expect(c.age).toBe(DATA.services["nobles"]!.startAge);
+  });
 });

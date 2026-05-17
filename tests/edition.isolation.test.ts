@@ -163,9 +163,15 @@ describe("each edition's lifecycle.terms is wired to known steps", () => {
   for (const ed of ALL) {
     const terms = ed.id && getEdition(ed.id).data.lifecycle?.terms;
     if (!terms) continue;
-    it(`${ed.id}: lifecycle.terms loads without error`, () => {
-      // Just retrieving each step's id is enough — runner throws if unknown.
+    it(`${ed.id}: every step id resolves to a registered step fn`, async () => {
+      const { STEP_REGISTRY } = await import("../lib/traveller/engine/steps");
       expect(terms.length).toBeGreaterThan(0);
+      for (const t of terms) {
+        expect(
+          STEP_REGISTRY[t.id as keyof typeof STEP_REGISTRY],
+          `step "${t.id}" referenced in ${ed.id}.lifecycle.terms is not registered`,
+        ).toBeDefined();
+      }
     });
   }
 });
@@ -188,7 +194,12 @@ describe("edition hooks are isolated", () => {
 // ---------------------------------------------------------------------------
 
 describe("MT smoke test: build character, enlist, run a term", () => {
-  it("constructs an MT Navy character, runs term 1, no exceptions", () => {
+  it("MT Navy term 1 with max rolls: terms=1, ages 4 years, commissions, allocates 2 skill points", () => {
+    // Forced max rolls (Math.random=0.999 → every d6=6, every 2d6=12) so
+    // survival passes (target 5+), commission passes (10+), promotion
+    // passes (8+). MT navy term-1 should give skillsPerTerm (1) +
+    // term1Bonus (1) = 2 skill points.
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
@@ -198,9 +209,14 @@ describe("MT smoke test: build character, enlist, run a term", () => {
       intelligence: 9, education: 9, social: 9,
     };
     c.service = "navy";
-    expect(() => c.doServiceTermStep()).not.toThrow();
-    // The character should now have a service ranks entry available.
+    const startAge = c.age;
+    c.doServiceTermStep();
     expect(c.serviceDef().serviceName).toBe("Navy");
+    expect(c.terms).toBe(1);
+    expect(c.age).toBe(startAge + 4);
+    expect(c.deceased).toBe(false);
+    expect(c.commissioned).toBe(true);
+    expect(c.skillPoints).toBeGreaterThanOrEqual(2);
   });
 
   it("MT character can survive a term and pick skills via auto-resolve", () => {
@@ -232,22 +248,28 @@ describe("MT smoke test: build character, enlist, run a term", () => {
 // ---------------------------------------------------------------------------
 
 describe("MT data wiring (post-PDF swap)", () => {
-  it("MT aging table reads from JSON not hardcoded code paths", () => {
+  it("MT aging at term 4 applies -1 to Str/Dex/End on failed saves", () => {
+    // Force every roll to minimum (Math.random=0 → d6=1 → 2d6=2). Saves
+    // are 8/7/8 — all fail at roll 2 → each attribute drops by 1.
+    vi.spyOn(Math, "random").mockReturnValue(0);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
     c.choiceMode = "auto";
     c.attributes = {
-      strength: 12, dexterity: 12, endurance: 12,
-      intelligence: 12, education: 12, social: 12,
+      strength: 9, dexterity: 9, endurance: 9,
+      intelligence: 9, education: 9, social: 9,
     };
     c.service = "navy";
     c.terms = 4;
     c.age = 34;
     c.doAging();
-    // After 4 terms, the term-4 row applies (-1 saves 8/7/8). With all
-    // attributes at 12, no save should fail — but the call should not throw.
-    expect(c.deceased).toBe(false);
+    // Term-4 row per the JSON aging table: -1 to each of Str/Dex/End.
+    expect(c.attributes.strength).toBe(8);
+    expect(c.attributes.dexterity).toBe(8);
+    expect(c.attributes.endurance).toBe(8);
+    // Intelligence isn't affected until term 12+.
+    expect(c.attributes.intelligence).toBe(9);
   });
 
   it("MT musterOutRolls applies cumulative rank-extra bonus (PM p. 17)", () => {

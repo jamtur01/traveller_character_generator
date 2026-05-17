@@ -49,21 +49,19 @@ describe("doPreCareer: College", () => {
     const c = freshAcgCandidate(12);
     expect(c.browniePoints).toBe(0);
     const r = c.doPreCareer("college");
-    if (r.honors) {
-      // 1 BP for graduation + 1 BP for honors.
-      expect(c.browniePoints).toBeGreaterThanOrEqual(2);
-    }
+    expect(r.honors).toBe(true);
+    // 1 BP for graduation + 1 BP for honors.
+    expect(c.browniePoints).toBeGreaterThanOrEqual(2);
   });
 
   it("Honors graduation raises Education to 10 or +1, whichever greater", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(8);
     c.attributes.education = 8;
-    c.doPreCareer("college");
+    const r = c.doPreCareer("college");
+    expect(r.honors).toBe(true);
     // After honors with Edu starting at 8, target is max(10, 9) = 10.
-    if (c.attributes.education > 8) {
-      expect(c.attributes.education).toBeGreaterThanOrEqual(10);
-    }
+    expect(c.attributes.education).toBeGreaterThanOrEqual(10);
   });
 });
 
@@ -113,22 +111,21 @@ describe("doPreCareer: Military Academy", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
     const r = c.doPreCareer("militaryAcademy");
-    if (r.graduated) {
-      expect(c.checkSkill("Combat Rifleman")).toBeGreaterThanOrEqual(0);
-      expect(r.autoEnlistPathway).toBe("mercenary");
-    }
+    expect(r.graduated).toBe(true);
+    expect(c.checkSkill("Combat Rifleman")).toBeGreaterThanOrEqual(0);
+    expect(r.autoEnlistPathway).toBe("mercenary");
   });
 
-  it("Honors graduates may pursue Medical or Flight School", () => {
+  it("Honors graduates may then attend Medical School and graduate it", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
-    const r = c.doPreCareer("militaryAcademy");
-    if (r.honors) {
-      // Medical school admission test
-      const r2 = c.doPreCareer("medicalSchool");
-      // With max rolls, admission should pass
-      expect(r2.graduated || r2.honors || r2.commissioned !== undefined).toBe(true);
-    }
+    const r1 = c.doPreCareer("militaryAcademy");
+    expect(r1.honors).toBe(true);
+    const r2 = c.doPreCareer("medicalSchool");
+    // Medical school admission requires honors prereq — military academy
+    // honors qualifies. With max rolls the admission + success rolls pass.
+    expect(r2.admitted).toBe(true);
+    expect(r2.graduated).toBe(true);
   });
 });
 
@@ -140,11 +137,10 @@ describe("doPreCareer: Medical School", () => {
     c.doPreCareer("college");
     const startEdu = c.attributes.education;
     const r = c.doPreCareer("medicalSchool");
-    if (r.graduated) {
-      expect(c.checkSkillLevel("Medical", 3)).toBe(true);
-      expect(c.checkSkill("Admin")).toBeGreaterThanOrEqual(0);
-      expect(c.attributes.education).toBe(Math.min(15, startEdu + 1));
-    }
+    expect(r.graduated).toBe(true);
+    expect(c.checkSkillLevel("Medical", 3)).toBe(true);
+    expect(c.checkSkill("Admin")).toBeGreaterThanOrEqual(0);
+    expect(c.attributes.education).toBe(Math.min(15, startEdu + 1));
   });
 
   it("Honors graduates add Medical + Computer skills (after college honors)", () => {
@@ -152,10 +148,9 @@ describe("doPreCareer: Medical School", () => {
     const c = freshAcgCandidate(12);
     c.doPreCareer("college");
     const r = c.doPreCareer("medicalSchool");
-    if (r.honors) {
-      expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-      expect(c.checkSkillLevel("Medical", 4)).toBe(true);
-    }
+    expect(r.honors).toBe(true);
+    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
+    expect(c.checkSkillLevel("Medical", 4)).toBe(true);
   });
 
   it("Honors-gate (R5): rejects medical school without honors prereq", () => {
@@ -171,10 +166,9 @@ describe("doPreCareer: Medical School", () => {
     const c = freshAcgCandidate(12);
     c.doPreCareer("college");
     const r = c.doPreCareer("medicalSchool");
-    if (r.graduated) {
-      expect(r.commissioned).toBe(true);
-      expect(c.acgState?.rankCode).toBe("O3");
-    }
+    expect(r.graduated).toBe(true);
+    expect(r.commissioned).toBe(true);
+    expect(c.acgState?.rankCode).toBe("O3");
   });
 });
 
@@ -182,12 +176,14 @@ describe("doPreCareer: Flight School", () => {
   it("Graduates receive Ship's Boat, Navigation, and Pilot (1+)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
+    // Flight School admission requires Naval Academy honors or commission;
+    // run Naval Academy first to satisfy the prereq.
+    c.doPreCareer("navalAcademy");
     const r = c.doPreCareer("flightSchool");
-    if (r.graduated) {
-      expect(c.checkSkill("Ship's Boat")).toBeGreaterThanOrEqual(0);
-      expect(c.checkSkill("Navigation")).toBeGreaterThanOrEqual(0);
-      expect(c.checkSkillLevel("Pilot", 1)).toBe(true);
-    }
+    expect(r.graduated).toBe(true);
+    expect(c.checkSkill("Ship's Boat")).toBeGreaterThanOrEqual(0);
+    expect(c.checkSkill("Navigation")).toBeGreaterThanOrEqual(0);
+    expect(c.checkSkillLevel("Pilot", 1)).toBe(true);
   });
 });
 
@@ -204,12 +200,10 @@ describe("Pre-career chain: College honors → Medical school", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
     const college = c.doPreCareer("college");
-    if (college.honors) {
-      const med = c.doPreCareer("medicalSchool");
-      if (med.graduated) {
-        expect(c.checkSkillLevel("Medical", 3)).toBe(true);
-      }
-    }
+    expect(college.honors).toBe(true);
+    const med = c.doPreCareer("medicalSchool");
+    expect(med.graduated).toBe(true);
+    expect(c.checkSkillLevel("Medical", 3)).toBe(true);
   });
 });
 
@@ -227,7 +221,8 @@ describe("R2: pre-career graduates age correctly", () => {
     const c = freshAcgCandidate(12);
     const startAge = c.age;
     const r = c.doPreCareer("navalAcademy");
-    if (r.graduated) expect(c.age).toBe(startAge + 4);
+    expect(r.graduated).toBe(true);
+    expect(c.age).toBe(startAge + 4);
   });
 
   it("Military Academy graduate is age 22", () => {
@@ -235,7 +230,8 @@ describe("R2: pre-career graduates age correctly", () => {
     const c = freshAcgCandidate(12);
     const startAge = c.age;
     const r = c.doPreCareer("militaryAcademy");
-    if (r.graduated) expect(c.age).toBe(startAge + 4);
+    expect(r.graduated).toBe(true);
+    expect(c.age).toBe(startAge + 4);
   });
 
   it("Medical School graduate ages another 4 years to age 26", () => {
@@ -244,7 +240,8 @@ describe("R2: pre-career graduates age correctly", () => {
     c.doPreCareer("college"); // 18 → 22
     const ageBefore = c.age;
     const r = c.doPreCareer("medicalSchool");
-    if (r.graduated) expect(c.age).toBe(ageBefore + 4);
+    expect(r.graduated).toBe(true);
+    expect(c.age).toBe(ageBefore + 4);
   });
 
   it("Flight School graduate ages 1 year (short specialty)", () => {
@@ -253,7 +250,8 @@ describe("R2: pre-career graduates age correctly", () => {
     c.doPreCareer("navalAcademy");
     const ageBefore = c.age;
     const r = c.doPreCareer("flightSchool");
-    if (r.graduated) expect(c.age).toBe(ageBefore + 1);
+    expect(r.graduated).toBe(true);
+    expect(c.age).toBe(ageBefore + 1);
   });
 });
 
@@ -291,16 +289,19 @@ describe("R3: pre-career failure short-term outcomes (revised by Rrev11)", () =>
   });
 
   it("Military Academy success failure: +1 year, drafted Army", () => {
-    vi.spyOn(Math, "random").mockImplementationOnce(() => 0.999) // admission pass
-      .mockImplementation(() => 0); // success fail
+    // Build the character first (constructor rolls attrs), then install
+    // the mock so the call counter starts at the admission roll.
     const c = freshAcgCandidate(2);
     c.attributes.strength = 12; // pass admission DM
+    c.attributes.social = 6;    // meet the Soc 6+ prereq gate
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => (i++ < 2 ? 0.999 : 0));
     const startAge = c.age;
     const r = c.doPreCareer("militaryAcademy");
-    if (r.admitted && !r.graduated) {
-      expect(c.age).toBeGreaterThan(startAge);
-      expect(c.acgState?.preCareerDraftedInto).toBe("army");
-    }
+    expect(r.admitted).toBe(true);
+    expect(r.graduated).toBe(false);
+    expect(c.age).toBe(startAge + 1);
+    expect(c.acgState?.preCareerDraftedInto).toBe("army");
   });
 
   it("College failure: short term flag set, no draft (free enlistment)", () => {

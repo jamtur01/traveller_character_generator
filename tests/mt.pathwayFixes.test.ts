@@ -32,30 +32,48 @@ function makeMt(): Character {
 }
 
 describe("Merchant: row 13 reachable on the specific assignment table", () => {
-  it("Roll 12 + DM +1 (rank O4+) yields die=13 without clamping", () => {
+  // Use a smallLine (Interface) because its column distinguishes row 12
+  // from row 13: die 12 = "Special", die 13 = "Transfer Up". Largelines
+  // are "Special" on both rows so wouldn't prove the DM shifted the result.
+  it("Roll 12 + DM 0 (smallLine O1) → die 12 → 'Special'", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
-    c.homeworld = {
-      starport: "A", size: "Medium", atmosphere: "Standard",
-      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
-      tech: "Avg Stellar",
-    };
-    c.beginAcg("merchantPrince", { lineType: "Megacorp" });
+    c.beginAcg("merchantPrince", { lineType: "Interface" });
+    c.acgState!.isOfficer = true;
+    c.acgState!.rankCode = "O1";
+    c.attributes.education = 12; // avoid -1 edu DM
+    expect(merchantRollAssignment(c)).toBe("Special");
+  });
+
+  it("Roll 12 + DM +1 (smallLine O4+) → die 13 → 'Transfer Up'", () => {
+    // Same roll, rankAtLeast O4 DM +1 → die 13. Proves the +1 DM is
+    // both wired and that the table does not clamp at 12.
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = makeMt();
+    c.beginAcg("merchantPrince", { lineType: "Interface" });
     c.acgState!.isOfficer = true;
     c.acgState!.rankCode = "O4";
-    const out = merchantRollAssignment(c);
-    expect(typeof out).toBe("string");
-    expect(out.length).toBeGreaterThan(0);
+    c.attributes.education = 12;
+    expect(merchantRollAssignment(c)).toBe("Transfer Up");
   });
 });
 
 describe("Merchant: Free Trader assignment column maps correctly", () => {
-  it("Free Trader Exploratory Trade routes through resolution without throwing", () => {
+  it("Free Trader term advances time, gains skills, and stays in Free Trader department", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
     expect(c.acgState!.department).toBe("Free Trader");
-    expect(() => runAcgTerm(c)).not.toThrow();
+    const startAge = c.age;
+    runAcgTerm(c);
+    // 4-year term advances age by 4 (or fewer if invalided early).
+    expect(c.age - startAge).toBeGreaterThan(0);
+    expect(c.age - startAge).toBeLessThanOrEqual(4);
+    // Department doesn't change mid-career for Free Traders.
+    expect(c.acgState!.department).toBe("Free Trader");
+    // A successful term should have produced at least one history entry
+    // referencing an assignment outcome.
+    expect(c.history.length).toBeGreaterThan(0);
   });
 });
 
@@ -125,45 +143,63 @@ describe("Navy: medical/flight school graduates get auto-branch", () => {
 });
 
 describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
-  it("Marine reenlist returns a boolean and consults crossTrainedArms", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.4);
+  // Marine reenlist target=6. DM +1 fires when crossTrainedInAny includes
+  // Artillery/Cavalry AND currentCombatArm is Artillery/Cavalry. Pin the
+  // 2d6 to 5 (one below target) so DM is the only thing that flips the
+  // outcome between pass and fail.
+  function setupMarineAtRoll5(): Character {
     const c = makeMt();
-    // Marines enter as Infantry/Support; cross-training into Cavalry happens
-    // later via Cross-Training assignment. Simulate that post-state directly.
+    // Pin all post-construction rolls to produce 2d6=5 (2/6+0.001 → die=2,
+    // 2/6+0.001 → die=3 — total 5).
+    const seq = [1 / 6 + 0.001, 2 / 6 + 0.001];
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => seq[i++ % seq.length]!);
     c.beginAcg("mercenary", { service: "marines", combatArm: "Infantry" });
+    return c;
+  }
+
+  it("Cross-trained Cavalry Marine on Cavalry: +1 DM → roll 5+1=6 ≥ 6 reenlists", () => {
+    const c = setupMarineAtRoll5();
     c.acgState!.combatArm = "Cavalry";
     c.acgState!.crossTrainedArms = ["Artillery"];
-    const result = mercenaryReenlist(c);
-    expect(typeof result).toBe("boolean");
+    expect(mercenaryReenlist(c)).toBe(true);
+  });
+
+  it("Same roll 5, no cross-training: no DM → 5 < 6 reenlist denied", () => {
+    const c = setupMarineAtRoll5();
+    c.acgState!.combatArm = "Cavalry";
+    c.acgState!.crossTrainedArms = []; // no cross-training
+    expect(mercenaryReenlist(c)).toBe(false);
+  });
+
+  it("Cross-trained but current arm is Infantry: DM does not fire → 5 < 6 denied", () => {
+    // The DM rule requires currentCombatArmIn = [Artillery, Cavalry].
+    // Infantry doesn't qualify even with cross-training.
+    const c = setupMarineAtRoll5();
+    c.acgState!.combatArm = "Infantry";
+    c.acgState!.crossTrainedArms = ["Cavalry"];
+    expect(mercenaryReenlist(c)).toBe(false);
   });
 });
 
 describe("F4: interactive ACG choices pause the year via ChoicePendingError", () => {
-  it("navy Soc 9+ branch pick pauses the runner; resolveChoice resumes it", async () => {
+  it("navy Soc 9+ branch pick queues a navyBranch choice; resolveChoice applies it", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
-    const { runAcgYear } = await import("../lib/traveller/engine/acg/runner");
     const c = makeMt();
     c.choiceMode = "interactive";
     c.attributes.social = 9;
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    // beginAcg performs branch assignment as part of enlistment. With Soc
-    // 9+ and interactive mode, that queues a navyBranch choice. The
-    // ChoicePendingError is caught inside beginAcg's runner path. Verify
-    // a pending choice is queued.
+    // Interactive mode + Soc 9+ → branch choice is queued (not auto-resolved).
     expect(c.pendingChoices.length).toBeGreaterThan(0);
     const choice = c.pendingChoices[0]!;
     expect(choice.kind).toBe("navyBranch");
-    // Resolve it.
-    const branchOptionIdx = choice.options.indexOf("Flight");
-    expect(branchOptionIdx).toBeGreaterThanOrEqual(0);
-    c.resolveChoice(choice.id, branchOptionIdx);
+    expect(choice.options).toContain("Flight");
+    expect(c.acgState!.branch).toBeFalsy(); // not set until choice resolves
+    // Resolve to Flight → branch stamps onto state, choice clears.
+    const flightIdx = choice.options.indexOf("Flight");
+    c.resolveChoice(choice.id, flightIdx);
     expect(c.acgState!.branch).toBe("Flight");
-    // Run a year — the runner should not crash and the year should advance.
-    const yearBefore = c.acgState!.year;
-    runAcgYear(c);
-    // Either the year advanced or it paused for the NEXT choice. Both are
-    // acceptable; what matters is no crash + no stale state.
-    expect(c.acgState!.year).toBeGreaterThanOrEqual(yearBefore);
+    expect(c.pendingChoices.find((p) => p.id === choice.id)).toBeUndefined();
   });
 });
 
