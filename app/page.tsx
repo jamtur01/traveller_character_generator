@@ -20,6 +20,7 @@ import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 type Phase =
   | "start"
   | "pre_career"
+  | "acg_enlist"
   | "career"
   | "term"
   | "skill_basic"
@@ -114,7 +115,11 @@ export default function Home() {
       c.acgPathway = acgPathway;
       // ACG characters get a pre-career phase first (college / academy /
       // medical / flight school) before enlistment. Honors graduates can
-      // chain; academy graduates auto-route into their pathway.
+      // chain; academy graduates auto-route into their pathway. Sub-options
+      // (service, combat arm, fleet, etc.) are configured at acg_enlist
+      // after pre-career, since pre-career outcomes can change them
+      // (Naval Academy honors auto-routes to Navy; OTC chooses Army/Marines
+      // mid-college).
       commit(c, "pre_career");
       return;
     }
@@ -134,12 +139,12 @@ export default function Home() {
     if (!prev) return;
     const c = cloneCharacter(prev);
     if (opt === "skip") {
-      commit(c, "career");
+      commit(c, c.useAcg ? "acg_enlist" : "career");
       return;
     }
     const r = c.doPreCareer(opt);
-    // Record the auto-enlist pathway (used as a default on the career
-    // screen) but DON'T route to career yet. Per PM p. 47, academy honors
+    // Record the auto-enlist pathway (used as a default on the enlist
+    // screen) but DON'T route to enlist yet. Per PM p. 47, academy honors
     // graduates may chain into Medical or Flight School before service
     // begins — the player chooses Skip when they're done. PreCareerPhase
     // gates which chain options are visible (medAvailable / flightAvailable),
@@ -147,6 +152,13 @@ export default function Home() {
     if (r.autoEnlistPathway) {
       c.acgPathway = r.autoEnlistPathway;
       setAcgPathway(r.autoEnlistPathway);
+      // Pre-populate enlistment sub-options from the academy outcome so
+      // the acg_enlist screen reflects what pre-career decided.
+      const branch = c.acgState?.preCareerBranch;
+      if (branch === "army" || branch === "marines") setAcgService(branch);
+      if (r.autoEnlistPathway === "navy" && opt === "navalAcademy") {
+        setAcgFleet("imperialNavy");
+      }
     }
     commit(c, "pre_career");
   };
@@ -486,20 +498,6 @@ export default function Home() {
               setUseAcg={setUseAcg}
               acgPathway={acgPathway}
               setAcgPathway={setAcgPathway}
-              acgService={acgService}
-              setAcgService={setAcgService}
-              acgCombatArm={acgCombatArm}
-              setAcgCombatArm={setAcgCombatArm}
-              acgFleet={acgFleet}
-              setAcgFleet={setAcgFleet}
-              acgDivision={acgDivision}
-              setAcgDivision={setAcgDivision}
-              acgLineType={acgLineType}
-              setAcgLineType={setAcgLineType}
-              acgSubsectorTech={acgSubsectorTech}
-              setAcgSubsectorTech={setAcgSubsectorTech}
-              acgMerchantAcademy={acgMerchantAcademy}
-              setAcgMerchantAcademy={setAcgMerchantAcademy}
             />
           )}
 
@@ -507,6 +505,29 @@ export default function Home() {
             <PreCareerPhase
               character={character}
               onApply={applyPreCareer}
+            />
+          )}
+
+          {phase === "acg_enlist" && character && (
+            <AcgEnlistPhase
+              character={character}
+              edition={edition}
+              acgPathway={acgPathway}
+              acgService={acgService}
+              setAcgService={setAcgService}
+              acgCombatArm={acgCombatArm}
+              setAcgCombatArm={setAcgCombatArm}
+              acgFleet={acgFleet}
+              setAcgFleet={setAcgFleet}
+              acgSubsectorTech={acgSubsectorTech}
+              setAcgSubsectorTech={setAcgSubsectorTech}
+              acgDivision={acgDivision}
+              setAcgDivision={setAcgDivision}
+              acgLineType={acgLineType}
+              setAcgLineType={setAcgLineType}
+              acgMerchantAcademy={acgMerchantAcademy}
+              setAcgMerchantAcademy={setAcgMerchantAcademy}
+              onEnlist={enlist}
             />
           )}
 
@@ -702,7 +723,7 @@ const STEPPER_STEPS_BASIC: StepperStep[] = [
 const STEPPER_STEPS_ACG: StepperStep[] = [
   { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
   { id: "pre", label: "Pre-Career", hint: "College & academies", phases: ["pre_career"] },
-  { id: "enlist", label: "Enlist", hint: "Pathway & branch", phases: ["career"] },
+  { id: "enlist", label: "Enlist", hint: "Pathway & branch", phases: ["acg_enlist", "career"] },
   { id: "serve", label: "Serve", hint: "Annual cycle", phases: ["term", "skill_basic", "skill_adv"] },
   { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
   { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
@@ -711,6 +732,7 @@ const STEPPER_STEPS_ACG: StepperStep[] = [
 function activityFor(phase: Phase, character: Character | null): string {
   if (phase === "start") return "Configure your character";
   if (phase === "pre_career") return "Optional college / academy";
+  if (phase === "acg_enlist") return "Configure pathway & enlist";
   if (phase === "career") return character?.useAcg ? "Choose pathway" : "Choose service";
   if (phase === "term") {
     const termNum = (character?.terms ?? 0) + 1;
@@ -983,20 +1005,6 @@ function StartPhase({
   setUseAcg,
   acgPathway,
   setAcgPathway,
-  acgService,
-  setAcgService,
-  acgCombatArm,
-  setAcgCombatArm,
-  acgFleet,
-  setAcgFleet,
-  acgDivision,
-  setAcgDivision,
-  acgLineType,
-  setAcgLineType,
-  acgSubsectorTech,
-  setAcgSubsectorTech,
-  acgMerchantAcademy,
-  setAcgMerchantAcademy,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
@@ -1007,20 +1015,6 @@ function StartPhase({
   setUseAcg: (v: boolean) => void;
   acgPathway: string;
   setAcgPathway: (v: string) => void;
-  acgService: "army" | "marines";
-  setAcgService: (v: "army" | "marines") => void;
-  acgCombatArm: string;
-  setAcgCombatArm: (v: string) => void;
-  acgFleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
-  setAcgFleet: (v: "imperialNavy" | "reserveFleet" | "systemSquadron") => void;
-  acgDivision: "field" | "bureaucracy";
-  setAcgDivision: (v: "field" | "bureaucracy") => void;
-  acgLineType: string;
-  setAcgLineType: (v: string) => void;
-  acgSubsectorTech: string;
-  setAcgSubsectorTech: (v: string) => void;
-  acgMerchantAcademy: boolean;
-  setAcgMerchantAcademy: (v: boolean) => void;
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
@@ -1144,157 +1138,29 @@ function StartPhase({
               ACG is the optional rules-heavy chargen system in MT (PM
               pp. 44-65). Each pathway is its own career book — Mercenary
               (Army/Marines), Navy, Scout, or Merchant Prince — with its
-              own per-year assignment cycle. Pick a pathway, then choose
-              the starting branch / role for that path.
+              own per-year assignment cycle. Pick a pathway here; you&apos;ll
+              configure the starting branch / role at enlistment, after
+              optional pre-career.
             </p>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <FormField
-              label="Pathway"
-              hint="Which ACG career book to follow. Each has its own enlistment table, assignments, schools, and ranks."
-            >
-              <FormSelect value={acgPathway} onChange={setAcgPathway}>
-                <option value="" disabled>
-                  Select a pathway…
+          <FormField
+            label="Pathway"
+            hint="Which ACG career book to follow. Each has its own enlistment table, assignments, schools, and ranks."
+          >
+            <FormSelect value={acgPathway} onChange={setAcgPathway}>
+              <option value="" disabled>
+                Select a pathway…
+              </option>
+              {acgPathways.map((p) => (
+                <option key={p} value={p}>
+                  {p === "merchantPrince"
+                    ? "Merchant Prince"
+                    : p.charAt(0).toUpperCase() + p.slice(1)}
                 </option>
-                {acgPathways.map((p) => (
-                  <option key={p} value={p}>
-                    {p === "merchantPrince"
-                      ? "Merchant Prince"
-                      : p.charAt(0).toUpperCase() + p.slice(1)}
-                  </option>
-                ))}
-              </FormSelect>
-            </FormField>
-
-            <div className="space-y-4">
-              {acgPathway === "mercenary" && (
-                <>
-                  <FormField
-                    label="Service"
-                    hint="Army (5+ to enlist, ground operations) or Marines (9+ to enlist, ship-board assignments available)."
-                  >
-                    <FormSelect
-                      value={acgService}
-                      onChange={(v) => setAcgService(v as "army" | "marines")}
-                    >
-                      <option value="army">Army</option>
-                      <option value="marines">Marines</option>
-                    </FormSelect>
-                  </FormField>
-                  <FormField
-                    label="Combat arm"
-                    hint="Commando is restricted to Military Academy honors graduates."
-                  >
-                    <FormSelect value={acgCombatArm} onChange={setAcgCombatArm}>
-                      {mercenaryNonCommandoArms(edition).map((arm) => (
-                        <option key={arm} value={arm}>
-                          {arm}
-                        </option>
-                      ))}
-                    </FormSelect>
-                  </FormField>
-                </>
-              )}
-
-              {acgPathway === "navy" && (
-                <>
-                  <FormField label="Fleet">
-                    <FormSelect
-                      value={acgFleet}
-                      onChange={(v) => setAcgFleet(v as typeof acgFleet)}
-                    >
-                      <option value="imperialNavy">
-                        Imperial Navy (8+ to enlist)
-                      </option>
-                      <option value="reserveFleet">
-                        Reserve Fleet (7+ to enlist)
-                      </option>
-                      <option value="systemSquadron">
-                        System Squadron (6+, requires Early Stellar+ homeworld)
-                      </option>
-                    </FormSelect>
-                  </FormField>
-                  <FormField
-                    label="Subsector tech code"
-                    hint="Usually the subsector capital's tech. Default falls back to your homeworld tech."
-                  >
-                    <FormSelect
-                      value={acgSubsectorTech}
-                      onChange={setAcgSubsectorTech}
-                    >
-                      <option value="">
-                        — default (homeworld tech, clamped to Early Stellar+)
-                      </option>
-                      <option value="Early Stellar">Early Stellar</option>
-                      <option value="Avg Stellar">Avg Stellar</option>
-                      <option value="High Stellar">High Stellar</option>
-                    </FormSelect>
-                  </FormField>
-                </>
-              )}
-
-              {acgPathway === "scout" && (
-                <FormField label="Division">
-                  <FormSelect
-                    value={acgDivision}
-                    onChange={(v) =>
-                      setAcgDivision(v as "field" | "bureaucracy")
-                    }
-                  >
-                    <option value="field">
-                      Field (Survey, Communications, Exploration)
-                    </option>
-                    <option value="bureaucracy">
-                      Bureaucracy (Technical, Operations, Administration, Detached Duty)
-                    </option>
-                  </FormSelect>
-                </FormField>
-              )}
-
-              {acgPathway === "merchantPrince" && (
-                <FormField label="Line type">
-                  <FormSelect value={acgLineType} onChange={setAcgLineType}>
-                    <option value="Megacorp">Megacorp (9+, Class B+)</option>
-                    <option value="Sector-wide">Sector-wide (8+, Class C+)</option>
-                    <option value="Subsector-wide">Subsector-wide (7+, Class D+)</option>
-                    <option value="Interface">Interface (7+)</option>
-                    <option value="Fledgling">Fledgling (7+)</option>
-                    <option value="Free Trader">Free Trader (7+)</option>
-                  </FormSelect>
-                </FormField>
-              )}
-
-              {acgPathway === "merchantPrince" &&
-                (acgLineType === "Megacorp" || acgLineType === "Sector-wide") && (
-                  <label className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={acgMerchantAcademy}
-                      onChange={(e) => setAcgMerchantAcademy(e.target.checked)}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      <strong className="font-semibold">
-                        Apply for Merchant Academy.
-                      </strong>{" "}
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        PM p. 47: available only after enlistment in
-                        Megacorporation or Sector-wide lines. Honors graduates
-                        pick their department and start at rank O1.
-                      </span>
-                    </span>
-                  </label>
-              )}
-
-              {!acgPathway && (
-                <p className="text-sm italic text-zinc-500 dark:text-zinc-500">
-                  Pick a pathway to configure its options.
-                </p>
-              )}
-            </div>
-          </div>
+              ))}
+            </FormSelect>
+          </FormField>
         </div>
       )}
 
@@ -1587,6 +1453,195 @@ function PreCareerButton({
       <div className="font-semibold text-zinc-900 dark:text-zinc-50">{label}</div>
       <div className="text-xs text-zinc-600 dark:text-zinc-400">{sub}</div>
     </button>
+  );
+}
+
+function AcgEnlistPhase({
+  character,
+  edition,
+  acgPathway,
+  acgService,
+  setAcgService,
+  acgCombatArm,
+  setAcgCombatArm,
+  acgFleet,
+  setAcgFleet,
+  acgSubsectorTech,
+  setAcgSubsectorTech,
+  acgDivision,
+  setAcgDivision,
+  acgLineType,
+  setAcgLineType,
+  acgMerchantAcademy,
+  setAcgMerchantAcademy,
+  onEnlist,
+}: {
+  character: Character;
+  edition: string;
+  acgPathway: string;
+  acgService: "army" | "marines";
+  setAcgService: (v: "army" | "marines") => void;
+  acgCombatArm: string;
+  setAcgCombatArm: (v: string) => void;
+  acgFleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
+  setAcgFleet: (v: "imperialNavy" | "reserveFleet" | "systemSquadron") => void;
+  acgSubsectorTech: string;
+  setAcgSubsectorTech: (v: string) => void;
+  acgDivision: "field" | "bureaucracy";
+  setAcgDivision: (v: "field" | "bureaucracy") => void;
+  acgLineType: string;
+  setAcgLineType: (v: string) => void;
+  acgMerchantAcademy: boolean;
+  setAcgMerchantAcademy: (v: boolean) => void;
+  onEnlist: () => void;
+}) {
+  // Pre-career may have locked the branch (Military Academy honors → army or
+  // marines; OTC → branch chosen during OTC). When set, surface it as the
+  // default and note that it came from pre-career.
+  const preCareerBranch = character.acgState?.preCareerBranch ?? null;
+  const preCareerCommissioned =
+    character.acgState?.preCareerCommission === true;
+  const pathwayLabel =
+    acgPathway === "merchantPrince"
+      ? "Merchant Prince"
+      : acgPathway.charAt(0).toUpperCase() + acgPathway.slice(1);
+
+  return (
+    <PhaseCard
+      title={`Configure ${pathwayLabel} enlistment`}
+      subtitle={
+        preCareerCommissioned
+          ? "Pre-career commissioned you — pick remaining sub-options and enlist."
+          : "Per the PM ACG checklist, configure your starting branch / role for this pathway, then enlist."
+      }
+    >
+      <div className="space-y-4">
+        {acgPathway === "mercenary" && (
+          <>
+            <FormField
+              label="Service"
+              hint={
+                preCareerBranch
+                  ? `Pre-career fixed this to ${preCareerBranch === "army" ? "Army" : "Marines"}.`
+                  : "Army (5+ to enlist, ground operations) or Marines (9+ to enlist, ship-board assignments available)."
+              }
+            >
+              <FormSelect
+                value={acgService}
+                onChange={(v) => setAcgService(v as "army" | "marines")}
+              >
+                <option value="army">Army</option>
+                <option value="marines">Marines</option>
+              </FormSelect>
+            </FormField>
+            <FormField
+              label="Combat arm"
+              hint="Commando is restricted to Military Academy honors graduates."
+            >
+              <FormSelect value={acgCombatArm} onChange={setAcgCombatArm}>
+                {mercenaryNonCommandoArms(edition).map((arm) => (
+                  <option key={arm} value={arm}>
+                    {arm}
+                  </option>
+                ))}
+              </FormSelect>
+            </FormField>
+          </>
+        )}
+
+        {acgPathway === "navy" && (
+          <>
+            <FormField label="Fleet">
+              <FormSelect
+                value={acgFleet}
+                onChange={(v) => setAcgFleet(v as typeof acgFleet)}
+              >
+                <option value="imperialNavy">
+                  Imperial Navy (8+ to enlist)
+                </option>
+                <option value="reserveFleet">
+                  Reserve Fleet (7+ to enlist)
+                </option>
+                <option value="systemSquadron">
+                  System Squadron (6+, requires Early Stellar+ homeworld)
+                </option>
+              </FormSelect>
+            </FormField>
+            <FormField
+              label="Subsector tech code"
+              hint="PM p. 52 step 1C: subsector capital's tech. Default falls back to your homeworld tech, clamped to Early Stellar+."
+            >
+              <FormSelect
+                value={acgSubsectorTech}
+                onChange={setAcgSubsectorTech}
+              >
+                <option value="">
+                  — default (homeworld tech, clamped to Early Stellar+)
+                </option>
+                <option value="Early Stellar">Early Stellar</option>
+                <option value="Avg Stellar">Avg Stellar</option>
+                <option value="High Stellar">High Stellar</option>
+              </FormSelect>
+            </FormField>
+          </>
+        )}
+
+        {acgPathway === "scout" && (
+          <FormField label="Division">
+            <FormSelect
+              value={acgDivision}
+              onChange={(v) =>
+                setAcgDivision(v as "field" | "bureaucracy")
+              }
+            >
+              <option value="field">
+                Field (Survey, Communications, Exploration)
+              </option>
+              <option value="bureaucracy">
+                Bureaucracy (Technical, Operations, Administration, Detached Duty)
+              </option>
+            </FormSelect>
+          </FormField>
+        )}
+
+        {acgPathway === "merchantPrince" && (
+          <>
+            <FormField label="Line type">
+              <FormSelect value={acgLineType} onChange={setAcgLineType}>
+                <option value="Megacorp">Megacorp (9+, Class B+)</option>
+                <option value="Sector-wide">Sector-wide (8+, Class C+)</option>
+                <option value="Subsector-wide">Subsector-wide (7+, Class D+)</option>
+                <option value="Interface">Interface (7+)</option>
+                <option value="Fledgling">Fledgling (7+)</option>
+                <option value="Free Trader">Free Trader (7+)</option>
+              </FormSelect>
+            </FormField>
+            {(acgLineType === "Megacorp" || acgLineType === "Sector-wide") && (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acgMerchantAcademy}
+                  onChange={(e) => setAcgMerchantAcademy(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <strong className="font-semibold">
+                    Apply for Merchant Academy.
+                  </strong>{" "}
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    PM p. 47: available only after enlistment in
+                    Megacorporation or Sector-wide lines. Honors graduates
+                    pick their department and start at rank O1.
+                  </span>
+                </span>
+              </label>
+            )}
+          </>
+        )}
+      </div>
+
+      <PrimaryButton onClick={onEnlist}>Enlist →</PrimaryButton>
+    </PhaseCard>
   );
 }
 
