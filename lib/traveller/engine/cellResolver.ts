@@ -22,6 +22,7 @@
 import type { Character } from "../character";
 import type { AttributeKey } from "../types";
 import type { BenefitDetail } from "../editions/types";
+import { getEdition } from "../editions";
 import { cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 
@@ -56,6 +57,30 @@ const SKILL_LABEL_RENAMES: Record<string, string> = {
   Electronics: "Electronic",
   "Fwd Obsv": "Fwd Obsvr",
 };
+
+/** PM Includes-skills are declared in the edition JSON under
+ *  `includesSkills`. Receiving an Includes-skill grants every constituent
+ *  skill — unlike a cascade, which is one player pick. Entries may be
+ *  plain names (granted at level 1) or "Name-N" (granted at level N,
+ *  e.g. "Laser Weapons-0" for High-G Environ). */
+function includesExpansion(
+  editionId: string, name: string,
+): Array<{ skill: string; level: number }> | null {
+  const data = (getEdition(editionId).data as {
+    includesSkills?: Record<string, unknown>;
+  }).includesSkills;
+  if (!data) return null;
+  const entry = data[name];
+  if (!Array.isArray(entry) || entry.length === 0) return null;
+  const out: Array<{ skill: string; level: number }> = [];
+  for (const item of entry) {
+    if (typeof item !== "string") continue;
+    const m = item.match(/^(.+)-(\d+)$/);
+    if (m) out.push({ skill: m[1]!.trim(), level: parseInt(m[2]!, 10) });
+    else out.push({ skill: item, level: 1 });
+  }
+  return out;
+}
 
 export type CellMode = "skill" | "muster";
 
@@ -157,6 +182,18 @@ export function applyCell(
 
   // Skill-table mode: literal skill name (with renames applied).
   const skillName = SKILL_LABEL_RENAMES[label] ?? label;
+  // F1: PM Includes-skills expand to all constituent skills at level 1
+  // each (e.g., ATV → Tracked Vehicle + Wheeled Vehicle; Handgun → Body
+  // Pistol, Pistol, Revolver, Snub Pistol). Data lives in the edition's
+  // `includesSkills` block.
+  const expansion = includesExpansion(ch.editionId, skillName);
+  if (expansion) {
+    for (const inner of expansion) {
+      if (!acquireSkillWithRestrictionCheck(ch, inner.skill)) continue;
+      ch.addSkill(inner.skill, inner.level);
+    }
+    return;
+  }
   // Homeworld limitation: literal vehicle/weapon cells (e.g., "Grav Belt")
   // also gate through the override roll. Non-restricted skills pass through.
   if (!acquireSkillWithRestrictionCheck(ch, skillName)) return;
