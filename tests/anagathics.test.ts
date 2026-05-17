@@ -127,6 +127,88 @@ describe("anagathics integration (B5)", () => {
     });
   });
 
+  describe("retry mechanic (PM p. 15)", () => {
+    it("on first failure, succeeds on retry when survival roll passes", () => {
+      const c = makeMtChar();
+      c.age = 34;
+      c.terms = 3;
+      c.service = "army";
+      const r = vi.spyOn(random, "roll");
+      // 2D availability fails (low roll), 2D survival pass, 2D availability pass
+      r.mockReturnValueOnce(2)  // availability roll 1: fail
+       .mockReturnValueOnce(8)  // retry survival roll: pass (army survival is 5+)
+       .mockReturnValueOnce(6); // availability roll 2: 6 + +6 starport/tech DMs = pass
+      expect(c.tryAnagathics()).toBe(true);
+      expect(c.onAnagathics).toBe(true);
+    });
+
+    it("on first failure, forces muster-out when retry survival fails", () => {
+      const c = makeMtChar();
+      c.age = 34;
+      c.terms = 3;
+      c.service = "army";
+      c.activeDuty = true;
+      const r = vi.spyOn(random, "roll");
+      r.mockReturnValueOnce(2)  // availability roll 1: fail
+       .mockReturnValueOnce(2); // retry survival roll: fail → force muster-out
+      expect(c.tryAnagathics()).toBe(false);
+      expect(c.activeDuty).toBe(false);
+      expect(c.shortTermThisTerm).toBe(true);
+    });
+
+    it("retry disabled when allowRetry=false", () => {
+      const c = makeMtChar();
+      c.age = 34;
+      c.terms = 3;
+      c.service = "army";
+      vi.spyOn(random, "roll").mockReturnValueOnce(2); // fail, no retry
+      expect(c.tryAnagathics(false)).toBe(false);
+      expect(c.onAnagathics).toBe(false);
+    });
+  });
+
+  describe("auto-aging-saves benefit (PM p. 15)", () => {
+    it("on anagathics: 2 attributes auto-pass, only the rest roll", () => {
+      const c = makeMtChar();
+      c.attributes.strength = 10;
+      c.attributes.dexterity = 10;
+      c.attributes.endurance = 10;
+      c.terms = 4;
+      c.age = 34;
+      c.apparentAge = 34;
+      c.onAnagathics = true;
+      c.anagathicsBenefitForfeitedTerms = 1;
+      // Aging table for term 4-7 has Str/Dex/End each needing a save. With
+      // auto-saves on 2, only the third one rolls. Force that to fail.
+      vi.spyOn(random, "roll").mockReturnValue(2);
+      c.doAging();
+      // Exactly one attribute should have been reduced by aging.
+      const reductions =
+        (10 - c.attributes.strength) +
+        (10 - c.attributes.dexterity) +
+        (10 - c.attributes.endurance);
+      expect(reductions).toBe(1);
+    });
+
+    it("not on anagathics: no auto-saves; all attributes roll", () => {
+      const c = makeMtChar();
+      c.attributes.strength = 10;
+      c.attributes.dexterity = 10;
+      c.attributes.endurance = 10;
+      c.terms = 4;
+      c.age = 34;
+      c.apparentAge = 34;
+      c.onAnagathics = false;
+      vi.spyOn(random, "roll").mockReturnValue(2);
+      c.doAging();
+      const reductions =
+        (10 - c.attributes.strength) +
+        (10 - c.attributes.dexterity) +
+        (10 - c.attributes.endurance);
+      expect(reductions).toBeGreaterThanOrEqual(3);
+    });
+  });
+
   describe("doServiceTermStep resets per-term flags", () => {
     it("clears anagathicsActiveThisTerm at the start of each term", () => {
       const c = makeMtChar();
