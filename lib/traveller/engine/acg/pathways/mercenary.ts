@@ -30,7 +30,7 @@ import {
   parseResolutionTarget, rollVsTarget,
   type StructuredDm,
 } from "../tables";
-import { awardDecoration, runCourtMartial } from "../awards";
+import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyMercenarySchool } from "../schools";
 import type { AcgState, ResolutionTarget } from "../types";
@@ -392,9 +392,8 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       });
       effMargin = mit.newMargin;
     }
-    if (effMargin >= 6) awardDecoration(ch, "SEH");
-    else if (effMargin >= 3) awardDecoration(ch, "MCG");
-    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
+    const tierAward = resolveDecorationTier(ch, effMargin);
+    if (tierAward) awardDecoration(ch, tierAward);
     else if (effMargin <= -6) runCourtMartial(ch, assignment);
   }
 
@@ -589,15 +588,16 @@ export function mercenarySpecialAssignment(ch: Character): void {
   };
   let sa = rollOnce();
   if (!sa) return;
-  // OCS age limit (PM p. 51): "OCS is prohibited over age 38: Reroll on the
-  // Special Assignments table, and if OCS is selected, a waiver allows
-  // attendance."
-  if (sa === "OCS" && ch.age > 38) {
+  // OCS age limit (PM p. 51 line 3188): age cap and waiver-on-reroll
+  // come from mercenary.ocsAdvancement.ageLimit in JSON.
+  const ocsAgeLimit = (data as { ocsAdvancement?: { ageLimit?: number } })
+    .ocsAdvancement?.ageLimit;
+  if (sa === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.history.push("OCS over age 38: waiver granted on reroll.");
+      ch.history.push(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
-      ch.verboseHistory(`OCS over age 38: rerolled to ${reroll}.`);
+      ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
       sa = reroll;
     } else {
       return;

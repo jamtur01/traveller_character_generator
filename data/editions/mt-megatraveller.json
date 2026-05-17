@@ -402,6 +402,31 @@
       "min": 0,
       "socialMin": 1
     },
+    "anagathics": {
+      "$rule": "PM p. 15 lines 887-947. All thresholds and DMs are PM-validated.",
+      "eligibility": {
+        "minAge": 30,
+        "minTerms": 3,
+        "rule": "Upon reaching age 30 at the end of the third term of service (but never before age 30)."
+      },
+      "availability": {
+        "die": "2D",
+        "target": 12,
+        "dms": {
+          "byStarport": { "A": 3, "B": 2, "C": 1 },
+          "byTech":     { "Early Stellar": 1, "Avg Stellar": 2, "High Stellar": 3 }
+        }
+      },
+      "survivalDm": -1,
+      "nobleSurvivalDm": -2,
+      "agingAutoSavesPerTerm": 2,
+      "cashRollCap": 2,
+      "retry": {
+        "rule": "PM p. 15: if availability fails, one retry allowed if the character rerolls another survival roll first. On survival fail, character is short-term mustered out.",
+        "extraSurvivalRequired": true,
+        "onFailForcedShortTermMuster": true
+      }
+    },
     "skillCap": {
       "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
       "source": "MT PM p. 39"
@@ -3851,7 +3876,10 @@
             ]
           },
           "skills": {
-            "rule": "Select one Merchant department and throw for three department skills."
+            "rule": "Select one Merchant department and throw for three department skills.",
+            "throwTarget": 4,
+            "throwDie": "1D",
+            "rolls": 3
           }
         },
         "medicalSchool": {
@@ -3921,6 +3949,18 @@
             "Navigation",
             "1D-3 levels of Pilot, minimum 1"
           ]
+        }
+      },
+      "decorationTiers": {
+        "$rule": "PM p. 49 line 3050-3056 (Mercenary), echoed on p. 53 for Navy. 'If a character rolls the indicated number or higher, he is awarded the MCUF. If at least three higher, MCG. If at least six higher, SEH.' Purple Heart is awarded on exact survival roll in a combat assignment (PM p. 49 line 3042-3046).",
+        "tiers": [
+          { "minMargin": 6, "award": "SEH",  "sehPromotion": true },
+          { "minMargin": 3, "award": "MCG"  },
+          { "minMargin": 0, "award": "MCUF" }
+        ],
+        "purpleHeart": {
+          "trigger": "exactSurvivalRollInCombatAssignment",
+          "award": "Purple Heart"
         }
       },
       "courtMartial": {
@@ -5180,6 +5220,37 @@
       "branchFleetRestrictions": {
         "$comment": "PM p. 52 line 3261: 'The Technical Services branch exists only in the Imperial Navy.' Other branches are unrestricted.",
         "Technical": ["imperialNavy"]
+      },
+      "ocsAdvancement": {
+        "$rule": "PM p. 53 line 3499-3505 and the cross-service OCS rule on p. 51 line 3182-3188 — Navy OCS uses the same age limit and advancement pattern as the Mercenary services.",
+        "tiers": [
+          { "fromRanks": ["E7"], "toRank": "O2" },
+          { "fromRanks": ["E8", "E9"], "toRank": "O3", "skipsSkills": true }
+        ],
+        "defaultToRank": "O1",
+        "ageLimit": 38
+      },
+      "preCareerFleetAssignment": {
+        "$rule": "PM p. 52 line 3254-3256: 'Naval Academy graduates are commissioned with rank O1 in the Imperial Navy. NOTC graduates are commissioned with rank O1 in the Reserve Fleet.' Medical School direct commission joins the Imperial Navy Medical Branch.",
+        "bySchool": {
+          "medicalSchool": { "fleet": "imperialNavy", "branch": "Medical" },
+          "navalAcademy":  { "fleet": "imperialNavy" }
+        },
+        "byPreCareerBranch": {
+          "navy": { "fleet": "reserveFleet" }
+        }
+      },
+      "decorationTiers": {
+        "$rule": "PM p. 53 line 3311 'survival, decoration, promotion, and skills' — same tier structure as Mercenary (PM p. 49).",
+        "tiers": [
+          { "minMargin": 6, "award": "SEH",  "sehPromotion": true },
+          { "minMargin": 3, "award": "MCG"  },
+          { "minMargin": 0, "award": "MCUF" }
+        ],
+        "purpleHeart": {
+          "trigger": "exactSurvivalRollInCombatAssignment",
+          "award": "Purple Heart"
+        }
       },
       "commandDuty": {
         "columns": [

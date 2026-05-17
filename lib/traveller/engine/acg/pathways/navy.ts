@@ -19,7 +19,7 @@ import {
   parseResolutionTarget, rollVsTarget,
   type StructuredDm,
 } from "../tables";
-import { awardDecoration, runCourtMartial } from "../awards";
+import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applySpecialAssignment } from "../schools";
 import { applyAcgSkillCell } from "./mercenary";
@@ -39,6 +39,15 @@ interface NavyData {
   branchResolution?: Record<string, string>;
   branches?: string[];
   branchFleetRestrictions?: Record<string, string[]>;
+  preCareerFleetAssignment?: {
+    bySchool?: Record<string, { fleet?: string; branch?: string }>;
+    byPreCareerBranch?: Record<string, { fleet?: string; branch?: string }>;
+  };
+  ocsAdvancement?: {
+    tiers?: Array<{ fromRanks?: string[]; toRank: string; skipsSkills?: boolean }>;
+    defaultToRank?: string;
+    ageLimit?: number;
+  };
   initialTraining?: string[];
   commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   assignment: {
@@ -118,17 +127,32 @@ export function navyEnlist(
   const spec = data.enlistment[fleet];
   ch.acgState!.fleet = fleet;
 
-  // Naval Academy / NOTC graduates auto-enlist at O1 (manual p. 52):
-  //   - Naval Academy graduates commission into the Imperial Navy.
-  //   - NOTC graduates commission into the Reserve Fleet.
-  //   - Medical School graduate (O3): joins Imperial Navy Medical Branch.
-  // Enforce that fleet here: ignore the caller-provided fleet if it conflicts.
+  // Naval Academy / NOTC / Medical-School graduates: read the fleet
+  // assignment from JSON (navy.preCareerFleetAssignment).
   if (ch.acgState!.preCareerCommission) {
+    const policy = data.preCareerFleetAssignment;
     const schools = ch.acgState!.schoolsAttended;
     let forcedFleet: typeof fleet | null = null;
-    if (schools.includes("medicalSchool")) forcedFleet = "imperialNavy";
-    else if (schools.includes("navalAcademy")) forcedFleet = "imperialNavy";
-    else if (ch.acgState!.preCareerBranch === "navy") forcedFleet = "reserveFleet"; // college NOTC
+    let forcedBranch: string | null = null;
+    if (policy) {
+      // Schools (e.g. Naval Academy, Medical School) take precedence.
+      for (const school of schools) {
+        const entry = policy.bySchool?.[school];
+        if (entry?.fleet) {
+          forcedFleet = entry.fleet as typeof fleet;
+          forcedBranch = entry.branch ?? forcedBranch;
+          break;
+        }
+      }
+      // Otherwise consider preCareerBranch (e.g. college NOTC → Reserve Fleet).
+      if (!forcedFleet && ch.acgState!.preCareerBranch) {
+        const entry = policy.byPreCareerBranch?.[ch.acgState!.preCareerBranch];
+        if (entry?.fleet) {
+          forcedFleet = entry.fleet as typeof fleet;
+          forcedBranch = entry.branch ?? forcedBranch;
+        }
+      }
+    }
     if (forcedFleet && fleet !== forcedFleet) {
       ch.acgState!.fleet = forcedFleet;
       ch.history.push(
@@ -138,10 +162,10 @@ export function navyEnlist(
       ch.acgState!.fleet = forcedFleet ?? fleet;
     }
     // Medical School graduate joins the Medical Branch automatically.
-    if (schools.includes("medicalSchool")) {
-      ch.acgState!.branch = "Medical";
+    if (forcedBranch) {
+      ch.acgState!.branch = forcedBranch;
       ch.history.push(
-        `Auto-enlisted in the Imperial Navy Medical Branch as ${ch.acgState!.rankCode} (medical school direct commission).`,
+        `Auto-enlisted in the ${ch.acgState!.fleet} ${forcedBranch} Branch as ${ch.acgState!.rankCode} (academy/school direct commission).`,
       );
     } else {
       ch.history.push(
@@ -453,9 +477,8 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       });
       effMargin = mit.newMargin;
     }
-    if (effMargin >= 6) awardDecoration(ch, "SEH");
-    else if (effMargin >= 3) awardDecoration(ch, "MCG");
-    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
+    const tierAward = resolveDecorationTier(ch, effMargin);
+    if (tierAward) awardDecoration(ch, tierAward);
     else if (effMargin <= -6) runCourtMartial(ch, assignment);
   }
 
@@ -579,12 +602,15 @@ export function navySpecialAssignment(ch: Character): void {
   };
   let assignment = rollOnce();
   if (!assignment) return;
-  if (assignment === "OCS" && ch.age > 38) {
+  // OCS age limit per JSON (navy.ocsAdvancement.ageLimit, PM p. 51/54).
+  const ocsAgeLimit = (data as { ocsAdvancement?: { ageLimit?: number } })
+    .ocsAdvancement?.ageLimit;
+  if (assignment === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.history.push("OCS over age 38: waiver granted on reroll.");
+      ch.history.push(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
-      ch.verboseHistory(`OCS over age 38: rerolled to ${reroll}.`);
+      ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
       assignment = reroll;
     } else {
       return;

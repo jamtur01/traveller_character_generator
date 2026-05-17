@@ -49,10 +49,55 @@ export function awardDecoration(
   ch.history.push(`Decorated: ${award}`);
   const bp = bpAwardFor(ch, `${award} received`) ?? 0;
   if (bp > 0) awardBrownie(ch, bp, `Decoration ${award}`);
-  // SEH carries an automatic +1 rank at muster-out (manual p. 46).
-  if (award === "SEH") {
+  // SEH carries an automatic +1 rank at muster-out. The flag comes from
+  // decorationTiers[].sehPromotion in JSON — search the active edition's
+  // decoration tiers for a matching award entry.
+  if (matchesDecorationFlag(ch, award, "sehPromotion")) {
     ch.acgState.sehPromotionPending = true;
   }
+}
+
+function matchesDecorationFlag(
+  ch: Character,
+  award: string,
+  flag: "sehPromotion",
+): boolean {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  // Decoration tiers live on each pathway (mercenary / navy / scout).
+  // We look on the character's current pathway first; if not declared,
+  // walk other pathways since decorationTiers are PM-shared.
+  const pathways = [ch.acgState?.pathway, "mercenary", "navy", "scout"];
+  for (const p of pathways) {
+    if (!p) continue;
+    const pdata = acg?.[p] as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined;
+    const tiers = pdata?.decorationTiers?.tiers;
+    if (!tiers) continue;
+    const match = tiers.find((t) => t.award === award);
+    if (match) return match[flag] === true;
+  }
+  return false;
+}
+
+/** Resolve a decoration tier for the given margin from the active
+ *  pathway's `decorationTiers.tiers` JSON. Returns the highest-tier
+ *  match (tiers are ordered with the biggest margin first in JSON).
+ *  Returns null if no tier matches (margin too low). */
+export function resolveDecorationTier(
+  ch: Character, margin: number,
+): "SEH" | "MCG" | "MCUF" | null {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const pdata = acg?.[ch.acgState?.pathway ?? "mercenary"] as {
+    decorationTiers?: { tiers?: Array<{ minMargin: number; award: string }> };
+  } | undefined;
+  const tiers = pdata?.decorationTiers?.tiers ?? [];
+  for (const t of tiers) {
+    if (margin >= t.minMargin) {
+      return t.award as "SEH" | "MCG" | "MCUF";
+    }
+  }
+  return null;
 }
 
 interface CourtMartialOutcome { roll: number; result: string }

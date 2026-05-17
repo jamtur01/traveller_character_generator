@@ -1084,8 +1084,11 @@ export class Character {
    *  on failure the character is short-term mustered out ("forced to
    *  muster out"). */
   tryAnagathics(allowRetry = true): boolean {
-    if (this.age < 30 || this.terms < 3) {
-      this.verboseHistory("Anagathics unavailable: must be at least age 30 and end of third term.");
+    const rules = this.anagathicsRules();
+    const minAge = rules?.eligibility?.minAge ?? 30;
+    const minTerms = rules?.eligibility?.minTerms ?? 3;
+    if (this.age < minAge || this.terms < minTerms) {
+      this.verboseHistory(`Anagathics unavailable: must be at least age ${minAge} and end of term ${minTerms}.`);
       return false;
     }
     const result = this.rollAnagathicsAvailability();
@@ -1096,21 +1099,39 @@ export class Character {
     return this.rollAnagathicsAvailability();
   }
 
+  /** Anagathics rules block from the active edition. Returns null if the
+   *  edition doesn't declare one (CT — no anagathics in TTB). */
+  private anagathicsRules(): {
+    eligibility?: { minAge?: number; minTerms?: number };
+    availability?: {
+      target?: number;
+      dms?: {
+        byStarport?: Record<string, number>;
+        byTech?: Record<string, number>;
+      };
+    };
+  } | null {
+    const rules = (getEdition(this.editionId).data.rules as {
+      anagathics?: unknown;
+    } | undefined)?.anagathics;
+    return (rules as ReturnType<Character["anagathicsRules"]>) ?? null;
+  }
+
   /** Roll 2D + DMs for anagathics availability and apply the success/failure
    *  side-effects. Returns whether a supply was found. */
   private rollAnagathicsAvailability(): boolean {
+    const rules = this.anagathicsRules();
+    const target = rules?.availability?.target ?? 12;
+    const starportDms = rules?.availability?.dms?.byStarport ?? {};
+    const techDms = rules?.availability?.dms?.byTech ?? {};
     let dm = 0;
     const sp = this.homeworld?.starport;
-    if (sp === "A") dm += 3;
-    else if (sp === "B") dm += 2;
-    else if (sp === "C") dm += 1;
+    if (sp && starportDms[sp] !== undefined) dm += starportDms[sp]!;
     const t = this.homeworld?.tech;
-    if (t === "Early Stellar") dm += 1;
-    else if (t === "Avg Stellar") dm += 2;
-    else if (t === "High Stellar") dm += 3;
+    if (t && techDms[t] !== undefined) dm += techDms[t]!;
     const r = roll(2) + dm;
-    this.verboseHistory(`Anagathics availability roll ${r} (DM ${dm}) vs 12+`);
-    const success = r >= 12;
+    this.verboseHistory(`Anagathics availability roll ${r} (DM ${dm}) vs ${target}+`);
+    const success = r >= target;
     if (success) {
       if (!this.onAnagathics) {
         this.apparentAge = this.age;
@@ -1163,7 +1184,10 @@ export class Character {
     // this and is a no-op when the threshold isn't met; calling here is
     // still safe but we gate to avoid the extra history line for the
     // common pre-eligibility case.
-    if (this.age < 30 || this.terms < 3) return;
+    const rules = this.anagathicsRules();
+    const minAge = rules?.eligibility?.minAge ?? 30;
+    const minTerms = rules?.eligibility?.minTerms ?? 3;
+    if (this.age < minAge || this.terms < minTerms) return;
     this.wantsAnagathicsThisTerm = true;
     this.tryAnagathics();
   }
