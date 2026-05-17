@@ -578,8 +578,40 @@ export function navyReenlist(ch: Character): boolean {
   }
   const r = roll(2);
   ch.verboseHistory(`Navy reenlist (${fleet}): ${r} + ${dm} vs ${spec.target}`);
-  if (r === 12) { ch.mandatoryReenlistment = true; return true; }
-  return r + dm >= spec.target;
+  if (r === 12) {
+    ch.mandatoryReenlistment = true;
+    offerNavyBranchChange(ch);
+    return true;
+  }
+  const keep = r + dm >= spec.target;
+  if (keep) offerNavyBranchChange(ch);
+  return keep;
+}
+
+/** PM p. 53: at reenlistment officers may change branches; the choice is
+ *  surfaced to the player in interactive mode. Auto mode keeps the
+ *  current branch. Branches are sourced from JSON branchSkills.columns. */
+function offerNavyBranchChange(ch: Character): void {
+  if (!ch.acgState || ch.choiceMode === "auto") return;
+  if (!ch.acgState.isOfficer) return;
+  const data = dataFor(ch);
+  const cols = data.branchSkills?.columns ?? [];
+  const branches = cols.filter((c) => c !== "die");
+  const current = ch.acgState.branch ?? branches[0] ?? "";
+  if (branches.length <= 1) return;
+  ch.pickOrDefer({
+    kind: "cascade",
+    label: `Change navy branch for next term (current: ${current})`,
+    options: branches,
+    preferred: [current],
+    context: { source: "reenlist", reenlistChangeBranch: true },
+    onResolve: (c, chosen) => {
+      if (chosen !== current && c.acgState) {
+        c.acgState.branch = chosen;
+        c.history.push(`Reenlisted into ${chosen} branch.`);
+      }
+    },
+  });
 }
 
 export function getNavyPathway() {
