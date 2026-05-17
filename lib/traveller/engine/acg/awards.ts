@@ -37,7 +37,10 @@ function bpAwardFor(ch: Character, event: string): number | null {
 export function awardBrownie(ch: Character, count: number, reason: string): void {
   if (!ch.acgState) return;
   ch.acgState.browniePoints += count;
-  ch.logRaw(`Brownie Point +${count}: ${reason}`, "verbose");
+  ch.log({
+    kind: "browniePoint", level: "simple",
+    delta: count, reason, balance: ch.acgState.browniePoints,
+  });
 }
 
 export function awardDecoration(
@@ -170,7 +173,11 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         ch.acgState.browniePoints -= 1;
         ch.acgState.browniePointsSpent += 1;
         total += 1;
-        ch.logRaw("Spent 1 brownie point to avoid court martial", "verbose");
+        ch.log({
+          kind: "browniePoint", level: "simple",
+          delta: -1, reason: "Avoid court martial",
+          balance: ch.acgState.browniePoints,
+        });
       }
     }
     if (total >= o.avoidTarget) {
@@ -196,7 +203,11 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
       ch.acgState.browniePoints -= 1;
       ch.acgState.browniePointsSpent += 1;
       r -= 1;
-      ch.logRaw("Spent 1 brownie point to mitigate court martial", "verbose");
+      ch.log({
+        kind: "browniePoint", level: "simple",
+        delta: -1, reason: "Mitigate court martial",
+        balance: ch.acgState.browniePoints,
+      });
     }
   }
   const outcome = cm.dieResults.find((o) => o.roll === r)
