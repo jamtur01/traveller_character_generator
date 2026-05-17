@@ -114,6 +114,9 @@ export interface AcgState {
   /** PM p. 47: pre-career failure may draft the character into a specific
    *  service (Navy/Army) regardless of homeworld restrictions. */
   preCareerDraftedInto?: "army" | "navy" | "marines";
+  /** Player's opt-in for Merchant Academy (PM p. 47: "may apply").
+   *  Set by the UI before merchant enlistment runs. Default: skip. */
+  attemptMerchantAcademy?: boolean;
 
   /** Combat arms or branches the character has been cross-trained into via
    *  special-assignment schools. Drives the Marine cross-training reenlist

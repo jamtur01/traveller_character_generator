@@ -427,6 +427,8 @@ export class Character {
       ...(prev?.preCareerBranch !== undefined ? { preCareerBranch: prev.preCareerBranch } : {}),
       ...(prev?.preCareerFirstTermShort ? { preCareerFirstTermShort: true } : {}),
       ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
+      ...(prev?.attemptMerchantAcademy !== undefined
+        ? { attemptMerchantAcademy: prev.attemptMerchantAcademy } : {}),
     };
     if (hasCommission) this.commissioned = true;
     if (draft) {

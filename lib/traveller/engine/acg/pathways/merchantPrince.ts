@@ -171,12 +171,13 @@ export function merchantEnlist(
     );
   }
 
-  // PM p. 47: Merchant Academy is offered AFTER enlistment, BEFORE
-  // department assignment. Eligible only for Megacorporation and
-  // Sector-wide lines. Honors graduates pick their own department
-  // (handled inside attemptPreCareer's applyMerchantDepartmentSkills).
+  // PM p. 47: Merchant Academy "may" be applied for after enlistment in
+  // a Megacorporation or Sector-wide line. The choice is the player's,
+  // not automatic. Interactive mode queues a yes/no choice; auto mode
+  // skips the Academy unless ch.acgState.attemptMerchantAcademy was
+  // pre-set by the UI/caller (defaults to false).
   if (lineType === "Megacorp" || lineType === "Sector-wide") {
-    maybeAttemptMerchantAcademy(ch);
+    offerMerchantAcademy(ch);
   }
 
   // Department assignment (skipped if the Academy already set it on
@@ -191,6 +192,29 @@ export function merchantEnlist(
 function maybeAttemptMerchantAcademy(ch: Character): void {
   const result = attemptPreCareer(ch, "merchantAcademy");
   applyPreCareerResult(ch, "merchantAcademy", result);
+}
+
+function offerMerchantAcademy(ch: Character): void {
+  // Caller may have pre-flagged the choice via acgState.attemptMerchantAcademy.
+  const pre = ch.acgState?.attemptMerchantAcademy;
+  if (pre === true) {
+    maybeAttemptMerchantAcademy(ch);
+    return;
+  }
+  if (pre === false) return; // explicit decline
+  if (ch.choiceMode === "auto") return; // default: skip in auto mode
+  ch.pickOrDefer({
+    kind: "cascade",
+    label: "Apply for Merchant Academy? (Megacorp/Sector-wide only)",
+    options: ["Apply for Merchant Academy", "Skip — proceed to department assignment"],
+    preferred: ["Skip — proceed to department assignment"],
+    context: { source: "merchantAcademyOptIn" },
+    onResolve: (c, chosen) => {
+      if (chosen.startsWith("Apply")) {
+        maybeAttemptMerchantAcademy(c);
+      }
+    },
+  });
 }
 
 function merchantAssignDepartment(ch: Character): void {

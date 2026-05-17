@@ -50,6 +50,9 @@ export default function Home() {
   // PM p. 52: Navy ACG characters need a subsector tech code (usually the
   // capital's). Empty string = defer to beginAcg's homeworld-based default.
   const [acgSubsectorTech, setAcgSubsectorTech] = useState<string>("");
+  // PM p. 47 Rrev5: Merchant Academy "may apply" — opt-in for Megacorp /
+  // Sector-wide. Default off; UI surfaces a checkbox.
+  const [acgMerchantAcademy, setAcgMerchantAcademy] = useState(false);
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -151,6 +154,14 @@ export default function Home() {
     const c = cloneCharacter(prev);
     c.showHistory = verbose ? "verbose" : "simple";
     if (c.useAcg && c.acgPathway) {
+      // Rrev5: persist merchant academy opt-in into acgState before
+      // beginAcg consumes it. Force lazy-init via browniePoints setter.
+      if (c.acgPathway === "merchantPrince" &&
+          (acgLineType === "Megacorp" || acgLineType === "Sector-wide") &&
+          acgMerchantAcademy) {
+        c.browniePoints = c.browniePoints;
+        if (c.acgState) c.acgState.attemptMerchantAcademy = true;
+      }
       // ACG: bypass basic doEnlistment and call the pathway-specific
       // enlist via beginAcg with the user's sub-option choices.
       try {
@@ -420,6 +431,8 @@ export default function Home() {
               setAcgLineType={setAcgLineType}
               acgSubsectorTech={acgSubsectorTech}
               setAcgSubsectorTech={setAcgSubsectorTech}
+              acgMerchantAcademy={acgMerchantAcademy}
+              setAcgMerchantAcademy={setAcgMerchantAcademy}
             />
           )}
 
@@ -787,6 +800,8 @@ function StartPhase({
   setAcgLineType,
   acgSubsectorTech,
   setAcgSubsectorTech,
+  acgMerchantAcademy,
+  setAcgMerchantAcademy,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
@@ -809,6 +824,8 @@ function StartPhase({
   setAcgLineType: (v: string) => void;
   acgSubsectorTech: string;
   setAcgSubsectorTech: (v: string) => void;
+  acgMerchantAcademy: boolean;
+  setAcgMerchantAcademy: (v: boolean) => void;
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
@@ -1037,6 +1054,24 @@ function StartPhase({
                     <option value="Fledgling">Fledgling (7+)</option>
                     <option value="Free Trader">Free Trader (7+)</option>
                   </select>
+                </label>
+              )}
+
+              {acgPathway === "merchantPrince" &&
+                (acgLineType === "Megacorp" || acgLineType === "Sector-wide") && (
+                <label className="mt-3 flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={acgMerchantAcademy}
+                    onChange={(e) => setAcgMerchantAcademy(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <strong className="font-semibold">Apply for Merchant Academy.</strong>{" "}
+                    PM p. 47: available only after enlistment in Megacorporation
+                    or Sector-wide lines. Honors graduates pick their department
+                    and start at rank O1.
+                  </span>
                 </label>
               )}
             </>
