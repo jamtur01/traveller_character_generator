@@ -429,7 +429,7 @@
     },
     "skillCap": {
       "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
-      "source": "MT PM p. 39"
+      "source": "MT PM p. 15"
     },
     "disability": {
       "rule": "PM p. 16 (lines 939-943): characters may quit adventuring when any disability condition is met. In chargen this blocks further reenlistment — the character must muster out at the next term boundary.",
@@ -453,7 +453,7 @@
     },
     "homeworldSkillRestrictions": {
       "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Law Enforcers, Pirates, and Rogues may select weapon skills one law code lower than their homeworld's. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely.",
-      "source": "MT PM p. 39",
+      "source": "MT PM p. 15",
       "overrideTarget": 7,
       "exemptServices": ["nobles"],
       "weaponLawLowerServices": ["lawenforcers", "pirates", "rogues"],
@@ -515,20 +515,59 @@
     }
   },
   "attributeAbbreviations": {
-    "$comment": "PM-printed abbreviations on skill-table cells (e.g. '+1 Intel', '-2 Soc') map to the engine's internal attribute key. Same set across CT and MT.",
+    "$comment": "Maps both PDF Skill-List canonical names (Strength, Dexterity, …) and the table-cell abbreviations (Stren, Str, Dex, …) to the engine's internal attribute key. JSON values now use canonical full names; legacy abbreviated forms kept as aliases for forward compat with CT and migrated characters.",
+    "Strength": "strength",
     "Stren": "strength",
+    "Str": "strength",
+    "Dexterity": "dexterity",
     "Dext": "dexterity",
+    "Dex": "dexterity",
+    "Endurance": "endurance",
     "Endur": "endurance",
+    "End": "endurance",
+    "Intelligence": "intelligence",
     "Intel": "intelligence",
+    "Int": "intelligence",
+    "Education": "education",
     "Educ": "education",
+    "Edu": "education",
     "Social": "social",
     "Soc": "social"
   },
   "skillLabelRenames": {
-    "$comment": "Map abbreviated/typo cell labels to the canonical engine skill name. Cells in the PM acquired-skills tables sometimes use abbreviations or alternate spellings (e.g. 'Engnrng' for Engineering, 'Electronics' for Electronic, 'Fwd Obsv' for Fwd Obsvr).",
+    "$comment": "Map abbreviated PM table cell labels to the canonical PDF Skill-List name (pp. 28-29). MT JSON values are now in canonical form; these aliases let the engine resolve any abbreviated labels that survive in CT data, user input, or legacy characters.",
     "Engnrng": "Engineering",
-    "Electronics": "Electronic",
-    "Fwd Obsv": "Fwd Obsvr"
+    "Electronic": "Electronics",
+    "Fwd Obs": "Forward Observer",
+    "Fwd Obsv": "Forward Observer",
+    "Fwd Obsvr": "Forward Observer",
+    "Blade Cbt": "Blade Combat",
+    "Gun Cbt": "Gun Combat",
+    "Hand Cbt": "Hand Combat",
+    "Space Cbt": "Space Combat",
+    "Spl Cbt": "Special Combat",
+    "Hvy Wpns": "Heavy Weapons",
+    "Arch Wpn": "Archaic Weapons",
+    "Battle Drss": "Battle Dress",
+    "Comm": "Communications",
+    "Grav Veh": "Grav Vehicle",
+    "Interpers": "Interpersonal",
+    "Interrog": "Interrogation",
+    "Prospect": "Prospecting",
+    "Explor": "Exploratory",
+    "Sp Tech": "Space Tech",
+    "Sh Tactics": "Ship Tactics",
+    "Sh Tcts": "Ship Tactics",
+    "Fl Tactics": "Fleet Tactics",
+    "Fl Tcts": "Fleet Tactics",
+    "Zero-G Env": "Zero-G Environ",
+    "Sm Water": "Small Watercraft",
+    "Lg Water": "Large Watercraft",
+    "Forens Kit": "Forensic Kit",
+    "Mechanic": "Mechanical",
+    "Demolition": "Demolitions",
+    "Combat Engineer": "Combat Engineering",
+    "Lt. Commander": "Lieutenant Commander"
   },
   "includesSkills": {
     "$comment": "PM Includes-skills, verified against MT_MegaTraveller_Players_Manual.pdf. Each entry expands to its constituent skill(s) at level 1 unless suffixed '-0'. Excluded: Small Watercraft (line 2393) and Wheeled Vehicle (line 2483) — both use the 'Includes' wording but with '-1' suffixes, which the PM treats as 'Serves as' (substitutes at one level lower), not as multi-skill grants. PM citations are line numbers in extracted text.",
@@ -602,7 +641,7 @@
       "Linguistics",
       "Persuasion",
       "Science",
-      "+1 Educ"
+      "+1 Education"
     ],
     "animalHandling": [
       "Guard/Hunting Beasts",
@@ -668,10 +707,10 @@
       "Turret Weapons"
     ],
     "handCombat": [
-      "Blade Cbt",
+      "Blade Combat",
       "Brawling",
-      "+1 Endur",
-      "+1 Stren"
+      "+1 Endurance",
+      "+1 Strength"
     ],
     "inborn": [
       "Artisan",
@@ -688,13 +727,13 @@
       "Steward"
     ],
     "mental": [
-      "+1 Intel",
-      "+1 Educ"
+      "+1 Intelligence",
+      "+1 Education"
     ],
     "physical": [
-      "+1 Stren",
-      "+1 Dext",
-      "+1 Endur"
+      "+1 Strength",
+      "+1 Dexterity",
+      "+1 Endurance"
     ],
     "science": [
       "Biology",
@@ -728,7 +767,7 @@
     ],
     "specialCombat": [
       "Battle Dress",
-      "Combat Engineer",
+      "Combat Engineering",
       "Combat Rifleman",
       "Demolitions",
       "Field Artillery Gunnery",
@@ -743,7 +782,7 @@
     "technical": [
       "Communications",
       "Computer",
-      "Electronic",
+      "Electronics",
       "Gravitics",
       "Robot Ops",
       "Sensor Ops"
@@ -934,29 +973,23 @@
         null,
         "Ensign",
         "Lieutenant",
-        "Lt. Commander",
+        "Lieutenant Commander",
         "Commander",
         "Captain",
         "Admiral"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Vacc Suit",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        }
+        { "trigger": "service", "skill": "Vacc Suit", "level": 0 },
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "rank", "rank": 5, "effect": "+1 Social" },
+        { "trigger": "rank", "rank": 6, "effect": "+1 Social" }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Mental",
           "+1 Social"
@@ -965,16 +998,16 @@
           null,
           "Ship's Boat",
           "Vacc Suit",
-          "Fwd Obsvr",
+          "Forward Observer",
           "Space Combat",
           "Hand Combat",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
           "Vacc Suit",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Space",
           "Space Combat",
           "Inborn"
@@ -993,8 +1026,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
-          "+2 Educ",
+          "+1 Intelligence",
+          "+2 Education",
           "Weapon",
           "Travellers'",
           "High Psg",
@@ -1082,46 +1115,35 @@
         "Brigadier"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Vacc Suit",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Large Blade",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Vacc Suit", "level": 0 },
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "service", "skill": "Large Blade", "level": 1 },
+        { "trigger": "rank", "rank": 1, "skill": "Handgun", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
+          "+1 Dexterity",
           "Physical",
           "Vice",
           "Hand Combat",
-          "Blade Cbt"
+          "Blade Combat"
         ],
         "serviceSkills": [
           null,
           "ATV",
           "Vacc Suit",
-          "Blade Cbt",
+          "Blade Combat",
           "Special Combat",
           "Hand Combat",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
           "Vehicle",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Tactics",
           "Hand Combat",
           "Special Combat"
@@ -1140,8 +1162,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+2 Intel",
-          "+1 Educ",
+          "+2 Intelligence",
+          "+1 Education",
           "Weapon",
           "Travellers'",
           "High Psg",
@@ -1229,44 +1251,37 @@
         "General"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Combat Rifleman",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "service", "skill": "Combat Rifleman", "level": 1 },
+        { "trigger": "rank", "rank": 1, "skill": "Submachinegun", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
-          "+1 Educ",
+          "+1 Education",
           "Hand Combat"
         ],
         "serviceSkills": [
           null,
           "ATV",
           "Grav Vehicle",
-          "Gun Cbt",
+          "Gun Combat",
           "Special Combat",
           "Hand Combat",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
           "Vehicle",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Tactics",
-          "Blade Cbt",
-          "Gun Cbt"
+          "Blade Combat",
+          "Gun Combat"
         ],
         "advancedEducation8Plus": [
           null,
@@ -1282,8 +1297,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
-          "+2 Educ",
+          "+1 Intelligence",
+          "+2 Education",
           "Weapon",
           "High Psg",
           "Mid Psg",
@@ -1359,7 +1374,7 @@
         },
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -1372,11 +1387,11 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Mental",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "serviceSkills": [
           null,
@@ -1384,14 +1399,14 @@
           "Vacc Suit",
           "Mechanical",
           "Space",
-          "Electronic",
+          "Electronics",
           "Inborn"
         ],
         "advancedEducation": [
           null,
           "Vehicle",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Inborn",
           "Special Combat",
           "Medical"
@@ -1410,8 +1425,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+2 Intel",
-          "+2 Educ",
+          "+2 Intelligence",
+          "+2 Education",
           "Weapon",
           "Weapon",
           "Scout Ship",
@@ -1509,7 +1524,7 @@
         },
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -1522,8 +1537,8 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Brawling",
           "Inborn"
@@ -1532,7 +1547,7 @@
           null,
           "Hand Combat",
           "Vacc Suit",
-          "Gun Cbt",
+          "Gun Combat",
           "Vehicle",
           "Vehicle",
           "Vehicle"
@@ -1541,9 +1556,9 @@
           null,
           "Aircraft",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Gravitics",
-          "Gun Cbt",
+          "Gun Combat",
           "Survival"
         ],
         "advancedEducation8Plus": [
@@ -1560,7 +1575,7 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Educ",
+          "+1 Intelligence",
           "Weapon",
           "Weapon",
           "High Psg",
@@ -1643,38 +1658,31 @@
         null,
         "Ensign",
         "Lieutenant",
-        "Lt. Commander",
+        "Lieutenant Commander",
         "Commander",
         "Captain",
         "Admiral"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Small Watercraft",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "service", "skill": "Small Watercraft", "level": 1 },
+        { "trigger": "rank", "rank": 1, "skill": "Large Watercraft", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Brawling",
           "Inborn"
         ],
         "serviceSkills": [
           null,
-          "Gun Cbt",
+          "Gun Combat",
           "Communications",
-          "Fwd Obsvr",
+          "Forward Observer",
           "Vehicle",
           "Small Watercraft",
           "Special Combat"
@@ -1683,7 +1691,7 @@
           null,
           "Large Watercraft",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Gravitics",
           "Navigation",
           "Demolitions"
@@ -1702,8 +1710,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
-          "+1 Educ",
+          "+1 Intelligence",
+          "+1 Education",
           "Weapon",
           "+1 Social",
           "High Psg",
@@ -1744,7 +1752,7 @@
           ]
         },
         "survival": {
-          "target": 6,
+          "target": 4,
           "dm": [
             {
               "modifier": 2,
@@ -1791,22 +1799,17 @@
         "Commissioner"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Streetwise",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "service", "skill": "Streetwise", "level": 1 },
+        { "trigger": "rank", "rank": 4, "skill": "Interrogation", "level": 1 },
+        { "trigger": "rank", "rank": 5, "skill": "Admin", "level": 1 },
+        { "trigger": "rank", "rank": 6, "skill": "Liaison", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
+          "+1 Dexterity",
           "Mental",
           "Hand Combat",
           "Vice",
@@ -1818,8 +1821,8 @@
           "Vehicle",
           "Inborn",
           "Hand Combat",
-          "Blade Cbt",
-          "Gun Cbt"
+          "Blade Combat",
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
@@ -1844,7 +1847,7 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
+          "+1 Intelligence",
           "Forensic Kit",
           "Weapon",
           "High Psg",
@@ -1916,7 +1919,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -1928,28 +1931,28 @@
       "skillTables": {
         "personalDevelopment": [
           null,
-          "+1 Stren",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Strength",
+          "+1 Education",
+          "+1 Endurance",
           "Mental",
-          "+1 Educ",
+          "+1 Education",
           "+1 Social"
         ],
         "serviceSkills": [
           null,
-          "+1 Dext",
+          "+1 Dexterity",
           "Technical",
           "Medical",
           "Vice",
           "Medical",
-          "Blade Cbt"
+          "Blade Combat"
         ],
         "advancedEducation": [
           null,
           "Medical",
           "Medical",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Technical",
           "Academic"
         ],
@@ -1967,8 +1970,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Educ",
-          "+1 Educ",
+          "+1 Education",
+          "+1 Education",
           "Weapon",
           "Instruments",
           "Mid Psg",
@@ -1982,7 +1985,7 @@
           30000,
           40000,
           60000,
-          100000
+          80000
         ]
       }
     },
@@ -2058,7 +2061,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -2071,10 +2074,10 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Educ",
+          "+1 Dexterity",
           "Mental",
-          "Blade Cbt",
-          "Gun Cbt",
+          "Blade Combat",
+          "Gun Combat",
           "Inborn"
         ],
         "serviceSkills": [
@@ -2109,8 +2112,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
-          "+2 Educ",
+          "+1 Intelligence",
+          "+2 Education",
           "Weapon",
           "+1 Social",
           "High Psg",
@@ -2136,7 +2139,7 @@
       "skillsPerTerm": 1,
       "checks": {
         "enlistment": {
-          "target": 5,
+          "target": 8,
           "dm": [
             {
               "modifier": 1,
@@ -2200,28 +2203,28 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
-          "+1 Endur",
-          "+1 Educ",
+          "+1 Endurance",
+          "+1 Education",
           "Mental",
           "Brawling",
-          "+1 Dext",
+          "+1 Dexterity",
           "Inborn"
         ],
         "serviceSkills": [
           null,
-          "Gun Cbt",
+          "Gun Combat",
           "Vehicle",
           "Hand Combat",
           "Inborn",
           "Vehicle",
-          "+1 Educ"
+          "+1 Education"
         ],
         "advancedEducation": [
           null,
@@ -2247,21 +2250,21 @@
           null,
           "Low Psg",
           "Mid Psg",
-          null,
           "Watch",
-          null,
+          "Watch",
+          "+1 Social",
           "High Psg",
           "+1 Social"
         ],
         "cash": [
           null,
-          0,
-          0,
+          null,
+          null,
           10000,
           10000,
           40000,
           40000,
-          80000
+          40000
         ]
       }
     },
@@ -2318,7 +2321,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -2330,16 +2333,16 @@
       "skillTables": {
         "personalDevelopment": [
           null,
-          "+1 Stren",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Strength",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Mental",
           "Interpersonal",
           "Inborn"
         ],
         "serviceSkills": [
           null,
-          "Gun Cbt",
+          "Gun Combat",
           "Hand Combat",
           "Inborn",
           "Vehicle",
@@ -2349,7 +2352,7 @@
         "advancedEducation": [
           null,
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Technical",
           "Technical",
           "Academic",
@@ -2445,7 +2448,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         }
       ],
@@ -2453,20 +2456,20 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Mental",
           "Vice",
           "Hand Combat"
         ],
         "serviceSkills": [
           null,
-          "Gun Cbt",
+          "Gun Combat",
           "Hand Combat",
           "Environ",
           "Vehicle",
           "Vice",
-          "+1 Dext"
+          "+1 Dexterity"
         ],
         "advancedEducation": [
           null,
@@ -2580,25 +2583,18 @@
         "Owner"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Vacc Suit",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        }
+        { "trigger": "service", "skill": "Vacc Suit", "level": 0 },
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "rank", "rank": 4, "skill": "Pilot", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Hand Combat",
-          "Blade Cbt",
+          "Blade Combat",
           "Vice"
         ],
         "serviceSkills": [
@@ -2608,13 +2604,13 @@
           "Inborn",
           "Interpersonal",
           "Technical",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
           "Streetwise",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Space",
           "Space Combat",
           "Academic"
@@ -2633,8 +2629,8 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
-          "+2 Educ",
+          "+1 Intelligence",
+          "+2 Education",
           "Weapon",
           "Weapon",
           "Low Psg",
@@ -2646,7 +2642,7 @@
           5000,
           10000,
           10000,
-          10000,
+          20000,
           20000,
           50000
         ]
@@ -2704,7 +2700,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -2723,8 +2719,8 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Hand Combat",
           "Vacc Suit"
@@ -2733,7 +2729,7 @@
           null,
           "Space",
           "Zero-G Environ",
-          "Gun Cbt",
+          "Gun Combat",
           "Prospecting",
           "Prospecting",
           "Space"
@@ -2742,7 +2738,7 @@
           null,
           "Ship's Boat",
           "Mechanical",
-          "Electronic",
+          "Electronics",
           "Prospecting",
           "Exploratory",
           "Space"
@@ -2761,7 +2757,7 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
+          "+1 Intelligence",
           "Weapon",
           "High Psg",
           "Travellers'",
@@ -2850,40 +2846,29 @@
         null
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Vacc Suit",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Gun Cbt",
-          "level": 0
-        },
-        {
-          "trigger": "service",
-          "skill": "Brawling",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Vacc Suit", "level": 0 },
+        { "trigger": "service", "skill": "Gun Combat", "level": 0 },
+        { "trigger": "service", "skill": "Brawling", "level": 1 },
+        { "trigger": "rank", "rank": 4, "skill": "Pilot", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Hand Combat",
-          "Blade Cbt"
+          "Blade Combat"
         ],
         "serviceSkills": [
           null,
           "Space",
           "Zero-G Environ",
-          "Gun Cbt",
+          "Gun Combat",
           "Special Combat",
-          "Blade Cbt",
-          "Gun Cbt"
+          "Blade Combat",
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
@@ -2901,14 +2886,14 @@
           "Vice",
           "Technical",
           "Inborn",
-          "Electronic"
+          "Electronics"
         ]
       },
       "musterOut": {
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intel",
+          "+1 Intelligence",
           "Weapon",
           "Letter",
           "-1 Social",
@@ -2917,9 +2902,9 @@
         ],
         "cash": [
           null,
-          0,
-          0,
-          1000,
+          null,
+          null,
+          10000,
           10000,
           50000,
           50000,
@@ -2935,7 +2920,7 @@
       "skillsPerTerm": 2,
       "checks": {
         "enlistment": {
-          "target": 6,
+          "target": 5,
           "dm": [
             {
               "modifier": 1,
@@ -2980,7 +2965,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -2993,8 +2978,8 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Vice",
           "Hand Combat",
           "Carousing"
@@ -3002,10 +2987,10 @@
         "serviceSkills": [
           null,
           "Hand Combat",
-          "Gun Cbt",
+          "Gun Combat",
           "Demolitions",
           "Vehicle",
-          "+1 Educ",
+          "+1 Education",
           "Vehicle"
         ],
         "advancedEducation": [
@@ -3036,16 +3021,16 @@
           "Weapon",
           "High Psg",
           "Travellers'",
-          null
+          "+1 Social"
         ],
         "cash": [
           null,
-          0,
-          0,
+          null,
+          null,
           10000,
           10000,
           50000,
-          100000,
+          50000,
           100000
         ]
       }
@@ -3103,7 +3088,7 @@
       "automaticSkills": [
         {
           "trigger": "service",
-          "skill": "Gun Cbt",
+          "skill": "Gun Combat",
           "level": 0
         },
         {
@@ -3116,16 +3101,16 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
-          "+1 Endur",
+          "+1 Dexterity",
+          "+1 Endurance",
           "Mental",
-          "Gun Cbt",
-          "Blade Cbt"
+          "Gun Combat",
+          "Blade Combat"
         ],
         "serviceSkills": [
           null,
           "Hand Combat",
-          "Gun Cbt",
+          "Gun Combat",
           "Environ",
           "Environ",
           "Hunting",
@@ -3133,12 +3118,12 @@
         ],
         "advancedEducation": [
           null,
-          "Electronic",
+          "Electronics",
           "Mechanical",
           "Technical",
           "Computer",
           "Environ",
-          "Economic"
+          "Academic"
         ],
         "advancedEducation8Plus": [
           null,
@@ -3243,17 +3228,15 @@
         "Elder"
       ],
       "automaticSkills": [
-        {
-          "trigger": "service",
-          "skill": "Large Blade",
-          "level": 1
-        }
+        { "trigger": "service", "skill": "Large Blade", "level": 1 },
+        { "trigger": "rank", "rank": 2, "skill": "Blade Combat", "level": 1 },
+        { "trigger": "rank", "rank": 5, "skill": "Leader", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dext",
+          "+1 Dexterity",
           "Physical",
           "Vice",
           "Physical",
@@ -3263,10 +3246,10 @@
           null,
           "Hand Combat",
           "Hand Combat",
-          "Blade Cbt",
+          "Blade Combat",
           "Environ",
           "Archaic Weapons",
-          "Gun Cbt"
+          "Gun Combat"
         ],
         "advancedEducation": [
           null,
@@ -3294,14 +3277,14 @@
           "Weapon",
           "Weapon",
           "Weapon",
-          null,
+          "Weapon",
           "High Psg",
           "High Psg"
         ],
         "cash": [
           null,
-          0,
-          0,
+          null,
+          null,
           1000,
           2000,
           3000,
@@ -4719,7 +4702,7 @@
           },
           {
             "die": 2,
-            "training": "Electronic",
+            "training": "Electronics",
             "schooling": "Medical"
           },
           {
@@ -4729,7 +4712,7 @@
           },
           {
             "die": 4,
-            "training": "Comm",
+            "training": "Communications",
             "schooling": "Environ"
           },
           {
@@ -4765,7 +4748,7 @@
             "marineLife": "Brawling",
             "ncoSkills": "Heavy Weapons",
             "commandSkills": "+1 Endurance",
-            "staffSkills": "Mechanic",
+            "staffSkills": "Mechanical",
             "shipboard": "Forward Observer"
           },
           {
@@ -4900,7 +4883,7 @@
             "cavalry": "Heavy Weapons",
             "infantry": "Heavy Weapons",
             "support": "Mechanical",
-            "commando": "Demolition",
+            "commando": "Demolitions",
             "shipsTroops": "Environ"
           },
           {
@@ -4908,7 +4891,7 @@
             "artillery": "Forward Observer",
             "cavalry": "Heavy Weapons",
             "infantry": "Vehicle",
-            "support": "Electronic",
+            "support": "Electronics",
             "commando": "Environ",
             "shipsTroops": "High-G Environ"
           },
@@ -5836,7 +5819,7 @@
           },
           {
             "die": 2,
-            "training": "Electronic",
+            "training": "Electronics",
             "schooling": "Medical"
           },
           {
@@ -5846,7 +5829,7 @@
           },
           {
             "die": 4,
-            "training": "Comm",
+            "training": "Communications",
             "schooling": "Space"
           },
           {
@@ -5892,7 +5875,7 @@
             "shoreDuty": "Vehicle",
             "pettyOfficer": "Blade Combat",
             "commandOfficer": "+1 Endurance",
-            "staffOfficer": "Electronic"
+            "staffOfficer": "Electronics"
           },
           {
             "die": 3,
@@ -5906,9 +5889,9 @@
           {
             "die": 4,
             "navyLife": "Gambling",
-            "shipboard": "Mechanic",
+            "shipboard": "Mechanical",
             "shoreDuty": "Vacc Suit",
-            "pettyOfficer": "Mechanic",
+            "pettyOfficer": "Mechanical",
             "commandOfficer": "Ship's Boat",
             "staffOfficer": "Academic"
           },
@@ -5942,7 +5925,7 @@
           {
             "die": 8,
             "navyLife": "+1 Education",
-            "shipboard": "Comm",
+            "shipboard": "Communications",
             "shoreDuty": "Environ",
             "pettyOfficer": "+1 Education",
             "commandOfficer": "+1 Social",
@@ -5994,39 +5977,39 @@
         "rows": [
           {
             "die": 1,
-            "lineCrew": "Mechanic",
+            "lineCrew": "Mechanical",
             "flight": "Vacc Suit",
             "gunnery": "Forward Observer",
-            "engineer": "Mechanic",
+            "engineer": "Mechanical",
             "medical": "Admin",
-            "technical": "Mechanic"
+            "technical": "Mechanical"
           },
           {
             "die": 2,
-            "lineCrew": "Electronic",
+            "lineCrew": "Electronics",
             "flight": "Admin",
             "gunnery": "Gun Combat",
-            "engineer": "Electronic",
+            "engineer": "Electronics",
             "medical": "Technical",
-            "technical": "Mechanic"
+            "technical": "Mechanical"
           },
           {
             "die": 3,
             "lineCrew": "Gun Combat",
             "flight": "Gun Combat",
-            "gunnery": "Comm",
+            "gunnery": "Communications",
             "engineer": "Engineer",
-            "medical": "Electronic",
-            "technical": "Electronic"
+            "medical": "Electronics",
+            "technical": "Electronics"
           },
           {
             "die": 4,
             "lineCrew": "Navigation",
-            "flight": "Comm",
+            "flight": "Communications",
             "gunnery": "Computer",
-            "engineer": "Mechanic",
+            "engineer": "Mechanical",
             "medical": "Admin",
-            "technical": "Electronic"
+            "technical": "Electronics"
           },
           {
             "die": 5,
@@ -6781,7 +6764,7 @@
             "shipSchool": "Navigation",
             "intelligenceSchool": "Streetwise",
             "technologySchool": "Electronics",
-            "specialistSchool": "Mechanic",
+            "specialistSchool": "Mechanical",
             "fieldTraining": "Grav Belt",
             "contactSchool": "Liaison"
           },
@@ -6798,7 +6781,7 @@
             "die": 4,
             "shipSchool": "Gunnery",
             "intelligenceSchool": "Vice",
-            "technologySchool": "Mechanic",
+            "technologySchool": "Mechanical",
             "specialistSchool": "Gunnery",
             "fieldTraining": "Survival",
             "contactSchool": "Streetwise"
@@ -6879,7 +6862,7 @@
               "die": 5,
               "scoutLife": "Gun Combat",
               "exploration": "Recon",
-              "communications": "Comm",
+              "communications": "Communications",
               "survey": "Survey",
               "specialOrWarMission": "Vice",
               "fieldService": "Gun Combat"
@@ -6954,7 +6937,7 @@
             {
               "die": 1,
               "admin": "Electronics",
-              "operation": "Mechanic",
+              "operation": "Mechanical",
               "technical": "Sensor Ops",
               "detachedDuty": "Electronics",
               "adminRank": "Admin",
@@ -6964,17 +6947,17 @@
               "die": 2,
               "admin": "Admin",
               "operation": "Gun Combat",
-              "technical": "Mechanic",
+              "technical": "Mechanical",
               "detachedDuty": "Admin",
               "adminRank": "Admin",
               "bureaucracy": "Gambling"
             },
             {
               "die": 3,
-              "admin": "Comm",
+              "admin": "Communications",
               "operation": "Vehicle",
               "technical": "Vehicle",
-              "detachedDuty": "Comm",
+              "detachedDuty": "Communications",
               "adminRank": "Computer",
               "bureaucracy": "Carousing"
             },
@@ -6991,7 +6974,7 @@
               "die": 5,
               "admin": "Robot Ops",
               "operation": "Computer",
-              "technical": "Electronic",
+              "technical": "Electronics",
               "detachedDuty": "Robot Ops",
               "adminRank": "Gun Combat",
               "bureaucracy": "Computer"
@@ -7983,7 +7966,7 @@
             {
               "die": 5,
               "merchantLife": "+1 Education",
-              "shipboardLife": "Comm",
+              "shipboardLife": "Communications",
               "officerSkills": "Liaison",
               "merchantSkills": "Admin",
               "masterSkills": "Leader"
@@ -8021,7 +8004,7 @@
             {
               "die": 2,
               "deck": "Admin",
-              "engineer": "Electronic",
+              "engineer": "Electronics",
               "purser": "Medical",
               "medic": "Medical",
               "admin": "Liaison"
