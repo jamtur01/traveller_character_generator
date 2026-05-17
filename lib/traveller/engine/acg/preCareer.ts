@@ -34,21 +34,19 @@ export type PreCareerOption =
   | "medicalSchool" | "flightSchool";
 
 /** Display label for a pre-career option key. Reads `displayName` from
- *  the edition JSON; falls back to a hardcoded label so old/test editions
- *  without the field still render correctly. */
-export function preCareerLabel(opt: PreCareerOption, editionId?: string): string {
-  if (editionId) {
-    const spec = specFor(editionId, opt) as { displayName?: string } | null;
-    if (spec?.displayName) return spec.displayName;
+ *  the edition's preCareerOptions JSON. The label is data, not code; if
+ *  an edition declares the option without a displayName that's a data
+ *  bug — surface it loudly rather than hiding behind a hardcoded
+ *  fallback that drifts out of sync with the JSON. */
+export function preCareerLabel(opt: PreCareerOption, editionId: string): string {
+  const spec = specFor(editionId, opt) as { displayName?: string } | null;
+  if (!spec?.displayName) {
+    throw new Error(
+      `Edition "${editionId}" preCareerOptions.${opt} is missing displayName. ` +
+      `Add it to data/editions/${editionId}.json.`,
+    );
   }
-  switch (opt) {
-    case "college": return "College";
-    case "navalAcademy": return "Naval Academy";
-    case "militaryAcademy": return "Military Academy";
-    case "merchantAcademy": return "Merchant Academy";
-    case "medicalSchool": return "Medical School";
-    case "flightSchool": return "Flight School";
-  }
+  return spec.displayName;
 }
 
 /** Pre-career attribute eligibility (e.g., Naval Academy requires Soc 8+).
