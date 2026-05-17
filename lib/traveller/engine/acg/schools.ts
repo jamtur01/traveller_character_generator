@@ -99,16 +99,22 @@ function runEffect(
       return;
     }
     case "crossTrainBranch": {
+      // Rrev7: cross-training records ELIGIBILITY for branch change at the
+      // next reenlistment (PM p. 53). It does not immediately transfer the
+      // character to the new branch — that's the player's reenlist choice.
       const branches = data.branches ?? [];
       if (branches.length === 0) return;
       const current = ch.acgState.branch ?? branches[0]!;
       const opts = branches.filter((b) => b !== current);
       if (opts.length === 0) return;
       const newBranch = arnd(opts);
-      recordTransfer(ch.acgState, "branch", current, newBranch,
-        ch.acgState.yearsServed ?? 0);
-      ch.acgState.branch = newBranch;
-      ch.history.push(`Cross-trained in ${newBranch}`);
+      ch.acgState.crossTrainedBranches = ch.acgState.crossTrainedBranches ?? [];
+      if (!ch.acgState.crossTrainedBranches.includes(newBranch)) {
+        ch.acgState.crossTrainedBranches.push(newBranch);
+      }
+      ch.history.push(
+        `Cross-trained in ${newBranch}; eligible to transfer at next reenlistment.`,
+      );
       return;
     }
     case "rollOnMosTable": {

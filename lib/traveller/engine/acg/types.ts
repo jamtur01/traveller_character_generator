@@ -122,6 +122,10 @@ export interface AcgState {
    *  special-assignment schools. Drives the Marine cross-training reenlist
    *  DM (PM p. 51) and similar branch-eligibility rules. */
   crossTrainedArms?: string[];
+  /** Navy branches the character has been cross-trained into. Cross-training
+   *  records eligibility for reenlistment branch-change (PM p. 53) — it does
+   *  NOT immediately transfer the character. */
+  crossTrainedBranches?: string[];
 
   // Merchant Prince specific: promotion-exam state.
   /** True when the character has earned the right to take the department
