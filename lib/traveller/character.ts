@@ -6,6 +6,8 @@ import { arnd, rndInt, roll } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId, ChoicePendingError } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
+import type { HistoryEvent, HistoryLevel } from "./history";
+import { event as ev, formatEvent } from "./history";
 import type { AcgState } from "./engine/acg/types";
 import {
   applyHomeworldSkills, availableServicesForHomeworld, editionHasHomeworld,
@@ -62,6 +64,10 @@ export class Character {
   terms = 0;
   credits = 0;
   history: string[] = [];
+  /** Structured event log. Each entry mirrors a `history` push (plus
+   *  extra structure for typed events). HistoryPanel renders from here
+   *  when available, falling back to `history` for legacy entries. */
+  events: HistoryEvent[] = [];
   benefits: string[] = [];
   ship = false;
   TAS = false;
@@ -444,7 +450,7 @@ export class Character {
     if (hasCommission) this.commissioned = true;
     if (draft) {
       this.drafted = true;
-      this.history.push(`Drafted into ${this.service} (pre-career failure).`);
+      this.logRaw(`Drafted into ${this.service} (pre-career failure).`);
     }
     // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
     // clamped to Early Stellar minimum.
@@ -673,14 +679,38 @@ export class Character {
     this.verboseHistory(benefit);
   }
 
-  verboseHistory(text: string) {
-    if (this.showHistory === "verbose" || this.showHistory === "debug") {
-      this.history.push(text);
-    }
+  // ---------- single logging API ----------
+  //
+  // All chargen history flows through `log(event)`. Every push records a
+  // structured `events[]` entry and (subject to showHistory) mirrors the
+  // formatted string into the legacy `history[]` array so existing
+  // consumers (PDF sheet, tests) keep working. The convenience wrappers
+  // below construct common event shapes for callers that don't want to
+  // import the event factory; they are thin shims over `log()`, not
+  // independent paths.
+
+  /** Canonical single entry point for all chargen history. */
+  log(e: HistoryEvent) {
+    this.events.push(e);
+    if (e.level === "debug" && this.showHistory !== "debug") return;
+    if (e.level === "verbose" && this.showHistory === "simple") return;
+    this.history.push(formatEvent(e));
   }
 
+  /** Convenience: log a plain-text raw event (default level: simple). */
+  logRaw(text: string, level: HistoryLevel = "simple") {
+    this.log(ev.raw(text, level));
+  }
+
+  /** Legacy alias for `log(ev.raw(text, "verbose"))`. New code should use
+   *  `log()` directly with a typed event, or `logRaw(text, "verbose")`. */
+  verboseHistory(text: string) {
+    this.log(ev.raw(text, "verbose"));
+  }
+
+  /** Legacy alias for `log(ev.raw(text, "debug"))`. */
   debugHistory(text: string) {
-    if (this.showHistory === "debug") this.history.push(text);
+    this.log(ev.raw(text, "debug"));
   }
 
   /**
@@ -828,7 +858,7 @@ export class Character {
     if (method && method !== "random") {
       preferredService = method as ServiceKey;
       if (this.homeworld && !gated.includes(preferredService)) {
-        this.history.push(
+        this.logRaw(
           `Cannot enlist in ${preferredService}: homeworld tech ${this.homeworld.tech} forbids it.`,
         );
         // Force pick from gated list.
@@ -840,7 +870,7 @@ export class Character {
 
     // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
     if (this.attributes.social >= 10 && (!method || method === "random")) {
-      this.history.push(
+      this.logRaw(
         "Distinguished by social standing, automatically enrolled in the Nobility.",
       );
       this.applyServiceStartAge("nobles");
@@ -857,12 +887,12 @@ export class Character {
     const pref = this.editionService(preferredService);
     const dm = pref.enlistmentDM(this.attributes);
     const en = roll(2);
-    this.history.push(`Attempted to enlist in ${pref.serviceName}.`);
+    this.logRaw(`Attempted to enlist in ${pref.serviceName}.`);
     this.verboseHistory(
       `Enlistment roll ${en} + ${dm} vs ${pref.enlistmentThrow}`,
     );
     if (en + dm >= pref.enlistmentThrow) {
-      this.history.push("Enlistment accepted.");
+      this.logRaw("Enlistment accepted.");
       this.applyServiceStartAge(preferredService);
       // Now that service is set, apply service-conditioned homeworld
       // default skills (Vacc Suit-0 for Navy/Marines/etc; Gun Combat-0
@@ -874,9 +904,9 @@ export class Character {
       return preferredService;
     }
     this.drafted = true;
-    this.history.push("Enlistment denied.");
+    this.logRaw("Enlistment denied.");
     const draftService = arnd(draftPool);
-    this.history.push(`Drafted into ${draftService}.`);
+    this.logRaw(`Drafted into ${draftService}.`);
     this.applyServiceStartAge(draftService);
     this.service = draftService;
     if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
@@ -936,7 +966,7 @@ export class Character {
     if (dis.disabled) {
       this.activeDuty = false;
       if (this.isRetirementEligible()) this.retired = true;
-      this.history.push(
+      this.logRaw(
         `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
       );
       return;
@@ -945,9 +975,9 @@ export class Character {
       const keep = runAcgReenlist(this);
       if (!keep) {
         this.activeDuty = false;
-        this.history.push(`Mustered out after ${intToOrdinal(this.terms)} term.`);
+        this.logRaw(`Mustered out after ${intToOrdinal(this.terms)} term.`);
       } else if (!this.mandatoryReenlistment) {
-        this.history.push(`Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`);
+        this.logRaw(`Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`);
       }
       return;
     }
@@ -963,7 +993,7 @@ export class Character {
     }
     if (reenlistRoll === 12) {
       this.mandatoryReenlistment = true;
-      this.history.push(
+      this.logRaw(
         `Mandatory reenlistment for ${intToOrdinal(this.terms + 1)} term.`,
       );
     } else if (
@@ -982,17 +1012,17 @@ export class Character {
     ) {
       this.activeDuty = false;
       this.retired = true;
-      this.history.push(
+      this.logRaw(
         `Mandatory retirement after ${intToOrdinal(this.terms)} term.`,
       );
     } else if (def.inverseReenlist) {
       if (reenlistRoll >= target) {
         this.activeDuty = false;
-        this.history.push(
+        this.logRaw(
           `Released from service after ${intToOrdinal(this.terms)} term.`,
         );
       } else {
-        this.history.push(
+        this.logRaw(
           `Held over for ${intToOrdinal(this.terms + 1)} term (release roll failed).`,
         );
       }
@@ -1003,7 +1033,7 @@ export class Character {
       // service is on the no-retirement excludedServices list (Barbarians,
       // Pirates, Rogues, Scouts per MT).
       if (this.isRetirementEligible()) this.retired = true;
-      this.history.push(
+      this.logRaw(
         `Denied reenlistment after ${intToOrdinal(this.terms)} term.`,
       );
     } else {
@@ -1011,7 +1041,7 @@ export class Character {
       // choose between Run Term and Muster Out at the next term phase, so
       // we record the rule outcome (eligible) rather than the player's
       // pending decision.
-      this.history.push(
+      this.logRaw(
         `Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`,
       );
     }
@@ -1147,11 +1177,11 @@ export class Character {
       // — the retry path can flip from "lost supply" to "found supply" and
       // the character should not get withdrawal effects in the latter case.
       this.anagathicsWithdrawalThisTerm = false;
-      this.history.push(
+      this.logRaw(
         "Found a supply of anagathics for this term (-1 survival, no muster benefit roll).",
       );
     } else if (this.onAnagathics) {
-      this.history.push("Lost anagathics supply — withdrawal effects at end of term.");
+      this.logRaw("Lost anagathics supply — withdrawal effects at end of term.");
       this.anagathicsWithdrawalThisTerm = true;
       this.onAnagathics = false;
     }
@@ -1164,14 +1194,14 @@ export class Character {
     try {
       const svc = this.serviceDef();
       const passed = svc.checkSurvival(this);
-      this.history.push(
+      this.logRaw(
         `Anagathics retry survival ${passed ? "passed" : "failed"}.`,
       );
       if (!passed) {
         this.shortTermThisTerm = true;
         this.shortTermsCount += 1;
         this.activeDuty = false;
-        this.history.push("Forced to muster out after failed retry survival roll.");
+        this.logRaw("Forced to muster out after failed retry survival roll.");
       }
       return passed;
     } catch {
@@ -1206,7 +1236,7 @@ export class Character {
     this.onAnagathics = false;
     this.anagathicsActiveThisTerm = false;
     this.anagathicsWithdrawalThisTerm = true;
-    this.history.push("Stopped taking anagathics; withdrawal effects pending.");
+    this.logRaw("Stopped taking anagathics; withdrawal effects pending.");
   }
 
   // ---------- aging ----------
@@ -1307,7 +1337,7 @@ export class Character {
           `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`,
         );
         if (cr < crisisSave) {
-          this.history.push("Died of illness.");
+          this.logRaw("Died of illness.");
           this.deceased = true;
           this.activeDuty = false;
         } else {
@@ -1333,7 +1363,7 @@ export class Character {
       if (m) {
         const next = Math.min(10, parseInt(m[1]!, 10) + 1);
         this.acgState.rankCode = `O${next}`;
-        this.history.push(`SEH automatic promotion: rank ${this.acgState.rankCode}.`);
+        this.logRaw(`SEH automatic promotion: rank ${this.acgState.rankCode}.`);
       }
       this.acgState.sehPromotionPending = false;
     }
@@ -1469,7 +1499,7 @@ export class Character {
         `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
       );
     } else if (pensionForfeit && this.terms >= eligibleAfter) {
-      this.history.push("Pension forfeit due to dishonorable discharge or death sentence.");
+      this.logRaw("Pension forfeit due to dishonorable discharge or death sentence.");
     }
     // ACG Merchant Free Trader Owner/Captain auto-benefit.
     if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
@@ -1516,6 +1546,7 @@ export function cloneCharacter(c: Character): Character {
   next.skills = c.skills.map(([n, l]) => [n, l] as Skill);
   next.benefits = [...c.benefits];
   next.history = [...c.history];
+  next.events = [...c.events];
   next.musterLog = [...c.musterLog];
   // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate
   // the clone (via pickOrDefer → pendingChoices.push) before committing.

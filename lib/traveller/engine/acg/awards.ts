@@ -46,7 +46,7 @@ export function awardDecoration(
 ): void {
   if (!ch.acgState) return;
   ch.acgState.decorations.push(award);
-  ch.history.push(`Decorated: ${award}`);
+  ch.logRaw(`Decorated: ${award}`);
   const bp = bpAwardFor(ch, `${award} received`) ?? 0;
   if (bp > 0) awardBrownie(ch, bp, `Decoration ${award}`);
   // SEH carries an automatic +1 rank at muster-out. The flag comes from
@@ -204,7 +204,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         Math.abs(o.roll - r) < Math.abs(closest.roll - r) ? o : closest,
         cm.dieResults[0]!);
   const result = outcome.result;
-  ch.history.push(`Court Martial: ${result}`);
+  ch.logRaw(`Court Martial: ${result}`);
   ch.verboseHistory(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`);
 
   applyCourtMartialResult(ch, result);
@@ -302,7 +302,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 3;
     ch.acgState.pensionForfeit = true;
-    ch.history.push("Dishonorably discharged: -3 mustering-out rolls, no pension.");
+    ch.logRaw("Dishonorably discharged: -3 mustering-out rolls, no pension.");
     return;
   }
 
@@ -318,7 +318,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       // shortTermThisTerm / equivalent jail flag).
       const months = roll(1) + roll(1);
       ch.acgState.jailMonthsThisYear = months;
-      ch.history.push(`Jailed ${months} months — consumes this year of service.`);
+      ch.logRaw(`Jailed ${months} months — consumes this year of service.`);
       return;
     }
     // "Jail 1D years; ..." or "Jail 2D years; ..."
@@ -328,9 +328,9 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       let years = 0;
       for (let i = 0; i < dice; i++) years += roll(1);
       ch.age += years;
-      ch.history.push(`Imprisoned for ${years} years (${dice}D rolled); service ends.`);
+      ch.logRaw(`Imprisoned for ${years} years (${dice}D rolled); service ends.`);
     } else {
-      ch.history.push("Imprisoned; service ends.");
+      ch.logRaw("Imprisoned; service ends.");
     }
     ch.activeDuty = false;
     ch.acgState.dishonorablyDischarged = true;
@@ -370,9 +370,9 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       const killedTxt = ch.acgState.guardsKilledInEscape
         ? ` Killed ${ch.acgState.guardsKilledInEscape} guards in escape.`
         : "";
-      ch.history.push(`Sentenced to death; escaped.${bountyTxt}${killedTxt}`);
+      ch.logRaw(`Sentenced to death; escaped.${bountyTxt}${killedTxt}`);
     } else {
-      ch.history.push("Sentenced to death. No benefits or pension.");
+      ch.logRaw("Sentenced to death. No benefits or pension.");
       ch.deceased = true;
     }
     return;

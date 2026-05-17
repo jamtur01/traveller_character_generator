@@ -53,7 +53,7 @@ export function applySpecialAssignment(
   const data = pathwayData(ch, pathway);
   const spec = data?.specialAssignmentDetails?.[assignment];
   if (!spec) {
-    ch.history.push(`Special Assignment "${assignment}" (no JSON detail)`);
+    ch.logRaw(`Special Assignment "${assignment}" (no JSON detail)`);
     return;
   }
   // Age limits (e.g., OCS over 38) are evaluated by the caller before
@@ -95,7 +95,7 @@ function runEffect(
       if (!ch.acgState.crossTrainedArms.includes(newArm)) {
         ch.acgState.crossTrainedArms.push(newArm);
       }
-      ch.history.push(`Cross-trained in ${newArm}`);
+      ch.logRaw(`Cross-trained in ${newArm}`);
       return;
     }
     case "crossTrainBranch": {
@@ -112,7 +112,7 @@ function runEffect(
       if (!ch.acgState.crossTrainedBranches.includes(newBranch)) {
         ch.acgState.crossTrainedBranches.push(newBranch);
       }
-      ch.history.push(
+      ch.logRaw(
         `Cross-trained in ${newBranch}; eligible to transfer at next reenlistment.`,
       );
       return;
@@ -149,7 +149,7 @@ function runEffect(
       const skill = String(effect.skill);
       const levels = (effect.levels as number) ?? 1;
       ch.addSkill(skill, levels);
-      ch.history.push(`${schoolName}: ${skill}-${levels}`);
+      ch.logRaw(`${schoolName}: ${skill}-${levels}`);
       return;
     }
     case "ocsCommission":
@@ -160,7 +160,7 @@ function runEffect(
       return;
     default:
       // Unknown effect type — record and move on rather than crashing.
-      ch.history.push(`${schoolName}: unhandled effect ${effect.type}`);
+      ch.logRaw(`${schoolName}: unhandled effect ${effect.type}`);
       return;
   }
 }
@@ -217,9 +217,9 @@ function runSkillBatch(
     }
   }
   if (awarded.length > 0) {
-    ch.history.push(`${schoolName}: ${awarded.join(", ")}`);
+    ch.logRaw(`${schoolName}: ${awarded.join(", ")}`);
   } else {
-    ch.history.push(`${schoolName}: no skills rolled (all 1D < ${target}+)`);
+    ch.logRaw(`${schoolName}: no skills rolled (all 1D < ${target}+)`);
   }
 }
 
@@ -258,7 +258,7 @@ function rollOnSpecialistSchool(
   const col = useSchooling ? "schooling" : "training";
   const skill = row[col];
   if (typeof skill === "string") {
-    ch.history.push(`${schoolName} (${col}): ${skill}-1`);
+    ch.logRaw(`${schoolName} (${col}): ${skill}-1`);
     applyAcgSkillCell(ch, skill);
   }
 }
@@ -290,7 +290,7 @@ function ocsCommission(ch: Character): void {
     rules?: { draft?: { noCommissionFirstTerm?: boolean } };
   }).rules?.draft;
   if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
-    ch.history.push("OCS denied: drafted characters cannot commission during their first term (PM p. 21).");
+    ch.logRaw("OCS denied: drafted characters cannot commission during their first term (PM p. 21).");
     return;
   }
   // OCS rank-advancement tiers come from the pathway data
@@ -310,9 +310,9 @@ function ocsCommission(ch: Character): void {
   ch.acgState.isOfficer = true;
   ch.acgState.rankCode = resolved;
   if (skipsSkills) {
-    ch.history.push(`OCS: promoted to ${resolved} (no skills due to senior rank)`);
+    ch.logRaw(`OCS: promoted to ${resolved} (no skills due to senior rank)`);
   }
-  ch.history.push(`OCS graduation: rank ${ch.acgState.rankCode}`);
+  ch.logRaw(`OCS graduation: rank ${ch.acgState.rankCode}`);
 }
 
 interface OcsAdvancement {
@@ -343,11 +343,11 @@ function attacheOrAide(
   if (r <= 4) {
     promoteOfficer(ch, data);
     ch.improveAttribute("social", 1);
-    ch.history.push(`${pathway === "navy" ? "Naval" : "Military"} Attache: promotion + 1 Social`);
+    ch.logRaw(`${pathway === "navy" ? "Naval" : "Military"} Attache: promotion + 1 Social`);
   } else {
     ch.improveAttribute("social", 1);
     const role = pathway === "navy" ? "an admiral" : "a general";
-    ch.history.push(`Aide to ${role}: + 1 Social`);
+    ch.logRaw(`Aide to ${role}: + 1 Social`);
   }
 }
 
@@ -420,7 +420,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
     const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
     if (!pattern || !ch.acgState.rankCode.match(pattern)) {
       ch.acgState.rankCode = meta.promotesToRank;
-      ch.history.push(
+      ch.logRaw(
         `Promoted to administrator rank ${meta.promotesToRank} after ${school}.`,
       );
     }

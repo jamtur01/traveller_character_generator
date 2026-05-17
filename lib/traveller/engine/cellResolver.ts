@@ -122,7 +122,7 @@ function tryMarineTradition(ch: Character, label: string): boolean {
     return false;
   }
   // Save failed — forced to receive the named skill at level 1.
-  ch.history.push(
+  ch.logRaw(
     `Marine Tradition: Blade Combat → ${rule.forcedSkill}.`,
   );
   ch.addSkill(rule.forcedSkill);

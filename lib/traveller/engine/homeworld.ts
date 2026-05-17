@@ -125,9 +125,8 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   }
 
   const hw = result as Homeworld;
-  ch.verboseHistory(
-    `Homeworld: Starport ${hw.starport}, ${hw.size}, ${hw.atmosphere} atmosphere, ${hw.hydrosphere}, ${hw.population}, ${hw.law}, ${hw.tech}`,
-  );
+  // The caller (generateAndApplyHomeworld) logs the homeworld; don't
+  // double-log in verbose mode.
   return hw;
 }
 
@@ -282,7 +281,7 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
   const hw = rollHomeworld(ch);
   if (!hw) return null;
   ch.homeworld = hw;
-  ch.history.push(
+  ch.logRaw(
     `Homeworld: Starport ${hw.starport}, ${hw.size}, ${hw.atmosphere}, ${hw.hydrosphere}, ${hw.population}, ${hw.law}, ${hw.tech}.`,
   );
   // Default skills depend on the service; here we apply only the

@@ -35,5 +35,5 @@ export const promotionStep: StepFn = ({ character, service, config, edition }) =
   }
 
   service.doPromotion(character);
-  character.history.push(`Promoted to ${service.ranks[character.rank]}.`);
+  character.logRaw(`Promoted to ${service.ranks[character.rank]}.`);
 };

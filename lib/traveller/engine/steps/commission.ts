@@ -44,7 +44,7 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   }
 
   service.doPromotion(character);
-  character.history.push(
+  character.logRaw(
     `Commissioned during ${intToOrdinal(character.terms)} term of service as ${service.ranks[character.rank]}.`,
   );
 };

@@ -81,7 +81,7 @@ export function scoutEnlist(ch: Character): void {
       ch.acgState.schoolsAttended.includes("medicalSchool")) {
     ch.acgState.isOfficer = true;
     ch.acgState.division = "bureaucracy";
-    ch.history.push(
+    ch.logRaw(
       `Auto-enlisted in the Imperial Scout Service Medical Branch at ${ch.acgState.rankCode} (medical school direct commission).`,
     );
     scoutAssignOffice(ch);
@@ -92,7 +92,7 @@ export function scoutEnlist(ch: Character): void {
   // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
   // into the Field. Read pre-career state to honor these rules.
   if (hasCollege) {
-    ch.history.push("Auto-enlisted in the Imperial Scout Service (college graduate).");
+    ch.logRaw("Auto-enlisted in the Imperial Scout Service (college graduate).");
     ch.acgState!.rankCode = hasCollegeHonors
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
@@ -107,7 +107,7 @@ export function scoutEnlist(ch: Character): void {
     const r = roll(2);
     ch.verboseHistory(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`);
     if (r + dm >= data.enlistment.target) {
-      ch.history.push("Enlisted in the Imperial Scout Service.");
+      ch.logRaw("Enlisted in the Imperial Scout Service.");
       ch.acgState!.rankCode = data.enlistment.startingRank;
       ch.acgState!.isOfficer = false;
     } else {
@@ -117,7 +117,7 @@ export function scoutEnlist(ch: Character): void {
       }
       ch.drafted = true;
       ch.acgState!.rankCode = data.enlistment.startingRank;
-      ch.history.push("Drafted into the Scout Service.");
+      ch.logRaw("Drafted into the Scout Service.");
     }
     ch.acgState!.division = "field";
   }
@@ -145,10 +145,10 @@ export function scoutInitialTraining(ch: Character): void {
   const office = ch.acgState!.office ?? "Survey";
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
-    ch.history.push(`Initial Training (${office}): ${skill}-1`);
+    ch.logRaw(`Initial Training (${office}): ${skill}-1`);
     ch.addSkill(skill, 1);
   } else {
-    ch.history.push(`Initial Training (${office}): no skill specified in data`);
+    ch.logRaw(`Initial Training (${office}): no skill specified in data`);
   }
 }
 
@@ -280,11 +280,11 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       consequence: "Invalided out of Scout service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.history.push("Brownie-point spend revived character (Scout survival saved).");
+        c.logRaw("Brownie-point spend revived character (Scout survival saved).");
       },
     });
     if (mit.newMargin < 0) {
-      ch.history.push("Failed survival; invalided out of Scout service.");
+      ch.logRaw("Failed survival; invalided out of Scout service.");
       ch.activeDuty = false;
       return;
     }
@@ -360,7 +360,7 @@ function routeScoutToSchool(ch: Character): void {
   if (!row) return;
   const school = row[officeKey];
   if (typeof school !== "string") return;
-  ch.history.push(`Training → ${school}`);
+  ch.logRaw(`Training → ${school}`);
   applyScoutSchool(ch, school);
 }
 
@@ -400,7 +400,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // Bureaucracy has rank; ordinary rank becomes terms served.
   const termsServed = Math.max(1, ch.terms);
   ch.acgState!.rankCode = `IS-${Math.min(9, termsServed)}`;
-  ch.history.push(
+  ch.logRaw(
     `Transferred to Scout Bureaucracy; office ${ch.acgState!.office}, rank ${ch.acgState!.rankCode}.`,
   );
   // Resolve a fresh assignment in the new division.
@@ -422,7 +422,7 @@ function promoteScout(ch: Character): void {
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.history.push(`Promoted to ${data.ranks.ordinary[idx + 1]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.ordinary[idx + 1]![1]}.`);
       // Ordinary promotion: one skill from office column or scout life.
       scoutRollSkill(ch);
     }
@@ -432,7 +432,7 @@ function promoteScout(ch: Character): void {
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.history.push(`Promoted to ${data.ranks.administrator[idx + 1]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.administrator[idx + 1]![1]}.`);
       // Administrator promotion: one skill from administrator rank column.
       scoutRollSkillFromColumn(ch, "administratorRank");
     }
@@ -454,7 +454,7 @@ export function scoutFinalizeMuster(ch: Character): void {
     ch.verboseHistory(`Detached Duty roll ${r} + ${dm} vs 9+ — no permanent detached duty.`);
     return;
   }
-  ch.history.push("Awarded permanent Detached Duty (PM p. 57).");
+  ch.logRaw("Awarded permanent Detached Duty (PM p. 57).");
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {
     ch.benefits.push("Scout/Courier (Detached Duty)");
@@ -476,7 +476,7 @@ export function scoutReenlist(ch: Character): boolean {
   // Up-or-out: ordinary rank must be ≥ terms served.
   const rankNum = parseInt(ch.acgState!.rankCode.replace("IS-", ""), 10) || 0;
   if (!ch.acgState!.isOfficer && rankNum < ch.terms) {
-    ch.history.push("Up-or-out: insufficient rank to reenlist.");
+    ch.logRaw("Up-or-out: insufficient rank to reenlist.");
     return false;
   }
   const r = roll(2);
