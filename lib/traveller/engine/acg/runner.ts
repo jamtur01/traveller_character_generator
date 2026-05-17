@@ -11,6 +11,7 @@ import type { Character } from "../../character";
 import { getEdition } from "../../editions";
 import { ChoicePendingError } from "../choices";
 import { awardBrownie } from "./awards";
+import { event as ev } from "../../history";
 import type { AcgPathwayImpl } from "../../editions/types";
 
 /** Names for the sub-steps inside a single one-year assignment cycle.
@@ -103,6 +104,9 @@ export function runAcgYear(ch: Character): void {
     if (!ok) return;
     assignment = rolled;
     acg.currentAssignment = assignment;
+    if (assignment) {
+      ch.log(ev.assignmentRolled(assignment, ch.terms + 1, acg.year));
+    }
   }
 
   // Step 1: command duty (officers only; per PM, after the assignment is

@@ -33,6 +33,7 @@ import {
 import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyMercenarySchool } from "../schools";
+import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../types";
 
 const PATHWAY = "mercenary";
@@ -223,9 +224,7 @@ export function mercenaryCommandDuty(ch: Character): void {
   const dm = applyDmRules(data.commandDuty.dms, ch, "promotion"); // DMs apply by rule strings
   const r = roll(2);
   const success = r + dm >= parsed.target;
-  ch.logRaw(
-    `Mercenary Command Duty (${arm}/${svc}): roll ${r} + ${dm} vs ${parsed.target} → ${success ? "command" : "staff"}`,
-  "verbose");
+  ch.log(ev.commandDuty(success, r, dm, parsed.target));
   ch.acgState!.inCommand = success;
 }
 

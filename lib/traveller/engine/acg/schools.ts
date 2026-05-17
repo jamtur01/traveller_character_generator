@@ -13,6 +13,7 @@ import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
 import { applyAcgSkillCell } from "./pathways/mercenary";
 import { recordTransfer } from "./types";
+import { event as ev } from "../../history";
 
 type Effect = Record<string, unknown> & { type: string };
 
@@ -48,6 +49,7 @@ export function applySpecialAssignment(
 ): void {
   if (!ch.acgState) return;
   ch.acgState.schoolsAttended.push(assignment);
+  ch.log(ev.schoolAssigned(assignment, pathway));
   awardBrownie(ch, 1, `Special Assignment: ${assignment}`);
 
   const data = pathwayData(ch, pathway);
@@ -415,6 +417,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   // attendance, award BP, promote.
   if (meta?.promotesToRank) {
     ch.acgState.schoolsAttended.push(school);
+    ch.log(ev.schoolAssigned(school, "scout"));
     awardBrownie(ch, 1, `Scout school: ${school}`);
     if (meta.promotesToOfficer) ch.acgState.isOfficer = true;
     const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
@@ -428,6 +431,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   }
 
   ch.acgState.schoolsAttended.push(school);
+  ch.log(ev.schoolAssigned(school, "scout"));
   awardBrownie(ch, 1, `Scout school: ${school}`);
 
   const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
