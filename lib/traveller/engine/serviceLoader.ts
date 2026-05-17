@@ -4,7 +4,8 @@
 // existing callers in character.ts and the test suite continue to work.
 
 import { arnd, roll } from "../random";
-import type { Character } from "../character";
+import { skillTableDisplayName, type Character } from "../character";
+import { event as ev } from "../history";
 import type { Attributes, ServiceDef } from "../types";
 import { cascadePoolForLabel } from "./cascadeMap";
 import type {
@@ -121,13 +122,24 @@ export function buildServiceDef(
 
   // --- muster benefits ---------------------------------------------------
   const musterBenefits = (ch: Character, dm: number): void => {
-    const r = roll(1) + dm;
-    if (r < 1 || r > 7) return;
-    const cell = serviceData.musterOut.benefits[r];
-    if (cell == null) {
-      ch.logRaw("No benefit", "debug");
+    const rawRoll = roll(1);
+    const r = rawRoll + dm;
+    if (r < 1 || r > 7) {
+      ch.logRaw(
+        `Muster benefits roll ${rawRoll}${dm ? ` + ${dm}` : ""} → ${r}: out of range`,
+        "verbose",
+      );
       return;
     }
+    const cell = serviceData.musterOut.benefits[r];
+    if (cell == null) {
+      ch.logRaw(
+        `Muster benefits roll ${rawRoll}${dm ? ` + ${dm}` : ""} → ${r}: no benefit`,
+        "verbose",
+      );
+      return;
+    }
+    ch.log(ev.musterBenefit(cell, rawRoll, dm));
     applyCell(ch, cell, "muster", benefitDetails);
   };
 
@@ -165,6 +177,13 @@ export function buildServiceDef(
     const r = roll(1);
     const cell = table[r];
     if (cell == null) return;
+    // Log both the table picked and the cell rolled at verbose so the
+    // history reflects every step (table chosen → die rolled → outcome
+    // applied via applyCell).
+    ch.logRaw(
+      `${skillTableDisplayName(ch.editionId, tableIdx)} table, rolled ${r}: ${cell}`,
+      "verbose",
+    );
     applyCell(ch, cell, "skill");
   }
 

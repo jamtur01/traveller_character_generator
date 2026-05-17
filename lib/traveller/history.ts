@@ -176,6 +176,12 @@ export const event = {
     kind: "attributeChange", level: "verbose", attribute, delta,
     ...(reason !== undefined ? { reason } : {}),
   }),
+  cascadePick: (cascade: string, chosen: string): HistoryEvent => ({
+    kind: "cascadePick", level: "verbose", cascade, chosen,
+  }),
+  musterBenefit: (benefit: string, tableRoll: number, dm: number): HistoryEvent => ({
+    kind: "musterBenefit", level: "verbose", benefit, tableRoll, dm,
+  }),
 };
 
 /** Render a HistoryEvent to a display string. Used by the HistoryPanel

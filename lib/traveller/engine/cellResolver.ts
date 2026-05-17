@@ -26,6 +26,7 @@ import { getEdition } from "../editions";
 import { roll } from "../random";
 import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
+import { event as ev } from "../history";
 
 /** Map an abbreviated attribute label ("Intel", "Soc") to the engine
  *  attribute key, using the edition's `attributeAbbreviations` JSON. */
@@ -209,6 +210,7 @@ export function applyCell(
         // weapons) require a 2D 7+ override per PM p. 39. On failure the
         // skill roll is forfeited entirely.
         if (mode !== "muster" && !acquireSkillWithRestrictionCheck(c, name)) return;
+        c.log(ev.cascadePick(label, name));
         c.addSkill(name);
       },
     });
