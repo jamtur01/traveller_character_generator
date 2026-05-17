@@ -69,14 +69,27 @@ function dataFor(ch: Character): ScoutData {
 
 export function scoutEnlist(ch: Character): void {
   const data = dataFor(ch);
-  // PM p. 56: college graduates auto-enlist; college honors graduates start
-  // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
-  // into the Field. Read pre-career state to honor these rules.
   const schools = ch.acgState?.schoolsAttended ?? [];
   const honors = ch.acgState?.honorsGraduations ?? [];
   const hasCollege = schools.includes("college");
   const hasCollegeHonors = honors.includes("college");
 
+  // PM p. 47 medical school direct commission: O3 carries into Scouts.
+  // The pre-career rank is already set; just record division and exit.
+  if (ch.acgState?.preCareerCommission &&
+      ch.acgState.schoolsAttended.includes("medicalSchool")) {
+    ch.acgState.isOfficer = true;
+    ch.acgState.division = "bureaucracy";
+    ch.history.push(
+      `Auto-enlisted in the Imperial Scout Service Medical Branch at ${ch.acgState.rankCode} (medical school direct commission).`,
+    );
+    scoutAssignOffice(ch);
+    return;
+  }
+
+  // PM p. 56: college graduates auto-enlist; college honors graduates start
+  // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
+  // into the Field. Read pre-career state to honor these rules.
   if (hasCollege) {
     ch.history.push("Auto-enlisted in the Imperial Scout Service (college graduate).");
     ch.acgState!.rankCode = hasCollegeHonors ? "IS-10" : data.enlistment.startingRank;
