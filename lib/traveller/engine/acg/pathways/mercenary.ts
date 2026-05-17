@@ -325,35 +325,12 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     }
   }
 
-  // --- Decoration ---
-  if (res.decoration !== "none") {
-    const dec = rollVsTarget(res.decoration, decDm);
-    ch.verboseHistory(
-      `Mercenary ${assignment} decoration: ${dec.roll}${decDm ? ` + ${decDm}` : ""} vs ${res.decoration} → margin ${dec.margin}`,
-    );
-    // R10: brownie points can mitigate a borderline decoration miss
-    // (push margin to ≥ 0 for MCUF) or pull a near-court-martial margin
-    // back from the ≤ -6 threshold. tryMitigate handles caps per roll type.
-    let effMargin = dec.margin;
-    if (dec.margin < 0) {
-      const target = typeof res.decoration === "number" ? res.decoration : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "decoration",
-        rollValue: dec.roll,
-        dm: decDm,
-        target,
-        margin: dec.margin,
-        consequence: dec.margin <= -6
-          ? "Avoid court-martial referral"
-          : "Earn MCUF",
-      });
-      effMargin = mit.newMargin;
-    }
-    if (effMargin >= 6) awardDecoration(ch, "SEH");
-    else if (effMargin >= 3) awardDecoration(ch, "MCG");
-    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
-    else if (effMargin <= -6) runCourtMartial(ch, assignment);
-  }
+  // PM p. 64 Mercenary checklist order: Survival → Promotion → Decoration
+  // → Skills. (The prose at p. 49 lists "survival, decoration, promotion,
+  // and skills" but the checklist on p. 64 is authoritative for resolution
+  // order.) The order matters because promotion-conferred command status
+  // can affect court-martial dm and a promotion may consume the term's
+  // promote slot before a decoration triggers a court-martial roll.
 
   // --- Promotion ---
   if (res.promotion !== "none" &&
@@ -381,6 +358,33 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       promoMargin = mit.newMargin;
     }
     if (promoMargin >= 0) promoteMercenary(ch);
+  }
+
+  // --- Decoration ---
+  if (res.decoration !== "none") {
+    const dec = rollVsTarget(res.decoration, decDm);
+    ch.verboseHistory(
+      `Mercenary ${assignment} decoration: ${dec.roll}${decDm ? ` + ${decDm}` : ""} vs ${res.decoration} → margin ${dec.margin}`,
+    );
+    let effMargin = dec.margin;
+    if (dec.margin < 0) {
+      const target = typeof res.decoration === "number" ? res.decoration : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "decoration",
+        rollValue: dec.roll,
+        dm: decDm,
+        target,
+        margin: dec.margin,
+        consequence: dec.margin <= -6
+          ? "Avoid court-martial referral"
+          : "Earn MCUF",
+      });
+      effMargin = mit.newMargin;
+    }
+    if (effMargin >= 6) awardDecoration(ch, "SEH");
+    else if (effMargin >= 3) awardDecoration(ch, "MCG");
+    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
+    else if (effMargin <= -6) runCourtMartial(ch, assignment);
   }
 
   // --- Skills ---
