@@ -281,10 +281,31 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       const r = roll(2);
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
-        out.branch = "army"; // OTC -> Army/Marines commission
         out.autoEnlistPathway = "mercenary";
-        out.notes.push("OTC commission earned (Army/Marines).");
         ch.verboseHistory(`OTC commission earned`);
+        // F15 — PM p. 47 line 2782-2783: "A character in OTC is
+        // automatically enlisted in (and commissioned as an officer in)
+        // the Army or the Marines." Branch is a player choice.
+        if (ch.choiceMode === "interactive") {
+          ch.pickOrDefer({
+            kind: "cascade",
+            label: "OTC commission — choose your service branch",
+            options: ["Army", "Marines"],
+            preferred: ["Army"],
+            context: { source: "otcBranch" },
+            onResolve: (c, chosen) => {
+              const branch = chosen === "Marines" ? "marines" : "army";
+              c.acgState!.preCareerBranch = branch;
+              c.history.push(`OTC commission earned (${chosen}).`);
+            },
+          });
+          // Pending choice — set a default so non-pause callers see something.
+          out.branch = "army";
+          out.notes.push("OTC commission earned (branch pending choice).");
+        } else {
+          out.branch = "army";
+          out.notes.push("OTC commission earned (Army by default; player may select Army or Marines).");
+        }
       }
     }
     if (!out.commissioned && spec.notc) {
