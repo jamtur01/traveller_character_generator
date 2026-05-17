@@ -85,9 +85,9 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   }
   ch.acgState!.browniePoints -= need;
   ch.acgState!.browniePointsSpent += need;
-  ch.verboseHistory(
+  ch.logRaw(
     `Spent ${need} brownie point(s) to mitigate ${req.rollName} failure (avoided: ${req.consequence})`,
-  );
+  "verbose");
   return { spent: need, newMargin: 0 };
 }
 
@@ -139,7 +139,7 @@ function queueBpReview(
       const actual = Math.min(extra, c.acgState!.browniePoints);
       c.acgState!.browniePoints -= actual;
       c.acgState!.browniePointsSpent += actual;
-      c.verboseHistory(`Spent ${actual} additional brownie point(s) post-${req.rollName}`);
+      c.logRaw(`Spent ${actual} additional brownie point(s) post-${req.rollName}`, "verbose");
       c.acgState!.lastBpExtraSpend = {
         rollName: req.rollName,
         spent: actual,
@@ -168,7 +168,7 @@ export function spendBrowniePoints(
   ch.acgState.browniePoints -= spend;
   ch.acgState.browniePointsSpent += spend;
   if (spend > 0) {
-    ch.verboseHistory(`Spent ${spend} brownie point(s) post-roll`);
+    ch.logRaw(`Spent ${spend} brownie point(s) post-roll`, "verbose");
   }
   return originalMargin + spend;
 }

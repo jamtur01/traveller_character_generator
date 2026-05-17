@@ -139,9 +139,9 @@ export function mercenaryEnlist(
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
   const r = roll(2);
-  ch.verboseHistory(
+  ch.logRaw(
     `Mercenary enlist (${service}, ${combatArm}): roll ${r} + ${dm} vs ${enlistSpec.target}`,
-  );
+  "verbose");
 
   if (r + dm >= enlistSpec.target) {
     ch.logRaw(`Enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}).`);
@@ -223,9 +223,9 @@ export function mercenaryCommandDuty(ch: Character): void {
   const dm = applyDmRules(data.commandDuty.dms, ch, "promotion"); // DMs apply by rule strings
   const r = roll(2);
   const success = r + dm >= parsed.target;
-  ch.verboseHistory(
+  ch.logRaw(
     `Mercenary Command Duty (${arm}/${svc}): roll ${r} + ${dm} vs ${parsed.target} → ${success ? "command" : "staff"}`,
-  );
+  "verbose");
   ch.acgState!.inCommand = success;
 }
 
@@ -236,7 +236,7 @@ export function mercenaryRollAssignment(ch: Character): string {
     const retained = ch.acgState!.retainedAssignment;
     ch.acgState!.justRetained = false;
     ch.acgState!.retainedAssignment = null;
-    ch.verboseHistory(`Assignment retained from previous year: ${retained}`);
+    ch.logRaw(`Assignment retained from previous year: ${retained}`, "verbose");
     return retained;
   }
   const armKey = labelToColumnKey(ch.acgState!.combatArm!);
@@ -273,7 +273,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   if (!resTable.columns.includes(assignmentCol)) {
     // Garrison Duty: per manual, characters survive with no decoration or
     // skills. Treat unrecognised assignments as garrison.
-    ch.verboseHistory(`Garrison-style assignment "${assignment}": automatic survival, no rewards`);
+    ch.logRaw(`Garrison-style assignment "${assignment}": automatic survival, no rewards`, "verbose");
     ch.acgState!.assignmentHistory.push(assignment);
     return;
   }
@@ -299,9 +299,9 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 
   // --- Survival ---
   const sv = rollVsTarget(res.survival, survDm);
-  ch.verboseHistory(
+  ch.logRaw(
     `Mercenary ${assignment} survival: ${sv.roll}${survDm ? ` + ${survDm}` : ""} vs ${res.survival} → ${sv.success ? "survived" : "INJURED/INVALIDED"}`,
-  );
+  "verbose");
   if (!sv.success) {
     // Try brownie-point mitigation before invaliding out. The onMitigated
     // callback (F16) reverses the muster-out if the player later spends
@@ -351,10 +351,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     const effectiveDm = promoDm + penalty;
     if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0; // consumed
     const pr = rollVsTarget(res.promotion, effectiveDm);
-    ch.verboseHistory(
+    ch.logRaw(
       `Mercenary ${assignment} promotion: ${pr.roll}${effectiveDm ? ` + ${effectiveDm}` : ""} vs ${res.promotion}` +
       (penalty ? ` (reprimand penalty ${penalty})` : ""),
-    );
+    "verbose");
     let promoMargin = pr.margin;
     if (!pr.success) {
       const target = typeof res.promotion === "number" ? res.promotion : 0;
@@ -374,9 +374,9 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   // --- Decoration ---
   if (res.decoration !== "none") {
     const dec = rollVsTarget(res.decoration, decDm);
-    ch.verboseHistory(
+    ch.logRaw(
       `Mercenary ${assignment} decoration: ${dec.roll}${decDm ? ` + ${decDm}` : ""} vs ${res.decoration} → margin ${dec.margin}`,
-    );
+    "verbose");
     let effMargin = dec.margin;
     if (dec.margin < 0) {
       const target = typeof res.decoration === "number" ? res.decoration : 0;
@@ -400,9 +400,9 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   // --- Skills ---
   if (res.skills !== "none") {
     const sk = rollVsTarget(res.skills, skillDm);
-    ch.verboseHistory(
+    ch.logRaw(
       `Mercenary ${assignment} skills: ${sk.roll}${skillDm ? ` + ${skillDm}` : ""} vs ${res.skills}`,
-    );
+    "verbose");
     let skMargin = sk.margin;
     if (!sk.success) {
       const target = typeof res.skills === "number" ? res.skills : 0;
@@ -597,7 +597,7 @@ export function mercenarySpecialAssignment(ch: Character): void {
     if (reroll === "OCS") {
       ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
-      ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
+      ch.logRaw(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`, "verbose");
       sa = reroll;
     } else {
       return;
@@ -625,7 +625,7 @@ export function mercenaryReenlist(ch: Character): boolean {
   const spec = data.reenlistment[svc];
   const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);
-  ch.verboseHistory(`Mercenary reenlist (${svc}): ${r} + ${dm} vs ${spec.target}`);
+  ch.logRaw(`Mercenary reenlist (${svc}): ${r} + ${dm} vs ${spec.target}`, "verbose");
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerArmChange(ch, data);

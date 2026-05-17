@@ -17,13 +17,13 @@ export const specialDutyStep: StepFn = ({ character, edition, config }) => {
   if (target === undefined) return;
 
   const r = roll(2);
-  character.verboseHistory(`Special Duty roll ${r} vs ${target}`);
+  character.logRaw(`Special Duty roll ${r} vs ${target}`, "verbose");
   if (r < target) return;
   character.skillPoints += 1;
 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && r >= target + overshootN) {
     character.skillPoints += 1;
-    character.verboseHistory(`Special Duty overshoot +${overshootN}: +1 bonus skill`);
+    character.logRaw(`Special Duty overshoot +${overshootN}: +1 bonus skill`, "verbose");
   }
 };

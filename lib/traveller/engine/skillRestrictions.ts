@@ -110,9 +110,9 @@ export function rollSkillOverride(
 ): boolean {
   const r = roll(2);
   const passed = r >= target;
-  ch.verboseHistory(
+  ch.logRaw(
     `Homeworld restricts ${skillName}; override 2D ≥ ${target}: rolled ${r} → ${passed ? "acquired" : "forfeited"}`,
-  );
+  "verbose");
   return passed;
 }
 

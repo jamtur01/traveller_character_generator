@@ -257,7 +257,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const dm = applyDms(spec.admission.dms, ch);
     const r = roll(2);
     if (r + dm < spec.admission.target) {
-      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`);
+      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`, "verbose");
       out.notes.push("Admission denied — may attempt another option or enlist normally.");
       // Rrev11: PM p. 47 distinguishes admission failure from success
       // failure. Admission failure = the school didn't accept you; you
@@ -267,13 +267,13 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.admitted = true;
-    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} admission passed (${r}+${dm} vs ${spec.admission.target}+)`);
+    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} admission passed (${r}+${dm} vs ${spec.admission.target}+)`, "verbose");
   } else {
     out.admitted = true;
     if (flightAutoAdmit) {
-      ch.verboseHistory(
+      ch.logRaw(
         `Flight School admission automatic (PM p. 47 — commissioned college honors / Naval Academy honors).`,
-      );
+      "verbose");
     }
   }
 
@@ -282,7 +282,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const dm = applyDms(spec.success.dms, ch);
     const r = roll(2);
     if (r + dm < spec.success.target) {
-      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} success FAILED (${r}+${dm} vs ${spec.success.target}+)`);
+      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} success FAILED (${r}+${dm} vs ${spec.success.target}+)`, "verbose");
       out.notes.push("Did not complete the course.");
       out.ageGainedYears += 1;
       // PM p. 47 success-failure outcomes:
@@ -299,7 +299,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.graduated = true;
-    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} success passed (${r}+${dm} vs ${spec.success.target}+)`);
+    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} success passed (${r}+${dm} vs ${spec.success.target}+)`, "verbose");
   } else {
     out.graduated = true;
   }
@@ -329,7 +329,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
         out.autoEnlistPathway = "mercenary";
-        ch.verboseHistory(`OTC commission earned`);
+        ch.logRaw(`OTC commission earned`, "verbose");
         // F15 — PM p. 47 line 2782-2783: "A character in OTC is
         // automatically enlisted in (and commissioned as an officer in)
         // the Army or the Marines." Branch is a player choice.
@@ -363,7 +363,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         out.branch = "navy";
         out.autoEnlistPathway = "navy";
         out.notes.push("NOTC commission earned (Navy).");
-        ch.verboseHistory(`NOTC commission earned`);
+        ch.logRaw(`NOTC commission earned`, "verbose");
       }
     }
   }
@@ -376,7 +376,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const offset = m ? parseInt(m[1]!, 10) : 0;
     const gain = Math.max(1, roll(1) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
-    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} education gain: +${gain} Edu`);
+    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} education gain: +${gain} Edu`, "verbose");
   }
 
   // Honors throw.
@@ -400,7 +400,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         const rollDelta = out.attributeChanges.education ?? 0;
         out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
       }
-      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} honors achieved`);
+      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} honors achieved`, "verbose");
     }
   }
 
@@ -653,7 +653,7 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
     // attributes below 0 even though pre-career deltas are normally
     // positive — be defensive in case a future option declares one).
     ch.attributes[a] = Math.max(0, Math.min(15, ch.attributes[a] + delta));
-    ch.verboseHistory(`${delta >= 0 ? "+" : ""}${delta} ${attr}`);
+    ch.logRaw(`${delta >= 0 ? "+" : ""}${delta} ${attr}`, "verbose");
   }
   for (const [skill, lvl] of r.skills) {
     ch.addSkill(skill, lvl);

@@ -114,11 +114,11 @@ function tryMarineTradition(ch: Character, label: string): boolean {
   // normal cascade flow runs.
   const dieCount = rule.savingThrow?.die === "1D" ? 1 : 2;
   const r = roll(dieCount);
-  ch.verboseHistory(
+  ch.logRaw(
     `Marine Tradition save: ${r} + ${dm} vs ${target}+ (Blade Combat)`,
-  );
+  "verbose");
   if (r + dm >= target) {
-    ch.verboseHistory("Marine Tradition save passed — normal Blade Combat cascade.");
+    ch.logRaw("Marine Tradition save passed — normal Blade Combat cascade.", "verbose");
     return false;
   }
   // Save failed — forced to receive the named skill at level 1.
@@ -240,7 +240,7 @@ export function applyCell(
     const detail = benefitDetails?.[label];
     if (detail?.repeat === "no effect" || label === "Watch" || label === "Instruments") {
       if (ch.benefits.indexOf(label) > -1) {
-        ch.debugHistory("No benefit");
+        ch.logRaw("No benefit", "debug");
         return;
       }
       ch.addBenefit(label);
@@ -290,17 +290,17 @@ function applyShipBenefit(
     if (ch.mortgage > 0) {
       const paid = Math.min(ch.mortgage, detail.repeatReducesMortgageYears);
       ch.mortgage -= paid;
-      ch.verboseHistory(
+      ch.logRaw(
         `${paid} years of ${label} mortgage paid off`,
-      );
+      "verbose");
     } else {
-      ch.debugHistory("No benefit");
+      ch.logRaw("No benefit", "debug");
     }
     return;
   }
 
   if (already) {
-    ch.debugHistory("No benefit");
+    ch.logRaw("No benefit", "debug");
     return;
   }
   ch.addBenefit(label);

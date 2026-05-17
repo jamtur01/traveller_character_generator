@@ -15,11 +15,11 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   if (character.deceased) return;
   if (character.commissioned) return;
   if (character.shortTermThisTerm) {
-    character.verboseHistory("Skipping commission (short term after survival failure).");
+    character.logRaw("Skipping commission (short term after survival failure).", "verbose");
     return;
   }
   if (character.drafted && character.terms === 1) {
-    character.verboseHistory("Skipping commission because of draft.");
+    character.logRaw("Skipping commission because of draft.", "verbose");
     return;
   }
   if (service.commissionThrow === undefined) return;
@@ -30,7 +30,7 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
     : 0;
   const r = roll(2);
   const total = r + dm;
-  character.verboseHistory(`Commission roll ${r} + ${dm} vs ${service.commissionThrow}`);
+  character.logRaw(`Commission roll ${r} + ${dm} vs ${service.commissionThrow}`, "verbose");
   if (total < service.commissionThrow) return;
 
   character.commissioned = true;
@@ -40,7 +40,7 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && total >= service.commissionThrow + overshootN) {
     character.skillPoints += 1;
-    character.verboseHistory(`Commission overshoot +${overshootN}: +1 bonus skill`);
+    character.logRaw(`Commission overshoot +${overshootN}: +1 bonus skill`, "verbose");
   }
 
   service.doPromotion(character);
