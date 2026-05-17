@@ -41,9 +41,9 @@ export function buildServiceDef(
 
   const enlistmentDM = (a: Attributes): number => evaluateDM(
     serviceData.checks.enlistment.dm,
-    // evaluateDM takes a Character for termNumber support; build a minimal
-    // stand-in carrying attributes and terms=0 (enlistment is pre-term).
-    { attributes: a, terms: 0 } as unknown as Character,
+    // evaluateDM accepts a narrow DmContext ({attributes, terms}); no
+    // cast needed. Enlistment is pre-term so terms=0.
+    { attributes: a, terms: 0 },
   );
 
   // --- ranks -------------------------------------------------------------

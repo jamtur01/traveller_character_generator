@@ -288,9 +288,10 @@ function applyShipBenefit(
   if (already && detail?.repeatReducesMortgageYears) {
     ch.mortgages += 1;
     if (ch.mortgage > 0) {
-      ch.mortgage -= detail.repeatReducesMortgageYears;
+      const paid = Math.min(ch.mortgage, detail.repeatReducesMortgageYears);
+      ch.mortgage -= paid;
       ch.verboseHistory(
-        `${detail.repeatReducesMortgageYears} years of ${label} mortgage paid off`,
+        `${paid} years of ${label} mortgage paid off`,
       );
     } else {
       ch.debugHistory("No benefit");

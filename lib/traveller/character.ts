@@ -659,14 +659,13 @@ export class Character {
     const socialMin = caps?.socialMin ?? 1;
     const min = caps?.min ?? 0;
     if (attrib === "social" && this.attributes[attrib] < socialMin) {
-      this.verboseHistory(`Decreased ${attrib} below ${socialMin}, keeping it at ${socialMin}`);
       this.attributes[attrib] = socialMin;
-    } else {
-      if (this.attributes[attrib] < min) this.attributes[attrib] = min;
-      this.verboseHistory(
-        `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`,
-      );
+    } else if (this.attributes[attrib] < min) {
+      this.attributes[attrib] = min;
     }
+    this.verboseHistory(
+      `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`,
+    );
   }
 
   addBenefit(benefit: string) {
@@ -833,10 +832,10 @@ export class Character {
           `Cannot enlist in ${preferredService}: homeworld tech ${this.homeworld.tech} forbids it.`,
         );
         // Force pick from gated list.
-        preferredService = gated[Math.floor(Math.random() * gated.length)]!;
+        preferredService = arnd(gated);
       }
     } else {
-      preferredService = gated[Math.floor(Math.random() * gated.length)]!;
+      preferredService = arnd(gated);
     }
 
     // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
@@ -876,8 +875,7 @@ export class Character {
     }
     this.drafted = true;
     this.history.push("Enlistment denied.");
-    const draftService =
-      draftPool[Math.floor(Math.random() * draftPool.length)]!;
+    const draftService = arnd(draftPool);
     this.history.push(`Drafted into ${draftService}.`);
     this.applyServiceStartAge(draftService);
     this.service = draftService;
@@ -1140,6 +1138,10 @@ export class Character {
       this.anagathicsActiveThisTerm = true;
       this.anagathicsEverTaken = true;
       this.anagathicsBenefitForfeitedTerms += 1;
+      // Clear any withdrawal flag set by a prior failed attempt this term
+      // — the retry path can flip from "lost supply" to "found supply" and
+      // the character should not get withdrawal effects in the latter case.
+      this.anagathicsWithdrawalThisTerm = false;
       this.history.push(
         "Found a supply of anagathics for this term (-1 survival, no muster benefit roll).",
       );
@@ -1293,6 +1295,7 @@ export class Character {
     const crisisThreshold = aging.agingCrisis?.whenAttributeReducedTo ?? 0;
     const crisisSave = aging.agingCrisis?.save ?? 8;
     for (const a of Object.keys(this.attributes) as AttributeKey[]) {
+      if (this.deceased) break;
       if (this.attributes[a] <= crisisThreshold) {
         const cr = roll(2);
         this.verboseHistory(
