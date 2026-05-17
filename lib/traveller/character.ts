@@ -27,7 +27,7 @@ import {
 import { scoutFinalizeMuster } from "./engine/acg/pathways/scout";
 import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
 import { generateGender, generateName } from "./names";
-import { attrShort, extendedHex, intToOrdinal, numCommaSep } from "./formatting";
+import { attrShort, extendedHex, numCommaSep } from "./formatting";
 import type {
   AttributeKey,
   Attributes,
@@ -450,7 +450,7 @@ export class Character {
     if (hasCommission) this.commissioned = true;
     if (draft) {
       this.drafted = true;
-      this.logRaw(`Drafted into ${this.service} (pre-career failure).`);
+      this.log(ev.drafted(`${this.service} (pre-career failure)`));
     }
     // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
     // clamped to Early Stellar minimum.
@@ -574,10 +574,10 @@ export class Character {
     if (i >= 0) {
       const entry = this.skills[i]!;
       entry[1] += skillLevel;
-      this.logRaw(`Improved ${skill}-${entry[1]}`, "verbose");
+      this.log(ev.skillImproved(skill, entry[1]));
     } else {
       this.skills.push([skill, skillLevel]);
-      this.logRaw(`Learned ${skill}-${skillLevel}`, "verbose");
+      this.log(ev.skillLearned(skill, skillLevel));
     }
   }
 
@@ -616,10 +616,10 @@ export class Character {
         const last = this.skills[this.skills.length - 1]!;
         if (last[1] > 1) {
           last[1] -= 1;
-          this.logRaw(`Reduced ${last[0]} to level ${last[1]} (Int+Edu cap)`, "verbose");
+          this.log(ev.skillReduced(last[0], last[1], "Int+Edu cap"));
         } else {
           this.skills.pop();
-          this.logRaw(`Forfeited ${last[0]} (Int+Edu cap)`, "verbose");
+          this.log(ev.skillForfeited(last[0], "Int+Edu cap"));
         }
         remaining -= 1;
       }
@@ -638,10 +638,10 @@ export class Character {
         const entry = c.skills[i]!;
         if (entry[1] > 1) {
           entry[1] -= 1;
-          c.logRaw(`Reduced ${name} to level ${entry[1]} (Int+Edu cap)`, "verbose");
+          c.log(ev.skillReduced(name, entry[1], "Int+Edu cap"));
         } else {
           c.skills.splice(i, 1);
-          c.logRaw(`Forfeited ${name} (Int+Edu cap)`, "verbose");
+          c.log(ev.skillForfeited(name, "Int+Edu cap"));
         }
         c.enforceSkillCap();
       },
@@ -657,8 +657,7 @@ export class Character {
     } | undefined)?.attributeCaps;
     const max = caps?.max ?? 15;
     if (this.attributes[attrib] > max) {
-      this.logRaw(
-        `${attrib} would exceed ${max}; capping at ${max}.`, "verbose");
+      this.logRaw(`${attrib} would exceed ${max}; capping at ${max}.`, "verbose");
       this.attributes[attrib] = max;
     }
     const socialMin = caps?.socialMin ?? 1;
@@ -668,13 +667,18 @@ export class Character {
     } else if (this.attributes[attrib] < min) {
       this.attributes[attrib] = min;
     }
-    this.logRaw(
-      `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`, "verbose");
+    // The displayed delta is the requested change, not the post-clamp
+    // change; the cap-warning log line above is what tells the reader
+    // a clamp happened.
+    this.log(ev.attributeChange(
+      attrib, delta,
+      `now ${extendedHex(this.attributes[attrib])}`,
+    ));
   }
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    this.logRaw(benefit, "verbose");
+    this.log({ kind: "raw", level: "verbose", text: benefit });
   }
 
   // ---------- single logging API ----------
@@ -880,11 +884,11 @@ export class Character {
     const pref = this.editionService(preferredService);
     const dm = pref.enlistmentDM(this.attributes);
     const en = roll(2);
-    this.logRaw(`Attempted to enlist in ${pref.serviceName}.`);
-    this.logRaw(
-      `Enlistment roll ${en} + ${dm} vs ${pref.enlistmentThrow}`, "verbose");
-    if (en + dm >= pref.enlistmentThrow) {
-      this.logRaw("Enlistment accepted.");
+    const succeeded = en + dm >= pref.enlistmentThrow;
+    this.log(ev.enlistmentAttempt(
+      pref.serviceName, en, dm, pref.enlistmentThrow, succeeded,
+    ));
+    if (succeeded) {
       this.applyServiceStartAge(preferredService);
       // Now that service is set, apply service-conditioned homeworld
       // default skills (Vacc Suit-0 for Navy/Marines/etc; Gun Combat-0
@@ -896,9 +900,8 @@ export class Character {
       return preferredService;
     }
     this.drafted = true;
-    this.logRaw("Enlistment denied.");
     const draftService = arnd(draftPool);
-    this.logRaw(`Drafted into ${draftService}.`);
+    this.log(ev.drafted(draftService));
     this.applyServiceStartAge(draftService);
     this.service = draftService;
     if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
@@ -933,18 +936,18 @@ export class Character {
     if (!(this.useAcg && this.acgState)) {
       this.preSurvivalAnagathicsHook();
     }
-    this.logRaw("--------------------------------------------", "verbose");
+    this.log(ev.section("--------------------------------------------"));
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
       // assignments per term). The ACG runner handles term/age increments
       // because mid-term death has different semantics.
-      this.logRaw(`ACG term ${this.terms + 1} age ${this.age}`, "verbose");
+      this.log(ev.termBegin(this.terms + 1, this.age));
       runAcgTerm(this);
       return;
     }
     this.terms += 1;
     this.age += 4;
-    this.logRaw(`Term ${this.terms} age ${this.age}`, "verbose");
+    this.log(ev.termBegin(this.terms, this.age));
     // Basic chargen: delegate the step sequence to the engine runner.
     runTermSteps(this);
   }
@@ -967,26 +970,18 @@ export class Character {
       const keep = runAcgReenlist(this);
       if (!keep) {
         this.activeDuty = false;
-        this.logRaw(`Mustered out after ${intToOrdinal(this.terms)} term.`);
+        this.log(ev.reenlistment("denied"));
       } else if (!this.mandatoryReenlistment) {
-        this.logRaw(`Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`);
+        this.log(ev.reenlistment("voluntary"));
       }
       return;
     }
     const def = this.serviceDef();
     const reenlistRoll = roll(2);
     const target = def.reenlistThrow;
-    if (def.inverseReenlist) {
-      this.logRaw(
-        `Reenlistment roll ${reenlistRoll} vs ${target}+ to leave (inverse rule)`, "verbose");
-    } else {
-      this.logRaw(`Reenlistment roll ${reenlistRoll} vs ${target}`, "verbose");
-    }
     if (reenlistRoll === 12) {
       this.mandatoryReenlistment = true;
-      this.logRaw(
-        `Mandatory reenlistment for ${intToOrdinal(this.terms + 1)} term.`,
-      );
+      this.log(ev.reenlistment("mandatory", reenlistRoll, target));
     } else if (
       // CT mandates retirement at end of term 7. MT does not (voluntary
       // any-term per PM p. 17). Read the cap from edition rules.
@@ -1003,19 +998,13 @@ export class Character {
     ) {
       this.activeDuty = false;
       this.retired = true;
-      this.logRaw(
-        `Mandatory retirement after ${intToOrdinal(this.terms)} term.`,
-      );
+      this.log(ev.reenlistment("retired", reenlistRoll, target));
     } else if (def.inverseReenlist) {
       if (reenlistRoll >= target) {
         this.activeDuty = false;
-        this.logRaw(
-          `Released from service after ${intToOrdinal(this.terms)} term.`,
-        );
+        this.log(ev.reenlistment("released", reenlistRoll, target));
       } else {
-        this.logRaw(
-          `Held over for ${intToOrdinal(this.terms + 1)} term (release roll failed).`,
-        );
+        this.log(ev.reenlistment("heldOver", reenlistRoll, target));
       }
     } else if (reenlistRoll < target) {
       this.activeDuty = false;
@@ -1024,17 +1013,13 @@ export class Character {
       // service is on the no-retirement excludedServices list (Barbarians,
       // Pirates, Rogues, Scouts per MT).
       if (this.isRetirementEligible()) this.retired = true;
-      this.logRaw(
-        `Denied reenlistment after ${intToOrdinal(this.terms)} term.`,
-      );
+      this.log(ev.reenlistment("denied", reenlistRoll, target));
     } else {
       // The throw only determines eligibility. The player still gets to
       // choose between Run Term and Muster Out at the next term phase, so
       // we record the rule outcome (eligible) rather than the player's
       // pending decision.
-      this.logRaw(
-        `Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`,
-      );
+      this.log(ev.reenlistment("voluntary", reenlistRoll, target));
     }
   }
 
@@ -1112,7 +1097,7 @@ export class Character {
     const minAge = rules?.eligibility?.minAge ?? 30;
     const minTerms = rules?.eligibility?.minTerms ?? 3;
     if (this.age < minAge || this.terms < minTerms) {
-      this.logRaw(`Anagathics unavailable: must be at least age ${minAge} and end of term ${minTerms}.`, "verbose");
+      this.log(ev.anagathics("unavailable"));
       return false;
     }
     const result = this.rollAnagathicsAvailability();
@@ -1154,7 +1139,6 @@ export class Character {
     const t = this.homeworld?.tech;
     if (t && techDms[t] !== undefined) dm += techDms[t]!;
     const r = roll(2) + dm;
-    this.logRaw(`Anagathics availability roll ${r} (DM ${dm}) vs ${target}+`, "verbose");
     const success = r >= target;
     if (success) {
       if (!this.onAnagathics) {
@@ -1168,13 +1152,18 @@ export class Character {
       // — the retry path can flip from "lost supply" to "found supply" and
       // the character should not get withdrawal effects in the latter case.
       this.anagathicsWithdrawalThisTerm = false;
-      this.logRaw(
-        "Found a supply of anagathics for this term (-1 survival, no muster benefit roll).",
-      );
+      this.log(ev.anagathics("found", r, target));
     } else if (this.onAnagathics) {
-      this.logRaw("Lost anagathics supply — withdrawal effects at end of term.");
+      this.log(ev.anagathics("lost", r, target));
       this.anagathicsWithdrawalThisTerm = true;
       this.onAnagathics = false;
+    } else {
+      // Not currently on anagathics and the roll missed — record the
+      // failed availability roll at verbose for full visibility.
+      this.logRaw(
+        `Anagathics availability roll ${r} (DM ${dm}) vs ${target}+ — unavailable`,
+        "verbose",
+      );
     }
     return success;
   }
@@ -1410,11 +1399,12 @@ export class Character {
   }
 
   musterOutCash(cashDM: number) {
-    const idx = Math.min(7, Math.max(1, roll(1) + cashDM));
+    const rawRoll = roll(1);
+    const idx = Math.min(7, Math.max(1, rawRoll + cashDM));
     const cash = this.serviceDef().musterCash[idx] ?? 0;
     this.credits += cash;
     this.musterLog.push(`Cr${numCommaSep(cash)} cash`);
-    this.logRaw(`${numCommaSep(cash)} credits`, "verbose");
+    this.log(ev.musterCash(cash, rawRoll, cashDM));
   }
 
   musterOutBenefit(benefitsDM: number) {

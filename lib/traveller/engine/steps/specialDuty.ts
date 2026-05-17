@@ -6,6 +6,7 @@
 // step. CT has no specialDuty target field on services and would no-op.
 
 import { roll } from "../../random";
+import { event as ev } from "../../history";
 import type { StepFn } from "./types";
 
 export const specialDutyStep: StepFn = ({ character, edition, config }) => {
@@ -17,8 +18,9 @@ export const specialDutyStep: StepFn = ({ character, edition, config }) => {
   if (target === undefined) return;
 
   const r = roll(2);
-  character.logRaw(`Special Duty roll ${r} vs ${target}`, "verbose");
-  if (r < target) return;
+  const succeeded = r >= target;
+  character.log(ev.roll("Special Duty", r, 0, target, succeeded));
+  if (!succeeded) return;
   character.skillPoints += 1;
 
   const overshootN = config.doubleBonusOvershoot as number | undefined;

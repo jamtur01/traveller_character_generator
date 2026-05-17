@@ -140,7 +140,7 @@ export type HistoryEvent =
       kind: "preCareer";
       level: HistoryLevel;
       option: string;
-      result: "denied" | "washedOut" | "graduated" | "honors";
+      result: "denied" | "washedOut" | "graduated" | "honors" | "info";
       note?: string;
     }
   // Character ended generation (died, mustered, retired).
@@ -148,6 +148,36 @@ export type HistoryEvent =
       kind: "endGeneration";
       level: HistoryLevel;
       reason: "mustered" | "deceased" | "retired";
+      note?: string;
+    }
+  // Marine Tradition fired (PM p. 49). The save either passed (player
+  // gets the cascade as normal) or failed (forced to Large Blade).
+  | {
+      kind: "marineTradition";
+      level: HistoryLevel;
+      outcome: "saved" | "forced";
+      forcedSkill?: string;
+      roll?: number; dm?: number; target?: number;
+    }
+  // ACG year began with a specific assignment rolled.
+  | {
+      kind: "assignmentRolled";
+      level: HistoryLevel;
+      assignment: string; term?: number; year?: number;
+    }
+  // ACG officer command-duty roll outcome.
+  | {
+      kind: "commandDuty";
+      level: HistoryLevel;
+      inCommand: boolean; roll: number; dm: number; target: number;
+    }
+  // ACG school assignment (Scout school, Mercenary specialist school,
+  // etc.). Skills earned by attendance are logged separately as
+  // skillLearned events.
+  | {
+      kind: "schoolAssigned";
+      level: HistoryLevel;
+      school: string; pathway?: string;
     };
 
 /** Constructors for the most common events. UI / engine emit via these
@@ -181,6 +211,99 @@ export const event = {
   }),
   musterBenefit: (benefit: string, tableRoll: number, dm: number): HistoryEvent => ({
     kind: "musterBenefit", level: "verbose", benefit, tableRoll, dm,
+  }),
+  musterCash: (amount: number, tableRoll: number, dm: number): HistoryEvent => ({
+    kind: "musterCash", level: "verbose", amount, tableRoll, dm,
+  }),
+  skillReduced: (skill: string, lvl: number, reason: string): HistoryEvent => ({
+    kind: "skillReduced", level: "verbose", skill, skillLevel: lvl, reason,
+  }),
+  skillForfeited: (skill: string, reason: string): HistoryEvent => ({
+    kind: "skillForfeited", level: "verbose", skill, reason,
+  }),
+  enlistmentAttempt: (
+    service: string, roll: number, dm: number, target: number, succeeded: boolean,
+  ): HistoryEvent => ({
+    kind: "enlistmentAttempt", level: "simple",
+    service, roll, dm, target, succeeded,
+  }),
+  drafted: (service: string): HistoryEvent => ({
+    kind: "drafted", level: "simple", service,
+  }),
+  termBegin: (termNumber: number, age: number): HistoryEvent => ({
+    kind: "termBegin", level: "verbose", termNumber, age,
+  }),
+  roll: (
+    rollName: string, roll: number, dm: number, target: number,
+    succeeded: boolean, context?: string,
+  ): HistoryEvent => ({
+    kind: "roll", level: "verbose",
+    rollName, roll, dm, target, succeeded,
+    ...(context !== undefined ? { context } : {}),
+  }),
+  decoration: (award: string, reason?: string): HistoryEvent => ({
+    kind: "decoration", level: "simple", award,
+    ...(reason !== undefined ? { reason } : {}),
+  }),
+  courtMartial: (result: string): HistoryEvent => ({
+    kind: "courtMartial", level: "simple", result,
+  }),
+  reenlistment: (
+    outcome: "voluntary" | "mandatory" | "denied" | "retired" | "released" | "heldOver",
+    roll?: number, target?: number,
+  ): HistoryEvent => ({
+    kind: "reenlistment", level: "simple", outcome,
+    ...(roll !== undefined ? { roll } : {}),
+    ...(target !== undefined ? { target } : {}),
+  }),
+  anagathics: (
+    outcome: "found" | "lost" | "withdrawal" | "unavailable",
+    roll?: number, target?: number,
+  ): HistoryEvent => ({
+    kind: "anagathics", level: "simple", outcome,
+    ...(roll !== undefined ? { roll } : {}),
+    ...(target !== undefined ? { target } : {}),
+  }),
+  preCareer: (
+    option: string,
+    result: "denied" | "washedOut" | "graduated" | "honors" | "info",
+    note?: string,
+  ): HistoryEvent => ({
+    kind: "preCareer", level: "simple", option, result,
+    ...(note !== undefined ? { note } : {}),
+  }),
+  endGeneration: (
+    reason: "mustered" | "deceased" | "retired",
+    note?: string,
+  ): HistoryEvent => ({
+    kind: "endGeneration", level: "simple", reason,
+    ...(note !== undefined ? { note } : {}),
+  }),
+  marineTradition: (
+    outcome: "saved" | "forced",
+    extras?: { forcedSkill?: string; roll?: number; dm?: number; target?: number },
+  ): HistoryEvent => ({
+    kind: "marineTradition", level: "simple", outcome,
+    ...(extras?.forcedSkill !== undefined ? { forcedSkill: extras.forcedSkill } : {}),
+    ...(extras?.roll !== undefined ? { roll: extras.roll } : {}),
+    ...(extras?.dm !== undefined ? { dm: extras.dm } : {}),
+    ...(extras?.target !== undefined ? { target: extras.target } : {}),
+  }),
+  assignmentRolled: (
+    assignment: string, term?: number, year?: number,
+  ): HistoryEvent => ({
+    kind: "assignmentRolled", level: "verbose", assignment,
+    ...(term !== undefined ? { term } : {}),
+    ...(year !== undefined ? { year } : {}),
+  }),
+  commandDuty: (
+    inCommand: boolean, roll: number, dm: number, target: number,
+  ): HistoryEvent => ({
+    kind: "commandDuty", level: "verbose", inCommand, roll, dm, target,
+  }),
+  schoolAssigned: (school: string, pathway?: string): HistoryEvent => ({
+    kind: "schoolAssigned", level: "simple", school,
+    ...(pathway !== undefined ? { pathway } : {}),
   }),
 };
 
@@ -274,14 +397,33 @@ export function formatEvent(e: HistoryEvent): string {
         case "washedOut": return `${e.option}: washed out${note}.`;
         case "graduated": return `${e.option}: graduated${note}.`;
         case "honors": return `${e.option}: honors graduate${note}.`;
+        case "info": return `${e.option}: ${e.note ?? ""}`.trim();
       }
     }
-    case "endGeneration":
+    case "endGeneration": {
+      const note = e.note ? ` — ${e.note}` : "";
       switch (e.reason) {
-        case "mustered": return "======= End Generation =======";
-        case "deceased": return "Character deceased — generation ended.";
-        case "retired": return "Character retired — generation ended.";
+        case "mustered": return `======= End Generation =======${note}`;
+        case "deceased": return `Character deceased — generation ended${note}.`;
+        case "retired": return `Character retired — generation ended${note}.`;
       }
+    }
+    case "marineTradition":
+      if (e.outcome === "forced") {
+        return `Marine Tradition: Blade Combat → ${e.forcedSkill ?? "Large Blade"}.`;
+      }
+      return `Marine Tradition save passed — normal Blade Combat cascade.`;
+    case "assignmentRolled": {
+      const where = e.term !== undefined && e.year !== undefined
+        ? ` (term ${e.term} year ${e.year})` : "";
+      return `Assignment: ${e.assignment}${where}.`;
+    }
+    case "commandDuty":
+      return `Command duty roll ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ` +
+        (e.inCommand ? "in command" : "staff position");
+    case "schoolAssigned":
+      return `School assignment: ${e.school}` +
+        (e.pathway ? ` (${e.pathway})` : "") + ".";
   }
 }
 

@@ -6,6 +6,7 @@
 import { roll } from "../../random";
 import { getEdition } from "../../editions";
 import type { Character } from "../../character";
+import { event as ev } from "../../history";
 
 interface BrownieAward { event: string; points: number }
 
@@ -49,7 +50,7 @@ export function awardDecoration(
 ): void {
   if (!ch.acgState) return;
   ch.acgState.decorations.push(award);
-  ch.logRaw(`Decorated: ${award}`);
+  ch.log(ev.decoration(award));
   const bp = bpAwardFor(ch, `${award} received`) ?? 0;
   if (bp > 0) awardBrownie(ch, bp, `Decoration ${award}`);
   // SEH carries an automatic +1 rank at muster-out. The flag comes from
@@ -215,7 +216,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         Math.abs(o.roll - r) < Math.abs(closest.roll - r) ? o : closest,
         cm.dieResults[0]!);
   const result = outcome.result;
-  ch.logRaw(`Court Martial: ${result}`);
+  ch.log(ev.courtMartial(result));
   ch.logRaw(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`, "verbose");
 
   applyCourtMartialResult(ch, result);
