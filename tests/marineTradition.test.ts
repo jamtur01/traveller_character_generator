@@ -50,9 +50,7 @@ describe("Marine Tradition (F5)", () => {
     const c = makeMarine();
     c.skills = [["Large Blade", 1]];
     // Need 9+ with -3 DM → must roll 12 (12-3=9). 11 = 8 = fail.
-    let call = 0;
     vi.spyOn(Math, "random").mockImplementation(() => {
-      call += 1;
       // Two dice for the save; 6/6 = 12-3 = 9 pass; 5/6 = 11-3 = 8 fail.
       // First return 5/6=11 then verify the result.
       return 0.999;
