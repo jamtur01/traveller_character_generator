@@ -5038,6 +5038,10 @@
         "Medical",
         "Technical"
       ],
+      "branchFleetRestrictions": {
+        "$comment": "PM p. 52 line 3261: 'The Technical Services branch exists only in the Imperial Navy.' Other branches are unrestricted.",
+        "Technical": ["imperialNavy"]
+      },
       "commandDuty": {
         "columns": [
           "branch",
