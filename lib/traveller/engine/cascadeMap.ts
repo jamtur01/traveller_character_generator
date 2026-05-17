@@ -78,6 +78,11 @@ export function isCascadeLabel(label: string): boolean {
   return LABEL_TO_KEY[label.toLowerCase().trim()] !== undefined;
 }
 
+/** Resolve a cell label to its cascade JSON key (or null). Edition-independent. */
+export function cascadeKeyForLabel(label: string): string | null {
+  return LABEL_TO_KEY[label.toLowerCase().trim()] ?? null;
+}
+
 /** Get the named cascade pool for the given edition. Used by Character
  *  methods like doBladeBenefit that need a specific cascade pool. */
 export function cascadePoolByKey(
