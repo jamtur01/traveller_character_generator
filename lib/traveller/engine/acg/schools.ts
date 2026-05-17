@@ -283,6 +283,17 @@ function rollOnServiceSkills(ch: Character, data: PathwayData): void {
 
 function ocsCommission(ch: Character): void {
   if (!ch.acgState) return;
+  // F4/F17: PM lines 778, 3081, 3343, 3849 — drafted characters cannot
+  // attend OCS / receive a commission during their first four-year term.
+  // The rule is data-driven via rules.draft.noCommissionFirstTerm so
+  // editions can opt in/out.
+  const draftRules = (getEdition(ch.editionId).data as {
+    rules?: { draft?: { noCommissionFirstTerm?: boolean } };
+  }).rules?.draft;
+  if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
+    ch.history.push("OCS denied: drafted characters cannot commission during their first term (PM p. 21).");
+    return;
+  }
   const rankNum = parseInt(ch.acgState.rankCode.replace("E", ""), 10) || 0;
   if (rankNum === 7) {
     ch.acgState.isOfficer = true;
