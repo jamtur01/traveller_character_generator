@@ -315,9 +315,11 @@ export class Character {
    */
   doPreCareer(option: PreCareerOption): {
     autoEnlistPathway: "mercenary" | "navy" | "scout" | "merchantPrince" | null;
+    admitted: boolean;
     honors: boolean;
     graduated: boolean;
     commissioned: boolean;
+    notes: string[];
   } {
     if (!this.useAcg) {
       throw new Error("doPreCareer is only valid in ACG mode");
@@ -338,9 +340,11 @@ export class Character {
     applyPreCareerResult(this, option, result);
     return {
       autoEnlistPathway: result.autoEnlistPathway,
+      admitted: result.admitted,
       honors: result.honors,
       graduated: result.graduated,
       commissioned: result.commissioned,
+      notes: result.notes,
     };
   }
 
@@ -366,21 +370,17 @@ export class Character {
   ): void {
     this.useAcg = true;
     this.acgPathway = pathway;
-    // Pre-career may have set acgState already with a commission (academy
-    // graduate, OTC/NOTC). Preserve commission state instead of resetting.
-    const carryRank = this.acgState?.preCareerCommission
-      ? { rankCode: this.acgState.rankCode, isOfficer: this.acgState.isOfficer,
-          preCareerCommission: true,
-          preCareerBranch: this.acgState.preCareerBranch ?? null,
-          browniePoints: this.acgState.browniePoints,
-          browniePointsSpent: this.acgState.browniePointsSpent,
-          schoolsAttended: this.acgState.schoolsAttended,
-          decorations: this.acgState.decorations }
-      : null;
+    // Pre-career may have set acgState already with skills, BPs, honors,
+    // commission, and short-term/draft flags. Carry ALL of that forward
+    // instead of resetting — earlier code only preserved state when a
+    // commission was earned, which dropped college-graduate state needed
+    // for Medical/Flight School eligibility, Scout IS-10, etc.
+    const prev = this.acgState;
+    const hasCommission = prev?.preCareerCommission === true;
     this.acgState = {
       pathway,
-      rankCode: carryRank?.rankCode ?? "E1",
-      isOfficer: carryRank?.isOfficer ?? false,
+      rankCode: hasCommission ? prev!.rankCode : "E1",
+      isOfficer: hasCommission ? prev!.isOfficer : false,
       year: 1,
       currentAssignment: null,
       inCommand: false,
@@ -391,15 +391,18 @@ export class Character {
       assignmentHistory: [],
       combatRibbons: 0,
       commandClusters: 0,
-      schoolsAttended: carryRank?.schoolsAttended ?? [],
-      decorations: carryRank?.decorations ?? [],
-      browniePoints: carryRank?.browniePoints ?? 0,
-      browniePointsSpent: carryRank?.browniePointsSpent ?? 0,
+      schoolsAttended: prev?.schoolsAttended ? [...prev.schoolsAttended] : [],
+      decorations: prev?.decorations ? [...prev.decorations] : [],
+      browniePoints: prev?.browniePoints ?? 0,
+      browniePointsSpent: prev?.browniePointsSpent ?? 0,
       decorationDmStrategy: 0,
-      ...(carryRank?.preCareerCommission ? { preCareerCommission: true } : {}),
-      ...(carryRank?.preCareerBranch !== undefined ? { preCareerBranch: carryRank.preCareerBranch } : {}),
+      ...(prev?.honorsGraduations ? { honorsGraduations: [...prev.honorsGraduations] } : {}),
+      ...(hasCommission ? { preCareerCommission: true } : {}),
+      ...(prev?.preCareerBranch !== undefined ? { preCareerBranch: prev.preCareerBranch } : {}),
+      ...(prev?.preCareerFirstTermShort ? { preCareerFirstTermShort: true } : {}),
+      ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
     };
-    if (carryRank) this.commissioned = true;
+    if (hasCommission) this.commissioned = true;
     // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
     // clamped to Early Stellar minimum.
     if (pathway === "navy") {

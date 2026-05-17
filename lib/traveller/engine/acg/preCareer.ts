@@ -57,13 +57,51 @@ interface PreCareerResult {
   honors: boolean;
   commissioned: boolean;
   branch: "army" | "marines" | "navy" | "merchants" | null;
+  /** Rank granted by graduation (PM p. 47: academies grant O1; Medical
+   *  School graduates may take an automatic direct commission at O3). */
+  commissionRank?: "O1" | "O3";
   skills: Array<[string, number]>;
   attributeChanges: Record<string, number>;
   /** Pathways the character can subsequently enter without normal
    *  enlistment (the academy "automatic enlistment" effect). */
   autoEnlistPathway: AcgPathwayId | null;
   ageGainedYears: number;
+  /** PM p. 47: a character whose pre-career path failed enters their
+   *  first term as a short (three-year) term rather than the usual four. */
+  firstTermShort: boolean;
+  /** PM p. 47: academy admission/success failures draft the character
+   *  into a specific service for their first term. */
+  draftedInto: "army" | "navy" | "marines" | null;
+  /** PM p. 47: medical-school graduates may take an automatic direct
+   *  commission as rank O3. Tracked separately from `commissionRank`
+   *  in case future variants offer it optionally. */
+  medicalDirectCommission: boolean;
   notes: string[];
+}
+
+/** Honors gates: medical school requires honors from college, naval
+ *  academy, or military academy. Flight school requires a commissioned
+ *  college honors graduate (i.e. college honors + NOTC/OTC commission),
+ *  any Naval Academy graduate (honors or not), or any character holding
+ *  a NOTC/Merchant Academy commission (PM p. 47). */
+function honorsPrereqMet(ch: Character, opt: PreCareerOption): boolean {
+  const honors = ch.acgState?.honorsGraduations ?? [];
+  const schools = ch.acgState?.schoolsAttended ?? [];
+  if (opt === "medicalSchool") {
+    return honors.includes("college") || honors.includes("navalAcademy") ||
+      honors.includes("militaryAcademy");
+  }
+  if (opt === "flightSchool") {
+    const hasCommission =
+      ch.acgState?.preCareerCommission === true || ch.commissioned;
+    const collegeHonorsCommissioned =
+      honors.includes("college") && hasCommission;
+    const naAnyGrad = schools.includes("navalAcademy");
+    const merchantAcademyCommissioned =
+      schools.includes("merchantAcademy") && hasCommission;
+    return collegeHonorsCommissioned || naAnyGrad || merchantAcademyCommissioned;
+  }
+  return true;
 }
 
 function specFor(editionId: string, opt: PreCareerOption): PreCareerSpec | null {
@@ -107,10 +145,21 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   const out: PreCareerResult = {
     admitted: false, graduated: false, honors: false, commissioned: false,
     branch: null, skills: [], attributeChanges: {},
-    autoEnlistPathway: null, ageGainedYears: 0, notes: [],
+    autoEnlistPathway: null, ageGainedYears: 0,
+    firstTermShort: false, draftedInto: null, medicalDirectCommission: false,
+    notes: [],
   };
   if (!spec) {
     out.notes.push(`No pre-career data for "${opt}"`);
+    return out;
+  }
+  // Honors gate for Medical / Flight school (PM p. 47).
+  if (!honorsPrereqMet(ch, opt)) {
+    out.notes.push(
+      opt === "medicalSchool"
+        ? "Medical School requires honors graduation from college or a service academy."
+        : "Flight School requires a commissioned college honors graduate, a Naval Academy graduate, or a commissioned Merchant Academy graduate.",
+    );
     return out;
   }
   // Merchant Academy gate (PM p. 44): "A character who has enlisted in a
@@ -135,11 +184,20 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     if (r + dm < spec.admission.target) {
       ch.verboseHistory(`${opt} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`);
       out.notes.push("Admission denied.");
-      // College: drafted into Army for short term. Naval/Military/Merchant
-      // Academy: aged 1 year, drafted.
-      if (opt === "militaryAcademy" || opt === "navalAcademy" ||
-          opt === "merchantAcademy") {
+      // PM p. 47 admission-failure outcomes:
+      //   College: may attempt another option or enlist directly (no aging).
+      //   Naval Academy: aged 1 year, drafted into Navy for short 3-year term.
+      //   Military Academy: aged 1 year, drafted into Army for short term.
+      //   Merchant Academy: aged 1 year, drafted into Army for short term.
+      //   Medical / Flight School: no aging, no draft (continues normally).
+      if (opt === "navalAcademy") {
         out.ageGainedYears += 1;
+        out.draftedInto = "navy";
+        out.firstTermShort = true;
+      } else if (opt === "militaryAcademy" || opt === "merchantAcademy") {
+        out.ageGainedYears += 1;
+        out.draftedInto = "army";
+        out.firstTermShort = true;
       }
       return out;
     }
@@ -157,12 +215,36 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       ch.verboseHistory(`${opt} success FAILED (${r}+${dm} vs ${spec.success.target}+)`);
       out.notes.push("Did not complete the course.");
       out.ageGainedYears += 1;
+      // PM p. 47 success-failure outcomes:
+      //   College: age 19, first term short.
+      //   Naval Academy: age 19, drafted Navy, short term.
+      //   Military Academy: age 19, drafted Army, short term.
+      //   Merchant Academy: age 19, drafted Army, short term.
+      //   Medical School: age 23, may enlist normally OR short term if academy grad.
+      //   Flight School: age (varies), reports for duty in Navy/Marines (short).
+      out.firstTermShort = true;
+      if (opt === "navalAcademy") out.draftedInto = "navy";
+      else if (opt === "militaryAcademy" || opt === "merchantAcademy") out.draftedInto = "army";
+      else if (opt === "flightSchool") out.draftedInto = "navy";
       return out;
     }
     out.graduated = true;
     ch.verboseHistory(`${opt} success passed (${r}+${dm} vs ${spec.success.target}+)`);
   } else {
     out.graduated = true;
+  }
+
+  // Successful graduates age according to course length (PM p. 47):
+  //   college / academies: 4 years (entered at 18, graduates at 22)
+  //   medical school: 4 years (graduates at 26 — entered post-honors at 22)
+  //   flight school: 1 year (no explicit duration in PM; treated as a
+  //     short specialty course)
+  if (opt === "college" || opt === "navalAcademy" ||
+      opt === "militaryAcademy" || opt === "merchantAcademy" ||
+      opt === "medicalSchool") {
+    out.ageGainedYears += 4;
+  } else if (opt === "flightSchool") {
+    out.ageGainedYears += 1;
   }
 
   // OTC / NOTC (college only, voluntary).
@@ -230,15 +312,29 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   if (opt === "militaryAcademy") {
     out.commissioned = true;
     out.branch = "army";
+    out.commissionRank = "O1";
     out.autoEnlistPathway = "mercenary";
   } else if (opt === "navalAcademy") {
     out.commissioned = true;
     out.branch = "navy";
+    out.commissionRank = "O1";
     out.autoEnlistPathway = "navy";
   } else if (opt === "merchantAcademy") {
     out.commissioned = true;
     out.branch = "merchants";
+    out.commissionRank = "O1";
     out.autoEnlistPathway = "merchantPrince";
+  } else if (opt === "medicalSchool" && out.graduated) {
+    // PM p. 47: "He may apply for a direct commission (which is granted
+    // automatically) as rank O3 in the Navy (Medical Branch), Army,
+    // Scouts, or Merchants (Purser Department Medic). Marines have no
+    // medical officers; they are treated by Navy doctors." The branch
+    // defaults to Navy here; the player UI may override on enlistment.
+    out.commissioned = true;
+    out.commissionRank = "O3";
+    out.medicalDirectCommission = true;
+    out.branch = "navy";
+    out.autoEnlistPathway = "navy";
   }
 
   return out;
@@ -427,7 +523,7 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   // honors this rank by skipping the default E1 reset.
   if (r.commissioned && ch.acgState) {
     ch.acgState.isOfficer = true;
-    ch.acgState.rankCode = "O1";
+    ch.acgState.rankCode = r.commissionRank ?? "O1";
     ch.acgState.preCareerCommission = true;
     ch.acgState.preCareerBranch = r.branch ?? null;
   }
@@ -445,5 +541,14 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
         ch.acgState.honorsGraduations.push(opt);
       }
     }
+  }
+  // PM p. 47 failure outcomes: drafted into a service for a short
+  // (three-year) first term. Record on acgState so beginAcg / first-term
+  // logic can apply both effects.
+  if (r.firstTermShort && ch.acgState) {
+    ch.acgState.preCareerFirstTermShort = true;
+  }
+  if (r.draftedInto && ch.acgState) {
+    ch.acgState.preCareerDraftedInto = r.draftedInto;
   }
 }

@@ -122,25 +122,47 @@ describe("doPreCareer: Military Academy", () => {
 });
 
 describe("doPreCareer: Medical School", () => {
-  it("Graduates receive Medical-3, Admin, +1 Education", () => {
+  it("Graduates receive Medical-3, Admin, +1 Education (after college honors)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
-    const c = freshAcgCandidate(12);
+    // Start with a lower Edu so the +1 from medical doesn't cap at 15.
+    const c = freshAcgCandidate(9);
+    c.doPreCareer("college");
     const startEdu = c.attributes.education;
     const r = c.doPreCareer("medicalSchool");
     if (r.graduated) {
       expect(c.checkSkillLevel("Medical", 3)).toBe(true);
       expect(c.checkSkill("Admin")).toBeGreaterThanOrEqual(0);
-      expect(c.attributes.education).toBe(startEdu + 1);
+      expect(c.attributes.education).toBe(Math.min(15, startEdu + 1));
     }
   });
 
-  it("Honors graduates add Medical + Computer skills", () => {
+  it("Honors graduates add Medical + Computer skills (after college honors)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
+    c.doPreCareer("college");
     const r = c.doPreCareer("medicalSchool");
     if (r.honors) {
       expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
       expect(c.checkSkillLevel("Medical", 4)).toBe(true);
+    }
+  });
+
+  it("Honors-gate (R5): rejects medical school without honors prereq", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    const r = c.doPreCareer("medicalSchool");
+    expect(r.admitted).toBe(false);
+    expect(r.graduated).toBe(false);
+  });
+
+  it("Medical graduates receive automatic O3 direct commission (R4)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    c.doPreCareer("college");
+    const r = c.doPreCareer("medicalSchool");
+    if (r.graduated) {
+      expect(r.commissioned).toBe(true);
+      expect(c.acgState?.rankCode).toBe("O3");
     }
   });
 });
@@ -177,5 +199,168 @@ describe("Pre-career chain: College honors → Medical school", () => {
         expect(c.checkSkillLevel("Medical", 3)).toBe(true);
       }
     }
+  });
+});
+
+describe("R2: pre-career graduates age correctly", () => {
+  it("College graduate is age 22 (entered at 18, +4 years)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    const startAge = c.age;
+    c.doPreCareer("college");
+    expect(c.age).toBe(startAge + 4);
+  });
+
+  it("Naval Academy graduate is age 22", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    const startAge = c.age;
+    const r = c.doPreCareer("navalAcademy");
+    if (r.graduated) expect(c.age).toBe(startAge + 4);
+  });
+
+  it("Military Academy graduate is age 22", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    const startAge = c.age;
+    const r = c.doPreCareer("militaryAcademy");
+    if (r.graduated) expect(c.age).toBe(startAge + 4);
+  });
+
+  it("Medical School graduate ages another 4 years to age 26", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    c.doPreCareer("college"); // 18 → 22
+    const ageBefore = c.age;
+    const r = c.doPreCareer("medicalSchool");
+    if (r.graduated) expect(c.age).toBe(ageBefore + 4);
+  });
+
+  it("Flight School graduate ages 1 year (short specialty)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    c.doPreCareer("navalAcademy");
+    const ageBefore = c.age;
+    const r = c.doPreCareer("flightSchool");
+    if (r.graduated) expect(c.age).toBe(ageBefore + 1);
+  });
+});
+
+describe("R3: pre-career failure short-term outcomes", () => {
+  it("Naval Academy admission failure: +1 year, drafted Navy, short term", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const c = freshAcgCandidate(2);
+    const startAge = c.age;
+    const r = c.doPreCareer("navalAcademy");
+    expect(r.admitted).toBe(false);
+    expect(c.age).toBe(startAge + 1);
+    expect(c.acgState?.preCareerDraftedInto).toBe("navy");
+    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
+  });
+
+  it("Military Academy success failure: +1 year, drafted Army", () => {
+    vi.spyOn(Math, "random").mockImplementationOnce(() => 0.999) // admission pass
+      .mockImplementation(() => 0); // success fail
+    const c = freshAcgCandidate(2);
+    c.attributes.strength = 12; // pass admission DM
+    const startAge = c.age;
+    const r = c.doPreCareer("militaryAcademy");
+    if (r.admitted && !r.graduated) {
+      expect(c.age).toBeGreaterThan(startAge);
+      expect(c.acgState?.preCareerDraftedInto).toBe("army");
+    }
+  });
+
+  it("College failure: short term flag set, no draft (free enlistment)", () => {
+    // Build the character first (constructor rolls attributes), THEN set the
+    // mock so the call counter starts at the admission roll.
+    const c = freshAcgCandidate(2);
+    c.attributes.education = 12;
+    c.attributes.intelligence = 2;
+    let call = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => {
+      call += 1;
+      if (call === 1) return 0.5;   // admission die 1 → 4
+      if (call === 2) return 0.999; // admission die 2 → 6, total 10 + DM+2 = 12 ≥ 9 pass
+      return 0;                     // success and everything else low → fail
+    });
+    c.doPreCareer("college");
+    expect(c.acgState?.preCareerDraftedInto).toBeFalsy();
+    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
+  });
+});
+
+describe("R1: pre-career state preserved into beginAcg", () => {
+  it("honorsGraduations survive beginAcg", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    c.doPreCareer("college");
+    const honorsBefore = [...(c.acgState?.honorsGraduations ?? [])];
+    c.beginAcg("mercenary");
+    expect(c.acgState?.honorsGraduations).toEqual(honorsBefore);
+  });
+
+  it("schoolsAttended survive beginAcg even without commission", () => {
+    // Manually establish post-college non-commissioned state, then beginAcg.
+    const c = freshAcgCandidate(7);
+    c.acgState = {
+      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: ["college"], decorations: [], browniePoints: 1,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+    };
+    const schoolsBefore = [...(c.acgState?.schoolsAttended ?? [])];
+    c.beginAcg("mercenary");
+    expect(c.acgState?.schoolsAttended).toContain("college");
+    expect(c.acgState?.schoolsAttended).toEqual(schoolsBefore);
+  });
+
+  it("brownie points from pre-career survive beginAcg", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgCandidate(12);
+    c.doPreCareer("college");
+    const bpBefore = c.acgState?.browniePoints ?? 0;
+    expect(bpBefore).toBeGreaterThan(0);
+    c.beginAcg("mercenary");
+    expect(c.acgState?.browniePoints).toBe(bpBefore);
+  });
+});
+
+describe("R5: honors gates", () => {
+  it("Flight School rejects non-commissioned college honors graduates", () => {
+    // Manually build state: college honors but no commission. Bypass dice.
+    const c = freshAcgCandidate(12);
+    c.acgState = {
+      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: ["college"], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      honorsGraduations: ["college"],
+    };
+    const r = c.doPreCareer("flightSchool");
+    expect(r.admitted).toBe(false);
+    expect(r.notes.join(" ")).toMatch(/Flight School requires/);
+  });
+
+  it("Flight School admits Naval Academy graduates without honors", () => {
+    // Manually build state: graduated Naval Academy, no honors.
+    const c = freshAcgCandidate(12);
+    c.acgState = {
+      pathway: "mercenary", rankCode: "O1", isOfficer: true, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: ["navalAcademy"], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      honorsGraduations: [],
+      preCareerCommission: true,
+    };
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const r = c.doPreCareer("flightSchool");
+    expect(r.admitted).toBe(true);
   });
 });
