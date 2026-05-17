@@ -88,12 +88,23 @@ describe("doPreCareer: Naval Academy", () => {
     expect(c.checkSkill("Engineering")).toBeGreaterThanOrEqual(0);
   });
 
-  it("Failed admission ages character 1 year", () => {
+  it("Rrev11: admission failure does NOT age — character tries another path", () => {
+    // freshAcgCandidate(5) has Soc 5 → fails the new Soc 8+ gate too. Bump
+    // social to 9 so admission roll itself fails (with mocked-low rolls).
     vi.spyOn(Math, "random").mockReturnValue(0);
     const c = freshAcgCandidate(5);
+    c.attributes.social = 9;
     const startAge = c.age;
     c.doPreCareer("navalAcademy");
-    expect(c.age).toBe(startAge + 1);
+    expect(c.age).toBe(startAge);
+  });
+
+  it("Rrev11: Soc 7 character cannot apply to Naval Academy (Soc 8+ gate)", () => {
+    const c = freshAcgCandidate(7);
+    c.attributes.social = 7;
+    const r = c.doPreCareer("navalAcademy");
+    expect(r.admitted).toBe(false);
+    expect(r.notes.join(" ")).toMatch(/Social Standing 8\+/);
   });
 });
 
@@ -246,16 +257,37 @@ describe("R2: pre-career graduates age correctly", () => {
   });
 });
 
-describe("R3: pre-career failure short-term outcomes", () => {
-  it("Naval Academy admission failure: +1 year, drafted Navy, short term", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    const c = freshAcgCandidate(2);
+describe("R3: pre-career failure short-term outcomes (revised by Rrev11)", () => {
+  it("Naval Academy SUCCESS failure (admitted, washed out): +1 year, drafted Navy, short term", () => {
+    // Sequence: admission roll pass, success roll fail.
+    // freshAcgCandidate constructor consumed 12 Math.random calls. Set the
+    // mock after construction so the first calls are the admission.
+    const c = freshAcgCandidate(8); // Soc 8 to pass the gate
+    c.attributes.education = 12;
     const startAge = c.age;
+    let call = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => {
+      call += 1;
+      if (call <= 2) return 0.999; // admission rolls high
+      return 0;                    // success rolls low
+    });
     const r = c.doPreCareer("navalAcademy");
-    expect(r.admitted).toBe(false);
+    expect(r.admitted).toBe(true);
+    expect(r.graduated).toBe(false);
     expect(c.age).toBe(startAge + 1);
     expect(c.acgState?.preCareerDraftedInto).toBe("navy");
     expect(c.acgState?.preCareerFirstTermShort).toBe(true);
+  });
+
+  it("Rrev11: Naval Academy ADMISSION failure: no aging, no draft", () => {
+    const c = freshAcgCandidate(9); // Soc 9 → passes gate but rolls might fail
+    const startAge = c.age;
+    vi.spyOn(Math, "random").mockReturnValue(0); // admission rolls min → fail
+    const r = c.doPreCareer("navalAcademy");
+    expect(r.admitted).toBe(false);
+    expect(c.age).toBe(startAge);
+    expect(c.acgState?.preCareerDraftedInto).toBeFalsy();
+    expect(c.acgState?.preCareerFirstTermShort).toBeFalsy();
   });
 
   it("Military Academy success failure: +1 year, drafted Army", () => {
