@@ -746,6 +746,12 @@ export class Character {
       this.history.push(
         "Distinguished by social standing, automatically enrolled in the Nobility.",
       );
+      this.applyServiceStartAge("nobles");
+      this.service = "nobles";
+      // R15: apply service-conditioned homeworld default skills (Vacc Suit-0,
+      // Gun Combat-0, tech-keyed vehicles/computer) — previously skipped on
+      // the auto-noble path.
+      if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
       const skills = this.editionService("nobles").getServiceSkills(this);
       for (const sk of skills) this.addSkill(sk);
       return "nobles";
