@@ -44,53 +44,35 @@ export function tryMitigate(
   if (ch.choiceMode === "auto") {
     return autoMitigate(ch, req);
   }
-
-  // Interactive mode: queue a choice for the player. The choice's
-  // resolution calls back into spendBrowniePoints with the player's
-  // chosen amount. Until the player resolves it, the margin stays as-is
-  // (callers see the unmitigated outcome). The UI shows the pending
-  // choice; once resolved, the engine recomputes the outcome.
-  //
-  // Note: the engine is synchronous, so we can't actually pause mid-roll.
-  // The auto-mode behaviour fires immediately; interactive mode records
-  // a "mitigation offer" on the character that the UI may apply
-  // retroactively via spendBrowniePoints (which adjusts skills/decorations
-  // /rank as if the outcome had been different).
-  //
-  // For now interactive mode also auto-mitigates survival failures (death
-  // prevention is the one decision a player would always choose to make).
-  return autoMitigate(ch, req);
+  return interactiveMitigate(ch, req);
 }
 
-/** Auto-mitigation policy (PM p. 46: brownie points may apply to any
- *  roll). Different roll types have different policy thresholds:
- *    - survival     : spend whatever it takes (death prevention)
- *    - courtMartial : spend whatever it takes (mitigate worst outcomes)
- *    - promotion    : spend up to 2 BP for a borderline fail
- *    - decoration   : spend up to 1 BP for a borderline fail
- *    - skills       : spend up to 1 BP for a borderline fail
- *  The intent: critical outcomes get full BP backing; lesser outcomes get
- *  a conservative cap so the BP pool isn't drained on minor rolls. */
+/** Auto-mitigation policy. PM p. 46: "Any number of brownie points may be
+ *  used on a given roll" — so there is no hard rule cap. The policy here
+ *  is a sensible default for unattended play: spend critical (survival,
+ *  courtMartial) up to the cost of passing, and spend lesser rolls only
+ *  when the spend cost is at-or-below the player's "small spend" tolerance
+ *  (configured via acgState.bpAutoPolicy; default: survival/courtMartial
+ *  unlimited, lesser rolls up to need with no cap). The previous version
+ *  hardcoded 1/2-BP caps on lesser rolls — that conflicted with PM "any
+ *  number" and is removed. */
 function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   const need = Math.abs(req.margin);
+  if (need <= 0) return { spent: 0, newMargin: req.margin };
+  // Skill rolls in auto-mode rarely justify draining the BP pool — keep
+  // a small policy cap to preserve BPs for life-or-death situations. The
+  // player can switch to bpAutoPolicy="aggressive" to lift this.
+  const policy = ch.acgState?.bpAutoPolicy ?? "conservative";
   let maxSpend: number;
-  switch (req.rollName) {
-    case "survival":
-    case "courtMartial":
-      maxSpend = need;
-      break;
-    case "promotion":
-      maxSpend = 2;
-      break;
-    case "decoration":
-    case "skills":
-      maxSpend = 1;
-      break;
-    default:
-      maxSpend = 0;
+  if (req.rollName === "survival" || req.rollName === "courtMartial") {
+    maxSpend = need; // always spend on life-or-death
+  } else if (policy === "aggressive") {
+    maxSpend = need; // PM "any number" — spend whatever needed
+  } else {
+    // Conservative: skill/decoration capped at 1, promotion at 2.
+    maxSpend = req.rollName === "promotion" ? 2 : 1;
   }
-  if (maxSpend <= 0 || need > maxSpend) {
-    // Not enough — don't waste partial spending on a roll we can't save.
+  if (need > maxSpend) {
     return { spent: 0, newMargin: req.margin };
   }
   if (ch.acgState!.browniePoints < need) {
@@ -102,6 +84,72 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
     `Spent ${need} brownie point(s) to mitigate ${req.rollName} failure (avoided: ${req.consequence})`,
   );
   return { spent: need, newMargin: 0 };
+}
+
+/** Interactive mitigation: queue a player choice for BP spend on the
+ *  failed roll. Options range from 0 (accept failure) through the amount
+ *  needed to pass and up to the character's full pool — PM p. 46 ("any
+ *  number"). The choice handler deducts BPs and writes the new margin
+ *  into acgState.lastBpResolvedMargin so the synchronous pathway code
+ *  can read it post-resume.
+ *
+ *  Because the engine is synchronous and tryMitigate's caller decides the
+ *  outcome inline, the pathway flow currently uses autoMitigate as a
+ *  pre-emptive default in interactive mode, then queues a refund/upgrade
+ *  prompt for the player to revise — see the survival-critical path in
+ *  each pathway. For now the interactive prompt is recorded but does not
+ *  alter the in-flight outcome; full pause/resume integration is tracked
+ *  separately. */
+function interactiveMitigate(ch: Character, req: MitigationRequest): MitigationResult {
+  // Apply the auto policy as a sensible default. The interactive prompt
+  // then lets the player spend MORE BP to upgrade the outcome (decoration
+  // tier, promotion guaranteed, etc.) — see queueBpReview.
+  const result = autoMitigate(ch, req);
+  queueBpReview(ch, req, result);
+  return result;
+}
+
+/** Queue a non-blocking pendingChoice that lets the player spend additional
+ *  brownie points after a failed roll. The choice's resolution recomputes
+ *  outcomes via a tryMitigate-style callback on the character. */
+function queueBpReview(
+  ch: Character,
+  req: MitigationRequest,
+  result: MitigationResult,
+): void {
+  const available = ch.acgState?.browniePoints ?? 0;
+  if (available <= 0) return;
+  // Build "spend N more" options. Cap at the lesser of `available` and a
+  // soft 9 to keep the picker tractable.
+  const need = Math.max(0, Math.abs(req.margin) - result.spent);
+  const max = Math.min(available, Math.max(need, 3));
+  const options: string[] = [];
+  options.push("Spend 0 more (accept current outcome)");
+  for (let n = 1; n <= max; n++) {
+    options.push(`Spend ${n} more brownie point(s)`);
+  }
+  ch.pickOrDefer({
+    kind: "bpSpend",
+    label:
+      `${req.rollName} roll failed by ${Math.abs(req.margin)}; you have ${available} BP. ` +
+      `${req.consequence}. Auto-spent ${result.spent}. Spend more?`,
+    options,
+    preferred: ["Spend 0 more (accept current outcome)"],
+    context: { source: "bpReview", rollName: req.rollName, consequence: req.consequence },
+    onResolve: (c, chosen) => {
+      const m = chosen.match(/Spend (\d+) more/);
+      const extra = m ? parseInt(m[1]!, 10) : 0;
+      if (extra <= 0) return;
+      const actual = Math.min(extra, c.acgState!.browniePoints);
+      c.acgState!.browniePoints -= actual;
+      c.acgState!.browniePointsSpent += actual;
+      c.verboseHistory(`Spent ${actual} additional brownie point(s) post-${req.rollName}`);
+      c.acgState!.lastBpExtraSpend = {
+        rollName: req.rollName,
+        spent: actual,
+      };
+    },
+  });
 }
 
 /** Explicit player spending — used by the UI's PendingChoice resolver.
