@@ -598,27 +598,29 @@ export function navyReenlist(ch: Character): boolean {
   return keep;
 }
 
-/** PM p. 53: at reenlistment officers may change branches; the choice is
- *  surfaced to the player in interactive mode. Auto mode keeps the
- *  current branch. Branches are sourced from JSON branchSkills.columns. */
+/** PM p. 53: at reenlistment a character may transfer to a branch they
+ *  have been cross-trained into (recorded via crossTrainedBranches). The
+ *  choice is surfaced in interactive mode; auto mode keeps the current
+ *  branch. A character with no cross-training has only their current
+ *  branch as an option and no prompt is shown. */
 function offerNavyBranchChange(ch: Character): void {
   if (!ch.acgState || ch.choiceMode === "auto") return;
   if (!ch.acgState.isOfficer) return;
-  const data = dataFor(ch);
-  const cols = data.branchSkills?.columns ?? [];
-  const branches = cols.filter((c) => c !== "die");
-  const current = ch.acgState.branch ?? branches[0] ?? "";
-  if (branches.length <= 1) return;
+  const current = ch.acgState.branch ?? "";
+  const crossTrained = ch.acgState.crossTrainedBranches ?? [];
+  const eligible = [current, ...crossTrained.filter((b) => b !== current)];
+  if (eligible.length <= 1) return;
   ch.pickOrDefer({
     kind: "cascade",
-    label: `Change navy branch for next term (current: ${current})`,
-    options: branches,
+    label:
+      `Change navy branch for next term (current: ${current}; eligible via cross-training: ${crossTrained.join(", ")})`,
+    options: eligible,
     preferred: [current],
     context: { source: "reenlist", reenlistChangeBranch: true },
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.branch = chosen;
-        c.history.push(`Reenlisted into ${chosen} branch.`);
+        c.history.push(`Reenlisted into ${chosen} branch (cross-trained).`);
       }
     },
   });
