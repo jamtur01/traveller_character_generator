@@ -275,6 +275,10 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       target: typeof res.survival === "number" ? res.survival : 0,
       margin: sv.margin,
       consequence: "Invalided out of Scout service",
+      onMitigated: (c) => {
+        c.activeDuty = true;
+        c.history.push("Brownie-point spend revived character (Scout survival saved).");
+      },
     });
     if (mit.newMargin < 0) {
       ch.history.push("Failed survival; invalided out of Scout service.");

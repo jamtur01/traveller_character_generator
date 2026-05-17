@@ -299,7 +299,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     `Mercenary ${assignment} survival: ${sv.roll}${survDm ? ` + ${survDm}` : ""} vs ${res.survival} → ${sv.success ? "survived" : "INJURED/INVALIDED"}`,
   );
   if (!sv.success) {
-    // Try brownie-point mitigation before invaliding out.
+    // Try brownie-point mitigation before invaliding out. The onMitigated
+    // callback (F16) reverses the muster-out if the player later spends
+    // enough BPs via the interactive review prompt to push the margin to
+    // ≥ 0. activeDuty toggles back to true on revival.
     const mit = tryMitigate(ch, {
       rollName: "survival",
       rollValue: sv.roll,
@@ -307,6 +310,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       target: typeof res.survival === "number" ? res.survival : 0,
       margin: sv.margin,
       consequence: "Invalided out of mercenary service",
+      onMitigated: (c) => {
+        c.activeDuty = true;
+        c.history.push("Brownie-point spend revived character (survival saved).");
+      },
     });
     if (mit.newMargin < 0) {
       ch.history.push("Failed survival; invalided out of mercenary service.");

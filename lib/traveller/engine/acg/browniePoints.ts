@@ -22,6 +22,12 @@ export interface MitigationRequest {
   margin: number;
   /** Description of consequence if not mitigated. */
   consequence: string;
+  /** F16: callback to apply the success outcome if the player's BP spend
+   *  pushes the margin to ≥ 0. Used by interactive "manual" mode where
+   *  the outcome is deferred to the choice handler. Pathway code passes
+   *  e.g. `() => { ch.activeDuty = true; }` for survival to revive a
+   *  character who was about to be invalided. */
+  onMitigated?: (ch: Character) => void;
 }
 
 export interface MitigationResult {
@@ -48,21 +54,20 @@ export function tryMitigate(
 }
 
 /** Auto-mitigation policy. PM p. 46: "Any number of brownie points may be
- *  used on a given roll" — so there is no hard rule cap. The policy here
- *  is a sensible default for unattended play: spend critical (survival,
- *  courtMartial) up to the cost of passing, and spend lesser rolls only
- *  when the spend cost is at-or-below the player's "small spend" tolerance
- *  (configured via acgState.bpAutoPolicy; default: survival/courtMartial
- *  unlimited, lesser rolls up to need with no cap). The previous version
- *  hardcoded 1/2-BP caps on lesser rolls — that conflicted with PM "any
- *  number" and is removed. */
+ *  used on a given roll" — so there is no hard rule cap. The policy is
+ *  configurable per character via acgState.bpAutoPolicy:
+ *    - "manual" (new in F16): NEVER auto-spends. Pathway/choice handler
+ *      decides. Use in interactive mode to defer all BP spending to the
+ *      player.
+ *    - "aggressive": spends up to `need` on any failed roll.
+ *    - "conservative" (default for auto mode): unconditional spend on
+ *      survival/courtMartial (life-or-death), 1 BP on skill/decoration,
+ *      2 BP on promotion. */
 function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   const need = Math.abs(req.margin);
   if (need <= 0) return { spent: 0, newMargin: req.margin };
-  // Skill rolls in auto-mode rarely justify draining the BP pool — keep
-  // a small policy cap to preserve BPs for life-or-death situations. The
-  // player can switch to bpAutoPolicy="aggressive" to lift this.
   const policy = ch.acgState?.bpAutoPolicy ?? "conservative";
+  if (policy === "manual") return { spent: 0, newMargin: req.margin };
   let maxSpend: number;
   if (req.rollName === "survival" || req.rollName === "courtMartial") {
     maxSpend = need; // always spend on life-or-death
@@ -86,24 +91,15 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   return { spent: need, newMargin: 0 };
 }
 
-/** Interactive mitigation: queue a player choice for BP spend on the
- *  failed roll. Options range from 0 (accept failure) through the amount
- *  needed to pass and up to the character's full pool — PM p. 46 ("any
- *  number"). The choice handler deducts BPs and writes the new margin
- *  into acgState.lastBpResolvedMargin so the synchronous pathway code
- *  can read it post-resume.
- *
- *  Because the engine is synchronous and tryMitigate's caller decides the
- *  outcome inline, the pathway flow currently uses autoMitigate as a
- *  pre-emptive default in interactive mode, then queues a refund/upgrade
- *  prompt for the player to revise — see the survival-critical path in
- *  each pathway. For now the interactive prompt is recorded but does not
- *  alter the in-flight outcome; full pause/resume integration is tracked
- *  separately. */
+/** Interactive mitigation: combine the configured auto-policy with a
+ *  player-directed review prompt. When bpAutoPolicy is "manual" the
+ *  auto layer spends nothing and the player decides everything via the
+ *  prompt; the prompt's onResolve runs the request's onMitigated
+ *  callback when the spend pushes the margin to ≥ 0, allowing the
+ *  pathway to revive a character who was about to be invalided
+ *  (survival), award a missed decoration (decoration), force a
+ *  promotion (promotion), or grant a missed skill (skills). */
 function interactiveMitigate(ch: Character, req: MitigationRequest): MitigationResult {
-  // Apply the auto policy as a sensible default. The interactive prompt
-  // then lets the player spend MORE BP to upgrade the outcome (decoration
-  // tier, promotion guaranteed, etc.) — see queueBpReview.
   const result = autoMitigate(ch, req);
   queueBpReview(ch, req, result);
   return result;
@@ -148,6 +144,14 @@ function queueBpReview(
         rollName: req.rollName,
         spent: actual,
       };
+      // F16: if the total spend (auto + extra) is enough to push the
+      // margin to ≥ 0 and the request carries an onMitigated callback,
+      // run it now to apply the success outcome retroactively.
+      const totalSpent = result.spent + actual;
+      const finalMargin = req.margin + totalSpent;
+      if (finalMargin >= 0 && req.onMitigated) {
+        req.onMitigated(c);
+      }
     },
   });
 }
