@@ -9,6 +9,7 @@
 import { intToOrdinal } from "../../formatting";
 import { roll } from "../../random";
 import { evaluateDM } from "../dmEvaluator";
+import { event as ev } from "../../history";
 import type { StepFn } from "./types";
 
 export const commissionStep: StepFn = ({ character, service, config, edition }) => {
@@ -30,8 +31,9 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
     : 0;
   const r = roll(2);
   const total = r + dm;
-  character.logRaw(`Commission roll ${r} + ${dm} vs ${service.commissionThrow}`, "verbose");
-  if (total < service.commissionThrow) return;
+  const succeeded = total >= service.commissionThrow;
+  character.log(ev.roll("Commission", r, dm, service.commissionThrow, succeeded));
+  if (!succeeded) return;
 
   character.commissioned = true;
   character.rank += 1;

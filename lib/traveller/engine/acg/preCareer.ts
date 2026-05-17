@@ -27,6 +27,7 @@ import type { Character } from "../../character";
 import { getEdition } from "../../editions";
 import { arnd, roll } from "../../random";
 import { awardBrownie } from "./awards";
+import { event as ev } from "../../history";
 import type { AcgPathwayId } from "./types";
 
 export type PreCareerOption =
@@ -653,13 +654,27 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
     // attributes below 0 even though pre-career deltas are normally
     // positive — be defensive in case a future option declares one).
     ch.attributes[a] = Math.max(0, Math.min(15, ch.attributes[a] + delta));
-    ch.logRaw(`${delta >= 0 ? "+" : ""}${delta} ${attr}`, "verbose");
+    ch.log(ev.attributeChange(attr, delta));
   }
   for (const [skill, lvl] of r.skills) {
     ch.addSkill(skill, lvl);
   }
+  // Pre-career outcome notes describe what happened at the school. Map
+  // each note to the typed preCareer event result kind so the renderer
+  // can format them consistently.
   for (const note of r.notes) {
-    ch.logRaw(`${preCareerLabel(opt, ch.editionId)}: ${note}`);
+    const lc = note.toLowerCase();
+    let result: "denied" | "washedOut" | "graduated" | "honors" | "info";
+    if (lc.startsWith("admission denied")) result = "denied";
+    else if (lc.startsWith("did not complete")) result = "washedOut";
+    else result = "info";
+    ch.log(ev.preCareer(preCareerLabel(opt, ch.editionId), result, note));
+  }
+  if (r.graduated && !r.honors) {
+    ch.log(ev.preCareer(preCareerLabel(opt, ch.editionId), "graduated"));
+  }
+  if (r.honors) {
+    ch.log(ev.preCareer(preCareerLabel(opt, ch.editionId), "honors"));
   }
   // Brownie point awards per the manual: 1 BP for graduation from
   // college / service academy / medical / flight school; +1 for honors.

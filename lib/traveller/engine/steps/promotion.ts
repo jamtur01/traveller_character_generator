@@ -4,6 +4,7 @@
 
 import { roll } from "../../random";
 import { evaluateDM } from "../dmEvaluator";
+import { event as ev } from "../../history";
 import type { StepFn } from "./types";
 
 export const promotionStep: StepFn = ({ character, service, config, edition }) => {
@@ -22,8 +23,9 @@ export const promotionStep: StepFn = ({ character, service, config, edition }) =
     : 0;
   const r = roll(2);
   const total = r + dm;
-  character.logRaw(`Promotion roll ${r} + ${dm} vs ${service.promotionThrow}`, "verbose");
-  if (total < service.promotionThrow) return;
+  const succeeded = total >= service.promotionThrow;
+  character.log(ev.roll("Promotion", r, dm, service.promotionThrow, succeeded));
+  if (!succeeded) return;
 
   character.rank += 1;
   character.skillPoints += 1;

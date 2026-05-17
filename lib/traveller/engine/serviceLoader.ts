@@ -79,24 +79,27 @@ export function buildServiceDef(
       ch.logRaw(`Anagathics survival DM ${penalty}`, "verbose");
     }
     const sv = roll(2);
-    ch.logRaw(`Survival roll ${sv} + ${dm} vs ${survivalThrow}`, "verbose");
-    return sv + dm >= survivalThrow;
+    const succeeded = sv + dm >= survivalThrow;
+    ch.log(ev.roll("Survival", sv, dm, survivalThrow, succeeded));
+    return succeeded;
   };
 
   const checkCommission = (ch: Character): boolean => {
     if (!serviceData.checks.position || commissionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.position.dm, ch);
     const sv = roll(2);
-    ch.logRaw(`Commission roll ${sv} + ${dm} vs ${commissionThrow}`, "verbose");
-    return sv + dm >= commissionThrow;
+    const succeeded = sv + dm >= commissionThrow;
+    ch.log(ev.roll("Commission", sv, dm, commissionThrow, succeeded));
+    return succeeded;
   };
 
   const checkPromotion = (ch: Character): boolean => {
     if (!serviceData.checks.promotion || promotionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.promotion.dm, ch);
     const sv = roll(2);
-    ch.logRaw(`Promotion roll ${sv} + ${dm} vs ${promotionThrow}`, "verbose");
-    return sv + dm >= promotionThrow;
+    const succeeded = sv + dm >= promotionThrow;
+    ch.log(ev.roll("Promotion", sv, dm, promotionThrow, succeeded));
+    return succeeded;
   };
 
   // --- doPromotion: walk automaticSkills + call edition hook ------------

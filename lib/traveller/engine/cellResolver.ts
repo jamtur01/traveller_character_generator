@@ -115,17 +115,14 @@ function tryMarineTradition(ch: Character, label: string): boolean {
   // normal cascade flow runs.
   const dieCount = rule.savingThrow?.die === "1D" ? 1 : 2;
   const r = roll(dieCount);
-  ch.logRaw(
-    `Marine Tradition save: ${r} + ${dm} vs ${target}+ (Blade Combat)`,
-  "verbose");
   if (r + dm >= target) {
-    ch.logRaw("Marine Tradition save passed — normal Blade Combat cascade.", "verbose");
+    ch.log(ev.marineTradition("saved", { roll: r, dm, target }));
     return false;
   }
   // Save failed — forced to receive the named skill at level 1.
-  ch.logRaw(
-    `Marine Tradition: Blade Combat → ${rule.forcedSkill}.`,
-  );
+  ch.log(ev.marineTradition("forced", {
+    forcedSkill: rule.forcedSkill, roll: r, dm, target,
+  }));
   ch.addSkill(rule.forcedSkill);
   return true;
 }

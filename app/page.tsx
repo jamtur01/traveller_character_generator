@@ -10,7 +10,7 @@ import {
   isPreCareerEligible, preCareerLabel, preCareerUiSummary,
 } from "@/lib/traveller/engine/acg/preCareer";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
-import { formatEvent, visibleAt } from "@/lib/traveller/history";
+import { event as ev, formatEvent, visibleAt } from "@/lib/traveller/history";
 import {
   getEditionServices,
   getEnlistableServices,
@@ -298,7 +298,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.logRaw("======= End Generation =======");
+        c.log(ev.endGeneration("mustered"));
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -330,7 +330,7 @@ export default function Home() {
     c.musterRolls = c.musterOutRolls();
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.logRaw("======= End Generation =======");
+      c.log(ev.endGeneration("mustered"));
       commit(c, "end");
     } else {
       commit(c, "muster");
@@ -366,7 +366,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.logRaw("======= End Generation =======");
+        c.log(ev.endGeneration("mustered"));
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -430,7 +430,7 @@ export default function Home() {
 
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.logRaw("======= End Generation =======");
+      c.log(ev.endGeneration("mustered"));
       commit(c, "end");
     } else if (c.musterCashUsed >= maxCashRolls(c)) {
       commit(c, "muster_no_cash");
