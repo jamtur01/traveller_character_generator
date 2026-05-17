@@ -336,11 +336,6 @@
     "musterOutRolls": {
       "perTerm": 2,
       "maxCashTableRolls": 3,
-      "rankBands": [
-        { "ranks": [1, 2], "additionalRolls": 1 },
-        { "ranks": [3, 4], "additionalRolls": 1 },
-        { "ranks": [5, 6], "additionalRolls": 1 }
-      ],
       "rankExtraRolls": [
         { "rankMin": 1, "rankMax": 2, "additionalRolls": 1 },
         { "rankMin": 3, "rankMax": 4, "additionalRolls": 2 },

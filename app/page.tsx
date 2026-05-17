@@ -6,6 +6,7 @@ import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller/engine/mu
 import { DEFAULT_EDITION_ID, getEdition, listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
+import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import {
   getEditionServices,
   getEnlistableServices,
@@ -158,7 +159,15 @@ export default function Home() {
     // continues from acgState.pausedAtStep. If more choices come up
     // they'll throw again and we'll bounce back to the choice UI.
     if (c.useAcg && c.acgState?.pausedAtStep && c.pendingChoices.length === 0) {
-      try { runAcgYear(c); } catch { /* nested choice will re-pause */ }
+      try {
+        runAcgYear(c);
+      } catch (err) {
+        // ChoicePendingError is expected — a nested interactive choice
+        // re-pauses the runner and we'll bounce back to the choice UI
+        // with the new pendingChoices entry. Anything else is a real
+        // engine error and should propagate so the developer sees it.
+        if (!(err instanceof ChoicePendingError)) throw err;
+      }
     }
     commit(c, phase);
   };

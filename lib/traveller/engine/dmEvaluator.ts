@@ -5,11 +5,20 @@
 //
 // Multiple rules sum.
 
-import type { Character } from "../character";
-import type { AttributeKey } from "../types";
+import type { Attributes, AttributeKey } from "../types";
 import type { DMRule } from "../editions/types";
 
-export function evaluateDM(rules: DMRule[] | undefined, ch: Character): number {
+/** Narrow context that evaluateDM actually needs. Accepting this instead
+ *  of the full Character lets serviceLoader's enlistment-DM helper pass
+ *  in a {attributes, terms} bag without an unsafe cast — and ensures we
+ *  can't accidentally widen the evaluator to read other Character state
+ *  without an explicit interface change. */
+export interface DmContext {
+  attributes: Attributes;
+  terms: number;
+}
+
+export function evaluateDM(rules: DMRule[] | undefined, ch: DmContext): number {
   if (!rules) return 0;
   let total = 0;
   for (const r of rules) {

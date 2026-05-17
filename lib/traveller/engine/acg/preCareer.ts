@@ -25,7 +25,7 @@
 
 import type { Character } from "../../character";
 import { getEdition } from "../../editions";
-import { roll } from "../../random";
+import { arnd, roll } from "../../random";
 import { awardBrownie } from "./awards";
 import type { AcgPathwayId } from "./types";
 
@@ -341,12 +341,17 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       out.notes.push("Graduated with honors.");
       // Honors benefits per the manual:
       if (opt === "college") {
-        // Edu becomes 10 or +1 whichever greater. We compute against
-        // current education + applied changes from this attempt.
-        const projectedEdu = ch.attributes.education + (out.attributeChanges.education ?? 0);
-        const target = Math.max(10, projectedEdu + 1);
-        const delta = target - ch.attributes.education;
-        out.attributeChanges.education = delta;
+        // PM p. 47 "raises Education to 10 or +1, whichever greater."
+        // Read literally: the honors bump SETS Education to
+        // max(10, currentEdu + 1) — it's an OR, not a stack on top of
+        // the regular education roll. The education roll (1D-3) and
+        // the honors bump are alternative paths to the same Edu value.
+        // Take the larger of (existing roll, honors target) so honors
+        // never makes the character worse off than the plain roll.
+        const target = Math.max(10, ch.attributes.education + 1);
+        const honorsDelta = target - ch.attributes.education;
+        const rollDelta = out.attributeChanges.education ?? 0;
+        out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
       }
       ch.verboseHistory(`${opt} honors achieved`);
     }
@@ -580,7 +585,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     });
     return;
   }
-  apply(departments[Math.floor(Math.random() * departments.length)]!);
+  apply(arnd(departments));
 }
 
 /** Apply a pre-career result to the character. Mutates state. */
@@ -588,8 +593,11 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   ch.age += r.ageGainedYears;
   for (const [attr, delta] of Object.entries(r.attributeChanges)) {
     const a = attr as keyof Character["attributes"];
-    ch.attributes[a] = Math.min(15, ch.attributes[a] + delta);
-    ch.verboseHistory(`+${delta} ${attr}`);
+    // Clamp both ends (PM caps Edu at 15; negative deltas shouldn't push
+    // attributes below 0 even though pre-career deltas are normally
+    // positive — be defensive in case a future option declares one).
+    ch.attributes[a] = Math.max(0, Math.min(15, ch.attributes[a] + delta));
+    ch.verboseHistory(`${delta >= 0 ? "+" : ""}${delta} ${attr}`);
   }
   for (const [skill, lvl] of r.skills) {
     ch.addSkill(skill, lvl);
