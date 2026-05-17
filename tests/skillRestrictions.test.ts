@@ -93,6 +93,73 @@ describe("homeworld skill restrictions (B7)", () => {
     c.editionId = "ct-classic";
     expect(skillRequiresOverride(c, "Grav Vehicle")).toBeNull();
   });
+
+  describe("weapon law-code restrictions (PM p. 39)", () => {
+    it("Body Pistol restricted when homeworld law > No Law", () => {
+      const c = makeMtChar({
+        homeworld: {
+          starport: "A", size: "Medium", atmosphere: "Standard",
+          hydrosphere: "Wet World", population: "Mod Pop", law: "Low Law",
+          tech: "High Stellar",
+        } as Homeworld,
+      });
+      expect(skillRequiresOverride(c, "Body Pistol")).toBe(7);
+    });
+
+    it("Body Pistol unrestricted on a No Law homeworld", () => {
+      const c = makeMtChar({
+        homeworld: {
+          starport: "A", size: "Medium", atmosphere: "Standard",
+          hydrosphere: "Wet World", population: "Low Pop", law: "No Law",
+          tech: "High Stellar",
+        } as Homeworld,
+      });
+      expect(skillRequiresOverride(c, "Body Pistol")).toBeNull();
+    });
+
+    it("Handgun restricted when homeworld law > Low Law", () => {
+      const c = makeMtChar({
+        homeworld: {
+          starport: "A", size: "Medium", atmosphere: "Standard",
+          hydrosphere: "Wet World", population: "Mod Pop", law: "Mod Law",
+          tech: "High Stellar",
+        } as Homeworld,
+      });
+      expect(skillRequiresOverride(c, "Handgun")).toBe(7);
+    });
+
+    it("Rogues see one law code lower for weapon skills", () => {
+      const c = makeMtChar({
+        service: "rogues",
+        homeworld: {
+          starport: "A", size: "Medium", atmosphere: "Standard",
+          hydrosphere: "Wet World", population: "Mod Pop", law: "Mod Law",
+          tech: "High Stellar",
+        } as Homeworld,
+      });
+      // Handgun maxLaw=Low Law; homeworld Mod Law → normally restricted, but
+      // Rogue sees effective Low Law → unrestricted.
+      expect(skillRequiresOverride(c, "Handgun")).toBeNull();
+    });
+
+    it("Law Enforcers see one law code lower for weapon skills", () => {
+      const c = makeMtChar({
+        service: "lawenforcers",
+        homeworld: {
+          starport: "A", size: "Medium", atmosphere: "Standard",
+          hydrosphere: "Wet World", population: "Mod Pop", law: "Mod Law",
+          tech: "High Stellar",
+        } as Homeworld,
+      });
+      expect(skillRequiresOverride(c, "Handgun")).toBeNull();
+    });
+
+    it("the one-step-lower exception does not apply to non-weapon vehicle skills", () => {
+      const c = makeMtChar({ service: "rogues" });
+      // Industrial homeworld; Grav Vehicle requires Avg Stellar — still restricted.
+      expect(skillRequiresOverride(c, "Grav Vehicle")).toBe(7);
+    });
+  });
 });
 
 describe("Int+Edu skill cap (B7)", () => {

@@ -26,6 +26,11 @@ interface RestrictionsData {
   source?: string;
   overrideTarget: number;
   exemptServices: string[];
+  /** Services whose practitioners may treat the homeworld law code as one
+   *  step lower when checking weapon-skill maxLaw (PM p. 39: "Law Enforcers,
+   *  Pirates, and Rogues may select weapon skills one law code lower than
+   *  their homeworld's law code"). */
+  weaponLawLowerServices?: string[];
   vehicleSkillTech: Record<string, string>;
   weaponSkillTech: Record<string, string>;
   weaponSkillMaxLaw: Record<string, string>;
@@ -80,7 +85,12 @@ export function skillRequiresOverride(
   const weaponMaxLaw = d.r.weaponSkillMaxLaw[skillName];
   if (weaponMaxLaw !== undefined) {
     const maxIdx = LAW_ORDER.indexOf(weaponMaxLaw);
-    const hwLawIdx = LAW_ORDER.indexOf(ch.homeworld.law);
+    let hwLawIdx = LAW_ORDER.indexOf(ch.homeworld.law);
+    // Law Enforcers, Pirates, Rogues effectively see law one step lower
+    // for weapon-skill restriction purposes.
+    if (d.r.weaponLawLowerServices?.includes(String(ch.service)) && hwLawIdx > 0) {
+      hwLawIdx -= 1;
+    }
     if (hwLawIdx > maxIdx) return d.r.overrideTarget;
   }
 
