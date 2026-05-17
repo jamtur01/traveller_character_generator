@@ -339,27 +339,41 @@ function promoteOfficer(ch: Character, data: PathwayData): void {
 /** Apply Scout school awards. The Scout school assignment table picks
  *  one of six schools; each school then uses 1D on the schools table to
  *  determine the awarded skill. */
-/** Scout schools that grant 2 skills per attendance (manual p. 57:
- *  "Certain schools confer two skills, while others confer only one"). */
-const TWO_ROLL_SCOUT_SCHOOLS = new Set([
-  "Ship School", "Intelligence School", "Contact School",
-]);
+/** Scout school metadata is data-driven via mt JSON
+ *  `advancedCharacterGeneration.scout.schoolMeta`. */
+interface ScoutSchoolMeta {
+  rollsPerAttendance?: number;
+  onceOnly?: boolean;
+  requiresDivision?: string;
+  promotesToRank?: string;
+  promotesToOfficer?: boolean;
+  adminRankPattern?: string;
+  columnKey?: string;
+}
 
-/** Administrator School: may only be attended once per character; only
- *  characters in the Bureaucracy may attend. A subsequent assignment to
- *  Administrator School calls for a reroll (manual p. 57). F10: drafted
- *  characters cannot attend during their first 4-year term (PM line
- *  3588). The first-term restriction is the same flag as F4 / F17 for
- *  consistency. */
-function scoutCanAttendAdminSchool(ch: Character): boolean {
+function scoutSchoolMeta(ch: Character, school: string): ScoutSchoolMeta | null {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const scout = acg?.scout as { schoolMeta?: Record<string, ScoutSchoolMeta> } | undefined;
+  return scout?.schoolMeta?.[school] ?? null;
+}
+
+function scoutCanAttendSchool(ch: Character, school: string): boolean {
   if (!ch.acgState) return false;
-  if (ch.acgState.division !== "bureaucracy") return false;
-  if (ch.acgState.schoolsAttended.includes("Administrator School")) return false;
-  const draftRules = (getEdition(ch.editionId).data as {
-    rules?: { draft?: { noCommissionFirstTerm?: boolean } };
-  }).rules?.draft;
-  if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
-    return false;
+  const meta = scoutSchoolMeta(ch, school);
+  if (!meta) return true;
+  if (meta.onceOnly && ch.acgState.schoolsAttended.includes(school)) return false;
+  if (meta.requiresDivision && ch.acgState.division !== meta.requiresDivision) return false;
+  if (meta.onceOnly) {
+    // The first-term-no-commission rule mirrors PM line 3588 for any
+    // school that promotes to officer status.
+    const draftRules = (getEdition(ch.editionId).data as {
+      rules?: { draft?: { noCommissionFirstTerm?: boolean } };
+    }).rules?.draft;
+    if (meta.promotesToOfficer && draftRules?.noCommissionFirstTerm &&
+        ch.drafted && ch.terms === 0) {
+      return false;
+    }
   }
   return true;
 }
@@ -367,23 +381,24 @@ function scoutCanAttendAdminSchool(ch: Character): boolean {
 export function applyScoutSchool(ch: Character, school: string): void {
   if (!ch.acgState) return;
 
-  // Administrator School constraints. Caller is expected to pre-roll the
-  // school name; if it lands on Administrator and the character is barred,
-  // we no-op here — the caller (scoutResolveAssignment) is responsible for
-  // rolling again. We still record the attempt for visibility.
-  if (school === "Administrator School") {
-    if (!scoutCanAttendAdminSchool(ch)) {
-      ch.verboseHistory("Scout Administrator School denied (already taken or not in Bureaucracy)");
-      return;
-    }
+  const meta = scoutSchoolMeta(ch, school);
+  // Eligibility check (replaces hardcoded "Administrator School" gate).
+  if (meta?.onceOnly && !scoutCanAttendSchool(ch, school)) {
+    ch.verboseHistory(`Scout ${school} denied (eligibility check failed)`);
+    return;
+  }
+  // School that grants rank/officer status (Admin School): record
+  // attendance, award BP, promote.
+  if (meta?.promotesToRank) {
     ch.acgState.schoolsAttended.push(school);
     awardBrownie(ch, 1, `Scout school: ${school}`);
-    // Administrator School promotes ordinary rank holders into the
-    // administrator ladder at rank IS-10 (manual p. 57).
-    ch.acgState.isOfficer = true;
-    if (!ch.acgState.rankCode.match(/^IS-1\d$/)) {
-      ch.acgState.rankCode = "IS-10";
-      ch.history.push("Promoted to administrator rank IS-10 after Administrator School.");
+    if (meta.promotesToOfficer) ch.acgState.isOfficer = true;
+    const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
+    if (!pattern || !ch.acgState.rankCode.match(pattern)) {
+      ch.acgState.rankCode = meta.promotesToRank;
+      ch.history.push(
+        `Promoted to administrator rank ${meta.promotesToRank} after ${school}.`,
+      );
     }
     return;
   }
@@ -398,17 +413,9 @@ export function applyScoutSchool(ch: Character, school: string): void {
     columns: string[];
     rows: Array<Record<string, unknown>>;
   };
-  const colMap: Record<string, string> = {
-    "Ship School": "shipSchool",
-    "Intelligence School": "intelligenceSchool",
-    "Technology School": "technologySchool",
-    "Specialist School": "specialistSchool",
-    "Field Training": "fieldTraining",
-    "Contact School": "contactSchool",
-  };
-  const col = colMap[school];
+  const col = meta?.columnKey;
   if (!col) return;
-  const rolls = TWO_ROLL_SCOUT_SCHOOLS.has(school) ? 2 : 1;
+  const rolls = meta?.rollsPerAttendance ?? 1;
   for (let i = 0; i < rolls; i++) {
     const r = roll(1);
     const row = schools.rows.find((row) => row.die === r);
