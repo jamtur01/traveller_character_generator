@@ -276,12 +276,32 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   if (division === "bureaucracy" && res.promotion !== "none" &&
       !(ch.acgState!.isOfficer && ch.acgState!.promotedThisTerm)) {
     const pr = rollVsTarget(res.promotion, promoDm);
-    if (pr.success) promoteScout(ch);
+    let promoMargin = pr.margin;
+    if (!pr.success) {
+      const target = typeof res.promotion === "number" ? res.promotion : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "promotion",
+        rollValue: pr.roll, dm: promoDm, target, margin: pr.margin,
+        consequence: "Earn promotion (administrator ladder)",
+      });
+      promoMargin = mit.newMargin;
+    }
+    if (promoMargin >= 0) promoteScout(ch);
   }
 
   if (res.skills !== "none") {
     const sk = rollVsTarget(res.skills, skillDm);
-    if (sk.success) scoutRollSkill(ch);
+    let skMargin = sk.margin;
+    if (!sk.success) {
+      const target = typeof res.skills === "number" ? res.skills : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "skills",
+        rollValue: sk.roll, dm: skillDm, target, margin: sk.margin,
+        consequence: "Earn a skill this assignment",
+      });
+      skMargin = mit.newMargin;
+    }
+    if (skMargin >= 0) scoutRollSkill(ch);
   }
 
   // Special/War mission → extra skill from the dedicated column (PM p. 57:
