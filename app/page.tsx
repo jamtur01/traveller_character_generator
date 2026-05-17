@@ -1369,6 +1369,7 @@ function PreCareerPhase({
   const attended = character.acgState?.schoolsAttended ?? [];
   const attempted = character.acgState?.schoolsAttempted ?? [];
   const honors = character.acgState?.honorsGraduations ?? [];
+  const pathway = character.acgPathway ?? "";
   const has = (k: string) => attended.includes(k);
   const tried = (k: string) => attempted.includes(k);
   const hasHonors = (k: string) => honors.includes(k);
@@ -1384,6 +1385,16 @@ function PreCareerPhase({
   const flightAvailable = !tried("flightSchool") &&
     (collegeHonorsCommissioned || navalAcademyGraduated ||
      (has("merchantAcademy") && character.acgState?.preCareerCommission === true));
+  // PM ACG checklists (one per pathway, p. 64-65) constrain which schools
+  // a pathway's pre-enlistment options include:
+  //   Mercenary: College, Naval Academy, Military Academy, Medical, Flight
+  //   Navy:      College, Naval Academy, Medical, Flight
+  //   Scout:     College, Medical, Flight (no academies)
+  //   Merchant:  College, Medical, Flight (no academies)
+  // Academies auto-enlist into their service, which would conflict with the
+  // declared pathway — hiding them keeps the pre-career picker honest.
+  const allowsNavalAcademy = pathway === "mercenary" || pathway === "navy";
+  const allowsMilitaryAcademy = pathway === "mercenary";
   return (
     <PhaseCard
       title="Pre-career education (optional)"
@@ -1397,14 +1408,14 @@ function PreCareerPhase({
             onClick={() => onApply("college")}
           />
         )}
-        {!tried("navalAcademy") && (
+        {allowsNavalAcademy && !tried("navalAcademy") && (
           <PreCareerButton
             label="Naval Academy"
             sub="Soc 6+ to apply. Graduates auto-enlist as O1 Imperial Navy."
             onClick={() => onApply("navalAcademy")}
           />
         )}
-        {!tried("militaryAcademy") && (
+        {allowsMilitaryAcademy && !tried("militaryAcademy") && (
           <PreCareerButton
             label="Military Academy"
             sub="Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines."
