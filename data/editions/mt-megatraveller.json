@@ -678,6 +678,20 @@
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
+    "Far Trader": {
+      "$comment": "PM p. 61 line 3841-3843: 'Far Traders are jump-2 trading ships.' Possible Merchant muster-out ship. Mortgage mechanics follow the standard merchant-ship pattern (40-year first receipt, 10-year reductions per repeat).",
+      "shipType": "Far Trader",
+      "description": "jump-2 trading ship",
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
+    },
+    "Fat Trader": {
+      "$comment": "PM p. 61 line 3842-3843: 'Fat Traders are larger capacity jump-1 trading ships.' Possible Merchant muster-out ship.",
+      "shipType": "Fat Trader",
+      "description": "larger-capacity jump-1 trading ship",
+      "firstReceiptMortgageYears": 40,
+      "repeatReducesMortgageYears": 10
+    },
     "Scout Ship": {
       "shipType": "Scout/Courier",
       "ownership": "Loaned/detached duty; effectively possessed but cannot be sold.",

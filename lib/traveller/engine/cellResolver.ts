@@ -45,7 +45,7 @@ const PASSAGES: Record<string, string> = {
 
 const SHIPS = new Set([
   "Corsair", "Seeker", "Yacht", "Lab Ship", "Safari Ship",
-  "Scout Ship", "Free Trader",
+  "Scout Ship", "Free Trader", "Far Trader", "Fat Trader",
 ]);
 
 // Note: the cascade pool for any given label is now resolved per-edition
