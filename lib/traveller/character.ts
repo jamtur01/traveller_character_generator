@@ -880,6 +880,11 @@ export class Character {
       }
     } else if (reenlistRoll < target) {
       this.activeDuty = false;
+      // PM p. 17: a character denied reenlistment after 5+ terms still
+      // retires (and gets the cash-table +1 retirement DM), unless their
+      // service is on the no-retirement excludedServices list (Barbarians,
+      // Pirates, Rogues, Scouts per MT).
+      if (this.isRetirementEligible()) this.retired = true;
       this.history.push(
         `Denied reenlistment after ${intToOrdinal(this.terms)} term.`,
       );
@@ -892,6 +897,23 @@ export class Character {
         `Eligible to reenlist for ${intToOrdinal(this.terms + 1)} term.`,
       );
     }
+  }
+
+  /** True when this character qualifies for retirement: at least the
+   *  edition's eligibleAfterCompletedTerm and not in the excludedServices
+   *  list (MT excludes Barbarians, Pirates, Rogues, Scouts per PM p. 17). */
+  isRetirementEligible(): boolean {
+    const rules = getEdition(this.editionId).data.rules as {
+      retirement?: {
+        eligibleAfterCompletedTerm?: number;
+        excludedServices?: string[];
+      };
+    } | undefined;
+    const minTerms = rules?.retirement?.eligibleAfterCompletedTerm ?? 5;
+    const excluded = rules?.retirement?.excludedServices ?? ["scouts", "other"];
+    if (this.terms < minTerms) return false;
+    if (excluded.includes(String(this.service))) return false;
+    return true;
   }
 
   // ---------- anagathics ----------

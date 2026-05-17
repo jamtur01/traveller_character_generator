@@ -240,8 +240,10 @@ export default function Home() {
     if (prev.mandatoryReenlistment) return;
     const c = cloneCharacter(prev);
     c.activeDuty = false;
-    if (c.terms >= 5 && c.service !== "scouts" && c.service !== "other")
-      c.retired = true;
+    // Retirement eligibility reads rules.retirement.excludedServices so MT
+    // and CT enforce their own lists (MT: Barbarians, Pirates, Rogues,
+    // Scouts excluded; CT: Scouts + Other).
+    if (c.isRetirementEligible()) c.retired = true;
     c.history.push(
       `Voluntarily mustered out after ${intToOrdinal(c.terms)} term of service.`,
     );
