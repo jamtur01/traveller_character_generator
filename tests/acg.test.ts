@@ -30,61 +30,20 @@ describe("listAcgPathways", () => {
   it("returns empty list for CT", () => {
     expect(listAcgPathways("ct-classic")).toEqual([]);
   });
-
-  it("returns the four MT pathways", () => {
-    const pathways = listAcgPathways("mt-megatraveller");
-    expect(pathways).toContain("mercenary");
-    expect(pathways).toContain("navy");
-    expect(pathways).toContain("scout");
-    expect(pathways).toContain("merchantPrince");
-    expect(pathways).toHaveLength(4);
-  });
-
-  it("excludes the meta keys (common, source, coverage)", () => {
-    const pathways = listAcgPathways("mt-megatraveller");
-    expect(pathways).not.toContain("common");
-    expect(pathways).not.toContain("source");
-    expect(pathways).not.toContain("coverage");
-  });
+  // The MT-content claims (four pathways, excludes meta keys) are
+  // verified in tests/audit/acg.data.audit.test.ts.
 });
 
 // ---------------------------------------------------------------------------
 // API: getAcgPathway / getAcgCommon
 // ---------------------------------------------------------------------------
 
-describe("getAcgPathway", () => {
-  it("returns the mercenary block for MT", () => {
+describe("getAcgPathway API", () => {
+  it("returns a non-empty object for a valid pathway", () => {
     const m = getAcgPathway("mt-megatraveller", "mercenary");
     expect(m).toBeDefined();
     expect(typeof m).toBe("object");
-    // The enlistment block is the canonical "is this real ACG data" signal.
     expect(m.enlistment).toBeDefined();
-  });
-
-  it("each MT pathway has a non-empty ranks block", () => {
-    for (const name of listAcgPathways("mt-megatraveller")) {
-      const p = getAcgPathway("mt-megatraveller", name);
-      // Pathways use varying schemas: mercenary/navy have enlisted+officer,
-      // scout uses ordinary, merchantPrince uses ranksAndPromotions. The
-      // common contract: the pathway exposes SOME non-empty ranks group.
-      const ranks = (p.ranks ?? p.ranksAndPromotions ?? {}) as
-        Record<string, unknown>;
-      const groups = Object.entries(ranks).filter(
-        ([, v]) => Array.isArray(v) && v.length > 0,
-      );
-      expect(
-        groups.length,
-        `${name} has no non-empty rank group`,
-      ).toBeGreaterThan(0);
-    }
-  });
-
-  it("mercenary has the canonical E1–E9 enlisted ladder", () => {
-    const m = getAcgPathway("mt-megatraveller", "mercenary");
-    const enlisted = (m.ranks?.enlisted ?? []) as [string, string][];
-    expect(enlisted).toHaveLength(9);
-    expect(enlisted[0]?.[0]).toBe("E1");
-    expect(enlisted[8]?.[0]).toBe("E9");
   });
 
   it("throws if the pathway doesn't exist in this edition", () => {
@@ -98,20 +57,16 @@ describe("getAcgPathway", () => {
       /has no Advanced Character Generation/,
     );
   });
+  // The MT-content claims (every pathway has ranks, mercenary E1–E9) are
+  // verified in tests/audit/acg.data.audit.test.ts.
 });
 
-describe("getAcgCommon", () => {
-  it("exposes the four common tables for MT", () => {
-    const common = getAcgCommon("mt-megatraveller");
-    expect(common.preCareerOptions).toBeDefined();
-    expect(common.courtMartial).toBeDefined();
-    expect(common.browniePoints).toBeDefined();
-    expect(common.decorationAndSurvival).toBeDefined();
-  });
-
-  it("throws for CT", () => {
+describe("getAcgCommon API", () => {
+  it("throws for CT (no ACG block declared)", () => {
     expect(() => getAcgCommon("ct-classic")).toThrow(/has no Advanced/);
   });
+  // The MT-content claim (four common tables exist) is in
+  // tests/audit/acg.data.audit.test.ts.
 });
 
 // ---------------------------------------------------------------------------

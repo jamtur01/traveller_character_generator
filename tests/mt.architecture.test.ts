@@ -3,50 +3,9 @@
 // pathway runtime to a hooks-based registry.
 
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Character } from "../lib/traveller/character";
 import { getEdition, listEditions } from "../lib/traveller/editions";
 import { applyStructuredDms } from "../lib/traveller/engine/acg/tables";
-
-const json = JSON.parse(
-  readFileSync(
-    resolve(__dirname, "../data/editions/mt-megatraveller.json"),
-    "utf8",
-  ),
-) as Record<string, unknown>;
-
-const acg = (json.advancedCharacterGeneration ?? {}) as Record<string, unknown>;
-const mercenary = (acg.mercenary ?? {}) as Record<string, unknown>;
-const navy = (acg.navy ?? {}) as Record<string, unknown>;
-
-describe("Pathway → resolution sub-table mappings live in JSON", () => {
-  it("mercenary.combatArmResolution maps every combat arm to a sub-table", () => {
-    const map = mercenary.combatArmResolution as Record<string, string>;
-    const arms = mercenary.combatArms as string[];
-    expect(map).toBeDefined();
-    const resKeys = Object.keys(
-      mercenary.assignmentResolution as Record<string, unknown>,
-    );
-    for (const arm of arms) {
-      expect(map[arm]).toBeDefined();
-      expect(resKeys).toContain(map[arm]);
-    }
-  });
-
-  it("navy.branchResolution maps every branch to a sub-table", () => {
-    const map = navy.branchResolution as Record<string, string>;
-    const branches = navy.branches as string[];
-    expect(map).toBeDefined();
-    const resKeys = Object.keys(
-      navy.assignmentResolution as Record<string, unknown>,
-    );
-    for (const branch of branches) {
-      expect(map[branch]).toBeDefined();
-      expect(resKeys).toContain(map[branch]);
-    }
-  });
-});
 
 describe("Structured DM arrays evaluate correctly", () => {
   function makeCh(withAcgState = false): Character {
@@ -160,12 +119,11 @@ describe("Dynamic pathway factory registry via EditionHooks", () => {
   });
 });
 
-describe("MT survival rule declares non-death failure", () => {
-  it("rules.survival.onFailure is 'shortTerm' for MT (PM p. 16)", () => {
-    const rules = json.rules as { survival?: { onFailure?: string } };
-    expect(rules.survival?.onFailure).toBe("shortTerm");
-  });
+// JSON-side declaration of rules.survival.onFailure='shortTerm' is in
+// tests/audit/mt.json.audit.test.ts. This block tests the engine-side
+// consequence of that declaration.
 
+describe("MT survival failure routes through non-death short-term path", () => {
   it("MT survival failure: 2-year short term, no muster benefits, commission/promotion skipped", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";

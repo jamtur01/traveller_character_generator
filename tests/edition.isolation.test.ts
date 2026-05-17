@@ -311,14 +311,8 @@ describe("MT data wiring (post-PDF swap)", () => {
   });
 });
 
-describe("MT lifecycle includes specialDuty; CT does not", () => {
-  it("ct-classic.lifecycle.terms has no specialDuty step", () => {
-    const terms = getEdition("ct-classic").data.lifecycle?.terms ?? [];
-    expect(terms.some((t) => t.id === "specialDuty")).toBe(false);
-  });
-
-  it("mt-megatraveller.lifecycle.terms includes specialDuty", () => {
-    const terms = getEdition("mt-megatraveller").data.lifecycle?.terms ?? [];
-    expect(terms.some((t) => t.id === "specialDuty")).toBe(true);
-  });
-});
+// JSON-side lifecycle declarations for both editions are in
+// tests/audit/mt.json.audit.test.ts ("Edition lifecycle.terms
+// declarations vs PM"). No engine-runtime equivalent exists here —
+// lifecycle wiring is verified per-step by other tests via the
+// STEP_REGISTRY resolution test above.
