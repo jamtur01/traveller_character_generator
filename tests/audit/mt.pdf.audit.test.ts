@@ -12,7 +12,7 @@ import { resolve } from "node:path";
 
 const json = JSON.parse(
   readFileSync(
-    resolve(__dirname, "../data/editions/mt-megatraveller.json"),
+    resolve(__dirname, "../../data/editions/mt-megatraveller.json"),
     "utf8",
   ),
 ) as Record<string, unknown>;

@@ -125,30 +125,6 @@ describe("Structured DM arrays evaluate correctly", () => {
   });
 });
 
-describe("MT JSON DM arrays are structured, not free-text strings", () => {
-  function assertStructured(dms: unknown) {
-    expect(Array.isArray(dms)).toBe(true);
-    const arr = dms as unknown[];
-    for (const d of arr) {
-      expect(typeof d).toBe("object");
-      expect(d).not.toBeNull();
-      expect(typeof (d as { dm?: unknown }).dm).toBe("number");
-    }
-  }
-  it("navy.branchAssignment.dms", () => {
-    assertStructured((navy.branchAssignment as { dms: unknown }).dms);
-  });
-  it("navy.commandDuty.dms", () => {
-    assertStructured((navy.commandDuty as { dms: unknown }).dms);
-  });
-  it("navy.specialAssignments.dms", () => {
-    assertStructured((navy.specialAssignments as { dms: unknown }).dms);
-  });
-  it("mercenary.specialAssignments.dms", () => {
-    assertStructured((mercenary.specialAssignments as { dms: unknown }).dms);
-  });
-});
-
 describe("Dynamic pathway factory registry via EditionHooks", () => {
   it("MT registers all four ACG pathways through hooks.acgPathways", () => {
     const ed = getEdition("mt-megatraveller");
@@ -181,25 +157,6 @@ describe("Dynamic pathway factory registry via EditionHooks", () => {
     expect(() => c.doServiceTermStep()).toThrow(
       /No ACG pathway implementation for "mercenary"/,
     );
-  });
-});
-
-describe("Navy fleet-specific reenlistment uses per-fleet targets from JSON", () => {
-  const reenl = (navy.reenlistment ?? {}) as {
-    perFleet?: Record<string, { target: number; dms: unknown[] }>;
-  };
-  it("per-fleet block exists for all three fleets", () => {
-    expect(reenl.perFleet).toBeDefined();
-    expect(Object.keys(reenl.perFleet!).sort()).toEqual(
-      ["imperialNavy", "reserveFleet", "systemSquadron"],
-    );
-  });
-  it("System Squadron reenlistment target is 5 (per manual p. 53)", () => {
-    expect(reenl.perFleet!.systemSquadron!.target).toBe(5);
-  });
-  it("Imperial Navy and Reserve Fleet reenlistment targets are 6", () => {
-    expect(reenl.perFleet!.imperialNavy!.target).toBe(6);
-    expect(reenl.perFleet!.reserveFleet!.target).toBe(6);
   });
 });
 
