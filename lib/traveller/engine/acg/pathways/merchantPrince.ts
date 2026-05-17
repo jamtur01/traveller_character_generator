@@ -36,6 +36,7 @@ import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { recordTransfer } from "../types";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
+import { event as ev } from "../../../history";
 
 const PATHWAY = "merchantPrince";
 
@@ -333,7 +334,11 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   if (survRow) {
     const target = parseResolutionTarget(survRow[colKey]).target;
     const sv = rollVsTarget(target, survDm);
-    ch.logRaw(`Merchant ${assignment} survival: ${sv.roll} + ${survDm} vs ${target}`, "verbose");
+    ch.log(ev.roll(
+      "Survival", sv.roll, survDm,
+      typeof target === "number" ? target : 0,
+      sv.success, assignment,
+    ));
     if (!sv.success) {
       const mit = tryMitigate(ch, {
         rollName: "survival",
@@ -791,7 +796,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
   "verbose");
   if (r + dm >= target) {
     ch.acgState!.rankCode = nextRow[0] as string;
-    ch.logRaw(`Promoted to ${nextRow[1]}.`);
+    ch.log(ev.promoted(nextRow[1]));
     // Skill granted on promotion (column 3 in the ladder rows, when set).
     const skillGrant = nextRow[3];
     if (typeof skillGrant === "string") {

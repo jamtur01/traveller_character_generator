@@ -27,6 +27,7 @@ import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { applyScoutSchool } from "../schools";
 import { recordTransfer } from "../types";
+import { event as ev } from "../../../history";
 
 const PATHWAY = "scout";
 
@@ -269,7 +270,11 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
   const sv = rollVsTarget(res.survival, survDm);
-  ch.logRaw(`Scout ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`, "verbose");
+  ch.log(ev.roll(
+    "Survival", sv.roll, survDm,
+    typeof res.survival === "number" ? res.survival : 0,
+    sv.success, assignment,
+  ));
   if (!sv.success) {
     const mit = tryMitigate(ch, {
       rollName: "survival",
@@ -422,7 +427,7 @@ function promoteScout(ch: Character): void {
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.logRaw(`Promoted to ${data.ranks.ordinary[idx + 1]![1]}.`);
+      ch.log(ev.promoted(data.ranks.ordinary[idx + 1]![1]));
       // Ordinary promotion: one skill from office column or scout life.
       scoutRollSkill(ch);
     }
@@ -432,7 +437,7 @@ function promoteScout(ch: Character): void {
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.logRaw(`Promoted to ${data.ranks.administrator[idx + 1]![1]}.`);
+      ch.log(ev.promoted(data.ranks.administrator[idx + 1]![1]));
       // Administrator promotion: one skill from administrator rank column.
       scoutRollSkillFromColumn(ch, "administratorRank");
     }

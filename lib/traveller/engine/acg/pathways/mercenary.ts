@@ -561,14 +561,14 @@ function promoteMercenary(ch: Character): void {
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.logRaw(`Promoted to ${data.ranks.officer[idx + 1]![1]}.`);
+      ch.log(ev.promoted(data.ranks.officer[idx + 1]![1]));
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.logRaw(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
+      ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
     }
   }
 }
