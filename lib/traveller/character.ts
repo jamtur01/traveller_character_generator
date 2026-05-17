@@ -565,7 +565,7 @@ export class Character {
     const table = this.forceTable
       ? this.forceTableIndex
       : rndInt(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
-    this.debugHistory(`Skill from table ${table} ${skillTableDisplayName(this.editionId, table)}`);
+    this.logRaw(`Skill from table ${table} ${skillTableDisplayName(this.editionId, table)}`, "debug");
     return table;
   }
 
@@ -574,10 +574,10 @@ export class Character {
     if (i >= 0) {
       const entry = this.skills[i]!;
       entry[1] += skillLevel;
-      this.verboseHistory(`Improved ${skill}-${entry[1]}`);
+      this.logRaw(`Improved ${skill}-${entry[1]}`, "verbose");
     } else {
       this.skills.push([skill, skillLevel]);
-      this.verboseHistory(`Learned ${skill}-${skillLevel}`);
+      this.logRaw(`Learned ${skill}-${skillLevel}`, "verbose");
     }
   }
 
@@ -616,10 +616,10 @@ export class Character {
         const last = this.skills[this.skills.length - 1]!;
         if (last[1] > 1) {
           last[1] -= 1;
-          this.verboseHistory(`Reduced ${last[0]} to level ${last[1]} (Int+Edu cap)`);
+          this.logRaw(`Reduced ${last[0]} to level ${last[1]} (Int+Edu cap)`, "verbose");
         } else {
           this.skills.pop();
-          this.verboseHistory(`Forfeited ${last[0]} (Int+Edu cap)`);
+          this.logRaw(`Forfeited ${last[0]} (Int+Edu cap)`, "verbose");
         }
         remaining -= 1;
       }
@@ -638,10 +638,10 @@ export class Character {
         const entry = c.skills[i]!;
         if (entry[1] > 1) {
           entry[1] -= 1;
-          c.verboseHistory(`Reduced ${name} to level ${entry[1]} (Int+Edu cap)`);
+          c.logRaw(`Reduced ${name} to level ${entry[1]} (Int+Edu cap)`, "verbose");
         } else {
           c.skills.splice(i, 1);
-          c.verboseHistory(`Forfeited ${name} (Int+Edu cap)`);
+          c.logRaw(`Forfeited ${name} (Int+Edu cap)`, "verbose");
         }
         c.enforceSkillCap();
       },
@@ -657,9 +657,8 @@ export class Character {
     } | undefined)?.attributeCaps;
     const max = caps?.max ?? 15;
     if (this.attributes[attrib] > max) {
-      this.verboseHistory(
-        `${attrib} would exceed ${max}; capping at ${max}.`,
-      );
+      this.logRaw(
+        `${attrib} would exceed ${max}; capping at ${max}.`, "verbose");
       this.attributes[attrib] = max;
     }
     const socialMin = caps?.socialMin ?? 1;
@@ -669,14 +668,13 @@ export class Character {
     } else if (this.attributes[attrib] < min) {
       this.attributes[attrib] = min;
     }
-    this.verboseHistory(
-      `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`,
-    );
+    this.logRaw(
+      `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`, "verbose");
   }
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    this.verboseHistory(benefit);
+    this.logRaw(benefit, "verbose");
   }
 
   // ---------- single logging API ----------
@@ -697,20 +695,15 @@ export class Character {
     this.history.push(formatEvent(e));
   }
 
-  /** Convenience: log a plain-text raw event (default level: simple). */
+  /** Shorthand for `log(ev.raw(text, level))`. The level parameter is
+   *  required when not simple; this prevents the level from being
+   *  implicit in the method name (the old verboseHistory / debugHistory
+   *  wrappers obscured what was really just a level parameter). New
+   *  callsites should prefer `log()` with a typed event constructor
+   *  (`ev.skillLearned(...)`, etc.) — `logRaw` exists for legacy text
+   *  lines that don't yet have a typed event kind. */
   logRaw(text: string, level: HistoryLevel = "simple") {
     this.log(ev.raw(text, level));
-  }
-
-  /** Legacy alias for `log(ev.raw(text, "verbose"))`. New code should use
-   *  `log()` directly with a typed event, or `logRaw(text, "verbose")`. */
-  verboseHistory(text: string) {
-    this.log(ev.raw(text, "verbose"));
-  }
-
-  /** Legacy alias for `log(ev.raw(text, "debug"))`. */
-  debugHistory(text: string) {
-    this.log(ev.raw(text, "debug"));
   }
 
   /**
@@ -888,9 +881,8 @@ export class Character {
     const dm = pref.enlistmentDM(this.attributes);
     const en = roll(2);
     this.logRaw(`Attempted to enlist in ${pref.serviceName}.`);
-    this.verboseHistory(
-      `Enlistment roll ${en} + ${dm} vs ${pref.enlistmentThrow}`,
-    );
+    this.logRaw(
+      `Enlistment roll ${en} + ${dm} vs ${pref.enlistmentThrow}`, "verbose");
     if (en + dm >= pref.enlistmentThrow) {
       this.logRaw("Enlistment accepted.");
       this.applyServiceStartAge(preferredService);
@@ -941,18 +933,18 @@ export class Character {
     if (!(this.useAcg && this.acgState)) {
       this.preSurvivalAnagathicsHook();
     }
-    this.verboseHistory("--------------------------------------------");
+    this.logRaw("--------------------------------------------", "verbose");
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
       // assignments per term). The ACG runner handles term/age increments
       // because mid-term death has different semantics.
-      this.verboseHistory(`ACG term ${this.terms + 1} age ${this.age}`);
+      this.logRaw(`ACG term ${this.terms + 1} age ${this.age}`, "verbose");
       runAcgTerm(this);
       return;
     }
     this.terms += 1;
     this.age += 4;
-    this.verboseHistory(`Term ${this.terms} age ${this.age}`);
+    this.logRaw(`Term ${this.terms} age ${this.age}`, "verbose");
     // Basic chargen: delegate the step sequence to the engine runner.
     runTermSteps(this);
   }
@@ -985,11 +977,10 @@ export class Character {
     const reenlistRoll = roll(2);
     const target = def.reenlistThrow;
     if (def.inverseReenlist) {
-      this.verboseHistory(
-        `Reenlistment roll ${reenlistRoll} vs ${target}+ to leave (inverse rule)`,
-      );
+      this.logRaw(
+        `Reenlistment roll ${reenlistRoll} vs ${target}+ to leave (inverse rule)`, "verbose");
     } else {
-      this.verboseHistory(`Reenlistment roll ${reenlistRoll} vs ${target}`);
+      this.logRaw(`Reenlistment roll ${reenlistRoll} vs ${target}`, "verbose");
     }
     if (reenlistRoll === 12) {
       this.mandatoryReenlistment = true;
@@ -1121,7 +1112,7 @@ export class Character {
     const minAge = rules?.eligibility?.minAge ?? 30;
     const minTerms = rules?.eligibility?.minTerms ?? 3;
     if (this.age < minAge || this.terms < minTerms) {
-      this.verboseHistory(`Anagathics unavailable: must be at least age ${minAge} and end of term ${minTerms}.`);
+      this.logRaw(`Anagathics unavailable: must be at least age ${minAge} and end of term ${minTerms}.`, "verbose");
       return false;
     }
     const result = this.rollAnagathicsAvailability();
@@ -1163,7 +1154,7 @@ export class Character {
     const t = this.homeworld?.tech;
     if (t && techDms[t] !== undefined) dm += techDms[t]!;
     const r = roll(2) + dm;
-    this.verboseHistory(`Anagathics availability roll ${r} (DM ${dm}) vs ${target}+`);
+    this.logRaw(`Anagathics availability roll ${r} (DM ${dm}) vs ${target}+`, "verbose");
     const success = r >= target;
     if (success) {
       if (!this.onAnagathics) {
@@ -1243,7 +1234,7 @@ export class Character {
 
   ageAttribute(attrib: AttributeKey, req: number, reduction: number) {
     const r = roll(2);
-    this.verboseHistory(`Aging ${attrib} throw ${r} vs ${req}`);
+    this.logRaw(`Aging ${attrib} throw ${r} vs ${req}`, "verbose");
     if (r < req) this.improveAttribute(attrib, reduction);
   }
 
@@ -1301,9 +1292,8 @@ export class Character {
       const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
       const n = Math.min(2, ranked.length);
       for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
-      this.verboseHistory(
-        `Anagathics auto-saves: ${[...autoSaves].join(", ")} (2 of ${effects.length})`,
-      );
+      this.logRaw(
+        `Anagathics auto-saves: ${[...autoSaves].join(", ")} (2 of ${effects.length})`, "verbose");
     }
     for (const [attr, eff] of effects) {
       if (autoSaves.has(attr)) continue;
@@ -1311,9 +1301,8 @@ export class Character {
         const r1 = roll(2);
         const r2 = roll(2);
         const failed = r1 < eff.save || r2 < eff.save;
-        this.verboseHistory(
-          `Anagathics withdrawal aging ${attr}: ${r1}/${r2} vs ${eff.save} → ${failed ? "failed" : "passed"}`,
-        );
+        this.logRaw(
+          `Anagathics withdrawal aging ${attr}: ${r1}/${r2} vs ${eff.save} → ${failed ? "failed" : "passed"}`, "verbose");
         if (failed) this.improveAttribute(attr, eff.delta);
       } else {
         this.ageAttribute(attr, eff.save, eff.delta);
@@ -1333,9 +1322,8 @@ export class Character {
       if (this.deceased) break;
       if (this.attributes[a] <= crisisThreshold) {
         const cr = roll(2);
-        this.verboseHistory(
-          `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`,
-        );
+        this.logRaw(
+          `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`, "verbose");
         if (cr < crisisSave) {
           this.logRaw("Died of illness.");
           this.deceased = true;
@@ -1426,7 +1414,7 @@ export class Character {
     const cash = this.serviceDef().musterCash[idx] ?? 0;
     this.credits += cash;
     this.musterLog.push(`Cr${numCommaSep(cash)} cash`);
-    this.verboseHistory(`${numCommaSep(cash)} credits`);
+    this.logRaw(`${numCommaSep(cash)} credits`, "verbose");
   }
 
   musterOutBenefit(benefitsDM: number) {

@@ -162,7 +162,7 @@ export function merchantEnlist(
   } else if (typeof parsed.target === "number") {
     const dm = applyStructuredDms(data.enlistment.dms, ch);
     const r = roll(2);
-    ch.verboseHistory(`Merchant enlist (${lineType}): ${r} + ${dm} vs ${parsed.target}`);
+    ch.logRaw(`Merchant enlist (${lineType}): ${r} + ${dm} vs ${parsed.target}`, "verbose");
     if (r + dm < parsed.target) {
       throw new Error(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
     }
@@ -239,7 +239,7 @@ function merchantAssignDepartment(ch: Character): void {
   const row = data.departmentAssignment.rows.find((row) => row.die === r);
   if (!row) { ch.acgState!.department = "Purser"; return; }
   ch.acgState!.department = String(row[lineCol] ?? "Purser");
-  ch.verboseHistory(`Merchant department: ${ch.acgState!.department}`);
+  ch.logRaw(`Merchant department: ${ch.acgState!.department}`, "verbose");
 }
 
 export function merchantRollAssignment(ch: Character): string {
@@ -300,7 +300,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   const deptKey = labelToColumnKey(ch.acgState!.department ?? "Deck");
   const resTable = data.assignmentResolution[deptKey];
   if (!resTable) {
-    ch.verboseHistory(`Merchant: no resolution sub-table for department ${ch.acgState!.department}`);
+    ch.logRaw(`Merchant: no resolution sub-table for department ${ch.acgState!.department}`, "verbose");
     return;
   }
   // Free Trader characters resolve against the freeTraderTrade table regardless
@@ -311,13 +311,13 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     : resTable;
   const colKey = assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment);
   if (!resolutionTable.columns.includes(colKey)) {
-    ch.verboseHistory(`Merchant: assignment "${assignment}" → column "${colKey}" not in ${deptKey}`);
+    ch.logRaw(`Merchant: assignment "${assignment}" → column "${colKey}" not in ${deptKey}`, "verbose");
     return;
   }
   // F14: Free Trader pursuit narrative + mechanical overrides.
   const freeTraderFlags = freeTraderAssignmentFlags(ch)[assignment];
   if (freeTraderFlags?.narrative) {
-    ch.verboseHistory(`${assignment}: ${freeTraderFlags.narrative}`);
+    ch.logRaw(`${assignment}: ${freeTraderFlags.narrative}`, "verbose");
   }
   const skipBonus = freeTraderFlags?.skipBonus === true;
   // The merchant resolution rows are Survival / Skills / Bonus (not the
@@ -333,7 +333,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   if (survRow) {
     const target = parseResolutionTarget(survRow[colKey]).target;
     const sv = rollVsTarget(target, survDm);
-    ch.verboseHistory(`Merchant ${assignment} survival: ${sv.roll} + ${survDm} vs ${target}`);
+    ch.logRaw(`Merchant ${assignment} survival: ${sv.roll} + ${survDm} vs ${target}`, "verbose");
     if (!sv.success) {
       const mit = tryMitigate(ch, {
         rollName: "survival",
@@ -412,12 +412,12 @@ function merchantCheckAvailablePosition(ch: Character): void {
       const cur = parseInt(m[1]!, 10);
       const lower = Math.max(0, cur - 1);
       ch.acgState!.effectiveRankCode = lower === 0 ? "O0" : `O${lower}`;
-      ch.verboseHistory(
+      ch.logRaw(
         `No ${ch.acgState!.department} position (roll ${r} + ${dm} vs ${target}+); ` +
         `serving as ${ch.acgState!.effectiveRankCode} this year.`,
-      );
+      "verbose");
     } else {
-      ch.verboseHistory(`No ${ch.acgState!.department} position; rank unchanged.`);
+      ch.logRaw(`No ${ch.acgState!.department} position; rank unchanged.`, "verbose");
     }
   }
 }
@@ -472,7 +472,7 @@ function merchantAwardBonus(ch: Character): void {
   if (cash <= 0) return;
   ch.credits += cash;
   ch.musterLog.push(`Cr${cash} bonus (in-service)`);
-  ch.verboseHistory(`Merchant bonus: Cr${cash} (half of Cr${fullAmount})`);
+  ch.logRaw(`Merchant bonus: Cr${cash} (half of Cr${fullAmount})`, "verbose");
 }
 
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
@@ -488,7 +488,7 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const upper = dir === "down" ? Math.min(order.length - 1, idx + 1) : idx;
   const newIdx = dir === "up" ? lower : upper;
   if (newIdx === idx) {
-    ch.verboseHistory(`Transfer ${dir} from ${order[idx]} not possible.`);
+    ch.logRaw(`Transfer ${dir} from ${order[idx]} not possible.`, "verbose");
     return;
   }
   const from = order[idx]!;
@@ -750,9 +750,9 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   if (Number.isNaN(target)) return;
   const dm = ch.acgState!.examDm ?? 0;
   const r = roll(2);
-  ch.verboseHistory(
+  ch.logRaw(
     `Merchant enlisted-route commission exam: ${r} + ${dm} vs ${target}+`,
-  );
+  "verbose");
   if (r + dm >= target) {
     ch.acgState!.isOfficer = true;
     ch.acgState!.rankCode = "O1";
@@ -785,10 +785,10 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const dm = (ch.acgState!.examDm ?? 0) + penalty;
   if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
   const r = roll(2);
-  ch.verboseHistory(
+  ch.logRaw(
     `Merchant exam (rank ${codes[idx]}→${codes[idx + 1]}): ${r} + ${dm} vs ${target}+` +
     (penalty ? ` (reprimand penalty ${penalty})` : ""),
-  );
+  "verbose");
   if (r + dm >= target) {
     ch.acgState!.rankCode = nextRow[0] as string;
     ch.logRaw(`Promoted to ${nextRow[1]}.`);

@@ -188,7 +188,7 @@ export function navyEnlist(
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
   const r = roll(2);
-  ch.verboseHistory(`Navy enlist (${fleet}): roll ${r} + ${dm} vs ${spec.target}`);
+  ch.logRaw(`Navy enlist (${fleet}): roll ${r} + ${dm} vs ${spec.target}`, "verbose");
 
   if (r + dm >= spec.target) {
     ch.logRaw(`Enlisted in the ${fleet} Navy.`);
@@ -220,12 +220,12 @@ function navyAssignBranch(ch: Character): void {
   const schools = ch.acgState!.schoolsAttended;
   if (schools.includes("medicalSchool")) {
     ch.acgState!.branch = "Medical";
-    ch.verboseHistory("Navy branch (auto from Medical School): Medical");
+    ch.logRaw("Navy branch (auto from Medical School): Medical", "verbose");
     return;
   }
   if (schools.includes("flightSchool")) {
     ch.acgState!.branch = "Flight";
-    ch.verboseHistory("Navy branch (auto from Flight School): Flight");
+    ch.logRaw("Navy branch (auto from Flight School): Flight", "verbose");
     return;
   }
   if (ch.attributes.social >= 9 && data.branches && ch.choiceMode === "interactive") {
@@ -256,7 +256,7 @@ function navyAssignBranch(ch: Character): void {
     }
   }
   ch.acgState!.branch = rolled ?? (ch.acgState!.isOfficer ? "Line" : "Crew");
-  ch.verboseHistory(`Navy branch: ${ch.acgState!.branch}`);
+  ch.logRaw(`Navy branch: ${ch.acgState!.branch}`, "verbose");
 }
 
 /** F7: PM p. 52 — "The Technical Services branch exists only in the
@@ -379,9 +379,9 @@ function navyRollCommandDuty(ch: Character): void {
   const dm = applyStructuredDms(data.commandDuty.dms, ch);
   const r = roll(2);
   const success = r + dm >= parsed.target;
-  ch.verboseHistory(
+  ch.logRaw(
     `Navy Command Duty (${branch}): ${r}${dm ? `${dm}` : ""} vs ${parsed.target} → ${success ? "command" : "staff"}`,
-  );
+  "verbose");
   ch.acgState!.inCommand = success;
 }
 
@@ -408,7 +408,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const resKey = data.branchResolution?.[branch] ?? "lineCrew";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) {
-    ch.verboseHistory(`No resolution table for branch ${branch} (sub-key ${resKey})`);
+    ch.logRaw(`No resolution table for branch ${branch} (sub-key ${resKey})`, "verbose");
     return;
   }
 
@@ -434,7 +434,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       if (rule.historyLine) ch.logRaw(rule.historyLine);
       return;
     }
-    ch.verboseHistory(`Unknown navy assignment "${assignment}" for branch ${branch}`);
+    ch.logRaw(`Unknown navy assignment "${assignment}" for branch ${branch}`, "verbose");
     return;
   }
 
@@ -452,7 +452,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
   const sv = rollVsTarget(res.survival, survDm);
-  ch.verboseHistory(`Navy ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`);
+  ch.logRaw(`Navy ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`, "verbose");
   if (!sv.success) {
     const mit = tryMitigate(ch, {
       rollName: "survival",
@@ -631,7 +631,7 @@ export function navySpecialAssignment(ch: Character): void {
     if (reroll === "OCS") {
       ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
-      ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
+      ch.logRaw(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`, "verbose");
       assignment = reroll;
     } else {
       return;
@@ -671,7 +671,7 @@ export function navyReenlist(ch: Character): boolean {
     else if (d.condition === "officer" && isOfficer) dm += d.dm;
   }
   const r = roll(2);
-  ch.verboseHistory(`Navy reenlist (${fleet}): ${r} + ${dm} vs ${spec.target}`);
+  ch.logRaw(`Navy reenlist (${fleet}): ${r} + ${dm} vs ${spec.target}`, "verbose");
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerNavyBranchChange(ch);

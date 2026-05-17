@@ -408,7 +408,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   const meta = scoutSchoolMeta(ch, school);
   // Eligibility check (replaces hardcoded "Administrator School" gate).
   if (meta?.onceOnly && !scoutCanAttendSchool(ch, school)) {
-    ch.verboseHistory(`Scout ${school} denied (eligibility check failed)`);
+    ch.logRaw(`Scout ${school} denied (eligibility check failed)`, "verbose");
     return;
   }
   // School that grants rank/officer status (Admin School): record

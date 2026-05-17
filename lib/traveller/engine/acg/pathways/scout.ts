@@ -105,7 +105,7 @@ export function scoutEnlist(ch: Character): void {
       if (ch.attributes[attr] >= d.min) dm += d.dm;
     }
     const r = roll(2);
-    ch.verboseHistory(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`);
+    ch.logRaw(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`, "verbose");
     if (r + dm >= data.enlistment.target) {
       ch.logRaw("Enlisted in the Imperial Scout Service.");
       ch.acgState!.rankCode = data.enlistment.startingRank;
@@ -133,7 +133,7 @@ function scoutAssignOffice(ch: Character): void {
   if (!row) { ch.acgState!.office = "Survey"; return; }
   const off = row[division];
   ch.acgState!.office = typeof off === "string" ? off : "Survey";
-  ch.verboseHistory(`Scout office: ${ch.acgState!.office} (${division})`);
+  ch.logRaw(`Scout office: ${ch.acgState!.office} (${division})`, "verbose");
 }
 
 /** Scout initial training (PM p. 56): "The initial year of service in the
@@ -254,12 +254,12 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
-    ch.verboseHistory(`Scout: no resolution sub-table for office ${ch.acgState!.office}`);
+    ch.logRaw(`Scout: no resolution sub-table for office ${ch.acgState!.office}`, "verbose");
     return;
   }
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    ch.verboseHistory(`Scout: assignment "${assignment}" not in resolution columns`);
+    ch.logRaw(`Scout: assignment "${assignment}" not in resolution columns`, "verbose");
     ch.acgState!.assignmentHistory.push(assignment);
     return;
   }
@@ -269,7 +269,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
   const sv = rollVsTarget(res.survival, survDm);
-  ch.verboseHistory(`Scout ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`);
+  ch.logRaw(`Scout ${assignment} survival: ${sv.roll} + ${survDm} vs ${res.survival}`, "verbose");
   if (!sv.success) {
     const mit = tryMitigate(ch, {
       rollName: "survival",
@@ -451,7 +451,7 @@ export function scoutFinalizeMuster(ch: Character): void {
   const r = roll(2);
   const dm = ch.terms;
   if (r + dm < 9) {
-    ch.verboseHistory(`Detached Duty roll ${r} + ${dm} vs 9+ — no permanent detached duty.`);
+    ch.logRaw(`Detached Duty roll ${r} + ${dm} vs 9+ — no permanent detached duty.`, "verbose");
     return;
   }
   ch.logRaw("Awarded permanent Detached Duty (PM p. 57).");

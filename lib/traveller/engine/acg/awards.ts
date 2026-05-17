@@ -37,7 +37,7 @@ function bpAwardFor(ch: Character, event: string): number | null {
 export function awardBrownie(ch: Character, count: number, reason: string): void {
   if (!ch.acgState) return;
   ch.acgState.browniePoints += count;
-  ch.verboseHistory(`Brownie Point +${count}: ${reason}`);
+  ch.logRaw(`Brownie Point +${count}: ${reason}`, "verbose");
 }
 
 export function awardDecoration(
@@ -170,11 +170,11 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         ch.acgState.browniePoints -= 1;
         ch.acgState.browniePointsSpent += 1;
         total += 1;
-        ch.verboseHistory("Spent 1 brownie point to avoid court martial");
+        ch.logRaw("Spent 1 brownie point to avoid court martial", "verbose");
       }
     }
     if (total >= o.avoidTarget) {
-      ch.verboseHistory(`Court martial avoided (rolled ${baseTotal}, used ${total - baseTotal} BP, vs ${o.avoidTarget}+)`);
+      ch.logRaw(`Court martial avoided (rolled ${baseTotal}, used ${total - baseTotal} BP, vs ${o.avoidTarget}+)`, "verbose");
       return;
     }
   }
@@ -196,7 +196,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
       ch.acgState.browniePoints -= 1;
       ch.acgState.browniePointsSpent += 1;
       r -= 1;
-      ch.verboseHistory("Spent 1 brownie point to mitigate court martial");
+      ch.logRaw("Spent 1 brownie point to mitigate court martial", "verbose");
     }
   }
   const outcome = cm.dieResults.find((o) => o.roll === r)
@@ -205,7 +205,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         cm.dieResults[0]!);
   const result = outcome.result;
   ch.logRaw(`Court Martial: ${result}`);
-  ch.verboseHistory(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`);
+  ch.logRaw(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`, "verbose");
 
   applyCourtMartialResult(ch, result);
 }

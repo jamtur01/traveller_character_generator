@@ -173,7 +173,7 @@ export function applyHomeworldSkills(ch: Character, hw: Homeworld): void {
     if (!evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) continue;
     if (ch.checkSkill(entry.skill) >= 0) continue; // already known
     ch.addSkill(entry.skill, entry.level);
-    ch.verboseHistory(`Homeworld grants ${entry.skill}-${entry.level}`);
+    ch.logRaw(`Homeworld grants ${entry.skill}-${entry.level}`, "verbose");
   }
 }
 
@@ -299,7 +299,7 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
     if (evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) {
       if (ch.checkSkill(entry.skill) < 0) {
         ch.addSkill(entry.skill, entry.level);
-        ch.verboseHistory(`Homeworld grants ${entry.skill}-${entry.level}`);
+        ch.logRaw(`Homeworld grants ${entry.skill}-${entry.level}`, "verbose");
       }
     }
   }

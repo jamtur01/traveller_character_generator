@@ -9,7 +9,7 @@ import type { StepFn } from "./types";
 export const promotionStep: StepFn = ({ character, service, config, edition }) => {
   if (character.deceased) return;
   if (character.shortTermThisTerm) {
-    character.verboseHistory("Skipping promotion (short term after survival failure).");
+    character.logRaw("Skipping promotion (short term after survival failure).", "verbose");
     return;
   }
   if (!character.commissioned) return;
@@ -22,7 +22,7 @@ export const promotionStep: StepFn = ({ character, service, config, edition }) =
     : 0;
   const r = roll(2);
   const total = r + dm;
-  character.verboseHistory(`Promotion roll ${r} + ${dm} vs ${service.promotionThrow}`);
+  character.logRaw(`Promotion roll ${r} + ${dm} vs ${service.promotionThrow}`, "verbose");
   if (total < service.promotionThrow) return;
 
   character.rank += 1;
@@ -31,7 +31,7 @@ export const promotionStep: StepFn = ({ character, service, config, edition }) =
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && total >= service.promotionThrow + overshootN) {
     character.skillPoints += 1;
-    character.verboseHistory(`Promotion overshoot +${overshootN}: +1 bonus skill`);
+    character.logRaw(`Promotion overshoot +${overshootN}: +1 bonus skill`, "verbose");
   }
 
   service.doPromotion(character);

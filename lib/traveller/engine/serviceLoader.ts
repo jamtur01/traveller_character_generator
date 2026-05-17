@@ -75,10 +75,10 @@ export function buildServiceDef(
     if (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm) {
       const penalty = ch.service === "nobles" ? -2 : -1;
       dm += penalty;
-      ch.verboseHistory(`Anagathics survival DM ${penalty}`);
+      ch.logRaw(`Anagathics survival DM ${penalty}`, "verbose");
     }
     const sv = roll(2);
-    ch.verboseHistory(`Survival roll ${sv} + ${dm} vs ${survivalThrow}`);
+    ch.logRaw(`Survival roll ${sv} + ${dm} vs ${survivalThrow}`, "verbose");
     return sv + dm >= survivalThrow;
   };
 
@@ -86,7 +86,7 @@ export function buildServiceDef(
     if (!serviceData.checks.position || commissionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.position.dm, ch);
     const sv = roll(2);
-    ch.verboseHistory(`Commission roll ${sv} + ${dm} vs ${commissionThrow}`);
+    ch.logRaw(`Commission roll ${sv} + ${dm} vs ${commissionThrow}`, "verbose");
     return sv + dm >= commissionThrow;
   };
 
@@ -94,7 +94,7 @@ export function buildServiceDef(
     if (!serviceData.checks.promotion || promotionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.promotion.dm, ch);
     const sv = roll(2);
-    ch.verboseHistory(`Promotion roll ${sv} + ${dm} vs ${promotionThrow}`);
+    ch.logRaw(`Promotion roll ${sv} + ${dm} vs ${promotionThrow}`, "verbose");
     return sv + dm >= promotionThrow;
   };
 
@@ -125,7 +125,7 @@ export function buildServiceDef(
     if (r < 1 || r > 7) return;
     const cell = serviceData.musterOut.benefits[r];
     if (cell == null) {
-      ch.debugHistory("No benefit");
+      ch.logRaw("No benefit", "debug");
       return;
     }
     applyCell(ch, cell, "muster", benefitDetails);
