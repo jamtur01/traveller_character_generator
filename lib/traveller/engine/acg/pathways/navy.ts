@@ -395,10 +395,21 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
   if (res.decoration !== "none") {
     const dec = rollVsTarget(res.decoration, decDm);
-    if (dec.margin >= 6) awardDecoration(ch, "SEH");
-    else if (dec.margin >= 3) awardDecoration(ch, "MCG");
-    else if (dec.margin >= 0) awardDecoration(ch, "MCUF");
-    else if (dec.margin <= -6) runCourtMartial(ch, assignment);
+    // R10: brownie-point mitigation for decoration / court-martial avoidance.
+    let effMargin = dec.margin;
+    if (dec.margin < 0) {
+      const target = typeof res.decoration === "number" ? res.decoration : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "decoration",
+        rollValue: dec.roll, dm: decDm, target, margin: dec.margin,
+        consequence: dec.margin <= -6 ? "Avoid court-martial" : "Earn MCUF",
+      });
+      effMargin = mit.newMargin;
+    }
+    if (effMargin >= 6) awardDecoration(ch, "SEH");
+    else if (effMargin >= 3) awardDecoration(ch, "MCG");
+    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
+    else if (effMargin <= -6) runCourtMartial(ch, assignment);
   }
 
   if (res.promotion !== "none" &&
@@ -408,12 +419,32 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     const effectiveDm = promoDm + penalty;
     if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
     const pr = rollVsTarget(res.promotion, effectiveDm);
-    if (pr.success) promoteNavy(ch);
+    let promoMargin = pr.margin;
+    if (!pr.success) {
+      const target = typeof res.promotion === "number" ? res.promotion : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "promotion",
+        rollValue: pr.roll, dm: effectiveDm, target, margin: pr.margin,
+        consequence: "Earn promotion",
+      });
+      promoMargin = mit.newMargin;
+    }
+    if (promoMargin >= 0) promoteNavy(ch);
   }
 
   if (res.skills !== "none") {
     const sk = rollVsTarget(res.skills, skillDm);
-    if (sk.success) navyBranchSkillRoll(ch);
+    let skMargin = sk.margin;
+    if (!sk.success) {
+      const target = typeof res.skills === "number" ? res.skills : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "skills",
+        rollValue: sk.roll, dm: skillDm, target, margin: sk.margin,
+        consequence: "Earn a skill this assignment",
+      });
+      skMargin = mit.newMargin;
+    }
+    if (skMargin >= 0) navyBranchSkillRoll(ch);
   }
 
   if (combatAssignments.includes(assignment)) {

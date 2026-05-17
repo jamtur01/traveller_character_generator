@@ -303,12 +303,36 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   if (skillRow) {
     const target = parseResolutionTarget(skillRow[colKey]).target;
     const sk = rollVsTarget(target, skillDm);
-    if (sk.success) merchantRollSkill(ch);
+    let skMargin = sk.margin;
+    if (!sk.success) {
+      const mit = tryMitigate(ch, {
+        rollName: "skills",
+        rollValue: sk.roll, dm: skillDm,
+        target: typeof target === "number" ? target : 0,
+        margin: sk.margin,
+        consequence: "Earn a skill this assignment",
+      });
+      skMargin = mit.newMargin;
+    }
+    if (skMargin >= 0) merchantRollSkill(ch);
   }
   if (bonusRow) {
     const target = parseResolutionTarget(bonusRow[colKey]).target;
     const bn = rollVsTarget(target, bonusDm);
-    if (bn.success) merchantAwardBonus(ch);
+    // Bonus rolls are like decorations in merchant service. Use the
+    // decoration policy (1 BP cap) to mitigate borderline misses.
+    let bnMargin = bn.margin;
+    if (!bn.success) {
+      const mit = tryMitigate(ch, {
+        rollName: "decoration",
+        rollValue: bn.roll, dm: bonusDm,
+        target: typeof target === "number" ? target : 0,
+        margin: bn.margin,
+        consequence: "Earn merchant bonus",
+      });
+      bnMargin = mit.newMargin;
+    }
+    if (bnMargin >= 0) merchantAwardBonus(ch);
   }
 
   ch.acgState!.assignmentHistory.push(assignment);

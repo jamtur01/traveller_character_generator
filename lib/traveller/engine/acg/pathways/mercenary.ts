@@ -331,10 +331,28 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     ch.verboseHistory(
       `Mercenary ${assignment} decoration: ${dec.roll}${decDm ? ` + ${decDm}` : ""} vs ${res.decoration} → margin ${dec.margin}`,
     );
-    if (dec.margin >= 6) awardDecoration(ch, "SEH");
-    else if (dec.margin >= 3) awardDecoration(ch, "MCG");
-    else if (dec.margin >= 0) awardDecoration(ch, "MCUF");
-    else if (dec.margin <= -6) runCourtMartial(ch, assignment);
+    // R10: brownie points can mitigate a borderline decoration miss
+    // (push margin to ≥ 0 for MCUF) or pull a near-court-martial margin
+    // back from the ≤ -6 threshold. tryMitigate handles caps per roll type.
+    let effMargin = dec.margin;
+    if (dec.margin < 0) {
+      const target = typeof res.decoration === "number" ? res.decoration : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "decoration",
+        rollValue: dec.roll,
+        dm: decDm,
+        target,
+        margin: dec.margin,
+        consequence: dec.margin <= -6
+          ? "Avoid court-martial referral"
+          : "Earn MCUF",
+      });
+      effMargin = mit.newMargin;
+    }
+    if (effMargin >= 6) awardDecoration(ch, "SEH");
+    else if (effMargin >= 3) awardDecoration(ch, "MCG");
+    else if (effMargin >= 0) awardDecoration(ch, "MCUF");
+    else if (effMargin <= -6) runCourtMartial(ch, assignment);
   }
 
   // --- Promotion ---
@@ -349,7 +367,20 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       `Mercenary ${assignment} promotion: ${pr.roll}${effectiveDm ? ` + ${effectiveDm}` : ""} vs ${res.promotion}` +
       (penalty ? ` (reprimand penalty ${penalty})` : ""),
     );
-    if (pr.success) promoteMercenary(ch);
+    let promoMargin = pr.margin;
+    if (!pr.success) {
+      const target = typeof res.promotion === "number" ? res.promotion : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "promotion",
+        rollValue: pr.roll,
+        dm: effectiveDm,
+        target,
+        margin: pr.margin,
+        consequence: "Earn promotion",
+      });
+      promoMargin = mit.newMargin;
+    }
+    if (promoMargin >= 0) promoteMercenary(ch);
   }
 
   // --- Skills ---
@@ -358,7 +389,20 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     ch.verboseHistory(
       `Mercenary ${assignment} skills: ${sk.roll}${skillDm ? ` + ${skillDm}` : ""} vs ${res.skills}`,
     );
-    if (sk.success) rollMercenarySkill(ch);
+    let skMargin = sk.margin;
+    if (!sk.success) {
+      const target = typeof res.skills === "number" ? res.skills : 0;
+      const mit = tryMitigate(ch, {
+        rollName: "skills",
+        rollValue: sk.roll,
+        dm: skillDm,
+        target,
+        margin: sk.margin,
+        consequence: "Earn a skill this assignment",
+      });
+      skMargin = mit.newMargin;
+    }
+    if (skMargin >= 0) rollMercenarySkill(ch);
   }
 
   if (combatAssignments.includes(assignment)) {
