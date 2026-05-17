@@ -376,19 +376,66 @@
       "source": "MT PM p. 39"
     },
     "homeworldSkillRestrictions": {
-      "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely. Weapon law-code restriction is data-driven and currently empty (PM's legal-weapons table maps law code to permissible weapons; the inverse mapping for skill availability would require additional rule clarification).",
+      "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Law Enforcers, Pirates, and Rogues may select weapon skills one law code lower than their homeworld's. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely.",
       "source": "MT PM p. 39",
       "overrideTarget": 7,
       "exemptServices": ["nobles"],
+      "weaponLawLowerServices": ["lawenforcers", "pirates", "rogues"],
       "vehicleSkillTech": {
         "Wheeled Vehicle": "Industrial",
         "Tracked Vehicle": "Industrial",
+        "Hovercraft": "Pre-Stellar",
+        "Helicopter": "Pre-Stellar",
+        "Propeller-Driven Aircraft": "Industrial",
+        "Prop-Driven Aircraft": "Industrial",
+        "Jet-Propelled Aircraft": "Pre-Stellar",
+        "Lighter-Than-Air Craft": "Industrial",
         "Grav Vehicle": "Avg Stellar",
-        "Grav Belt": "Avg Stellar",
-        "Ship's Boat": "Early Stellar"
+        "Grav Belt": "Avg Stellar"
       },
-      "weaponSkillTech": {},
-      "weaponSkillMaxLaw": {}
+      "weaponSkillTech": {
+        "Assault Rifle": "Pre-Stellar"
+      },
+      "weaponSkillMaxLaw": {
+        "Energy Weapons":   "No Law",
+        "Submachinegun":    "No Law",
+        "Handgun":          "Low Law",
+        "Laser Weapons":    "Low Law",
+        "Rifleman":         "Low Law",
+        "Body Pistol":      "No Law",
+        "Autorifle":        "No Law",
+        "Machine Gun":      "No Law",
+        "Carbine":          "Low Law",
+        "Laser Pistol":     "Low Law",
+        "Laser Rifle":      "Low Law",
+        "Pistol":           "Low Law",
+        "Revolver":         "Low Law",
+        "Rifle":            "Low Law",
+        "Snub Pistol":      "Low Law",
+        "Battle Dress":     "Low Law",
+        "Neural Weapons":   "Mod Law",
+        "Neural Pistol":    "Mod Law",
+        "Neural Rifle":     "Mod Law",
+        "Bayonet":          "Mod Law",
+        "Boomerang":        "Mod Law",
+        "Bow":              "Mod Law",
+        "Early Firearms":   "Mod Law",
+        "Halberd":          "Mod Law",
+        "Pike":             "Mod Law",
+        "Spear":            "Mod Law",
+        "Polearm":          "Mod Law",
+        "Blowgun":          "High Law",
+        "Bola":             "High Law",
+        "Crossbow":         "High Law",
+        "Foil":             "High Law",
+        "Broadsword":       "High Law",
+        "Cutlass":          "High Law",
+        "Sword":            "High Law",
+        "Large Blade":      "High Law",
+        "Battle Axe":       "High Law",
+        "Axe":              "High Law",
+        "Archaic Weapons":  "Mod Law"
+      }
     }
   },
   "cascadeSkills": {

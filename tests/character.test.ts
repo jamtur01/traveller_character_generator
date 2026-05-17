@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cloneCharacter, extendedHex } from "../lib/traveller";
-import { Character } from "../lib/traveller/character";
+import { extendedHex } from "../lib/traveller";
+import { Character, cloneCharacter } from "../lib/traveller/character";
 
 describe("cloneCharacter", () => {
   it("produces a new top-level object that is still a Character", () => {

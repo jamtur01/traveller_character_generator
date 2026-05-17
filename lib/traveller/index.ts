@@ -19,7 +19,11 @@ export {
   cascadeBlade, cascadeBow, cascadeGun,
   cascadeVehicle, cascadeAircraft, cascadeServiceAircraft, cascadeWatercraft,
 } from "./cascades";
-export { Character, cloneCharacter } from "./character";
+// Character and cloneCharacter are deliberately NOT re-exported here.
+// Importing them via the barrel created a TypeScript-server cache pathology
+// (the same class type reachable via two paths got mis-identified across
+// re-evaluations). Callers must use:
+//   import { Character, cloneCharacter } from "@/lib/traveller/character";
 export {
   s, SERVICES, DRAFT_SERVICES, ENLISTABLE_SERVICES, serviceLabel,
   getEditionServices, getEnlistableServices, getDraftServices,
