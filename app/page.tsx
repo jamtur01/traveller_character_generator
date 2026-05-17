@@ -240,7 +240,7 @@ export default function Home() {
         });
       } catch (err) {
         // beginAcg throws on enlistment rejection; surface to the user.
-        c.history.push(`ACG enlistment failed: ${(err as Error).message}`);
+        c.logRaw(`ACG enlistment failed: ${(err as Error).message}`);
         commit(c, "end");
         return;
       }
@@ -298,7 +298,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.history.push("======= End Generation =======");
+        c.logRaw("======= End Generation =======");
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -323,14 +323,14 @@ export default function Home() {
     // and CT enforce their own lists (MT: Barbarians, Pirates, Rogues,
     // Scouts excluded; CT: Scouts + Other).
     if (c.isRetirementEligible()) c.retired = true;
-    c.history.push(
+    c.logRaw(
       `Voluntarily mustered out after ${intToOrdinal(c.terms)} term of service.`,
     );
     c.musteredOut = true;
     c.musterRolls = c.musterOutRolls();
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.history.push("======= End Generation =======");
+      c.logRaw("======= End Generation =======");
       commit(c, "end");
     } else {
       commit(c, "muster");
@@ -366,7 +366,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.history.push("======= End Generation =======");
+        c.logRaw("======= End Generation =======");
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -430,7 +430,7 @@ export default function Home() {
 
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.history.push("======= End Generation =======");
+      c.logRaw("======= End Generation =======");
       commit(c, "end");
     } else if (c.musterCashUsed >= maxCashRolls(c)) {
       commit(c, "muster_no_cash");
