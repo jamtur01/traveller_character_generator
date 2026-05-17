@@ -172,7 +172,16 @@ export function runAcgTerm(ch: Character): void {
   ch.acgState.year = 1;
   ch.acgState.promotedThisTerm = false;
   const yearsAtTermStart = ch.acgState.yearsServed ?? 0;
-  for (let y = 0; y < 4; y++) {
+  // Rrev2: pre-career failure may force the first term to a short
+  // 3-year term (PM p. 47). The flag fires on the very first term only;
+  // we consume it here so subsequent terms run normally.
+  const isFirstTerm = ch.terms === 0;
+  const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort) ? 3 : 4;
+  if (isFirstTerm && ch.acgState.preCareerFirstTermShort) {
+    ch.history.push("First term is a short (3-year) term due to pre-career failure.");
+    delete ch.acgState.preCareerFirstTermShort;
+  }
+  for (let y = 0; y < termLength; y++) {
     if (ch.deceased || !ch.activeDuty) break;
     runAcgYear(ch);
   }
@@ -181,12 +190,18 @@ export function runAcgTerm(ch: Character): void {
   // they didn't complete all four years — the term counter records terms
   // entered. A short term (< 4 years) is observable via yearsServed and
   // is not counted toward muster benefits (handled in musterOutRolls).
-  if (yearsThisTerm > 0 && yearsThisTerm < 4) {
+  if (yearsThisTerm > 0 && yearsThisTerm < termLength) {
     ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
     ch.terms += 1;
-  } else if (yearsThisTerm === 4 && !ch.deceased && ch.activeDuty) {
-    awardBrownie(ch, 1, "Completed four-year term");
+  } else if (yearsThisTerm === termLength && !ch.deceased && ch.activeDuty) {
+    awardBrownie(ch, 1, `Completed ${termLength}-year term`);
     ch.terms += 1;
+    // Mark a 3-year first term as a partial (it doesn't count for full
+    // muster benefits per PM short-term rule, matching basic-flow short
+    // term accounting).
+    if (termLength === 3) {
+      ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
+    }
   }
   if (ch.deceased || !ch.activeDuty) return;
 

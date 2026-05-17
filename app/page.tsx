@@ -117,16 +117,15 @@ export default function Home() {
       return;
     }
     const r = c.doPreCareer(opt);
-    // Academy graduates with autoEnlistPathway should jump straight to the
-    // pathway's ACG enlistment phase. Otherwise stay in pre_career so the
-    // player can chain (honors → medical/flight) or skip to enlistment.
+    // Record the auto-enlist pathway (used as a default on the career
+    // screen) but DON'T route to career yet. Per PM p. 47, academy honors
+    // graduates may chain into Medical or Flight School before service
+    // begins — the player chooses Skip when they're done. PreCareerPhase
+    // gates which chain options are visible (medAvailable / flightAvailable),
+    // and once none remain available it only shows Skip.
     if (r.autoEnlistPathway) {
       c.acgPathway = r.autoEnlistPathway;
       setAcgPathway(r.autoEnlistPathway);
-      // Best-effort pathway routing for auto-enlistment: the user can still
-      // override sub-options on the career screen.
-      commit(c, "career");
-      return;
     }
     commit(c, "pre_career");
   };
