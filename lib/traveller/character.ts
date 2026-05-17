@@ -909,6 +909,17 @@ export class Character {
   // ---------- reenlistment ----------
 
   doReenlistmentStep() {
+    // F2/F3: PM p. 16 disability conditions force muster regardless of
+    // the reenlistment roll. Block reenlist for both basic and ACG flows.
+    const dis = this.isDisabled();
+    if (dis.disabled) {
+      this.activeDuty = false;
+      if (this.isRetirementEligible()) this.retired = true;
+      this.history.push(
+        `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
+      );
+      return;
+    }
     if (this.useAcg && this.acgState) {
       const keep = runAcgReenlist(this);
       if (!keep) {
@@ -1000,6 +1011,47 @@ export class Character {
     if (this.terms < minTerms) return false;
     if (excluded.includes(String(this.service))) return false;
     return true;
+  }
+
+  /** PM p. 16 (lines 939-943): a character is disabled — and must muster
+   *  out at the next term boundary — when any of these conditions hold:
+   *    - age has reached the aging-table line declared in
+   *      rules.disability.atAgeLine
+   *    - any one of the listed physical characteristics has dropped to
+   *      rules.disability.physicalAttributeAtMost
+   *    - the sum of the physical characteristics is at or below
+   *      rules.disability.sumPhysicalAttributesAtMost
+   *  Editions without a `rules.disability` block (CT) return false. */
+  isDisabled(): { disabled: boolean; reasons: string[] } {
+    const rules = getEdition(this.editionId).data.rules as {
+      disability?: {
+        physicalAttributes?: string[];
+        atAgeLine?: number;
+        physicalAttributeAtMost?: number;
+        sumPhysicalAttributesAtMost?: number;
+      };
+    } | undefined;
+    const d = rules?.disability;
+    if (!d) return { disabled: false, reasons: [] };
+    const physical = (d.physicalAttributes ?? []) as AttributeKey[];
+    const reasons: string[] = [];
+    if (d.atAgeLine !== undefined && this.age >= d.atAgeLine) {
+      reasons.push(`age ≥ ${d.atAgeLine}`);
+    }
+    if (d.physicalAttributeAtMost !== undefined) {
+      for (const a of physical) {
+        if (this.attributes[a] <= d.physicalAttributeAtMost) {
+          reasons.push(`${a} ≤ ${d.physicalAttributeAtMost}`);
+        }
+      }
+    }
+    if (d.sumPhysicalAttributesAtMost !== undefined) {
+      const sum = physical.reduce((acc, a) => acc + this.attributes[a], 0);
+      if (sum <= d.sumPhysicalAttributesAtMost) {
+        reasons.push(`sum of ${physical.join("+")} = ${sum} ≤ ${d.sumPhysicalAttributesAtMost}`);
+      }
+    }
+    return { disabled: reasons.length > 0, reasons };
   }
 
   // ---------- anagathics ----------

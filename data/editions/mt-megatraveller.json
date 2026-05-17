@@ -375,6 +375,14 @@
       "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
       "source": "MT PM p. 39"
     },
+    "disability": {
+      "rule": "PM p. 16 (lines 939-943): characters may quit adventuring when any disability condition is met. In chargen this blocks further reenlistment — the character must muster out at the next term boundary.",
+      "source": "MT PM p. 16",
+      "physicalAttributes": ["strength", "dexterity", "endurance"],
+      "atAgeLine": 66,
+      "physicalAttributeAtMost": 1,
+      "sumPhysicalAttributesAtMost": 10
+    },
     "homeworldSkillRestrictions": {
       "rule": "Vehicle skills are limited by homeworld tech code; weapon skills are limited by homeworld tech code AND law code. Law Enforcers, Pirates, and Rogues may select weapon skills one law code lower than their homeworld's. Nobles are not subject to homeworld skill limitations. Override: 2D for 7+; on failure the skill roll is forfeited entirely.",
       "source": "MT PM p. 39",
