@@ -5239,6 +5239,18 @@
         "defaultToRank": "O1",
         "ageLimit": 38
       },
+      "specialAssignmentRules": {
+        "$rule": "PM p. 53 line 3358-3361: 'Frozen Watch: place the character in cold sleep for the four-year term. He ages chronologically but not physically...' Engine treats each Frozen Watch year as a no-skill assignment with physical age frozen.",
+        "Frozen Watch": {
+          "noSkillRoll": true,
+          "physicalAgeDelta": -1,
+          "noRetention": true,
+          "historyLine": "Frozen Watch: 1 year in cold sleep (chronological +1, physical +0)."
+        },
+        "Special Duty": {
+          "noRetention": true
+        }
+      },
       "preCareerFleetAssignment": {
         "$rule": "PM p. 52 line 3254-3256: 'Naval Academy graduates are commissioned with rank O1 in the Imperial Navy. NOTC graduates are commissioned with rank O1 in the Reserve Fleet.' Medical School direct commission joins the Imperial Navy Medical Branch.",
         "bySchool": {
