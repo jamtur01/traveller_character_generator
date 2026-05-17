@@ -64,14 +64,15 @@ function matchesDecorationFlag(
 ): boolean {
   const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
     Record<string, unknown> | undefined;
-  // Decoration tiers live on each pathway (mercenary / navy / scout).
-  // We look on the character's current pathway first; if not declared,
-  // walk other pathways since decorationTiers are PM-shared.
-  const pathways = [ch.acgState?.pathway, "mercenary", "navy", "scout"];
-  for (const p of pathways) {
-    if (!p) continue;
-    const pdata = acg?.[p] as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined;
-    const tiers = pdata?.decorationTiers?.tiers;
+  // Decoration tiers may live on the pathway or in `common` (the shared
+  // PM block). Check pathway first, then fall back to common.
+  const sources: Array<unknown> = [
+    ch.acgState?.pathway ? acg?.[ch.acgState.pathway] : undefined,
+    acg?.common,
+  ];
+  for (const src of sources) {
+    const tiers = (src as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined)
+      ?.decorationTiers?.tiers;
     if (!tiers) continue;
     const match = tiers.find((t) => t.award === award);
     if (match) return match[flag] === true;
@@ -80,9 +81,13 @@ function matchesDecorationFlag(
 }
 
 /** Resolve a decoration tier for the given margin from the active
- *  pathway's `decorationTiers.tiers` JSON. Returns the highest-tier
- *  match (tiers are ordered with the biggest margin first in JSON).
- *  Returns null if no tier matches (margin too low). */
+ *  pathway's `decorationTiers.tiers` JSON, falling back to
+ *  `common.decorationTiers` if the pathway doesn't declare its own
+ *  (PM p. 49 line 3050-3056 — the tier structure is shared across
+ *  pathways; navy duplicates the block, but mercenary doesn't, so the
+ *  fallback is what makes mercenary decorations work). Returns the
+ *  highest-tier match (tiers are ordered with the biggest margin first
+ *  in JSON). Returns null if no tier matches (margin too low). */
 export function resolveDecorationTier(
   ch: Character, margin: number,
 ): "SEH" | "MCG" | "MCUF" | null {
@@ -91,7 +96,12 @@ export function resolveDecorationTier(
   const pdata = acg?.[ch.acgState?.pathway ?? "mercenary"] as {
     decorationTiers?: { tiers?: Array<{ minMargin: number; award: string }> };
   } | undefined;
-  const tiers = pdata?.decorationTiers?.tiers ?? [];
+  const common = acg?.common as {
+    decorationTiers?: { tiers?: Array<{ minMargin: number; award: string }> };
+  } | undefined;
+  const tiers = pdata?.decorationTiers?.tiers
+    ?? common?.decorationTiers?.tiers
+    ?? [];
   for (const t of tiers) {
     if (margin >= t.minMargin) {
       return t.award as "SEH" | "MCG" | "MCUF";
