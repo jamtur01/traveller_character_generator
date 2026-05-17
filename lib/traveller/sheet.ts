@@ -4,6 +4,7 @@
 
 import { numCommaSep } from "./formatting";
 import type { Character } from "./character";
+import { getEdition } from "./editions";
 
 const SHEET_WIDTH = 60;
 
@@ -31,20 +32,28 @@ function wrapList(items: string[], width: number, indent = ""): string {
   return lines.join("\n");
 }
 
-/** Canonical CT ship-type name for a benefit string, or the benefit itself. */
+/** Canonical ship-type display name for a benefit string, sourced from
+ *  the edition's benefitDetails[name].displayName. Falls back to the
+ *  raw benefit string if no override is declared. Free Trader gets
+ *  mortgage status appended. */
 export function formatBenefit(b: string, ch: Character): string {
-  if (b === "Free Trader") {
-    if (ch.mortgage === 0) return "Type A Free Trader (paid off)";
-    if (ch.mortgage === 40) return "Type A Free Trader (new with a 40-year mortgage)";
-    return `Type A Free Trader (${ch.mortgage} years of payments remaining)`;
+  const details = (getEdition(ch.editionId).data as {
+    benefitDetails?: Record<string, { displayName?: string; firstReceiptMortgageYears?: number }>;
+  }).benefitDetails;
+  const entry = details?.[b];
+  if (!entry) return b;
+  const display = entry.displayName ?? b;
+  // Mortgage suffix for any ship whose entry declares
+  // firstReceiptMortgageYears (Free Trader, Far Trader, Fat Trader,
+  // Seeker, Yacht, Lab Ship, Safari Ship in MT).
+  if (entry.firstReceiptMortgageYears) {
+    if (ch.mortgage === 0) return `${display} (paid off)`;
+    if (ch.mortgage === entry.firstReceiptMortgageYears) {
+      return `${display} (new with a ${entry.firstReceiptMortgageYears}-year mortgage)`;
+    }
+    return `${display} (${ch.mortgage} years of payments remaining)`;
   }
-  if (b === "Scout Ship") return "Type S Scout Ship";
-  if (b === "Seeker") return "Type J Seeker";
-  if (b === "Lab Ship") return "Type L Lab Ship";
-  if (b === "Yacht") return "Type Y Yacht";
-  if (b === "Safari Ship") return "Type X Safari Ship";
-  if (b === "Corsair") return "Pirate Corsair";
-  return b;
+  return display;
 }
 
 /** Aggregate repeat benefits TTB-style (e.g., "2 High Passage"). */

@@ -28,6 +28,21 @@ type Phase =
   | "end";
 
 
+/** Mercenary combat arms available in the enlistment dropdown, sourced
+ *  from the edition JSON. Commando is filtered out (its honors-graduate
+ *  gate is enforced by mercenaryEnlist) so the dropdown only lists arms
+ *  the player can actually choose at first enlistment. */
+function mercenaryNonCommandoArms(editionId: string): string[] {
+  const acg = getEdition(editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const merc = acg?.mercenary as { combatArms?: string[]; combatArmEligibility?: {
+    armGates?: Record<string, unknown>;
+  } } | undefined;
+  const arms = merc?.combatArms ?? [];
+  const gated = new Set(Object.keys(merc?.combatArmEligibility?.armGates ?? {}));
+  return arms.filter((a) => !gated.has(a));
+}
+
 function pickSkillPhase(c: Character): Phase {
   return c.attributes.education >= 8 ? "skill_adv" : "skill_basic";
 }
@@ -980,10 +995,9 @@ function StartPhase({
                       onChange={(e) => setAcgCombatArm(e.target.value)}
                       className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
                     >
-                      <option value="Infantry">Infantry</option>
-                      <option value="Cavalry">Cavalry</option>
-                      <option value="Artillery">Artillery</option>
-                      <option value="Support">Support</option>
+                      {mercenaryNonCommandoArms(edition).map((arm) => (
+                        <option key={arm} value={arm}>{arm}</option>
+                      ))}
                     </select>
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       Commando is restricted to Military Academy honors graduates.

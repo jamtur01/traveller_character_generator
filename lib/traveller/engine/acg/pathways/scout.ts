@@ -35,6 +35,7 @@ interface ScoutData {
     target: number;
     dms: Array<{ attribute: string; min: number; dm: number }>;
     startingRank: string;
+    collegeHonorsStartingRank?: string;
     automatic?: string;
     draft: { die: string; results: Record<string, string> };
   };
@@ -92,7 +93,9 @@ export function scoutEnlist(ch: Character): void {
   // into the Field. Read pre-career state to honor these rules.
   if (hasCollege) {
     ch.history.push("Auto-enlisted in the Imperial Scout Service (college graduate).");
-    ch.acgState!.rankCode = hasCollegeHonors ? "IS-10" : data.enlistment.startingRank;
+    ch.acgState!.rankCode = hasCollegeHonors
+      ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
+      : data.enlistment.startingRank;
     ch.acgState!.isOfficer = false;
     ch.acgState!.division = "bureaucracy";
   } else {

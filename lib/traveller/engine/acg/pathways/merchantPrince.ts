@@ -524,14 +524,24 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   // promotion examination this term).
   if (sa === "Commission") {
     if (!ch.acgState!.isOfficer) {
+      // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
+      // come from merchantPrince.specialRules.specialDutyCommission in JSON.
+      const rule = (data as { specialRules?: { specialDutyCommission?: {
+        defaultRank?: string;
+        rankByLineType?: Record<string, string>;
+        passO1DeadlineYears?: number;
+        revertOnDeadlineToRank?: string;
+      } } }).specialRules?.specialDutyCommission;
+      const lineType = ch.acgState!.lineType ?? "";
+      const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
       ch.acgState!.isOfficer = true;
-      ch.acgState!.rankCode = ch.acgState!.lineType === "Free Trader" ? "O1" : "O0";
+      ch.acgState!.rankCode = rank;
       ch.commissioned = true;
-      // O0 holders must pass exam for O1 within 4 years or revert to
-      // enlisted rank (PM Special Duty: Commission entry, p. 63).
-      if (ch.acgState!.rankCode === "O0") {
+      // O0 holders must pass exam for O1 within passO1DeadlineYears or
+      // revert to enlisted (PM p. 63).
+      if (rank === (rule?.defaultRank ?? "O0") && rule?.passO1DeadlineYears) {
         ch.acgState!.commissionO0DeadlineYear =
-          (ch.acgState!.yearsServed ?? 0) + 4;
+          (ch.acgState!.yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
       ch.history.push(`Commissioned to rank ${ch.acgState!.rankCode}.`);
     }
@@ -659,17 +669,23 @@ export function merchantStartOfTerm(ch: Character): void {
     }
     return;
   }
-  // O0 holders revert to enlisted if they haven't passed O1 within 4 years
-  // of receiving the commission (PM Special Duty: Commission entry).
+  // O0 holders revert to enlisted if they haven't passed O1 within the
+  // commission deadline (PM p. 63). All thresholds in JSON.
+  const data = dataFor(ch);
+  const rule = (data as { specialRules?: { specialDutyCommission?: {
+    defaultRank?: string; revertOnDeadlineToRank?: string;
+  } } }).specialRules?.specialDutyCommission;
+  const o0Rank = rule?.defaultRank ?? "O0";
+  const revertRank = rule?.revertOnDeadlineToRank ?? "E1";
   const deadline = ch.acgState!.commissionO0DeadlineYear;
   if (deadline !== undefined &&
-      ch.acgState!.rankCode === "O0" &&
+      ch.acgState!.rankCode === o0Rank &&
       (ch.acgState!.yearsServed ?? 0) >= deadline) {
     ch.acgState!.isOfficer = false;
-    ch.acgState!.rankCode = "E1";
+    ch.acgState!.rankCode = revertRank;
     ch.commissioned = false;
     delete ch.acgState!.commissionO0DeadlineYear;
-    ch.history.push("Failed to pass exam for O1 within 4 years — reverted to enlisted (E1).");
+    ch.history.push(`Failed to pass exam for O1 in time — reverted to enlisted (${revertRank}).`);
     return;
   }
   // F12 PM p. 61: officers auto-transfer to the Deck department after one
