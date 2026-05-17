@@ -80,7 +80,12 @@ describe("edition discovery", () => {
 // ---------------------------------------------------------------------------
 
 const ATTR_LABELS = new Set([
-  "Stren", "Dext", "Endur", "Intel", "Educ", "Social", "Soc",
+  "Strength", "Stren", "Str",
+  "Dexterity", "Dext", "Dex",
+  "Endurance", "Endur", "End",
+  "Intelligence", "Intel", "Int",
+  "Education", "Educ", "Edu",
+  "Social", "Soc",
 ]);
 
 /** Cell labels that should resolve via known cascades, attribute changes,
