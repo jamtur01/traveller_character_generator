@@ -279,7 +279,7 @@ describe("Merchant Prince ACG runtime", () => {
     expect(c.acgState!.department).not.toBe("Free Trader");
   });
 
-  it("R6: Megacorp enlistment runs Merchant Academy attempt post-enlistment", () => {
+  it("R6: Megacorp enlistment runs Merchant Academy attempt when opted in (Rrev5)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.attributes.education = 12;
@@ -290,10 +290,28 @@ describe("Merchant Prince ACG runtime", () => {
       hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
       tech: "Avg Stellar",
     };
+    // Per Rrev5 the Academy is opt-in (PM "may apply"). Force lazy-init
+    // of acgState (browniePoints setter creates it) then set the flag.
+    c.browniePoints = 0;
+    c.acgState!.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
-    // Merchant Academy should have been attempted: schoolsAttended will
-    // contain "merchantAcademy" if it graduated.
     expect(c.acgState!.schoolsAttended).toContain("merchantAcademy");
+  });
+
+  it("Rrev5: Megacorp enlistment skips Merchant Academy by default (auto mode)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgChar();
+    c.attributes.education = 12;
+    c.attributes.intelligence = 12;
+    c.attributes.social = 12;
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
+    // No opt-in flag → Academy is skipped in auto mode.
+    c.beginAcg("merchantPrince", { lineType: "Megacorp" });
+    expect(c.acgState!.schoolsAttended).not.toContain("merchantAcademy");
   });
 
   it("R6: Free Trader enlistment does NOT attempt Merchant Academy", () => {
@@ -314,9 +332,11 @@ describe("Merchant Prince ACG runtime", () => {
       hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
       tech: "Avg Stellar",
     };
+    // Opt in for Rrev5 via the engine. Force lazy-init of acgState
+    // (browniePoints setter creates it) and then set the flag.
+    c.browniePoints = 0;
+    c.acgState!.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
-    // Honors graduate auto-mode picks a random department. The post-enlistment
-    // department-assignment roll must NOT overwrite the academy choice.
     expect(c.acgState!.department).toBeDefined();
   });
 
