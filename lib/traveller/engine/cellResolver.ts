@@ -27,15 +27,15 @@ import { roll } from "../random";
 import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 
-const ATTR_BY_ABBR: Record<string, AttributeKey> = {
-  Stren: "strength",
-  Dext: "dexterity",
-  Endur: "endurance",
-  Intel: "intelligence",
-  Educ: "education",
-  Social: "social",
-  Soc: "social",
-};
+/** Map an abbreviated attribute label ("Intel", "Soc") to the engine
+ *  attribute key, using the edition's `attributeAbbreviations` JSON. */
+function attrKeyFromAbbreviation(editionId: string, abbr: string): AttributeKey | null {
+  const map = (getEdition(editionId).data as {
+    attributeAbbreviations?: Record<string, string>;
+  }).attributeAbbreviations;
+  const v = map?.[abbr];
+  return (v as AttributeKey | undefined) ?? null;
+}
 
 // Note: the cascade pool for any given label is now resolved per-edition
 // via cascadeMap.cascadePoolForLabel(label, editionId). The edition-aware
@@ -94,7 +94,7 @@ function tryMarineTradition(ch: Character, label: string): boolean {
   }).rules?.marineTradition;
   if (!rule || !rule.forcedSkill) return false;
   if (!rule.appliesToServices?.includes(String(ch.service))) return false;
-  if (cascadeKeyForLabel(label) !== rule.appliesToCascade) return false;
+  if (cascadeKeyForLabel(label, ch.editionId) !== rule.appliesToCascade) return false;
 
   // Saving throw: 2D vs target, with DMs if already skilled in the forced
   // skill at the listed level.
@@ -163,7 +163,7 @@ export function applyCell(
   const m = label.match(/^([+-]\d+)\s+(\w+)$/);
   if (m) {
     const delta = parseInt(m[1]!, 10);
-    const attr = ATTR_BY_ABBR[m[2]!];
+    const attr = attrKeyFromAbbreviation(ch.editionId, m[2]!);
     if (!attr) throw new Error(`Unknown attribute abbr in cell "${label}"`);
     ch.improveAttribute(attr, delta);
     return;
@@ -179,7 +179,7 @@ export function applyCell(
   // Screens/Spinal/Turret) but a literal skill in CT. Pool existence is
   // the authoritative test: alias + edition has pool = cascade; alias +
   // no pool = fall through to literal skill handling below.
-  const pool = isCascadeLabel(label)
+  const pool = isCascadeLabel(label, ch.editionId)
     ? cascadePoolForLabel(label, ch.editionId)
     : undefined;
   if (pool) {

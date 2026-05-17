@@ -18,12 +18,14 @@ import {
 import { applyCell } from "./cellResolver";
 import { evaluateDM } from "./dmEvaluator";
 
-const SKILL_TABLE_ORDER = [
-  "personalDevelopment",
-  "serviceSkills",
-  "advancedEducation",
-  "advancedEducation8Plus",
-] as const;
+/** Skill-table key for the given table index (1-based). Order declared
+ *  by the edition under `skillTableMeta.order`. */
+function skillTableKeyForIndex(editionData: unknown, idx: number): string | null {
+  const meta = (editionData as {
+    skillTableMeta?: { order?: string[] };
+  }).skillTableMeta;
+  return meta?.order?.[idx - 1] ?? null;
+}
 
 export function buildServiceDef(
   serviceData: ServiceData,
@@ -158,10 +160,12 @@ export function buildServiceDef(
   };
 
   function runTablePick(ch: Character, tableIdx: number): void {
-    if (tableIdx < 1 || tableIdx > 4) return;
-    const tableKey = SKILL_TABLE_ORDER[tableIdx - 1]!;
+    const tableKey = skillTableKeyForIndex(edition.data, tableIdx);
+    if (!tableKey) return;
+    const table = (serviceData.skillTables as Record<string, (string | null)[]>)[tableKey];
+    if (!table) return;
     const r = roll(1);
-    const cell = serviceData.skillTables[tableKey][r];
+    const cell = table[r];
     if (cell == null) return;
     applyCell(ch, cell, "skill");
   }

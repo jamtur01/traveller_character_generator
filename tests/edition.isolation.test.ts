@@ -67,8 +67,11 @@ describe("cascade pools are edition-scoped", () => {
 // ---------------------------------------------------------------------------
 
 describe('"Gunnery" label resolves per edition', () => {
-  it("isCascadeLabel returns true for 'Gunnery' (edition-agnostic check)", () => {
-    expect(isCascadeLabel("Gunnery")).toBe(true);
+  it("isCascadeLabel returns true for 'Gunnery' in MT (cascade alias)", () => {
+    expect(isCascadeLabel("Gunnery", "mt-megatraveller")).toBe(true);
+  });
+  it("isCascadeLabel returns false for 'Gunnery' in CT (no alias)", () => {
+    expect(isCascadeLabel("Gunnery", "ct-classic")).toBe(false);
   });
 
   it("CT has no gunnery cascade — pool lookup returns undefined", () => {

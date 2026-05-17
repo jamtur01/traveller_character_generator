@@ -38,10 +38,17 @@ import { DEFAULT_EDITION_ID, getEdition } from "./editions";
 import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
-const SKILL_TABLE_NAMES = [
-  "personal development", "service skills",
-  "advanced education", "advanced education 8+",
-] as const;
+/** Look up the display name for the skill-table index from the edition's
+ *  `skillTableMeta` block. Falls back to the table key if no display name
+ *  is declared. */
+function skillTableDisplayName(editionId: string, index: number): string {
+  const meta = (getEdition(editionId).data as {
+    skillTableMeta?: { order?: string[]; displayNames?: Record<string, string> };
+  }).skillTableMeta;
+  const key = meta?.order?.[index - 1];
+  if (!key) return `table ${index}`;
+  return meta?.displayNames?.[key] ?? key;
+}
 
 export class Character {
   age = 18;
@@ -548,7 +555,7 @@ export class Character {
     const table = this.forceTable
       ? this.forceTableIndex
       : rndInt(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
-    this.debugHistory(`Skill from table ${table} ${SKILL_TABLE_NAMES[table - 1]}`);
+    this.debugHistory(`Skill from table ${table} ${skillTableDisplayName(this.editionId, table)}`);
     return table;
   }
 

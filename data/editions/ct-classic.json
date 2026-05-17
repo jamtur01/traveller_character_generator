@@ -65,6 +65,21 @@
       "CotI bureaucrats invert re-enlistment: they must roll the target or higher to leave before retirement."
     ]
   },
+  "skillTableMeta": {
+    "$comment": "TTB Acquired Skills tables (Book 1 / CotI). Same four-table layout as MT.",
+    "order": [
+      "personalDevelopment",
+      "serviceSkills",
+      "advancedEducation",
+      "advancedEducation8Plus"
+    ],
+    "displayNames": {
+      "personalDevelopment": "Personal Development",
+      "serviceSkills": "Service Skills",
+      "advancedEducation": "Advanced Education",
+      "advancedEducation8Plus": "Advanced Education (Edu 8+)"
+    }
+  },
   "rules": {
     "dice": {
       "characteristics": "2d6 each",
@@ -181,11 +196,38 @@
     ],
     "generatedAt": "2026-05-16"
   },
+  "attributeAbbreviations": {
+    "$comment": "TTB skill-table abbreviations (same set as MT).",
+    "Stren": "strength",
+    "Dext": "dexterity",
+    "Endur": "endurance",
+    "Intel": "intelligence",
+    "Educ": "education",
+    "Social": "social",
+    "Soc": "social"
+  },
   "skillLabelRenames": {
     "$comment": "TTB acquired-skills tables print 'Engnrng', 'Electronics', 'Fwd Obsv' as abbreviations; engine uses 'Engineering', 'Electronic', 'Fwd Obsvr'.",
     "Engnrng": "Engineering",
     "Electronics": "Electronic",
     "Fwd Obsv": "Fwd Obsvr"
+  },
+  "cascadeAliases": {
+    "$comment": "Printed cell label (lowercased) → cascade JSON key. CT uses the same aliases as MT — labels are stable across editions even when the cascade pools differ.",
+    "blade cbt": "bladeCombat",
+    "blade combat": "bladeCombat",
+    "blade": "bladeCombat",
+    "gun cbt": "gunCombat",
+    "gun combat": "gunCombat",
+    "gun": "gunCombat",
+    "bow cbt": "bowCombat",
+    "bow combat": "bowCombat",
+    "bow": "bowCombat",
+    "vehicle": "vehicle",
+    "air craft": "aircraft",
+    "aircraft": "aircraft",
+    "water craft": "watercraft",
+    "watercraft": "watercraft"
   },
   "cascadeSkills": {
     "aircraft": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter"],

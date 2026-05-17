@@ -1,47 +1,21 @@
-// Procedural name generation. Names are an intentionally global mix of
-// real-world cultures to fit the Imperium's polyglot setting.
+// Procedural name generation. Pools live in data/names.json so adding new
+// names is a data edit, not a code change.
 
+import namesJson from "../../data/names.json";
 import { arnd, roll } from "./random";
 import type { Gender } from "./types";
 
-const FEMALE_NAMES = [
-  "Alice", "Ananya", "Beatriz", "Cai", "Chloe", "Darpana", "Elena", "Emily",
-  "Emma", "Esperanza", "Fang", "Fatima", "Freja", "Harper", "Ida", "Isidora",
-  "Kana", "Kayla", "Khadija", "Lena", "Malika", "Manon", "Mariam", "Marie",
-  "Mary", "Martha", "Milagrosa", "Nadia", "Nina", "Olivia", "Petra", "Rin",
-  "Rosalie", "Sara", "Shu", "Sophia", "Trisha", "Valentina", "Victoria",
-  "Vivien", "Xia", "Yan", "Zhen", "Zoe",
-];
+interface NameData {
+  femaleNames: string[];
+  maleNames: string[];
+  familyNames: string[];
+}
 
-const MALE_NAMES = [
-  "Aarav", "Adam", "Ahmed", "Ali", "An", "Andrew", "Antonio", "Aziz",
-  "Bartholomew", "Ben", "Bo", "Brom", "Bruno", "Charles", "Cheng", "Daniel",
-  "David", "Diego", "Feng", "Finn", "Gabriel", "George", "Hamza", "Haruto",
-  "Hiroto", "Hugo", "Jack", "Jacob", "James", "John", "Juan", "Judas", "Leo",
-  "Logan", "Luis", "Luke", "Magnus", "Mark", "Mehmet", "Mohamed", "Nicolas",
-  "Noam", "Oliver", "Omar", "Paul", "Peng", "Philip", "Quentin", "Rachid",
-  "Ren", "Said", "Santino", "Simon", "Stanisław", "Stefan", "Thaddaeus",
-  "Thomas", "Victor", "Wei", "Wen", "William", "Yi", "Youssef",
-];
-
-const FAMILY_NAMES = [
-  "Abe", "Anderson", "Bautista", "Bauer", "Becker", "Brown", "Chang", "Chen",
-  "Chu", "Cohen", "Colombo", "Cruz", "Das", "Davies", "Díaz", "Dubois",
-  "Esposito", "Evans", "Fernandes", "Fontana", "Fujii", "García", "Gazi",
-  "Green", "Gruber", "Hall", "Han", "Hernández", "Hoffmann", "Hon", "Hong",
-  "Itō", "Ivanov", "Jensen", "Jones", "Kask", "Katz", "Kelly", "Khan", "Kim",
-  "Klein", "Kowalski", "Larsen", "Lee", "Li", "Lin", "Ma", "Martin", "Mirza",
-  "Moreau", "Murphy", "Nakamura", "Novák", "Ota", "Papadopoulos", "Pérez",
-  "Petrov", "Pavlov", "Popov", "Quinn", "Reyes", "Rizzo", "Robinson",
-  "Rodríguez", "Rossi", "Saar", "Santos", "Satō", "Schmidt", "Shin", "Silva",
-  "Sokolov", "Sullivan", "Sun", "Suzuki", "Singh", "Smith", "Tamm", "Tanaka",
-  "Taylor", "Varga", "Wagner", "Wang", "Watanabe", "Weber", "Wen", "White",
-  "Williams", "Wilson", "Wood", "Wu", "Yamamoto", "Yamazaki", "Yang", "Zhang",
-];
+const POOL = namesJson as NameData;
 
 export function generateName(gender: Gender): string {
-  const given = gender === "female" ? FEMALE_NAMES : MALE_NAMES;
-  return `${arnd(given)} ${arnd(FAMILY_NAMES)}`;
+  const given = gender === "female" ? POOL.femaleNames : POOL.maleNames;
+  return `${arnd(given)} ${arnd(POOL.familyNames)}`;
 }
 
 export function generateGender(): Gender {
