@@ -181,6 +181,12 @@
     ],
     "generatedAt": "2026-05-16"
   },
+  "skillLabelRenames": {
+    "$comment": "TTB acquired-skills tables print 'Engnrng', 'Electronics', 'Fwd Obsv' as abbreviations; engine uses 'Engineering', 'Electronic', 'Fwd Obsvr'.",
+    "Engnrng": "Engineering",
+    "Electronics": "Electronic",
+    "Fwd Obsv": "Fwd Obsvr"
+  },
   "cascadeSkills": {
     "aircraft": ["Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter"],
     "bladeCombat": ["Dagger", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet", "Spear", "Halberd", "Pike", "Cudgel"],
@@ -226,9 +232,9 @@
   },
   "benefitDetails": {
     "passages": {
-      "High Psg": { "cashValueCredits": 10000, "resalePercent": 90 },
-      "Mid Psg": { "cashValueCredits": 8000, "resalePercent": 90 },
-      "Low Psg": { "cashValueCredits": 1000, "resalePercent": 90, "revivalSave": "5+" }
+      "High Psg": { "displayName": "High Passage", "cashValueCredits": 10000, "resalePercent": 90 },
+      "Mid Psg": { "displayName": "Mid Passage", "cashValueCredits": 8000, "resalePercent": 90 },
+      "Low Psg": { "displayName": "Low Passage", "cashValueCredits": 1000, "resalePercent": 90, "revivalSave": "5+" }
     },
     "Travellers'": { "name": "Travellers' Aid Society membership", "repeat": "no effect" },
     "Free Trader": { "shipType": "Type A Free Trader", "firstReceiptMortgageYears": 40, "repeatReducesMortgageYears": 10 },

@@ -37,27 +37,39 @@ const ATTR_BY_ABBR: Record<string, AttributeKey> = {
   Soc: "social",
 };
 
-const PASSAGES: Record<string, string> = {
-  "High Psg": "High Passage",
-  "Mid Psg": "Mid Passage",
-  "Low Psg": "Low Passage",
-};
-
-const SHIPS = new Set([
-  "Corsair", "Seeker", "Yacht", "Lab Ship", "Safari Ship",
-  "Scout Ship", "Free Trader", "Far Trader", "Fat Trader",
-]);
-
 // Note: the cascade pool for any given label is now resolved per-edition
 // via cascadeMap.cascadePoolForLabel(label, editionId). The edition-aware
 // lookup ensures CT's blade pool doesn't leak into MT or vice versa.
 
-/** Canonicalize cells whose printed label differs from the engine's skill name. */
-const SKILL_LABEL_RENAMES: Record<string, string> = {
-  Engnrng: "Engineering",
-  Electronics: "Electronic",
-  "Fwd Obsv": "Fwd Obsvr",
-};
+/** Look up an abbreviated cell-label passage ("High Psg") in the edition's
+ *  benefitDetails.passages and return the display benefit name ("High
+ *  Passage") if found. */
+function passageDisplayName(editionId: string, label: string): string | null {
+  const passages = (getEdition(editionId).data as {
+    benefitDetails?: { passages?: Record<string, { displayName?: string }> };
+  }).benefitDetails?.passages;
+  return passages?.[label]?.displayName ?? null;
+}
+
+/** Is the cell label a ship-benefit name in the edition's benefitDetails? */
+function isShipLabel(editionId: string, label: string): boolean {
+  const benefits = (getEdition(editionId).data as {
+    benefitDetails?: Record<string, unknown>;
+  }).benefitDetails;
+  if (!benefits) return false;
+  const entry = benefits[label] as { shipType?: unknown } | undefined;
+  return entry?.shipType !== undefined;
+}
+
+/** Canonicalize cells whose printed label differs from the engine's skill
+ *  name (typo / abbreviation aliases). Sourced from edition JSON via
+ *  `skillLabelRenames`. */
+function applySkillLabelRename(editionId: string, label: string): string {
+  const renames = (getEdition(editionId).data as {
+    skillLabelRenames?: Record<string, string>;
+  }).skillLabelRenames;
+  return renames?.[label] ?? label;
+}
 
 /** PM Includes-skills are declared in the edition JSON under
  *  `includesSkills`. Receiving an Includes-skill grants every constituent
@@ -215,12 +227,12 @@ export function applyCell(
       ch.TAS = true;
       return;
     }
-    const passage = PASSAGES[label];
+    const passage = passageDisplayName(ch.editionId, label);
     if (passage) {
       ch.addBenefit(passage);
       return;
     }
-    if (SHIPS.has(label)) {
+    if (isShipLabel(ch.editionId, label)) {
       applyShipBenefit(ch, label, benefitDetails);
       return;
     }
@@ -239,8 +251,9 @@ export function applyCell(
     return;
   }
 
-  // Skill-table mode: literal skill name (with renames applied).
-  const skillName = SKILL_LABEL_RENAMES[label] ?? label;
+  // Skill-table mode: literal skill name (with edition-specific renames
+  // applied, e.g. "Electronics" → "Electronic").
+  const skillName = applySkillLabelRename(ch.editionId, label);
   // F1: PM Includes-skills expand to all constituent skills at level 1
   // each (e.g., ATV → Tracked Vehicle + Wheeled Vehicle; Handgun → Body
   // Pistol, Pistol, Revolver, Snub Pistol). Data lives in the edition's

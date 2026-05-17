@@ -81,15 +81,12 @@ interface MerchantData {
   reenlistment: { target: number; dms: StructuredDm[] };
 }
 
-const ASSIGNMENT_COL_MAP: Record<string, string> = {
-  "Route": "route",
-  "Charter": "charter",
-  "Exploratory Trade": "exploratory",
-  "Speculative Trade": "speculative",
-  "No Business": "route",
-  "Smuggling": "speculative",
-  "Piracy": "speculative",
-};
+function assignmentColumnMap(ch: Character): Record<string, string> {
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const mp = acg?.merchantPrince as { assignmentColumnMap?: Record<string, string> } | undefined;
+  return mp?.assignmentColumnMap ?? {};
+}
 
 function lineSizeFor(data: MerchantData, lineType: string): "Large" | "Small" | "FreeTrader" {
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
@@ -111,17 +108,19 @@ function dataFor(ch: Character): MerchantData {
   return acg.merchantPrince as MerchantData;
 }
 
-/** Starport letter ordering A (best) … X (worst). Higher = better. */
-const STARPORT_ORDER: Record<string, number> = {
-  "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "X": 0,
-};
-
-function starportMeets(home: string | undefined, minimum: string): boolean {
+/** Starport ordering: edition JSON `homeworld.starportOrder` lists letters
+ *  worst → best (X, E, ... A). */
+function starportMeets(
+  ch: Character, home: string | undefined, minimum: string,
+): boolean {
   if (!home) return false;
   if (!minimum || minimum.toLowerCase() === "any") return true;
-  const have = STARPORT_ORDER[home.toUpperCase()];
-  const want = STARPORT_ORDER[minimum.toUpperCase()];
-  if (have === undefined || want === undefined) return true;
+  const order = (getEdition(ch.editionId).data as {
+    homeworld?: { starportOrder?: string[] };
+  }).homeworld?.starportOrder ?? [];
+  const have = order.indexOf(home.toUpperCase());
+  const want = order.indexOf(minimum.toUpperCase());
+  if (have < 0 || want < 0) return true;
   return have >= want;
 }
 
@@ -139,7 +138,7 @@ export function merchantEnlist(
   // starport type less than that shown, the individual may not enlist in
   // that merchant line."
   if (row.minimumStarport && row.minimumStarport.toLowerCase() !== "any") {
-    if (!starportMeets(ch.homeworld?.starport, row.minimumStarport)) {
+    if (!starportMeets(ch, ch.homeworld?.starport, row.minimumStarport)) {
       throw new Error(
         `Merchant line "${lineType}" requires homeworld starport ${row.minimumStarport}+; ` +
         `this character's homeworld starport is ${ch.homeworld?.starport ?? "unset"}.`,
@@ -299,7 +298,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   const resolutionTable = useFreeTraderTable
     ? (data.assignmentResolution.freeTraderTrade ?? resTable)
     : resTable;
-  const colKey = ASSIGNMENT_COL_MAP[assignment] ?? labelToColumnKey(assignment);
+  const colKey = assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment);
   if (!resolutionTable.columns.includes(colKey)) {
     ch.verboseHistory(`Merchant: assignment "${assignment}" → column "${colKey}" not in ${deptKey}`);
     return;
