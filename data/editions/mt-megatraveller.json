@@ -3652,7 +3652,10 @@
     },
     "common": {
       "preCareerOptions": {
+        "$comment": "Each option declares displayName (UI label), eligibility (attribute gates that must be met to apply at all — failures hide the option from the picker rather than showing 'requires X'), and the throw specs the engine rolls. PM p. 47 line refs in $rule fields.",
         "college": {
+          "displayName": "College",
+          "uiSummary": "2D6 admit 9+ (Edu 9+: +2 DM); 4 years; honors gates Medical.",
           "admission": {
             "target": 9,
             "dms": [
@@ -3716,6 +3719,9 @@
           }
         },
         "navalAcademy": {
+          "displayName": "Naval Academy",
+          "uiSummary": "Soc 8+ to apply. Graduates auto-enlist as O1 Imperial Navy.",
+          "eligibility": { "attribute": "social", "min": 8 },
           "admission": {
             "target": 10,
             "dms": [
@@ -3766,6 +3772,9 @@
           }
         },
         "militaryAcademy": {
+          "displayName": "Military Academy",
+          "uiSummary": "Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines.",
+          "eligibility": { "attribute": "social", "min": 6 },
           "admission": {
             "target": 10,
             "dms": [
@@ -3822,6 +3831,8 @@
           }
         },
         "merchantAcademy": {
+          "displayName": "Merchant Academy",
+          "uiSummary": "Post-enlistment only — available after joining a Megacorp or Sector-wide line.",
           "admission": {
             "target": 9,
             "dms": [
@@ -3870,6 +3881,8 @@
           }
         },
         "medicalSchool": {
+          "displayName": "Medical School",
+          "uiSummary": "Honors of college / academy gates entry. Graduates receive Medical-3, Admin, +1 Edu.",
           "admission": {
             "target": 9,
             "dms": [
@@ -3911,6 +3924,8 @@
           ]
         },
         "flightSchool": {
+          "displayName": "Flight School",
+          "uiSummary": "Naval Academy honors or commissioned college honors. Ship's Boat, Navigation, 1D-3 (min 1) Pilot.",
           "admission": {
             "target": 9,
             "dms": [

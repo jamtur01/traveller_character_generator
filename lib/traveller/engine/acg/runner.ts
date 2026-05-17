@@ -178,7 +178,7 @@ export function runAcgTerm(ch: Character): void {
   const isFirstTerm = ch.terms === 0;
   const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort) ? 3 : 4;
   if (isFirstTerm && ch.acgState.preCareerFirstTermShort) {
-    ch.history.push("First term is a short (3-year) term due to pre-career failure.");
+    ch.logRaw("First term is a short (3-year) term due to pre-career failure.");
     delete ch.acgState.preCareerFirstTermShort;
   }
   for (let y = 0; y < termLength; y++) {
@@ -226,7 +226,7 @@ export function runAcgTerm(ch: Character): void {
   if (dis.disabled) {
     ch.activeDuty = false;
     if (ch.isRetirementEligible()) ch.retired = true;
-    ch.history.push(
+    ch.logRaw(
       `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
     );
     return;

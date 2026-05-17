@@ -6,7 +6,11 @@ import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller/engine/mu
 import { DEFAULT_EDITION_ID, getEdition, listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
+import {
+  isPreCareerEligible, preCareerLabel, preCareerUiSummary,
+} from "@/lib/traveller/engine/acg/preCareer";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { formatEvent, visibleAt } from "@/lib/traveller/history";
 import {
   getEditionServices,
   getEnlistableServices,
@@ -1395,30 +1399,35 @@ function PreCareerPhase({
   // declared pathway — hiding them keeps the pre-career picker honest.
   const allowsNavalAcademy = pathway === "mercenary" || pathway === "navy";
   const allowsMilitaryAcademy = pathway === "mercenary";
+  // Hide an option if the character can't meet its attribute eligibility
+  // (e.g., Naval Academy with Soc < 8). Showing "requires Soc 8+" and then
+  // doing nothing on click is worse than just not showing it.
+  const eligible = (opt: PreCareerOption) => isPreCareerEligible(character, opt);
+  const eid = character.editionId;
   return (
     <PhaseCard
       title="Pre-career education (optional)"
       subtitle="College, service academies, medical, and flight school. Each option ages you and may grant skills, attributes, brownie points, or auto-enlist. Academy honors graduates may chain into Medical or Flight School. Skip to proceed straight to enlistment."
     >
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {!tried("college") && (
+        {!tried("college") && eligible("college") && (
           <PreCareerButton
-            label="College"
-            sub="2D6 admit 9+ (Edu 9+: +2 DM); 4 years; honors gates Medical."
+            label={preCareerLabel("college", eid)}
+            sub={preCareerUiSummary(eid, "college")}
             onClick={() => onApply("college")}
           />
         )}
-        {allowsNavalAcademy && !tried("navalAcademy") && (
+        {allowsNavalAcademy && !tried("navalAcademy") && eligible("navalAcademy") && (
           <PreCareerButton
-            label="Naval Academy"
-            sub="Soc 6+ to apply. Graduates auto-enlist as O1 Imperial Navy."
+            label={preCareerLabel("navalAcademy", eid)}
+            sub={preCareerUiSummary(eid, "navalAcademy")}
             onClick={() => onApply("navalAcademy")}
           />
         )}
-        {allowsMilitaryAcademy && !tried("militaryAcademy") && (
+        {allowsMilitaryAcademy && !tried("militaryAcademy") && eligible("militaryAcademy") && (
           <PreCareerButton
-            label="Military Academy"
-            sub="Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines."
+            label={preCareerLabel("militaryAcademy", eid)}
+            sub={preCareerUiSummary(eid, "militaryAcademy")}
             onClick={() => onApply("militaryAcademy")}
           />
         )}
@@ -1426,17 +1435,17 @@ function PreCareerPhase({
             after enlistment in a Megacorporation or Sector-wide line"). The
             pre-career UI no longer offers it; attemptPreCareer enforces the
             lineType gate. */}
-        {medAvailable && (
+        {medAvailable && eligible("medicalSchool") && (
           <PreCareerButton
-            label="Medical School"
-            sub="Honors of college / academy gates entry. Graduates receive Medical-3, Admin, +1 Edu."
+            label={preCareerLabel("medicalSchool", eid)}
+            sub={preCareerUiSummary(eid, "medicalSchool")}
             onClick={() => onApply("medicalSchool")}
           />
         )}
-        {flightAvailable && (
+        {flightAvailable && eligible("flightSchool") && (
           <PreCareerButton
-            label="Flight School"
-            sub="Naval Academy honors. Ship's Boat, Navigation, 1D-3 (min 1) Pilot."
+            label={preCareerLabel("flightSchool", eid)}
+            sub={preCareerUiSummary(eid, "flightSchool")}
             onClick={() => onApply("flightSchool")}
           />
         )}
@@ -2107,17 +2116,32 @@ function SecondaryButton({
 // ---------- history ----------
 
 function HistoryPanel({ character }: { character: Character }) {
+  // Prefer the structured event log when present (every event is typed,
+  // formatted by formatEvent, and filtered by visibility). Fall back to
+  // the legacy string history for older characters / migration period.
+  const events = visibleAt(
+    character.events,
+    character.showHistory === "debug"
+      ? "debug"
+      : character.showHistory === "verbose"
+      ? "verbose"
+      : "simple",
+  );
+  const lines = events.length > 0
+    ? events.map((e) => formatEvent(e))
+    : character.history;
+
   return (
     <details className={CARD}>
       <summary className="cursor-pointer select-none text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Service history
         <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-          ({character.history.length}{" "}
-          {character.history.length === 1 ? "entry" : "entries"})
+          ({lines.length}{" "}
+          {lines.length === 1 ? "entry" : "entries"})
         </span>
       </summary>
       <ol className="mt-3 max-h-80 space-y-1 overflow-y-auto pr-2 text-sm text-zinc-700 dark:text-zinc-300">
-        {character.history.map((line, i) => (
+        {lines.map((line, i) => (
           <li
             key={i}
             className={[

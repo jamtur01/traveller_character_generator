@@ -33,6 +33,55 @@ export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
   | "medicalSchool" | "flightSchool";
 
+/** Display label for a pre-career option key. Reads `displayName` from
+ *  the edition JSON; falls back to a hardcoded label so old/test editions
+ *  without the field still render correctly. */
+export function preCareerLabel(opt: PreCareerOption, editionId?: string): string {
+  if (editionId) {
+    const spec = specFor(editionId, opt) as { displayName?: string } | null;
+    if (spec?.displayName) return spec.displayName;
+  }
+  switch (opt) {
+    case "college": return "College";
+    case "navalAcademy": return "Naval Academy";
+    case "militaryAcademy": return "Military Academy";
+    case "merchantAcademy": return "Merchant Academy";
+    case "medicalSchool": return "Medical School";
+    case "flightSchool": return "Flight School";
+  }
+}
+
+/** Pre-career attribute eligibility (e.g., Naval Academy requires Soc 8+).
+ *  Returns null when no eligibility is declared (always eligible). */
+export function preCareerEligibility(
+  editionId: string, opt: PreCareerOption,
+): { attribute: keyof Character["attributes"]; min: number } | null {
+  const spec = specFor(editionId, opt) as {
+    eligibility?: { attribute: string; min: number };
+  } | null;
+  if (!spec?.eligibility) return null;
+  const a = mapAttr(spec.eligibility.attribute);
+  if (!a) return null;
+  return { attribute: a, min: spec.eligibility.min };
+}
+
+/** True iff the character meets the pre-career option's attribute gates. */
+export function isPreCareerEligible(
+  ch: Character, opt: PreCareerOption,
+): boolean {
+  const gate = preCareerEligibility(ch.editionId, opt);
+  if (!gate) return true;
+  return ch.attributes[gate.attribute] >= gate.min;
+}
+
+/** UI summary text for the picker button. Reads `uiSummary` from JSON. */
+export function preCareerUiSummary(
+  editionId: string, opt: PreCareerOption,
+): string {
+  const spec = specFor(editionId, opt) as { uiSummary?: string } | null;
+  return spec?.uiSummary ?? "";
+}
+
 interface ThrowSpec {
   target: number;
   dms: Array<{ attribute: string; min: number; dm: number }>;
@@ -210,7 +259,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const dm = applyDms(spec.admission.dms, ch);
     const r = roll(2);
     if (r + dm < spec.admission.target) {
-      ch.verboseHistory(`${opt} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`);
+      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`);
       out.notes.push("Admission denied — may attempt another option or enlist normally.");
       // Rrev11: PM p. 47 distinguishes admission failure from success
       // failure. Admission failure = the school didn't accept you; you
@@ -220,7 +269,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.admitted = true;
-    ch.verboseHistory(`${opt} admission passed (${r}+${dm} vs ${spec.admission.target}+)`);
+    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} admission passed (${r}+${dm} vs ${spec.admission.target}+)`);
   } else {
     out.admitted = true;
     if (flightAutoAdmit) {
@@ -235,7 +284,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const dm = applyDms(spec.success.dms, ch);
     const r = roll(2);
     if (r + dm < spec.success.target) {
-      ch.verboseHistory(`${opt} success FAILED (${r}+${dm} vs ${spec.success.target}+)`);
+      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} success FAILED (${r}+${dm} vs ${spec.success.target}+)`);
       out.notes.push("Did not complete the course.");
       out.ageGainedYears += 1;
       // PM p. 47 success-failure outcomes:
@@ -252,7 +301,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       return out;
     }
     out.graduated = true;
-    ch.verboseHistory(`${opt} success passed (${r}+${dm} vs ${spec.success.target}+)`);
+    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} success passed (${r}+${dm} vs ${spec.success.target}+)`);
   } else {
     out.graduated = true;
   }
@@ -296,7 +345,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             onResolve: (c, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
               c.acgState!.preCareerBranch = branch;
-              c.history.push(`OTC commission earned (${chosen}).`);
+              c.logRaw(`OTC commission earned (${chosen}).`);
             },
           });
           // Pending choice — set a default so non-pause callers see something.
@@ -329,7 +378,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const offset = m ? parseInt(m[1]!, 10) : 0;
     const gain = Math.max(1, roll(1) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
-    ch.verboseHistory(`${opt} education gain: +${gain} Edu`);
+    ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} education gain: +${gain} Edu`);
   }
 
   // Honors throw.
@@ -353,7 +402,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         const rollDelta = out.attributeChanges.education ?? 0;
         out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
       }
-      ch.verboseHistory(`${opt} honors achieved`);
+      ch.verboseHistory(`${preCareerLabel(opt, ch.editionId)} honors achieved`);
     }
   }
 
@@ -612,17 +661,17 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
     ch.addSkill(skill, lvl);
   }
   for (const note of r.notes) {
-    ch.history.push(`${opt}: ${note}`);
+    ch.logRaw(`${preCareerLabel(opt, ch.editionId)}: ${note}`);
   }
   // Brownie point awards per the manual: 1 BP for graduation from
   // college / service academy / medical / flight school; +1 for honors.
   if (r.graduated && (opt === "college" || opt === "navalAcademy" ||
       opt === "militaryAcademy" || opt === "merchantAcademy" ||
       opt === "medicalSchool" || opt === "flightSchool")) {
-    awardBrownie(ch, 1, `Graduated from ${opt}`);
+    awardBrownie(ch, 1, `Graduated from ${preCareerLabel(opt, ch.editionId)}`);
   }
   if (r.honors) {
-    awardBrownie(ch, 1, `Honors graduate of ${opt}`);
+    awardBrownie(ch, 1, `Honors graduate of ${preCareerLabel(opt, ch.editionId)}`);
   }
   // Pre-career commission carries into ACG enlistment: subsequent beginAcg
   // honors this rank by skipping the default E1 reset.

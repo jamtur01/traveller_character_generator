@@ -161,7 +161,7 @@ export function navyEnlist(
     }
     if (forcedFleet && fleet !== forcedFleet) {
       ch.acgState!.fleet = forcedFleet;
-      ch.history.push(
+      ch.logRaw(
         `Fleet adjusted to ${forcedFleet} per academy/NOTC commission (PM p. 52).`,
       );
     } else {
@@ -170,11 +170,11 @@ export function navyEnlist(
     // Medical School graduate joins the Medical Branch automatically.
     if (forcedBranch) {
       ch.acgState!.branch = forcedBranch;
-      ch.history.push(
+      ch.logRaw(
         `Auto-enlisted in the ${ch.acgState!.fleet} ${forcedBranch} Branch as ${ch.acgState!.rankCode} (academy/school direct commission).`,
       );
     } else {
-      ch.history.push(
+      ch.logRaw(
         `Auto-enlisted in the ${ch.acgState!.fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`,
       );
       navyAssignBranch(ch);
@@ -191,7 +191,7 @@ export function navyEnlist(
   ch.verboseHistory(`Navy enlist (${fleet}): roll ${r} + ${dm} vs ${spec.target}`);
 
   if (r + dm >= spec.target) {
-    ch.history.push(`Enlisted in the ${fleet} Navy.`);
+    ch.logRaw(`Enlisted in the ${fleet} Navy.`);
     ch.acgState!.rankCode = data.enlistment.startingRank;
     ch.acgState!.isOfficer = data.enlistment.startingRank.startsWith("O");
   } else {
@@ -205,7 +205,7 @@ export function navyEnlist(
     ch.acgState!.fleet = "imperialNavy";
     ch.acgState!.rankCode = data.enlistment.startingRank;
     ch.acgState!.isOfficer = false;
-    ch.history.push("Drafted into the Imperial Navy.");
+    ch.logRaw("Drafted into the Imperial Navy.");
   }
 
   // Branch assignment — different column for officers vs enlisted.
@@ -289,7 +289,7 @@ export function navyInitialTraining(ch: Character): void {
   // preCareerCommission flag set, we still treat the character as
   // ineligible for Officer Staff Skills.
   const data = dataFor(ch);
-  ch.history.push("Initial Training in the Navy");
+  ch.logRaw("Initial Training in the Navy");
   if (!data.branchSkills) return;
   const isAcademyOrNotcOfficer = ch.acgState!.isOfficer &&
     ch.acgState!.preCareerCommission === true;
@@ -431,7 +431,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
         ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
       }
       ch.acgState!.assignmentHistory.push(assignment);
-      if (rule.historyLine) ch.history.push(rule.historyLine);
+      if (rule.historyLine) ch.logRaw(rule.historyLine);
       return;
     }
     ch.verboseHistory(`Unknown navy assignment "${assignment}" for branch ${branch}`);
@@ -463,11 +463,11 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       consequence: "Invalided out of Navy service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.history.push("Brownie-point spend revived character (Navy survival saved).");
+        c.logRaw("Brownie-point spend revived character (Navy survival saved).");
       },
     });
     if (mit.newMargin < 0) {
-      ch.history.push("Failed survival; invalided out of Navy service.");
+      ch.logRaw("Failed survival; invalided out of Navy service.");
       ch.activeDuty = false;
       return;
     }
@@ -476,7 +476,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   if (sv.margin === 0 && typeof res.survival === "number" &&
       combatAssignments.includes(assignment)) {
     ch.acgState!.decorations.push("Purple Heart");
-    ch.history.push(`Wounded in ${assignment}; awarded Purple Heart.`);
+    ch.logRaw(`Wounded in ${assignment}; awarded Purple Heart.`);
     ch.acgState!.injuredThisYear = true;
   }
 
@@ -574,14 +574,14 @@ function promoteNavy(ch: Character): void {
     if (idx >= 0 && idx < targetIdx && targetIdx < codes.length) {
       ch.acgState!.rankCode = codes[targetIdx]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.history.push(`Promoted to ${data.ranks.officer[targetIdx]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.officer[targetIdx]![1]}.`);
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.history.push(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
     }
   }
 }
@@ -629,7 +629,7 @@ export function navySpecialAssignment(ch: Character): void {
   if (assignment === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.history.push(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
+      ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
       ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
       assignment = reroll;
@@ -708,7 +708,7 @@ function offerNavyBranchChange(ch: Character): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.branch = chosen;
-        c.history.push(`Reenlisted into ${chosen} branch (cross-trained).`);
+        c.logRaw(`Reenlisted into ${chosen} branch (cross-trained).`);
       }
     },
   });

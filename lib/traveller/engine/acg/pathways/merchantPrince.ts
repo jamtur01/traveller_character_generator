@@ -158,7 +158,7 @@ export function merchantEnlist(
   }
   const parsed = parseResolutionTarget(row.target);
   if (parsed.target === "auto") {
-    ch.history.push(`Automatic enlistment with ${lineType}.`);
+    ch.logRaw(`Automatic enlistment with ${lineType}.`);
   } else if (typeof parsed.target === "number") {
     const dm = applyStructuredDms(data.enlistment.dms, ch);
     const r = roll(2);
@@ -166,7 +166,7 @@ export function merchantEnlist(
     if (r + dm < parsed.target) {
       throw new Error(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
     }
-    ch.history.push(`Enlisted in ${lineType} merchant line.`);
+    ch.logRaw(`Enlisted in ${lineType} merchant line.`);
   }
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
   // Merchants as Purser Department Medic per PM p. 47). Otherwise default
@@ -176,7 +176,7 @@ export function merchantEnlist(
     ch.acgState!.isOfficer = false;
   } else if (ch.acgState!.schoolsAttended.includes("medicalSchool")) {
     ch.acgState!.department = "Purser";
-    ch.history.push(
+    ch.logRaw(
       `Auto-enlisted in Merchants as Purser Department Medic at ${ch.acgState!.rankCode} (medical school direct commission).`,
     );
   }
@@ -344,11 +344,11 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         consequence: "Mustered out of merchant service",
         onMitigated: (c) => {
           c.activeDuty = true;
-          c.history.push("Brownie-point spend revived character (Merchant survival saved).");
+          c.logRaw("Brownie-point spend revived character (Merchant survival saved).");
         },
       });
       if (mit.newMargin < 0) {
-        ch.history.push("Failed survival; mustered out of merchant service.");
+        ch.logRaw("Failed survival; mustered out of merchant service.");
         ch.activeDuty = false;
         return;
       }
@@ -498,7 +498,7 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
     ch.acgState!.yearsServed ?? 0,
   );
   ch.acgState!.lineType = to;
-  ch.history.push(`Transferred ${dir} to ${to}.`);
+  ch.logRaw(`Transferred ${dir} to ${to}.`);
 }
 
 export function merchantSpecialAssignment(ch: Character): void {
@@ -512,7 +512,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const sa = row[col];
   if (typeof sa !== "string") return;
   ch.acgState!.schoolsAttended.push(sa);
-  ch.history.push(`Merchant Special Duty: ${sa}`);
+  ch.logRaw(`Merchant Special Duty: ${sa}`);
   awardBrownie(ch, 1, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
 }
@@ -543,7 +543,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
         ch.acgState!.commissionO0DeadlineYear =
           (ch.acgState!.yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
-      ch.history.push(`Commissioned to rank ${ch.acgState!.rankCode}.`);
+      ch.logRaw(`Commissioned to rank ${ch.acgState!.rankCode}.`);
     }
     return;
   }
@@ -563,7 +563,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
         awarded.push(skill);
       }
     }
-    if (awarded.length > 0) ch.history.push(`${sa}: ${awarded.join(", ")}`);
+    if (awarded.length > 0) ch.logRaw(`${sa}: ${awarded.join(", ")}`);
   }
   // Department transfer effects (manual p. 60-61).
   if (res.effect) {
@@ -574,7 +574,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       recordTransfer(ch.acgState!, "department", from, to,
         ch.acgState!.yearsServed ?? 0);
       ch.acgState!.department = to;
-      ch.history.push(`Transferred to ${to} department.`);
+      ch.logRaw(`Transferred to ${to} department.`);
     }
     if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
       ch.acgState!.examDm = (ch.acgState!.examDm ?? 0) + 1;
@@ -652,7 +652,7 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.department = chosen;
-        c.history.push(`Reenlisted into ${chosen} department.`);
+        c.logRaw(`Reenlisted into ${chosen} department.`);
       }
     },
   });
@@ -685,7 +685,7 @@ export function merchantStartOfTerm(ch: Character): void {
     ch.acgState!.rankCode = revertRank;
     ch.commissioned = false;
     delete ch.acgState!.commissionO0DeadlineYear;
-    ch.history.push(`Failed to pass exam for O1 in time — reverted to enlisted (${revertRank}).`);
+    ch.logRaw(`Failed to pass exam for O1 in time — reverted to enlisted (${revertRank}).`);
     return;
   }
   // F12 PM p. 61: officers auto-transfer to the Deck department after one
@@ -710,7 +710,7 @@ function applyDeckAutoTransferIfDue(ch: Character): void {
   recordTransfer(ch.acgState, "department", from, rule.destinationDepartment,
     ch.acgState.yearsServed ?? 0);
   ch.acgState.department = rule.destinationDepartment;
-  ch.history.push(
+  ch.logRaw(
     `Auto-transferred to ${rule.destinationDepartment} department (rank ${rule.rankCode}, PM p. 61).`,
   );
 }
@@ -757,7 +757,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
     ch.acgState!.isOfficer = true;
     ch.acgState!.rankCode = "O1";
     ch.commissioned = true;
-    ch.history.push("Earned a commission via Route-assignment promotion exam.");
+    ch.logRaw("Earned a commission via Route-assignment promotion exam.");
   }
 }
 
@@ -791,7 +791,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
   );
   if (r + dm >= target) {
     ch.acgState!.rankCode = nextRow[0] as string;
-    ch.history.push(`Promoted to ${nextRow[1]}.`);
+    ch.logRaw(`Promoted to ${nextRow[1]}.`);
     // Skill granted on promotion (column 3 in the ladder rows, when set).
     const skillGrant = nextRow[3];
     if (typeof skillGrant === "string") {

@@ -126,7 +126,7 @@ export function mercenaryEnlist(
   // Academy/OTC graduates skip the enlistment roll — they are automatically
   // enlisted at the rank set by pre-career (O1 for Military Academy or OTC).
   if (ch.acgState!.preCareerCommission) {
-    ch.history.push(
+    ch.logRaw(
       `Auto-enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}) as ${ch.acgState!.rankCode} (academy/OTC).`,
     );
     return;
@@ -144,7 +144,7 @@ export function mercenaryEnlist(
   );
 
   if (r + dm >= enlistSpec.target) {
-    ch.history.push(`Enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}).`);
+    ch.logRaw(`Enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}).`);
     ch.acgState!.rankCode = enlistSpec.startingRank;
     ch.acgState!.isOfficer = enlistSpec.startingRank.startsWith("O");
     return;
@@ -154,13 +154,13 @@ export function mercenaryEnlist(
   const draftRoll = roll(1);
   const drafted = data.enlistment.draft.results[String(draftRoll)];
   if (!drafted) {
-    ch.history.push("Enlistment failed; draft did not assign mercenary service.");
+    ch.logRaw("Enlistment failed; draft did not assign mercenary service.");
     throw new Error("Mercenary draft rejection — choose another path");
   }
   ch.drafted = true;
   const draftedService = drafted.toLowerCase() as "army" | "marines";
   const draftSpec = data.enlistment[draftedService];
-  ch.history.push(`Drafted into the ${drafted}.`);
+  ch.logRaw(`Drafted into the ${drafted}.`);
   ch.acgState!.branch = drafted;
   ch.acgState!.rankCode = draftSpec.startingRank;
   ch.acgState!.isOfficer = false; // drafted = enlisted; no OCS first term
@@ -175,7 +175,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   const data = dataFor(ch);
   const fixed = data.initialTraining[0];
   if (fixed) {
-    ch.history.push(`Initial Training: ${fixed}-1`);
+    ch.logRaw(`Initial Training: ${fixed}-1`);
     ch.addSkill(fixed, 1);
   }
 
@@ -192,7 +192,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   }
   ch.acgState!.mos = mosSkill;
   ch.addSkill(mosSkill, 1);
-  ch.history.push(`MOS assigned: ${mosSkill}-1`);
+  ch.logRaw(`MOS assigned: ${mosSkill}-1`);
 }
 
 /** Officer command-duty roll. Success places officer in command position,
@@ -316,11 +316,11 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       consequence: "Invalided out of mercenary service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.history.push("Brownie-point spend revived character (survival saved).");
+        c.logRaw("Brownie-point spend revived character (survival saved).");
       },
     });
     if (mit.newMargin < 0) {
-      ch.history.push("Failed survival; invalided out of mercenary service.");
+      ch.logRaw("Failed survival; invalided out of mercenary service.");
       ch.activeDuty = false;
       return;
     }
@@ -331,7 +331,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
     if (combatAssignments.includes(assignment)) {
       ch.acgState!.decorations.push("Purple Heart");
-      ch.history.push(`Wounded in ${assignment}; awarded Purple Heart.`);
+      ch.logRaw(`Wounded in ${assignment}; awarded Purple Heart.`);
       ch.acgState!.injuredThisYear = true;
     }
   }
@@ -562,14 +562,14 @@ function promoteMercenary(ch: Character): void {
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
       ch.acgState!.promotedThisTerm = true;
-      ch.history.push(`Promoted to ${data.ranks.officer[idx + 1]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.officer[idx + 1]![1]}.`);
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
     const idx = codes.indexOf(ch.acgState!.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
       ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.history.push(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
+      ch.logRaw(`Promoted to ${data.ranks.enlisted[idx + 1]![1]}.`);
     }
   }
 }
@@ -595,7 +595,7 @@ export function mercenarySpecialAssignment(ch: Character): void {
   if (sa === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.history.push(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
+      ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
     } else if (reroll) {
       ch.verboseHistory(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`);
       sa = reroll;
@@ -603,7 +603,7 @@ export function mercenarySpecialAssignment(ch: Character): void {
       return;
     }
   }
-  ch.history.push(`Special Assignment: ${sa}`);
+  ch.logRaw(`Special Assignment: ${sa}`);
   applyMercenarySchool(ch, sa);
 }
 
@@ -667,7 +667,7 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.combatArm = chosen;
-        c.history.push(`Reenlisted into ${chosen} combat arm.`);
+        c.logRaw(`Reenlisted into ${chosen} combat arm.`);
       }
     },
   });

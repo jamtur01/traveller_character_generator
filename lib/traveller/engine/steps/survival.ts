@@ -32,12 +32,12 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
     character.shortTermThisTerm = true;
     character.shortTermsCount += 1;
     character.activeDuty = false;
-    character.history.push(
+    character.logRaw(
       "Injured in service; served only 2 years of this term (short term).",
     );
     return;
   }
-  character.history.push("Death in service.");
+  character.logRaw("Death in service.");
   character.deceased = true;
   character.activeDuty = false;
 };
