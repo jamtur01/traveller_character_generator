@@ -409,7 +409,7 @@ export default function Home() {
         }
       />
 
-      <Stepper phase={phase} />
+      <Stepper phase={phase} character={character} />
 
       <div
         className={
@@ -562,6 +562,50 @@ const CARD =
   "rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950";
 const SECTION_LABEL =
   "text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400";
+const SELECT_CLASS =
+  "rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+
+function FormField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5 text-sm">
+      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+        {label}
+      </span>
+      {children}
+      {hint && (
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</span>
+      )}
+    </label>
+  );
+}
+
+function FormSelect({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={SELECT_CLASS}
+    >
+      {children}
+    </select>
+  );
+}
 
 function PageHeader({
   verbose,
@@ -597,68 +641,150 @@ function PageHeader({
   );
 }
 
-const STEPPER_STEPS: { id: string; label: string; phases: Phase[] }[] = [
-  { id: "roll", label: "Roll", phases: ["start"] },
-  { id: "enlist", label: "Enlist", phases: ["career"] },
-  { id: "serve", label: "Serve", phases: ["term", "skill_basic", "skill_adv"] },
-  { id: "muster", label: "Muster", phases: ["muster", "muster_no_cash"] },
-  { id: "done", label: "Done", phases: ["end"] },
+interface StepperStep {
+  id: string;
+  label: string;
+  hint: string;
+  phases: Phase[];
+}
+
+const STEPPER_STEPS_BASIC: StepperStep[] = [
+  { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
+  { id: "enlist", label: "Enlist", hint: "Service & draft", phases: ["career"] },
+  { id: "serve", label: "Serve", hint: "Terms of duty", phases: ["term", "skill_basic", "skill_adv"] },
+  { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
+  { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
 ];
 
-function Stepper({ phase }: { phase: Phase }) {
-  const currentIdx = STEPPER_STEPS.findIndex((s) => s.phases.includes(phase));
+const STEPPER_STEPS_ACG: StepperStep[] = [
+  { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
+  { id: "pre", label: "Pre-Career", hint: "College & academies", phases: ["pre_career"] },
+  { id: "enlist", label: "Enlist", hint: "Pathway & branch", phases: ["career"] },
+  { id: "serve", label: "Serve", hint: "Annual cycle", phases: ["term", "skill_basic", "skill_adv"] },
+  { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
+  { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
+];
+
+function activityFor(phase: Phase, character: Character | null): string {
+  if (phase === "start") return "Configure your character";
+  if (phase === "pre_career") return "Optional college / academy";
+  if (phase === "career") return character?.useAcg ? "Choose pathway" : "Choose service";
+  if (phase === "term") {
+    const termNum = (character?.terms ?? 0) + 1;
+    return `Term ${termNum}${character?.mandatoryReenlistment ? " (mandatory reenlist)" : ""}`;
+  }
+  if (phase === "skill_basic") return "Pick a skill (basic tables)";
+  if (phase === "skill_adv") return "Pick a skill (advanced tables)";
+  if (phase === "muster") {
+    const left = character?.musterRolls ?? 0;
+    return left > 0 ? `${left} muster roll${left === 1 ? "" : "s"} remaining` : "Mustering out";
+  }
+  if (phase === "muster_no_cash") return "Benefits only — cash limit reached";
+  if (phase === "end") return character?.deceased ? "Character died" : "Generation complete";
+  return "";
+}
+
+function Stepper({ phase, character }: { phase: Phase; character: Character | null }) {
+  const useAcgStepper = character?.useAcg ?? false;
+  const steps = useAcgStepper ? STEPPER_STEPS_ACG : STEPPER_STEPS_BASIC;
+  const currentIdx = steps.findIndex((s) => s.phases.includes(phase));
+  const activity = activityFor(phase, character);
+  const progress = currentIdx < 0 ? 0 : ((currentIdx) / (steps.length - 1)) * 100;
+
   return (
-    <ol className="flex items-center gap-1 overflow-x-auto pb-1 sm:gap-2">
-      {STEPPER_STEPS.map((step, i) => {
-        const state =
-          i < currentIdx ? "done" : i === currentIdx ? "active" : "pending";
-        const isLast = i === STEPPER_STEPS.length - 1;
-        return (
-          <li
-            key={step.id}
-            aria-current={state === "active" ? "step" : undefined}
-            className="flex flex-1 items-center gap-2 last:flex-initial"
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={[
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  state === "done"
-                    ? "bg-emerald-600 text-white"
-                    : state === "active"
-                      ? "bg-zinc-900 text-white ring-2 ring-emerald-500 ring-offset-2 dark:bg-zinc-100 dark:text-zinc-900 dark:ring-offset-zinc-950"
-                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
-                ].join(" ")}
-              >
-                {state === "done" ? "✓" : i + 1}
-              </span>
-              <span
-                className={[
-                  "text-xs font-medium sm:text-sm",
-                  state === "active"
-                    ? "text-zinc-900 dark:text-zinc-100"
-                    : state === "done"
-                      ? "text-zinc-700 dark:text-zinc-300"
-                      : "text-zinc-400 dark:text-zinc-500",
-                ].join(" ")}
-              >
-                {step.label}
-              </span>
-            </div>
-            {!isLast && (
-              <span
-                className={[
-                  "h-px flex-1",
-                  state === "done"
-                    ? "bg-emerald-600"
-                    : "bg-zinc-200 dark:bg-zinc-800",
-                ].join(" ")}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:px-4">
+      <ol className="flex items-stretch gap-1 overflow-x-auto sm:gap-2">
+        {steps.map((step, i) => {
+          const state =
+            i < currentIdx ? "done" : i === currentIdx ? "active" : "pending";
+          return (
+            <li
+              key={step.id}
+              aria-current={state === "active" ? "step" : undefined}
+              className="flex min-w-[5rem] flex-1 flex-col items-center text-center sm:min-w-[7rem]"
+            >
+              <div className="flex w-full items-center">
+                {i > 0 && (
+                  <span
+                    className={[
+                      "h-0.5 flex-1 rounded-full transition-colors",
+                      state === "pending"
+                        ? "bg-zinc-200 dark:bg-zinc-800"
+                        : "bg-emerald-500",
+                    ].join(" ")}
+                    aria-hidden
+                  />
+                )}
+                <span
+                  className={[
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all",
+                    state === "done"
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/40"
+                      : state === "active"
+                        ? "scale-110 bg-zinc-900 text-white shadow-md ring-4 ring-emerald-200 dark:bg-zinc-100 dark:text-zinc-900 dark:ring-emerald-900"
+                        : "border border-zinc-200 bg-white text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500",
+                  ].join(" ")}
+                >
+                  {state === "done" ? "✓" : i + 1}
+                </span>
+                {i < steps.length - 1 && (
+                  <span
+                    className={[
+                      "h-0.5 flex-1 rounded-full transition-colors",
+                      i < currentIdx
+                        ? "bg-emerald-500"
+                        : "bg-zinc-200 dark:bg-zinc-800",
+                    ].join(" ")}
+                    aria-hidden
+                  />
+                )}
+              </div>
+              <div className="mt-1.5">
+                <div
+                  className={[
+                    "text-xs font-semibold sm:text-sm",
+                    state === "active"
+                      ? "text-zinc-900 dark:text-zinc-50"
+                      : state === "done"
+                        ? "text-emerald-700 dark:text-emerald-400"
+                        : "text-zinc-400 dark:text-zinc-500",
+                  ].join(" ")}
+                >
+                  {step.label}
+                </div>
+                <div
+                  className={[
+                    "hidden text-[10px] uppercase tracking-wider sm:block",
+                    state === "active"
+                      ? "text-zinc-500 dark:text-zinc-400"
+                      : "text-zinc-300 dark:text-zinc-600",
+                  ].join(" ")}
+                >
+                  {step.hint}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {/* Progress bar + current activity */}
+      <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.max(4, progress))}%` }}
+          />
+        </div>
+        {activity && (
+          <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+              Current step:
+            </span>{" "}
+            {activity}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -855,263 +981,408 @@ function StartPhase({
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
-  const dataOnly = selected?.status === "data-only";
   const hasAcg = editionHasAcg(edition);
   const acgPathways = hasAcg ? listAcgPathways(edition) : [];
 
   return (
-    <PhaseCard
-      title="Begin character generation"
-      subtitle="Two dice are rolled six times to produce your Universal Personality Profile. Then you'll choose a service, run terms of duty, pick skills, and finally muster out."
-    >
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-          Edition
-        </span>
-        <select
-          value={edition}
-          onChange={(e) => setEdition(e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-        >
+    <div className="space-y-6">
+      {/* Step 1: Edition selection — the most impactful choice, front and center */}
+      <div className={CARD + " space-y-4"}>
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            1. Choose an edition
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Each edition has its own services, skills, and lifecycle. You can
+            generate one character per edition; switching here resets the form.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           {editions.map((e) => (
-            <option key={e.id} value={e.id} disabled={e.status === "data-only"}>
-              {e.displayName}
-            </option>
+            <EditionCard
+              key={e.id}
+              meta={e}
+              selected={e.id === edition}
+              onSelect={() => {
+                if (e.status === "data-only") return;
+                setEdition(e.id);
+                // Reset ACG when switching to a non-ACG edition.
+                if (!editionHasAcg(e.id)) {
+                  setUseAcg(false);
+                  setAcgPathway("");
+                }
+              }}
+            />
           ))}
-        </select>
-        {dataOnly && (
-          <span className="text-xs text-amber-600 dark:text-amber-400">
-            Data extracted for this edition, but the engine doesn&apos;t yet
-            implement its mechanics. Use Classic Traveller for now.
-          </span>
-        )}
-        {editions.length === 1 && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            More editions coming. Drop a new JSON under data/editions/ and
-            register it in lib/traveller/editions/index.ts.
-          </span>
-        )}
-      </label>
-
-      <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-        <strong className="font-semibold">What happens next:</strong>
-        <ol className="mt-2 list-decimal space-y-1 pl-4">
-          <li>
-            Roll 2d6 for each of the six characteristics (Str, Dex, End, Int,
-            Edu, Soc).
-          </li>
-          <li>
-            Choose a service or accept random; success determines enlistment vs.
-            draft.
-          </li>
-          <li>
-            Each four-year term: survival, then position/commission and
-            promotion, special duty, skills, with aging applied from age 34+.
-          </li>
-          <li>
-            Muster out for cash and material benefits (ships, passages, weapons,
-            TAS).
-          </li>
-        </ol>
+        </div>
       </div>
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={interactiveMode && selected?.supportsInteractive === true}
-          disabled={selected?.supportsInteractive !== true}
-          onChange={(e) => setInteractiveMode(e.target.checked)}
-          className="mt-0.5"
-        />
-        <span>
-          <span className={
-            "font-semibold " +
-            (selected?.supportsInteractive
-              ? "text-zinc-700 dark:text-zinc-300"
-              : "text-zinc-400 dark:text-zinc-600")
-          }>
-            Interactive choices
-          </span>
-          <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-            {selected?.supportsInteractive
-              ? "When ticked, the engine pauses for player decisions — which blade or gun a weapon benefit becomes, which specific blade/gun a cascade resolves to, etc. Off = the original auto-everything flow."
-              : `Classic Traveller chargen rolls procedurally per the rulebook; the only player choice each term (which skill table to roll on) is already supported in the main flow. Interactive mode is available on editions that opt in (currently: MegaTraveller).`}
-          </span>
-        </span>
-      </label>
 
-      {hasAcg && (
-        <div className="rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
+      {/* Step 2: Edition-aware workflow preview + options */}
+      <div className={CARD + " space-y-5"}>
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            2. Workflow & options
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Two dice rolled six times produce your Universal Personality
+            Profile, then the selected edition&apos;s lifecycle runs.
+          </p>
+        </div>
+
+        <EditionWorkflow editionId={edition} useAcg={useAcg && hasAcg} />
+
+        <div className="space-y-3">
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
-              checked={useAcg}
-              onChange={(e) => {
-                setUseAcg(e.target.checked);
-                if (e.target.checked && !acgPathway && acgPathways[0]) {
-                  setAcgPathway(acgPathways[0]);
-                }
-              }}
+              checked={interactiveMode && selected?.supportsInteractive === true}
+              disabled={selected?.supportsInteractive !== true}
+              onChange={(e) => setInteractiveMode(e.target.checked)}
               className="mt-0.5"
             />
             <span>
-              <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                Use Advanced Character Generation
+              <span
+                className={
+                  "font-semibold " +
+                  (selected?.supportsInteractive
+                    ? "text-zinc-700 dark:text-zinc-300"
+                    : "text-zinc-400 dark:text-zinc-600")
+                }
+              >
+                Interactive choices{" "}
+                {selected?.supportsInteractive
+                  ? ""
+                  : "(unsupported in this edition)"}
               </span>
               <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-                MT&apos;s ACG runs a per-year assignment cycle with branch /
-                MOS rolls, specialist schools, command duty, brownie points,
-                and decorations.
+                {selected?.supportsInteractive
+                  ? "Pause for player decisions — which blade or gun a weapon benefit becomes, which specific item a cascade resolves to, etc. Off = the original auto-everything flow."
+                  : "Classic Traveller chargen runs procedurally per the rulebook. Only MegaTraveller opts into interactive choices today."}
               </span>
             </span>
           </label>
-          {useAcg && (
-            <>
-              <label className="mt-3 flex flex-col gap-1 text-sm">
-                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                  ACG pathway
-                </span>
-                <select
-                  value={acgPathway}
-                  onChange={(e) => setAcgPathway(e.target.value)}
-                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                >
-                  <option value="" disabled>
-                    Select a pathway…
-                  </option>
-                  {acgPathways.map((p) => (
-                    <option key={p} value={p}>
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </label>
 
+          {hasAcg && (
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={useAcg}
+                onChange={(e) => {
+                  setUseAcg(e.target.checked);
+                  if (e.target.checked && !acgPathway && acgPathways[0]) {
+                    setAcgPathway(acgPathways[0]);
+                  }
+                }}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                  Use Advanced Character Generation
+                </span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                  Per-year assignment cycle with branch / MOS rolls,
+                  specialist schools, command duty, brownie points, and
+                  decorations. (PM pp. 44-65.)
+                </span>
+              </span>
+            </label>
+          )}
+        </div>
+      </div>
+
+      {/* Step 3: ACG configuration — two-column on md+ when enabled */}
+      {hasAcg && useAcg && (
+        <div className={CARD + " space-y-4"}>
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              3. Advanced Character Generation
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Pick a pathway, then configure its starting branch / role.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <FormField label="Pathway">
+              <FormSelect value={acgPathway} onChange={setAcgPathway}>
+                <option value="" disabled>
+                  Select a pathway…
+                </option>
+                {acgPathways.map((p) => (
+                  <option key={p} value={p}>
+                    {p === "merchantPrince"
+                      ? "Merchant Prince"
+                      : p.charAt(0).toUpperCase() + p.slice(1)}
+                  </option>
+                ))}
+              </FormSelect>
+            </FormField>
+
+            <div className="space-y-4">
               {acgPathway === "mercenary" && (
                 <>
-                  <label className="mt-3 flex flex-col gap-1 text-sm">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Service</span>
-                    <select
+                  <FormField label="Service">
+                    <FormSelect
                       value={acgService}
-                      onChange={(e) => setAcgService(e.target.value as "army" | "marines")}
-                      className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                      onChange={(v) => setAcgService(v as "army" | "marines")}
                     >
                       <option value="army">Army</option>
                       <option value="marines">Marines</option>
-                    </select>
-                  </label>
-                  <label className="mt-3 flex flex-col gap-1 text-sm">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Combat arm</span>
-                    <select
-                      value={acgCombatArm}
-                      onChange={(e) => setAcgCombatArm(e.target.value)}
-                      className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                    >
+                    </FormSelect>
+                  </FormField>
+                  <FormField
+                    label="Combat arm"
+                    hint="Commando is restricted to Military Academy honors graduates."
+                  >
+                    <FormSelect value={acgCombatArm} onChange={setAcgCombatArm}>
                       {mercenaryNonCommandoArms(edition).map((arm) => (
-                        <option key={arm} value={arm}>{arm}</option>
+                        <option key={arm} value={arm}>
+                          {arm}
+                        </option>
                       ))}
-                    </select>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Commando is restricted to Military Academy honors graduates.
-                    </span>
-                  </label>
+                    </FormSelect>
+                  </FormField>
                 </>
               )}
 
               {acgPathway === "navy" && (
-                <label className="mt-3 flex flex-col gap-1 text-sm">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Fleet</span>
-                  <select
-                    value={acgFleet}
-                    onChange={(e) => setAcgFleet(e.target.value as typeof acgFleet)}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                <>
+                  <FormField label="Fleet">
+                    <FormSelect
+                      value={acgFleet}
+                      onChange={(v) => setAcgFleet(v as typeof acgFleet)}
+                    >
+                      <option value="imperialNavy">
+                        Imperial Navy (8+ to enlist)
+                      </option>
+                      <option value="reserveFleet">
+                        Reserve Fleet (7+ to enlist)
+                      </option>
+                      <option value="systemSquadron">
+                        System Squadron (6+, requires Early Stellar+ homeworld)
+                      </option>
+                    </FormSelect>
+                  </FormField>
+                  <FormField
+                    label="Subsector tech code"
+                    hint="Usually the subsector capital's tech. Default falls back to your homeworld tech."
                   >
-                    <option value="imperialNavy">Imperial Navy (8+ to enlist)</option>
-                    <option value="reserveFleet">Reserve Fleet (7+ to enlist)</option>
-                    <option value="systemSquadron">System Squadron (6+, requires homeworld tech Early Stellar+)</option>
-                  </select>
-                </label>
-              )}
-
-              {acgPathway === "navy" && (
-                <label className="mt-3 flex flex-col gap-1 text-sm">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    Subsector tech code <span className="font-normal opacity-70">(usually subsector capital&apos;s; defaults to homeworld tech)</span>
-                  </span>
-                  <select
-                    value={acgSubsectorTech}
-                    onChange={(e) => setAcgSubsectorTech(e.target.value)}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                  >
-                    <option value="">— default (homeworld tech, clamped to Early Stellar+)</option>
-                    <option value="Early Stellar">Early Stellar</option>
-                    <option value="Avg Stellar">Avg Stellar</option>
-                    <option value="High Stellar">High Stellar</option>
-                  </select>
-                </label>
+                    <FormSelect
+                      value={acgSubsectorTech}
+                      onChange={setAcgSubsectorTech}
+                    >
+                      <option value="">
+                        — default (homeworld tech, clamped to Early Stellar+)
+                      </option>
+                      <option value="Early Stellar">Early Stellar</option>
+                      <option value="Avg Stellar">Avg Stellar</option>
+                      <option value="High Stellar">High Stellar</option>
+                    </FormSelect>
+                  </FormField>
+                </>
               )}
 
               {acgPathway === "scout" && (
-                <label className="mt-3 flex flex-col gap-1 text-sm">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Division</span>
-                  <select
+                <FormField label="Division">
+                  <FormSelect
                     value={acgDivision}
-                    onChange={(e) => setAcgDivision(e.target.value as "field" | "bureaucracy")}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                    onChange={(v) =>
+                      setAcgDivision(v as "field" | "bureaucracy")
+                    }
                   >
-                    <option value="field">Field (Survey, Communications, Exploration)</option>
-                    <option value="bureaucracy">Bureaucracy (Technical, Operations, Administration, Detached Duty)</option>
-                  </select>
-                </label>
+                    <option value="field">
+                      Field (Survey, Communications, Exploration)
+                    </option>
+                    <option value="bureaucracy">
+                      Bureaucracy (Technical, Operations, Administration, Detached Duty)
+                    </option>
+                  </FormSelect>
+                </FormField>
               )}
 
               {acgPathway === "merchantPrince" && (
-                <label className="mt-3 flex flex-col gap-1 text-sm">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">Line type</span>
-                  <select
-                    value={acgLineType}
-                    onChange={(e) => setAcgLineType(e.target.value)}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                  >
-                    <option value="Megacorp">Megacorp (9+, Class B starport+)</option>
+                <FormField label="Line type">
+                  <FormSelect value={acgLineType} onChange={setAcgLineType}>
+                    <option value="Megacorp">Megacorp (9+, Class B+)</option>
                     <option value="Sector-wide">Sector-wide (8+, Class C+)</option>
                     <option value="Subsector-wide">Subsector-wide (7+, Class D+)</option>
                     <option value="Interface">Interface (7+)</option>
                     <option value="Fledgling">Fledgling (7+)</option>
                     <option value="Free Trader">Free Trader (7+)</option>
-                  </select>
-                </label>
+                  </FormSelect>
+                </FormField>
               )}
 
               {acgPathway === "merchantPrince" &&
                 (acgLineType === "Megacorp" || acgLineType === "Sector-wide") && (
-                <label className="mt-3 flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={acgMerchantAcademy}
-                    onChange={(e) => setAcgMerchantAcademy(e.target.checked)}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <strong className="font-semibold">Apply for Merchant Academy.</strong>{" "}
-                    PM p. 47: available only after enlistment in Megacorporation
-                    or Sector-wide lines. Honors graduates pick their department
-                    and start at rank O1.
-                  </span>
-                </label>
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={acgMerchantAcademy}
+                      onChange={(e) => setAcgMerchantAcademy(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <strong className="font-semibold">
+                        Apply for Merchant Academy.
+                      </strong>{" "}
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        PM p. 47: available only after enlistment in
+                        Megacorporation or Sector-wide lines. Honors graduates
+                        pick their department and start at rank O1.
+                      </span>
+                    </span>
+                  </label>
               )}
-            </>
-          )}
+
+              {!acgPathway && (
+                <p className="text-sm italic text-zinc-500 dark:text-zinc-500">
+                  Pick a pathway to configure its options.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      <PrimaryButton
-        onClick={onStart}
-        disabled={useAcg && hasAcg && !acgPathway}
-      >
-        Roll attributes &amp; begin →
-      </PrimaryButton>
-    </PhaseCard>
+      <div className="flex justify-end">
+        <PrimaryButton
+          onClick={onStart}
+          disabled={useAcg && hasAcg && !acgPathway}
+        >
+          Roll attributes &amp; begin →
+        </PrimaryButton>
+      </div>
+    </div>
   );
+}
+
+// ---------- edition picker ----------
+
+function EditionCard({
+  meta,
+  selected,
+  onSelect,
+}: {
+  meta: ReturnType<typeof listEditions>[number];
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const dataOnly = meta.status === "data-only";
+  const summary = editionSummary(meta.id);
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={dataOnly}
+      aria-pressed={selected}
+      className={[
+        "group relative flex flex-col gap-2 rounded-lg border p-4 text-left transition",
+        "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950",
+        selected
+          ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-500/30 dark:border-emerald-400 dark:bg-emerald-950/40"
+          : dataOnly
+            ? "cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-60 dark:border-zinc-800 dark:bg-zinc-900"
+            : "border-zinc-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/20",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-mono text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-50">
+            {meta.name}
+          </div>
+          {meta.year && (
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              {meta.year}
+            </div>
+          )}
+        </div>
+        {dataOnly ? (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+            Data only
+          </span>
+        ) : selected ? (
+          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+            Selected
+          </span>
+        ) : (
+          <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 group-hover:border-emerald-400 group-hover:text-emerald-700 dark:border-zinc-700 dark:text-zinc-400">
+            Available
+          </span>
+        )}
+      </div>
+      <div className="text-xs text-zinc-600 dark:text-zinc-400">
+        Based on:{" "}
+        <span className="italic">{meta.rulebooks.join(", ")}</span>
+      </div>
+      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{summary}</p>
+      {dataOnly && (
+        <p className="text-xs italic text-amber-700 dark:text-amber-400">
+          JSON data extracted, engine not yet implemented.
+        </p>
+      )}
+    </button>
+  );
+}
+
+function editionSummary(id: string): string {
+  if (id === "ct-classic") {
+    return "Classic Traveller: six services (Navy/Marines/Army/Scouts/Merchants/Other) plus Citizens of the Imperium expansions. Roll, enlist, run four-year terms, muster out. The original 1981 chargen.";
+  }
+  if (id === "mt-megatraveller") {
+    return "MegaTraveller adds homeworld generation, eighteen services (incl. Belters, Doctors, Pirates, Nobles), and an Advanced Character Generation system with brownie points, decorations, court martial, and per-year assignment cycles across four pathways.";
+  }
+  return "Edition data extracted from its rulebook. See data/editions for details.";
+}
+
+function EditionWorkflow({
+  editionId,
+  useAcg,
+}: {
+  editionId: string;
+  useAcg: boolean;
+}) {
+  const steps = workflowStepsFor(editionId, useAcg);
+  return (
+    <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
+      <div className={SECTION_LABEL}>What happens next</div>
+      <ol className="mt-2 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+        {steps.map((step, i) => (
+          <li key={i} className="flex gap-2.5">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-900 font-mono text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+              {i + 1}
+            </span>
+            <span>{step}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function workflowStepsFor(editionId: string, useAcg: boolean): string[] {
+  const ct = editionId === "ct-classic";
+  const mt = editionId === "mt-megatraveller";
+  const steps: string[] = [
+    "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
+  ];
+  if (mt) {
+    steps.push("Roll a homeworld (PM p. 12) — its tech / atmosphere / law constrain which careers you may enlist in.");
+  }
+  if (mt && useAcg) {
+    steps.push("Optional pre-career: college, service academy, medical or flight school. Honors graduates earn brownie points and special skills.");
+    steps.push("Pick a pathway (Mercenary / Navy / Scout / Merchant Prince) and roll for enlistment.");
+    steps.push("Each four-year term cycles annually: assignment roll, survival, decoration, promotion, skills. Schools, command duty, court martial, brownie point spend all in play.");
+  } else {
+    steps.push("Choose a service or take random; the enlistment roll determines acceptance vs. draft.");
+    steps.push(
+      ct
+        ? "Each four-year term: survival, commission and promotion, skills, then aging from age 34+. Reenlistment at term end."
+        : "Each four-year term: survival, position/commission, promotion, special duty, skills, aging from age 34+. Reenlistment at term end.",
+    );
+  }
+  steps.push("Muster out: cash and material benefits (passages, weapons, ships, TAS) determined by rank, terms, and rolls.");
+  return steps;
 }
 
 function PendingChoicesPanel({
