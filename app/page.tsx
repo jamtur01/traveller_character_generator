@@ -47,6 +47,9 @@ export default function Home() {
   >("imperialNavy");
   const [acgDivision, setAcgDivision] = useState<"field" | "bureaucracy">("field");
   const [acgLineType, setAcgLineType] = useState<string>("Free Trader");
+  // PM p. 52: Navy ACG characters need a subsector tech code (usually the
+  // capital's). Empty string = defer to beginAcg's homeworld-based default.
+  const [acgSubsectorTech, setAcgSubsectorTech] = useState<string>("");
   const [preferredService, setPreferredService] = useState<
     ServiceKey | "random"
   >("random");
@@ -158,6 +161,7 @@ export default function Home() {
           fleet: acgFleet,
           division: acgDivision,
           lineType: acgLineType,
+          ...(acgSubsectorTech ? { subsectorTechCode: acgSubsectorTech } : {}),
         });
       } catch (err) {
         // beginAcg throws on enlistment rejection; surface to the user.
@@ -415,6 +419,8 @@ export default function Home() {
               setAcgDivision={setAcgDivision}
               acgLineType={acgLineType}
               setAcgLineType={setAcgLineType}
+              acgSubsectorTech={acgSubsectorTech}
+              setAcgSubsectorTech={setAcgSubsectorTech}
             />
           )}
 
@@ -780,6 +786,8 @@ function StartPhase({
   setAcgDivision,
   acgLineType,
   setAcgLineType,
+  acgSubsectorTech,
+  setAcgSubsectorTech,
 }: {
   onStart: () => void;
   interactiveMode: boolean;
@@ -800,6 +808,8 @@ function StartPhase({
   setAcgDivision: (v: "field" | "bureaucracy") => void;
   acgLineType: string;
   setAcgLineType: (v: string) => void;
+  acgSubsectorTech: string;
+  setAcgSubsectorTech: (v: string) => void;
 }) {
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
@@ -977,6 +987,24 @@ function StartPhase({
                     <option value="imperialNavy">Imperial Navy (8+ to enlist)</option>
                     <option value="reserveFleet">Reserve Fleet (7+ to enlist)</option>
                     <option value="systemSquadron">System Squadron (6+, requires homeworld tech Early Stellar+)</option>
+                  </select>
+                </label>
+              )}
+
+              {acgPathway === "navy" && (
+                <label className="mt-3 flex flex-col gap-1 text-sm">
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                    Subsector tech code <span className="font-normal opacity-70">(usually subsector capital&apos;s; defaults to homeworld tech)</span>
+                  </span>
+                  <select
+                    value={acgSubsectorTech}
+                    onChange={(e) => setAcgSubsectorTech(e.target.value)}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <option value="">— default (homeworld tech, clamped to Early Stellar+)</option>
+                    <option value="Early Stellar">Early Stellar</option>
+                    <option value="Avg Stellar">Avg Stellar</option>
+                    <option value="High Stellar">High Stellar</option>
                   </select>
                 </label>
               )}
