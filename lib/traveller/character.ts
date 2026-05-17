@@ -644,18 +644,25 @@ export class Character {
 
   improveAttribute(attrib: AttributeKey, delta = 1) {
     this.attributes[attrib] += delta;
-    // TTB p. 17: characteristic values may not exceed 15 for player characters.
-    if (this.attributes[attrib] > 15) {
+    // PM/TTB p. 17 caps + per-edition socialMin override — sourced from
+    // rules.attributeCaps in the edition JSON.
+    const caps = (getEdition(this.editionId).data.rules as {
+      attributeCaps?: { max?: number; min?: number; socialMin?: number };
+    } | undefined)?.attributeCaps;
+    const max = caps?.max ?? 15;
+    if (this.attributes[attrib] > max) {
       this.verboseHistory(
-        `${attrib} would exceed 15; capping at 15 (TTB p. 17).`,
+        `${attrib} would exceed ${max}; capping at ${max}.`,
       );
-      this.attributes[attrib] = 15;
+      this.attributes[attrib] = max;
     }
-    if (this.attributes[attrib] < 1 && attrib === "social") {
-      this.verboseHistory(`Decreased ${attrib} below 1, keeping it at 1`);
-      this.attributes[attrib] = 1;
+    const socialMin = caps?.socialMin ?? 1;
+    const min = caps?.min ?? 0;
+    if (attrib === "social" && this.attributes[attrib] < socialMin) {
+      this.verboseHistory(`Decreased ${attrib} below ${socialMin}, keeping it at ${socialMin}`);
+      this.attributes[attrib] = socialMin;
     } else {
-      if (this.attributes[attrib] < 0) this.attributes[attrib] = 0;
+      if (this.attributes[attrib] < min) this.attributes[attrib] = min;
       this.verboseHistory(
         `${delta > 0 ? "Increased " : "Decreased "}${attrib} by ${delta} to ${extendedHex(this.attributes[attrib])}`,
       );
@@ -1448,14 +1455,12 @@ export class Character {
   // ---------- titles ----------
 
   getNobleTitle(): string {
-    switch (this.attributes.social) {
-      case 11: return this.gender === "female" ? "Dame" : "Sir";
-      case 12: return this.gender === "female" ? "Baroness" : "Baron";
-      case 13: return this.gender === "female" ? "Marchioness" : "Marquis";
-      case 14: return this.gender === "female" ? "Countess" : "Count";
-      case 15: return this.gender === "female" ? "Duchess" : "Duke";
-      default: return "";
-    }
+    const titles = (getEdition(this.editionId).data.rules as {
+      nobleTitles?: Record<string, { male?: string; female?: string }>;
+    } | undefined)?.nobleTitles;
+    const entry = titles?.[String(this.attributes.social)];
+    if (!entry) return "";
+    return (this.gender === "female" ? entry.female : entry.male) ?? "";
   }
 
   // ---------- display ----------

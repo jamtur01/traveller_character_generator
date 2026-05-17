@@ -1,14 +1,48 @@
 import { jsPDF } from "jspdf";
 import { Character } from "./traveller/character";
-import { BLADES, GUNS } from "./traveller/cascades";
 import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
+import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
 
-// Pistols are the prefix of the GUNS pool; deriving from the shared constant
-// keeps the two definitions from drifting.
-const PISTOLS = new Set<string>(GUNS.filter((g: string) => g.endsWith("Pistol") || g === "Revolver"));
-const BLADE_SET = new Set<string>(BLADES);
+/** Edition-aware pistol / blade sets for the "Equipment Qualified On"
+ *  rows. Pistols are the subset of the edition's gun pool ending in
+ *  "Pistol" (plus Revolver — TTB lists it alongside the pistols). */
+function pistolsFor(editionId: string): Set<string> {
+  const guns = cascadePoolByKey("gunCombat", editionId);
+  return new Set(guns.filter((g) => g.endsWith("Pistol") || g === "Revolver"));
+}
+function bladesFor(editionId: string): Set<string> {
+  return new Set(cascadePoolByKey("bladeCombat", editionId));
+}
+
+/** Ship/passage display names sourced from the edition's benefitDetails:
+ *  every key with a `shipType` is a ship; passage names come from the
+ *  `passages` block's displayName fields. */
+function shipNamesFor(editionId: string): Set<string> {
+  const out = new Set<string>();
+  const details = (getEdition(editionId).data as {
+    benefitDetails?: Record<string, unknown>;
+  }).benefitDetails;
+  if (!details) return out;
+  for (const [k, v] of Object.entries(details)) {
+    if ((v as { shipType?: unknown } | null)?.shipType !== undefined) out.add(k);
+  }
+  return out;
+}
+function passageNamesFor(editionId: string): string[] {
+  const passages = (getEdition(editionId).data as {
+    benefitDetails?: { passages?: Record<string, { displayName?: string }> };
+  }).benefitDetails?.passages ?? {};
+  const out = new Set<string>();
+  for (const v of Object.values(passages)) {
+    if (v.displayName) out.add(v.displayName);
+  }
+  // PM uses "Mid Passage" but TTB and some tables print "Middle Passage";
+  // accept both as the same kind for display purposes.
+  if (out.has("Mid Passage")) out.add("Middle Passage");
+  return [...out];
+}
 
 // Letter, in points.
 const PAGE_W = 612;
@@ -287,11 +321,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 135, y, 135, r19H);
   fieldLabel(doc, X0 + 139, y + 10, "19b. Preferred Pistol");
-  fieldValue(doc, X0 + 141, y + 28, highestSkillIn(c.skills, PISTOLS), 127);
+  fieldValue(doc, X0 + 141, y + 28, highestSkillIn(c.skills, pistolsFor(c.editionId)), 127);
 
   doc.rect(X0 + 270, y, 135, r19H);
   fieldLabel(doc, X0 + 274, y + 10, "19c. Preferred Blade");
-  fieldValue(doc, X0 + 276, y + 28, c.bladeBenefit || highestSkillIn(c.skills, BLADE_SET), 127);
+  fieldValue(doc, X0 + 276, y + 28, c.bladeBenefit || highestSkillIn(c.skills, bladesFor(c.editionId)), 127);
 
   doc.rect(X0 + 405, y, 135, r19H);
   fieldLabel(doc, X0 + 409, y + 10, "20. Travellers' Member?");
@@ -373,7 +407,7 @@ function drawSupplement(doc: jsPDF, c: Character) {
 
   doc.rect(X0 + 200, y, 340, 32);
   fieldLabel(doc, X0 + 204, y + 10, "Mustering-Out Passages");
-  const PASSAGE_KINDS = ["Low Passage", "Mid Passage", "Middle Passage", "High Passage"];
+  const PASSAGE_KINDS = passageNamesFor(c.editionId);
   const passageCounts = new Map<string, number>();
   for (const b of c.benefits) {
     if (PASSAGE_KINDS.includes(b)) {
@@ -387,11 +421,11 @@ function drawSupplement(doc: jsPDF, c: Character) {
   // Ships
   doc.rect(X0, y, W, 40);
   fieldLabel(doc, X0 + 4, y + 10, "Starships and Major Possessions");
-  const SHIP_NAMES = ["Free Trader", "Scout Ship", "Seeker", "Lab Ship", "Yacht", "Safari Ship", "Corsair"];
+  const shipNames = shipNamesFor(c.editionId);
   const seenShips = new Set<string>();
   const ships: string[] = [];
   for (const b of c.benefits) {
-    if (SHIP_NAMES.includes(b) && !seenShips.has(b)) {
+    if (shipNames.has(b) && !seenShips.has(b)) {
       seenShips.add(b);
       ships.push(formatBenefit(b, c));
     }
@@ -403,13 +437,10 @@ function drawSupplement(doc: jsPDF, c: Character) {
   // Other benefits (TAS, Instruments, Watch, etc.)
   doc.rect(X0, y, W, 40);
   fieldLabel(doc, X0 + 4, y + 10, "Other Benefits");
-  const SHIP_KINDS = new Set([
-    "Free Trader", "Scout Ship", "Seeker", "Lab Ship", "Yacht", "Safari Ship", "Corsair",
-  ]);
   const otherCounts = new Map<string, number>();
   for (const b of c.benefits) {
     if (PASSAGE_KINDS.includes(b)) continue;
-    if (SHIP_KINDS.has(b)) continue;
+    if (shipNames.has(b)) continue;
     if (b.endsWith("/yr Retirement Pay")) continue;
     otherCounts.set(b, (otherCounts.get(b) ?? 0) + 1);
   }
