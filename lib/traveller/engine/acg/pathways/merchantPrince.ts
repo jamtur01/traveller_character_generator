@@ -342,6 +342,10 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         target: typeof target === "number" ? target : 0,
         margin: sv.margin,
         consequence: "Mustered out of merchant service",
+        onMitigated: (c) => {
+          c.activeDuty = true;
+          c.history.push("Brownie-point spend revived character (Merchant survival saved).");
+        },
       });
       if (mit.newMargin < 0) {
         ch.history.push("Failed survival; mustered out of merchant service.");
