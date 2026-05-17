@@ -164,8 +164,10 @@ describe("Bug #4: aging crisis loop early-breaks on death", () => {
     c.doAging();
     expect(c.deceased).toBe(true);
     expect(c.activeDuty).toBe(false);
-    // Death history line should appear exactly once.
-    const deathLines = c.history.filter((h) => /Died of illness/.test(h));
+    // Death history line should appear exactly once. After the structured
+    // event migration the line reads "Character deceased — generation
+    // ended — aging crisis." rather than the old "Died of illness."
+    const deathLines = c.history.filter((h) => /Character deceased/.test(h));
     expect(deathLines).toHaveLength(1);
   });
 

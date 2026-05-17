@@ -5,6 +5,7 @@
 import { roll } from "../random";
 import type { Character } from "../character";
 import { getEdition } from "../editions";
+import { event as ev } from "../history";
 import type { ServiceKey } from "../types";
 
 export interface Homeworld {
@@ -172,8 +173,7 @@ export function applyHomeworldSkills(ch: Character, hw: Homeworld): void {
   for (const entry of data.defaultSkills) {
     if (!evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) continue;
     if (ch.checkSkill(entry.skill) >= 0) continue; // already known
-    ch.addSkill(entry.skill, entry.level);
-    ch.logRaw(`Homeworld grants ${entry.skill}-${entry.level}`, "verbose");
+    ch.addSkill(entry.skill, entry.level, "Homeworld");
   }
 }
 
@@ -281,9 +281,10 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
   const hw = rollHomeworld(ch);
   if (!hw) return null;
   ch.homeworld = hw;
-  ch.logRaw(
-    `Homeworld: Starport ${hw.starport}, ${hw.size}, ${hw.atmosphere}, ${hw.hydrosphere}, ${hw.population}, ${hw.law}, ${hw.tech}.`,
-  );
+  ch.log(ev.homeworld(
+    hw.starport, hw.size, hw.atmosphere, hw.hydrosphere,
+    hw.population, hw.law, hw.tech,
+  ));
   // Default skills depend on the service; here we apply only the
   // tech-based ones since service isn't yet selected. The service-based
   // skills are applied at enlistment time.
