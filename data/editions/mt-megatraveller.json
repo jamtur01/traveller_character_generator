@@ -438,6 +438,24 @@
       }
     }
   },
+  "includesSkills": {
+    "$comment": "PM Includes-skills, verified against MT_MegaTraveller_Players_Manual.pdf. Each entry expands to its constituent skill(s) at level 1 unless suffixed '-0'. Excluded: Small Watercraft (line 2393) and Wheeled Vehicle (line 2483) — both use the 'Includes' wording but with '-1' suffixes, which the PM treats as 'Serves as' (substitutes at one level lower), not as multi-skill grants. PM citations are line numbers in extracted text.",
+    "ATV": ["Tracked Vehicle", "Wheeled Vehicle"],
+    "Axe": ["Battle Axe", "Hand Axe"],
+    "Battle Dress": ["Vacc Suit"],
+    "Combat Rifleman": ["Advanced Combat Rifle", "Assault Rifle", "Carbine", "Gauss Rifle", "Rifle"],
+    "Handgun": ["Body Pistol", "Pistol", "Revolver", "Snub Pistol"],
+    "Heavy Weapons": [
+      "Autocannon", "Grenade Launcher", "Light Assault Gun",
+      "Machine Gun", "VRF Gauss Gun"
+    ],
+    "High-G Environ": ["Laser Weapons-0", "Energy Weapons-0"],
+    "Large Blade": ["Broadsword", "Cutlass", "Sword"],
+    "Laser Weapons": ["Laser Pistol", "Laser Rifle"],
+    "Polearm": ["Bayonet", "Halberd", "Pike", "Spear"],
+    "Rifleman": ["Autorifle", "Carbine", "Rifle", "Shotgun"],
+    "Small Blade": ["Blade", "Dagger"]
+  },
   "cascadeSkills": {
     "aircraft": [
       "Helicopter",
