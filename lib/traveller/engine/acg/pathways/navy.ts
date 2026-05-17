@@ -64,6 +64,12 @@ interface NavyData {
   retention?: unknown;
   specialAssignments?: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   specialAssignmentDetails?: Record<string, unknown>;
+  specialAssignmentRules?: Record<string, {
+    noSkillRoll?: boolean;
+    physicalAgeDelta?: number;
+    noRetention?: boolean;
+    historyLine?: string;
+  }>;
   combatAssignments?: string[];
   rankCaps?: { imperialNavy: number; reserveFleet: number; systemSquadron: number };
   specialistSchool?: Record<string, unknown>;
@@ -408,14 +414,24 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    // Frozen Watch (PM p. 53): cold sleep replacement; chronological age
-    // advances normally (runAcgYear handles the +1) but the character is
-    // *physically* one year younger per Frozen Watch year. No skills.
-    if (assignment === "Frozen Watch") {
-      ch.acgState!.frozenWatchYears = (ch.acgState!.frozenWatchYears ?? 0) + 1;
-      ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) - 1;
+    // Special-assignment rule: read mechanical overrides from
+    // navy.specialAssignmentRules in JSON (e.g. Frozen Watch: cold sleep
+    // — no skill roll, physical age frozen; PM p. 53).
+    const specials = (data as { specialAssignmentRules?: Record<string, {
+      noSkillRoll?: boolean;
+      physicalAgeDelta?: number;
+      historyLine?: string;
+    }> }).specialAssignmentRules ?? {};
+    const rule = specials[assignment];
+    if (rule) {
+      if (assignment === "Frozen Watch") {
+        ch.acgState!.frozenWatchYears = (ch.acgState!.frozenWatchYears ?? 0) + 1;
+      }
+      if (rule.physicalAgeDelta !== undefined) {
+        ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
+      }
       ch.acgState!.assignmentHistory.push(assignment);
-      ch.history.push("Frozen Watch: 1 year in cold sleep (chronological +1, physical +0).");
+      if (rule.historyLine) ch.history.push(rule.historyLine);
       return;
     }
     ch.verboseHistory(`Unknown navy assignment "${assignment}" for branch ${branch}`);
@@ -577,8 +593,13 @@ export function navyRetention(ch: Character, assignment: string): void {
   }
   // Per manual p. 53: "no one can be retained in the same assignment more
   // than once in succession". Retention roll: 1D=6 → same next year.
+  // Assignments flagged noRetention in navy.specialAssignmentRules are
+  // excluded (Frozen Watch / Special Duty).
+  const data = dataFor(ch);
+  const specials = (data as { specialAssignmentRules?: Record<string, { noRetention?: boolean }> })
+    .specialAssignmentRules ?? {};
   const r = roll(1);
-  if (r === 6 && assignment !== "Special Duty" && assignment !== "Frozen Watch") {
+  if (r === 6 && !specials[assignment]?.noRetention) {
     ch.acgState!.retainedAssignment = assignment;
     ch.acgState!.justRetained = true;
   } else {
