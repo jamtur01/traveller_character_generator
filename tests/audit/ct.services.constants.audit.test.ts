@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DRAFT_SERVICES, s, SERVICES, type Attributes,
-} from "../lib/traveller";
+} from "../../lib/traveller";
 
 // ============================================================================
 // TTB Prior Service Table — page 24

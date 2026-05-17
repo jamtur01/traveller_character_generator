@@ -25,8 +25,8 @@
 // unreachable in play; we still assert the code's behavior for documentation.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { s, type AttributeKey, type ServiceKey } from "../lib/traveller";
-import { Character } from "../lib/traveller/character";
+import { s, type AttributeKey, type ServiceKey } from "../../lib/traveller";
+import { Character } from "../../lib/traveller/character";
 
 const BASE = 7;
 

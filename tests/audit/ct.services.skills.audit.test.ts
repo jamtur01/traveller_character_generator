@@ -24,11 +24,11 @@
 // CotI p. 14 (Barbarian/Bureaucrat/Rogue/Noble/Scientist/Hunter).
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { s, type AttributeKey, type ServiceKey } from "../lib/traveller";
-import { Character } from "../lib/traveller/character";
+import { s, type AttributeKey, type ServiceKey } from "../../lib/traveller";
+import { Character } from "../../lib/traveller/character";
 import {
   AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
-} from "../lib/traveller/cascades";
+} from "../../lib/traveller/cascades";
 
 const BASE = 7;
 const POOLS = {

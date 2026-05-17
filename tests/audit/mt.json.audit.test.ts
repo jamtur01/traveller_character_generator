@@ -83,3 +83,167 @@ describe("Navy per-fleet officer rank caps (PM p. 55 line 3504)", () => {
     expect(caps.systemSquadron).toBe(7);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pathway → resolution sub-table mappings (consistency check on JSON).
+// Engine-side use of these mappings is exercised in tests/acg.runtime.test.ts.
+// ---------------------------------------------------------------------------
+
+describe("Pathway → resolution sub-table mappings live in JSON", () => {
+  it("mercenary.combatArmResolution maps every combat arm to a sub-table", () => {
+    const map = mercenary.combatArmResolution as Record<string, string>;
+    const arms = mercenary.combatArms as string[];
+    expect(map).toBeDefined();
+    const resKeys = Object.keys(
+      mercenary.assignmentResolution as Record<string, unknown>,
+    );
+    for (const arm of arms) {
+      expect(map[arm]).toBeDefined();
+      expect(resKeys).toContain(map[arm]);
+    }
+  });
+
+  it("navy.branchResolution maps every branch to a sub-table", () => {
+    const map = navy.branchResolution as Record<string, string>;
+    const branches = navy.branches as string[];
+    expect(map).toBeDefined();
+    const resKeys = Object.keys(
+      navy.assignmentResolution as Record<string, unknown>,
+    );
+    for (const branch of branches) {
+      expect(map[branch]).toBeDefined();
+      expect(resKeys).toContain(map[branch]);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Survival failure mode (PM p. 16) — JSON declares non-death failure.
+// Engine-side behaviour for shortTerm survival is in tests/mt.architecture.test.ts.
+// ---------------------------------------------------------------------------
+
+describe("MT rules.survival.onFailure declares 'shortTerm' (PM p. 16)", () => {
+  it("rules.survival.onFailure is 'shortTerm'", () => {
+    const rules = json.rules as { survival?: { onFailure?: string } };
+    expect(rules.survival?.onFailure).toBe("shortTerm");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Homeworld table (PM p. 12-13) — cell-for-cell audit against the manual.
+// Engine-side behaviour is in tests/homeworld.test.ts.
+// ---------------------------------------------------------------------------
+
+interface ManualRow {
+  die: number;
+  starport: string;
+  size: string;
+  atmosphere: string;
+  hydrosphere: string;
+  population: string;
+  law: string;
+  tech: string;
+}
+
+const MANUAL_ROWS: ManualRow[] = [
+  { die: 2,  starport: "A",   size: "Asteroid", atmosphere: "Vacuum",   hydrosphere: "Desert",      population: "Low Pop",  law: "No Law",    tech: "Pre-Industrial" },
+  { die: 3,  starport: "A",   size: "Small",    atmosphere: "Vacuum",   hydrosphere: "Desert",      population: "Low Pop",  law: "Low Law",   tech: "Industrial" },
+  { die: 4,  starport: "A",   size: "Small",    atmosphere: "Thin",     hydrosphere: "Dry",         population: "Mod Pop",  law: "Low Law",   tech: "Industrial" },
+  { die: 5,  starport: "A",   size: "Small",    atmosphere: "Thin",     hydrosphere: "Dry",         population: "Mod Pop",  law: "Mod Law",   tech: "Pre-Stellar" },
+  { die: 6,  starport: "A",   size: "Small",    atmosphere: "Standard", hydrosphere: "Wet World",   population: "Mod Pop",  law: "Mod Law",   tech: "Pre-Stellar" },
+  { die: 7,  starport: "B",   size: "Medium",   atmosphere: "Standard", hydrosphere: "Wet World",   population: "Mod Pop",  law: "Mod Law",   tech: "Early Stellar" },
+  { die: 8,  starport: "B",   size: "Medium",   atmosphere: "Standard", hydrosphere: "Wet World",   population: "High Pop", law: "Mod Law",   tech: "Early Stellar" },
+  { die: 9,  starport: "B",   size: "Medium",   atmosphere: "Dense",    hydrosphere: "Wet World",   population: "High Pop", law: "Mod Law",   tech: "Avg Stellar" },
+  { die: 10, starport: "C",   size: "Large",    atmosphere: "Dense",    hydrosphere: "Wet World",   population: "High Pop", law: "High Law",  tech: "Avg Stellar" },
+  { die: 11, starport: "C",   size: "Large",    atmosphere: "Exotic",   hydrosphere: "Wet World",   population: "High Pop", law: "High Law",  tech: "High Stellar" },
+  { die: 12, starport: "D-X", size: "Large",    atmosphere: "Exotic",   hydrosphere: "Water World", population: "High Pop", law: "Ext Law",   tech: "High Stellar" },
+];
+
+describe("MT homeworld JSON matches PM p. 12 cell-for-cell", () => {
+  const rows = (json.homeworld as { rollTable: { rows: ManualRow[] } }).rollTable.rows;
+
+  it("table has 11 rows (rolls 2-12)", () => {
+    expect(rows).toHaveLength(11);
+  });
+
+  for (const m of MANUAL_ROWS) {
+    it(`row die=${m.die} matches manual cell-for-cell`, () => {
+      const r = rows.find((r) => r.die === m.die);
+      expect(r).toBeDefined();
+      expect(r!.starport).toBe(m.starport);
+      expect(r!.size).toBe(m.size);
+      expect(r!.atmosphere).toBe(m.atmosphere);
+      expect(r!.hydrosphere).toBe(m.hydrosphere);
+      expect(r!.population).toBe(m.population);
+      expect(r!.law).toBe(m.law);
+      expect(r!.tech).toBe(m.tech);
+    });
+  }
+});
+
+describe("MT homeworld starport X follow-up roll matches PM", () => {
+  it("1-3 → D, 4-5 → E, 6 → X", () => {
+    const r = (json.homeworld as { starportXRoll: { results: Record<string, string> } })
+      .starportXRoll.results;
+    expect(r["1"]).toBe("D");
+    expect(r["2"]).toBe("D");
+    expect(r["3"]).toBe("D");
+    expect(r["4"]).toBe("E");
+    expect(r["5"]).toBe("E");
+    expect(r["6"]).toBe("X");
+  });
+});
+
+describe("Edition lifecycle.terms declarations vs PM", () => {
+  it("ct-classic.lifecycle.terms has no specialDuty step", () => {
+    const ctJson = JSON.parse(
+      readFileSync(resolve(__dirname, "../../data/editions/ct-classic.json"), "utf8"),
+    ) as { lifecycle?: { terms?: Array<{ id: string }> } };
+    const terms = ctJson.lifecycle?.terms ?? [];
+    expect(terms.some((t) => t.id === "specialDuty")).toBe(false);
+  });
+
+  it("mt-megatraveller.lifecycle.terms includes specialDuty", () => {
+    const terms = ((json.lifecycle as { terms?: Array<{ id: string }> }).terms ?? []);
+    expect(terms.some((t) => t.id === "specialDuty")).toBe(true);
+  });
+});
+
+describe("MT homeworld defaultSkills match PM p. 13", () => {
+  it("includes the five canonical entries", () => {
+    const ds = (json.homeworld as {
+      defaultSkills: Array<{
+        skill: string;
+        level: number;
+        when?: {
+          serviceIn?: string[];
+          serviceNotIn?: string[];
+          techAtLeast?: string;
+          techIn?: string[];
+        };
+      }>;
+    }).defaultSkills;
+    // Vacc Suit-0 for navy/marines/flyers/scouts/merchants/pirates.
+    expect(ds.some((d) =>
+      d.skill === "Vacc Suit" &&
+      d.when?.serviceIn?.includes("navy") === true,
+    )).toBe(true);
+    // Gun Combat-0 for all except barbarians.
+    expect(ds.some((d) =>
+      d.skill === "Gun Combat" &&
+      d.when?.serviceNotIn?.includes("barbarians") === true,
+    )).toBe(true);
+    // Computer-0 for Early Stellar+.
+    expect(ds.some((d) =>
+      d.skill === "Computer" && d.when?.techAtLeast === "Early Stellar",
+    )).toBe(true);
+    // Grav Vehicle-0 for Avg Stellar+.
+    expect(ds.some((d) =>
+      d.skill === "Grav Vehicle" && d.when?.techAtLeast === "Avg Stellar",
+    )).toBe(true);
+    // Wheeled Vehicle-0 for Industrial/Pre-Stellar/Early Stellar.
+    expect(ds.some((d) =>
+      d.skill === "Wheeled Vehicle" && d.when?.techIn?.includes("Industrial") === true,
+    )).toBe(true);
+  });
+});

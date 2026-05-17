@@ -1,9 +1,8 @@
-// MT homeworld tests. Exercises the actual generation engine plus
-// validates the JSON data against the MT Players' Manual pp. 12-13.
+// MT homeworld engine-behaviour tests. JSON↔PM citation locks for the
+// rollTable / starportXRoll / defaultSkills blocks live in
+// tests/audit/mt.json.audit.test.ts.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Character } from "../lib/traveller/character";
 import {
   applyHomeworldSkills, availableServicesForHomeworld, editionHasHomeworld,
@@ -27,121 +26,9 @@ describe("editionHasHomeworld", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// JSON ↔ Manual validation
-//
-// MT Players' Manual p. 12 prints the homeworld description codes table
-// (rolls 2–12). Compare every cell.
-// ---------------------------------------------------------------------------
-
-interface ManualRow {
-  die: number;
-  starport: string;
-  size: string;
-  atmosphere: string;
-  hydrosphere: string;
-  population: string;
-  law: string;
-  tech: string;
-}
-
-const MANUAL_ROWS: ManualRow[] = [
-  { die: 2,  starport: "A",   size: "Asteroid", atmosphere: "Vacuum",   hydrosphere: "Desert",      population: "Low Pop",  law: "No Law",    tech: "Pre-Industrial" },
-  { die: 3,  starport: "A",   size: "Small",    atmosphere: "Vacuum",   hydrosphere: "Desert",      population: "Low Pop",  law: "Low Law",   tech: "Industrial" },
-  { die: 4,  starport: "A",   size: "Small",    atmosphere: "Thin",     hydrosphere: "Dry",         population: "Mod Pop",  law: "Low Law",   tech: "Industrial" },
-  { die: 5,  starport: "A",   size: "Small",    atmosphere: "Thin",     hydrosphere: "Dry",         population: "Mod Pop",  law: "Mod Law",   tech: "Pre-Stellar" },
-  { die: 6,  starport: "A",   size: "Small",    atmosphere: "Standard", hydrosphere: "Wet World",   population: "Mod Pop",  law: "Mod Law",   tech: "Pre-Stellar" },
-  { die: 7,  starport: "B",   size: "Medium",   atmosphere: "Standard", hydrosphere: "Wet World",   population: "Mod Pop",  law: "Mod Law",   tech: "Early Stellar" },
-  { die: 8,  starport: "B",   size: "Medium",   atmosphere: "Standard", hydrosphere: "Wet World",   population: "High Pop", law: "Mod Law",   tech: "Early Stellar" },
-  { die: 9,  starport: "B",   size: "Medium",   atmosphere: "Dense",    hydrosphere: "Wet World",   population: "High Pop", law: "Mod Law",   tech: "Avg Stellar" },
-  { die: 10, starport: "C",   size: "Large",    atmosphere: "Dense",    hydrosphere: "Wet World",   population: "High Pop", law: "High Law",  tech: "Avg Stellar" },
-  { die: 11, starport: "C",   size: "Large",    atmosphere: "Exotic",   hydrosphere: "Wet World",   population: "High Pop", law: "High Law",  tech: "High Stellar" },
-  { die: 12, starport: "D-X", size: "Large",    atmosphere: "Exotic",   hydrosphere: "Water World", population: "High Pop", law: "Ext Law",   tech: "High Stellar" },
-];
-
-describe("MT homeworld JSON matches the Players' Manual p. 12 table", () => {
-  const mt = JSON.parse(
-    readFileSync(resolve(__dirname, "../data/editions/mt-megatraveller.json"), "utf8"),
-  ) as { homeworld: { rollTable: { rows: ManualRow[] } } };
-  const rows = mt.homeworld.rollTable.rows;
-
-  it("table has 11 rows (rolls 2-12)", () => {
-    expect(rows).toHaveLength(11);
-  });
-
-  for (const m of MANUAL_ROWS) {
-    it(`row die=${m.die} matches manual cell-for-cell`, () => {
-      const r = rows.find((r) => r.die === m.die);
-      expect(r).toBeDefined();
-      expect(r!.starport).toBe(m.starport);
-      expect(r!.size).toBe(m.size);
-      expect(r!.atmosphere).toBe(m.atmosphere);
-      expect(r!.hydrosphere).toBe(m.hydrosphere);
-      expect(r!.population).toBe(m.population);
-      expect(r!.law).toBe(m.law);
-      expect(r!.tech).toBe(m.tech);
-    });
-  }
-});
-
-describe("MT homeworld starport X follow-up roll matches the manual", () => {
-  it("1-3 → D, 4-5 → E, 6 → X", () => {
-    const mt = JSON.parse(
-      readFileSync(resolve(__dirname, "../data/editions/mt-megatraveller.json"), "utf8"),
-    ) as { homeworld: { starportXRoll: { results: Record<string, string> } } };
-    const r = mt.homeworld.starportXRoll.results;
-    expect(r["1"]).toBe("D");
-    expect(r["2"]).toBe("D");
-    expect(r["3"]).toBe("D");
-    expect(r["4"]).toBe("E");
-    expect(r["5"]).toBe("E");
-    expect(r["6"]).toBe("X");
-  });
-});
-
-describe("MT default skills match the manual (p. 13)", () => {
-  it("includes the five canonical entries", () => {
-    const mt = JSON.parse(
-      readFileSync(resolve(__dirname, "../data/editions/mt-megatraveller.json"), "utf8"),
-    ) as {
-      homeworld: {
-        defaultSkills: Array<{
-          skill: string;
-          level: number;
-          when?: {
-            serviceIn?: string[];
-            serviceNotIn?: string[];
-            techAtLeast?: string;
-            techIn?: string[];
-          };
-        }>;
-      };
-    };
-    const ds = mt.homeworld.defaultSkills;
-    // Vacc Suit-0 for navy/marines/flyers/scouts/merchants/pirates
-    expect(ds.some((d) =>
-      d.skill === "Vacc Suit" &&
-      d.when?.serviceIn?.includes("navy") === true,
-    )).toBe(true);
-    // Gun Combat-0 for all except barbarians
-    expect(ds.some((d) =>
-      d.skill === "Gun Combat" &&
-      d.when?.serviceNotIn?.includes("barbarians") === true,
-    )).toBe(true);
-    // Computer-0 for Early Stellar+
-    expect(ds.some((d) =>
-      d.skill === "Computer" && d.when?.techAtLeast === "Early Stellar",
-    )).toBe(true);
-    // Grav Vehicle-0 for Avg Stellar+
-    expect(ds.some((d) =>
-      d.skill === "Grav Vehicle" && d.when?.techAtLeast === "Avg Stellar",
-    )).toBe(true);
-    // Wheeled Vehicle-0 for Industrial/Pre-Stellar/Early Stellar
-    expect(ds.some((d) =>
-      d.skill === "Wheeled Vehicle" && d.when?.techIn?.includes("Industrial") === true,
-    )).toBe(true);
-  });
-});
+// JSON↔PM cell-for-cell audit for the rollTable, starportXRoll, and
+// defaultSkills blocks lives in tests/audit/mt.json.audit.test.ts.
+// This file covers engine behaviour against those JSON declarations.
 
 // ---------------------------------------------------------------------------
 // Engine behaviour
