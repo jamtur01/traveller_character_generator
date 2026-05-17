@@ -3,18 +3,16 @@
 // (enlistmentThrow, checkSurvival, acquireSkill, musterBenefits, etc.) so
 // existing callers in character.ts and the test suite continue to work.
 
-import { roll } from "../random";
+import { arnd, roll } from "../random";
 import type { Character } from "../character";
 import type { Attributes, ServiceDef } from "../types";
+import { cascadePoolForLabel } from "./cascadeMap";
 import type {
   AutoSkillEntry,
   CanonData,
   Edition,
   ServiceData,
 } from "../editions/types";
-import {
-  cascadeAircraft, cascadeBlade, cascadeBow, cascadeGun,
-} from "../cascades";
 import { applyCell } from "./cellResolver";
 import { evaluateDM } from "./dmEvaluator";
 
@@ -214,25 +212,16 @@ function resolveAutoSkill(label: string, ch: Character): string {
 }
 
 function applyAutoCascade(label: string, ch: Character): string | undefined {
-  switch (label) {
-    case "Blade Combat":
-    case "Blade Cbt":
-    case "Blade":
-      return cascadeBlade(ch);
-    case "Gun Combat":
-    case "Gun Cbt":
-    case "Gun":
-      return cascadeGun(ch);
-    case "Bow Combat":
-    case "Bow Cbt":
-    case "Bow":
-      return cascadeBow(ch);
-    case "Air Craft":
-    case "Aircraft":
-      return cascadeAircraft(ch);
-    default:
-      return undefined;
+  // Use the edition-aware cascade pool lookup. The alias map +
+  // cascade-pool table are both in JSON (cascadeAliases / cascadeSkills),
+  // so this works equivalently for CT and MT without hardcoded pools.
+  const pool = cascadePoolForLabel(label, ch.editionId);
+  if (!pool) return undefined;
+  const known: string[] = [];
+  for (const [name] of ch.skills) {
+    if (pool.includes(name)) known.push(name);
   }
+  return arnd(known.length > 0 ? known : pool);
 }
 
 /** "Marines" → "Marine", "Doctors" → "Doctor", etc. */

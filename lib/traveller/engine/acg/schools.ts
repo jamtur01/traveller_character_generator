@@ -285,8 +285,7 @@ function ocsCommission(ch: Character): void {
   if (!ch.acgState) return;
   // F4/F17: PM lines 778, 3081, 3343, 3849 — drafted characters cannot
   // attend OCS / receive a commission during their first four-year term.
-  // The rule is data-driven via rules.draft.noCommissionFirstTerm so
-  // editions can opt in/out.
+  // The rule is data-driven via rules.draft.noCommissionFirstTerm.
   const draftRules = (getEdition(ch.editionId).data as {
     rules?: { draft?: { noCommissionFirstTerm?: boolean } };
   }).rules?.draft;
@@ -294,19 +293,44 @@ function ocsCommission(ch: Character): void {
     ch.history.push("OCS denied: drafted characters cannot commission during their first term (PM p. 21).");
     return;
   }
-  const rankNum = parseInt(ch.acgState.rankCode.replace("E", ""), 10) || 0;
-  if (rankNum === 7) {
-    ch.acgState.isOfficer = true;
-    ch.acgState.rankCode = "O2";
-  } else if (rankNum >= 8) {
-    ch.acgState.isOfficer = true;
-    ch.acgState.rankCode = "O3";
-    ch.history.push("OCS: promoted to O3 (no skills due to senior rank)");
-  } else {
-    ch.acgState.isOfficer = true;
-    ch.acgState.rankCode = "O1";
+  // OCS rank-advancement tiers come from the pathway data
+  // (mercenary.ocsAdvancement / navy.ocsAdvancement, etc.), keyed by
+  // the character's current enlisted rank — PM p. 51 line 3182-3187.
+  const policy = readOcsAdvancement(ch);
+  let resolved: string | undefined;
+  let skipsSkills = false;
+  for (const tier of policy?.tiers ?? []) {
+    if (tier.fromRanks?.includes(ch.acgState.rankCode)) {
+      resolved = tier.toRank;
+      skipsSkills = tier.skipsSkills === true;
+      break;
+    }
+  }
+  if (!resolved) resolved = policy?.defaultToRank ?? "O1";
+  ch.acgState.isOfficer = true;
+  ch.acgState.rankCode = resolved;
+  if (skipsSkills) {
+    ch.history.push(`OCS: promoted to ${resolved} (no skills due to senior rank)`);
   }
   ch.history.push(`OCS graduation: rank ${ch.acgState.rankCode}`);
+}
+
+interface OcsAdvancement {
+  tiers?: Array<{ fromRanks?: string[]; toRank: string; skipsSkills?: boolean }>;
+  defaultToRank?: string;
+  ageLimit?: number;
+}
+
+/** Read the pathway's `ocsAdvancement` block (PM p. 51 line 3182-3187 for
+ *  mercenary; analogous data for navy if/when added). Falls back to
+ *  default-to-O1 if the data is missing. */
+function readOcsAdvancement(ch: Character): OcsAdvancement | null {
+  const pathway = ch.acgState?.pathway;
+  if (!pathway) return null;
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  const pathwayData = acg?.[pathway] as { ocsAdvancement?: OcsAdvancement } | undefined;
+  return pathwayData?.ocsAdvancement ?? null;
 }
 
 function attacheOrAide(

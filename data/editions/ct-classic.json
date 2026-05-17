@@ -81,6 +81,20 @@
     }
   },
   "rules": {
+    "nobleTitles": {
+      "$rule": "CotI p. 8: Social Standing B-F confers a noble title (Knights/Sir, Baron, Marquis, Count, Duke).",
+      "11": { "male": "Sir", "female": "Dame" },
+      "12": { "male": "Baron", "female": "Baroness" },
+      "13": { "male": "Marquis", "female": "Marchioness" },
+      "14": { "male": "Count", "female": "Countess" },
+      "15": { "male": "Duke", "female": "Duchess" }
+    },
+    "attributeCaps": {
+      "$rule": "TTB p. 17: 'For player characters the values of characteristics may not exceed 15; values do not go below 1 except for the results of calamitous injury or aging.'",
+      "max": 15,
+      "min": 0,
+      "socialMin": 1
+    },
     "dice": {
       "characteristics": "2d6 each",
       "serviceChecks": "2d6",

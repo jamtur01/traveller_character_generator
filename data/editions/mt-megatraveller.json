@@ -386,6 +386,22 @@
       "halfOfCashTable": true,
       "cashTableSource": "services.merchants.musterOut.cash"
     },
+    "nobleTitles": {
+      "$rule": "PM p. 8 lines 516-526. Social Standing B (11) through F (15) confers a noble title. G (16) Archduke and H (17) Emperor are beyond PC range and listed here for completeness.",
+      "11": { "male": "Sir", "female": "Dame" },
+      "12": { "male": "Baron", "female": "Baroness" },
+      "13": { "male": "Marquis", "female": "Marchioness" },
+      "14": { "male": "Count", "female": "Countess" },
+      "15": { "male": "Duke", "female": "Duchess" },
+      "16": { "male": "Archduke", "female": "Archduchess" },
+      "17": { "male": "Emperor", "female": "Empress" }
+    },
+    "attributeCaps": {
+      "$rule": "PM/TTB p. 17 + line 507-508: 'For player characters the values of characteristics may not exceed 15; values do not go below 1 except for the results of calamitous injury or aging.'",
+      "max": 15,
+      "min": 0,
+      "socialMin": 1
+    },
     "skillCap": {
       "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
       "source": "MT PM p. 39"
@@ -4122,9 +4138,15 @@
         "Commando"
       ],
       "combatArmEligibility": {
+        "$rule": "PM p. 50 line 2995-2997: Army characters may select any combat arm except Commando. Marine characters may select only Infantry or Support. Commando cannot be selected initially by anyone except a Military Academy honors graduate.",
         "army": ["Artillery", "Cavalry", "Infantry", "Support"],
         "marines": ["Infantry", "Support"],
-        "commandoEntryRequires": "Military Academy honors graduate"
+        "armGates": {
+          "Commando": {
+            "honorsGraduateOf": "militaryAcademy",
+            "errorMessage": "Commando combat arm requires Military Academy honors graduate (PM p. 50)."
+          }
+        }
       },
       "combatArmResolution": {
         "Infantry": "infantryCavalryArtillery",
@@ -4864,6 +4886,29 @@
           { "homeworldTechAtLeast": "Avg Stellar", "dm": 1, "note": "homeworld Avg Stellar+" }
         ],
         "notes": []
+      },
+      "skillColumnPolicy": {
+        "$rule": "PM p. 51 line 3194-3196: 'Army Life is for the Army, Marine Life for Marines, NCO Skills for rank E3 to E9, Command Skills for rank O1+ with Command Duty, Staff Skills for rank O1+ without Command Duty, and Shipboard Skills for Marines on Ship's Troops.'",
+        "officerInCommand": "commandSkills",
+        "officerStaff": "staffSkills",
+        "enlistedNcoMinRank": "E3",
+        "enlistedNcoColumn": "ncoSkills",
+        "enlistedLowRankColumns": {
+          "army": "armyLife",
+          "Army": "armyLife",
+          "marines": "marineLife",
+          "Marines": "marineLife"
+        },
+        "shipsTroopsColumn": "shipboardSkills"
+      },
+      "ocsAdvancement": {
+        "$rule": "PM p. 51 line 3182-3187: 'OCS: Advance to rank O1 (rank E7 advances to rank O2) in current or cross-trained branch. Roll twice on the Service Skills table and once on the MOS table. Rank E8 and E9 are commissioned to Rank O3, adding no skills.'",
+        "tiers": [
+          { "fromRanks": ["E7"], "toRank": "O2" },
+          { "fromRanks": ["E8", "E9"], "toRank": "O3", "skipsSkills": true }
+        ],
+        "defaultToRank": "O1",
+        "ageLimit": 38
       },
       "ranks": {
         "enlisted": [

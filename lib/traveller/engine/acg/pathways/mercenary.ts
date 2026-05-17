@@ -96,24 +96,28 @@ export function mercenaryEnlist(
   //   - Marine characters may select only Infantry or Support.
   //   - Commando entry is gated to Military Academy honors graduates,
   //     regardless of service.
-  const elig = data.combatArmEligibility;
+  const elig = data.combatArmEligibility as undefined | {
+    army?: string[];
+    marines?: string[];
+    armGates?: Record<string, { honorsGraduateOf?: string; errorMessage?: string }>;
+  };
   if (elig) {
-    const allowedByService = elig[service] ?? null;
-    if (combatArm === "Commando") {
-      // Commando entry requires Military Academy *honors* graduation (PM
-      // p. 50). Pre-career commission alone (without honors) does not
-      // qualify; track via acgState.honorsGraduations.
+    const armGate = elig.armGates?.[combatArm];
+    if (armGate?.honorsGraduateOf) {
       const honors = ch.acgState!.honorsGraduations ?? [];
-      if (!honors.includes("militaryAcademy")) {
+      if (!honors.includes(armGate.honorsGraduateOf)) {
         throw new Error(
-          "Commando combat arm requires Military Academy honors graduate (PM p. 50).",
+          armGate.errorMessage ?? `Combat arm "${combatArm}" gated by ${armGate.honorsGraduateOf} honors.`,
         );
       }
-    } else if (allowedByService && !allowedByService.includes(combatArm)) {
-      throw new Error(
-        `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
-        `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
-      );
+    } else {
+      const allowedByService = elig[service as "army" | "marines"] ?? null;
+      if (allowedByService && !allowedByService.includes(combatArm)) {
+        throw new Error(
+          `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
+          `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
+        );
+      }
     }
   }
   ch.acgState!.combatArm = combatArm;
@@ -482,13 +486,28 @@ function rollMercenarySkill(ch: Character): void {
 }
 
 function mercenaryDefaultSkillColumn(ch: Character): string {
+  // Per JSON skillColumnPolicy (PM p. 51 line 3194-3196).
+  const data = dataFor(ch);
+  const pol = (data as { skillColumnPolicy?: {
+    officerInCommand: string;
+    officerStaff: string;
+    enlistedNcoMinRank: string;
+    enlistedNcoColumn: string;
+    enlistedLowRankColumns: Record<string, string>;
+  } }).skillColumnPolicy;
+  if (!pol) return "ncoSkills";
   if (ch.acgState!.isOfficer) {
-    return ch.acgState!.inCommand ? "commandSkills" : "staffSkills";
+    return ch.acgState!.inCommand ? pol.officerInCommand : pol.officerStaff;
   }
-  if (ch.acgState!.rankCode === "E1" || ch.acgState!.rankCode === "E2") {
-    return ch.acgState!.branch === "Marines" ? "marineLife" : "armyLife";
+  // Enlisted: rank below the NCO threshold uses Army/Marine Life column.
+  const rank = ch.acgState!.rankCode;
+  const enlistedNum = parseInt(rank.replace(/[^\d]/g, ""), 10) || 0;
+  const ncoMin = parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 3;
+  if (enlistedNum < ncoMin) {
+    const branch = ch.acgState!.branch ?? "";
+    return pol.enlistedLowRankColumns[branch] ?? pol.enlistedLowRankColumns["army"] ?? "armyLife";
   }
-  return "ncoSkills";
+  return pol.enlistedNcoColumn;
 }
 
 function mercenaryAvailableSkillColumns(ch: Character): string[] {
