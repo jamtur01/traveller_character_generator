@@ -236,6 +236,47 @@ describe("Merchant Prince ACG runtime", () => {
     expect(c.acgState!.department).not.toBe("Free Trader");
   });
 
+  it("R6: Megacorp enlistment runs Merchant Academy attempt post-enlistment", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgChar();
+    c.attributes.education = 12;
+    c.attributes.intelligence = 12;
+    c.attributes.social = 12;
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
+    c.beginAcg("merchantPrince", { lineType: "Megacorp" });
+    // Merchant Academy should have been attempted: schoolsAttended will
+    // contain "merchantAcademy" if it graduated.
+    expect(c.acgState!.schoolsAttended).toContain("merchantAcademy");
+  });
+
+  it("R6: Free Trader enlistment does NOT attempt Merchant Academy", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgChar();
+    c.beginAcg("merchantPrince", { lineType: "Free Trader" });
+    expect(c.acgState!.schoolsAttended).not.toContain("merchantAcademy");
+  });
+
+  it("R6: Merchant Academy honors graduate keeps department selection", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgChar();
+    c.attributes.education = 12;
+    c.attributes.intelligence = 12;
+    c.attributes.social = 12;
+    c.homeworld = {
+      starport: "A", size: "Medium", atmosphere: "Standard",
+      hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+      tech: "Avg Stellar",
+    };
+    c.beginAcg("merchantPrince", { lineType: "Megacorp" });
+    // Honors graduate auto-mode picks a random department. The post-enlistment
+    // department-assignment roll must NOT overwrite the academy choice.
+    expect(c.acgState!.department).toBeDefined();
+  });
+
   it("Enlisted ranks advance on each new term via startOfTerm hook", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();

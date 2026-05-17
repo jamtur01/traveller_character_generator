@@ -474,6 +474,10 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
   if (departments.length === 0) return;
   const apply = (choice: string): void => {
     out.notes.push(`Merchant department: ${choice}`);
+    // PM p. 47: "may select the department to which he will be assigned"
+    // — record the player's pick so the post-enlistment flow doesn't
+    // re-roll department assignment.
+    if (ch.acgState) ch.acgState.department = choice;
     for (let i = 0; i < 3; i++) {
       if (roll(1) >= 4) {
         const r = roll(1);
