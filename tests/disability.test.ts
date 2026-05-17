@@ -92,3 +92,39 @@ describe("MT disability rule (F2/F3)", () => {
     expect(c.isDisabled().disabled).toBe(false);
   });
 });
+
+describe("F4/F17: drafted no OCS first term", () => {
+  it("drafted character cannot OCS in first term", async () => {
+    const { applyMercenarySchool } = await import(
+      "../lib/traveller/engine/acg/schools"
+    );
+    const c = makeMt();
+    c.drafted = true;
+    c.terms = 0;
+    c.browniePoints = 0; // force lazy-init acgState
+    if (c.acgState) {
+      c.acgState.rankCode = "E5";
+      c.acgState.isOfficer = false;
+    }
+    applyMercenarySchool(c, "OCS");
+    expect(c.acgState?.isOfficer).toBe(false);
+    expect(c.acgState?.rankCode).toBe("E5");
+    expect(c.history.some((h) => /OCS denied/.test(h))).toBe(true);
+  });
+
+  it("drafted character CAN OCS from second term onward", async () => {
+    const { applyMercenarySchool } = await import(
+      "../lib/traveller/engine/acg/schools"
+    );
+    const c = makeMt();
+    c.drafted = true;
+    c.terms = 1; // completed first term
+    c.browniePoints = 0;
+    if (c.acgState) {
+      c.acgState.rankCode = "E5";
+      c.acgState.isOfficer = false;
+    }
+    applyMercenarySchool(c, "OCS");
+    expect(c.acgState?.isOfficer).toBe(true);
+  });
+});
