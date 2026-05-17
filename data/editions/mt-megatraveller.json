@@ -791,12 +791,14 @@
     },
     "Free Trader": {
       "shipType": "Free Trader",
+      "displayName": "Type A Free Trader",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
     "Far Trader": {
       "$comment": "PM p. 61 line 3841-3843: 'Far Traders are jump-2 trading ships.' Possible Merchant muster-out ship. Mortgage mechanics follow the standard merchant-ship pattern (40-year first receipt, 10-year reductions per repeat).",
       "shipType": "Far Trader",
+      "displayName": "Far Trader (jump-2)",
       "description": "jump-2 trading ship",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
@@ -804,37 +806,44 @@
     "Fat Trader": {
       "$comment": "PM p. 61 line 3842-3843: 'Fat Traders are larger capacity jump-1 trading ships.' Possible Merchant muster-out ship.",
       "shipType": "Fat Trader",
+      "displayName": "Fat Trader (larger-capacity jump-1)",
       "description": "larger-capacity jump-1 trading ship",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
     "Scout Ship": {
       "shipType": "Scout/Courier",
+      "displayName": "Type S Scout Ship",
       "ownership": "Loaned/detached duty; effectively possessed but cannot be sold.",
       "repeat": "No additional benefit; roll wasted."
     },
     "Corsair": {
       "shipType": "Corsair",
+      "displayName": "Pirate Corsair",
       "ownership": "Owned by character.",
       "repeat": "No additional benefit; one ship maximum."
     },
     "Seeker": {
       "shipType": "Seeker",
+      "displayName": "Type J Seeker",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
     "Yacht": {
       "shipType": "Yacht",
+      "displayName": "Type Y Yacht",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
     "Lab Ship": {
       "shipType": "Lab Ship",
+      "displayName": "Type L Lab Ship",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
     "Safari Ship": {
       "shipType": "Safari Ship",
+      "displayName": "Type X Safari Ship",
       "firstReceiptMortgageYears": 40,
       "repeatReducesMortgageYears": 10
     },
@@ -6201,6 +6210,7 @@
           }
         ],
         "startingRank": "IS-1",
+        "collegeHonorsStartingRank": "IS-10",
         "automatic": "College graduates may choose automatic enlistment; honors graduates start at IS-10.",
         "draft": {
           "die": "1D",
@@ -7126,6 +7136,13 @@
     "merchantPrince": {
       "specialRules": {
         "$comment": "Rule-driven merchant transitions per PM p. 60-61.",
+        "specialDutyCommission": {
+          "$rule": "PM p. 63 Special Duty Resolution / 'Commission': 'Receive rank O0 (rank O1 in the Free Traders) and Department Assignment (determine normally). Must pass exam for O1 within 4 years or revert to enlisted rank.'",
+          "defaultRank": "O0",
+          "rankByLineType": { "Free Trader": "O1" },
+          "passO1DeadlineYears": 4,
+          "revertOnDeadlineToRank": "E1"
+        },
         "deckAutoTransferAtRank": {
           "$rule": "PM p. 61 line 3837: 'Officers automatically transfer to the Deck Department after one full term in rank O4.'",
           "rankCode": "O4",
