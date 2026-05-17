@@ -69,35 +69,47 @@ function dataFor(ch: Character): ScoutData {
 
 export function scoutEnlist(ch: Character): void {
   const data = dataFor(ch);
-  let dm = 0;
-  for (const d of data.enlistment.dms) {
-    const attr = d.attribute as keyof typeof ch.attributes;
-    if (ch.attributes[attr] >= d.min) dm += d.dm;
-  }
-  const r = roll(2);
-  ch.verboseHistory(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`);
-  if (r + dm >= data.enlistment.target) {
-    ch.history.push("Enlisted in the Imperial Scout Service.");
-    ch.acgState!.rankCode = data.enlistment.startingRank;
+  // PM p. 56: college graduates auto-enlist; college honors graduates start
+  // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
+  // into the Field. Read pre-career state to honor these rules.
+  const schools = ch.acgState?.schoolsAttended ?? [];
+  const honors = ch.acgState?.honorsGraduations ?? [];
+  const hasCollege = schools.includes("college");
+  const hasCollegeHonors = honors.includes("college");
+
+  if (hasCollege) {
+    ch.history.push("Auto-enlisted in the Imperial Scout Service (college graduate).");
+    ch.acgState!.rankCode = hasCollegeHonors ? "IS-10" : data.enlistment.startingRank;
     ch.acgState!.isOfficer = false;
+    ch.acgState!.division = "bureaucracy";
   } else {
-    const dr = roll(1);
-    if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
-      throw new Error("Scout draft rejection — choose another path");
+    let dm = 0;
+    for (const d of data.enlistment.dms) {
+      const attr = d.attribute as keyof typeof ch.attributes;
+      if (ch.attributes[attr] >= d.min) dm += d.dm;
     }
-    ch.drafted = true;
-    ch.acgState!.rankCode = data.enlistment.startingRank;
-    ch.history.push("Drafted into the Scout Service.");
+    const r = roll(2);
+    ch.verboseHistory(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`);
+    if (r + dm >= data.enlistment.target) {
+      ch.history.push("Enlisted in the Imperial Scout Service.");
+      ch.acgState!.rankCode = data.enlistment.startingRank;
+      ch.acgState!.isOfficer = false;
+    } else {
+      const dr = roll(1);
+      if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
+        throw new Error("Scout draft rejection — choose another path");
+      }
+      ch.drafted = true;
+      ch.acgState!.rankCode = data.enlistment.startingRank;
+      ch.history.push("Drafted into the Scout Service.");
+    }
+    ch.acgState!.division = "field";
   }
-  // Office selection — Field is default (non-college); Bureaucracy for
-  // college grads. Roll once on officeAssignment for the chosen division.
   scoutAssignOffice(ch);
 }
 
 function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
-  // Without pre-career college rolls we default everyone to Field. A UI
-  // upgrade later can let the player pick the division.
   const division: "field" | "bureaucracy" = ch.acgState!.division ?? "field";
   ch.acgState!.division = division;
   const r = Math.max(2, Math.min(12, roll(2)));
