@@ -1261,10 +1261,21 @@ function TermPhase({
   const anagathicsEligible =
     hasMtRules && nextAge >= 30 && character.terms >= 3;
 
+  // MT (PM p. 16) vs CT (TTB p. 11) checklist + survival-failure behaviour
+  // differ — read directly from the edition rules so the UI doesn't
+  // overstate the mechanics.
+  const survivalRules = (editionData.rules as {
+    survival?: { onFailure?: "death" | "shortTerm" | "musterOut" };
+  } | undefined)?.survival;
+  const failureIsDeath = (survivalRules?.onFailure ?? "death") === "death";
+  const checklist = hasMtRules
+    ? "Survival, position/commission and promotion, skills, special duty, then aging from age 34. End-of-term: reenlistment, mustering out."
+    : "Survival, commission, promotion, skills, then aging from age 34. End-of-term: reenlistment, mustering out.";
+
   return (
     <PhaseCard
       title={`Term ${termNum} of service`}
-      subtitle={`You'll be ${nextAge} years old after this term. Each term is 4 years and runs commission, promotion, skills, survival, then aging if you're 34 or older.`}
+      subtitle={`You'll be ${nextAge} years old after this term. Each term is 4 years. ${checklist}`}
     >
       {character.mandatoryReenlistment && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
@@ -1279,7 +1290,7 @@ function TermPhase({
         <Stat
           label="Survival"
           value={`${def.survivalThrow}+`}
-          hint="2d6, fail → death"
+          hint={failureIsDeath ? "2d6, fail → death" : "2d6, fail → short term (2 years), muster out"}
         />
         {def.commissionThrow !== undefined && (
           <Stat
