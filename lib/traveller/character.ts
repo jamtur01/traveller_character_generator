@@ -643,7 +643,8 @@ export class Character {
    */
   doBladeBenefit() {
     if (this.bladeBenefit !== "") {
-      this.addSkill(this.bladeBenefit);
+      // PM p. 20 repeated benefit: same / different / +1 category skill.
+      this.doRepeatWeaponBenefit("blade");
       return;
     }
     const pool = cascadePoolByKey("bladeCombat", this.editionId);
@@ -664,7 +665,7 @@ export class Character {
 
   doGunBenefit() {
     if (this.gunBenefit !== "") {
-      this.addSkill(this.gunBenefit);
+      this.doRepeatWeaponBenefit("gun");
       return;
     }
     const pool = cascadePoolByKey("gunCombat", this.editionId);
@@ -679,6 +680,55 @@ export class Character {
         ch.gunBenefit = gun;
         ch.addBenefit(gun);
         ch.addSkill(gun, 0);
+      },
+    });
+  }
+
+  /** PM p. 20: on a repeated weapon benefit the character may
+   *    (1) bump the existing weapon's skill,
+   *    (2) pick a different weapon from the cascade pool, or
+   *    (3) take +1 in the weapon category (Blade Combat / Gun Combat).
+   *  Interactive mode queues a choice; auto mode keeps the historical
+   *  "bump existing" default (option 1) since the player isn't watching. */
+  private doRepeatWeaponBenefit(kind: "blade" | "gun"): void {
+    const cascadeKey = kind === "blade" ? "bladeCombat" : "gunCombat";
+    const categorySkill = kind === "blade" ? "Blade Combat" : "Gun Combat";
+    const current = kind === "blade" ? this.bladeBenefit : this.gunBenefit;
+    if (this.choiceMode === "auto") {
+      this.addSkill(current);
+      return;
+    }
+    const pool = cascadePoolByKey(cascadeKey, this.editionId);
+    const optBump = `Bump ${current}`;
+    const optDifferent = `Pick a different ${kind}`;
+    const optCategory = `+1 in ${categorySkill}`;
+    this.pickOrDefer({
+      kind: "repeatWeaponBenefit",
+      label: `${current} (already received) — repeated weapon benefit choice (PM p. 20)`,
+      options: [optBump, optDifferent, optCategory],
+      context: { source: "muster", benefit: "RepeatWeapon", current, category: categorySkill },
+      onResolve: (ch, chosen) => {
+        if (chosen === optBump) {
+          ch.addSkill(current);
+          return;
+        }
+        if (chosen === optCategory) {
+          ch.addSkill(categorySkill, 1);
+          return;
+        }
+        // "Pick a different weapon" — queue an inner cascade choice.
+        const known = ch.knownFromPool(pool);
+        ch.pickOrDefer({
+          kind: "cascade",
+          label: `Choose a different ${kind}`,
+          options: pool,
+          preferred: known,
+          context: { source: "muster", benefit: kind === "blade" ? "Blade" : "Gun" },
+          onResolve: (c, weapon) => {
+            c.addBenefit(weapon);
+            c.addSkill(weapon, 0);
+          },
+        });
       },
     });
   }
