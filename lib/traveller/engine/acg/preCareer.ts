@@ -177,6 +177,20 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     }
   }
 
+  // Rrev11: Social-standing eligibility gates per PM p. 47.
+  //   Naval Academy: Social 8+ required to apply.
+  //   Military Academy: Social 6+ required to apply.
+  // Failing the gate is "may not apply" — character isn't aged or drafted,
+  // they simply can't enter (different from admission-roll failure).
+  if (opt === "navalAcademy" && ch.attributes.social < 8) {
+    out.notes.push("Naval Academy requires Social Standing 8+.");
+    return out;
+  }
+  if (opt === "militaryAcademy" && ch.attributes.social < 6) {
+    out.notes.push("Military Academy requires Social Standing 6+.");
+    return out;
+  }
+
   // Rrev4: Flight School admission is automatic for commissioned college
   // honors graduates and Naval Academy honors graduates (PM p. 47:
   // "Any commissioned college honors graduate or Naval Academy graduate
@@ -197,22 +211,12 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const r = roll(2);
     if (r + dm < spec.admission.target) {
       ch.verboseHistory(`${opt} admission FAILED (${r}+${dm} vs ${spec.admission.target}+)`);
-      out.notes.push("Admission denied.");
-      // PM p. 47 admission-failure outcomes:
-      //   College: may attempt another option or enlist directly (no aging).
-      //   Naval Academy: aged 1 year, drafted into Navy for short 3-year term.
-      //   Military Academy: aged 1 year, drafted into Army for short term.
-      //   Merchant Academy: aged 1 year, drafted into Army for short term.
-      //   Medical / Flight School: no aging, no draft (continues normally).
-      if (opt === "navalAcademy") {
-        out.ageGainedYears += 1;
-        out.draftedInto = "navy";
-        out.firstTermShort = true;
-      } else if (opt === "militaryAcademy" || opt === "merchantAcademy") {
-        out.ageGainedYears += 1;
-        out.draftedInto = "army";
-        out.firstTermShort = true;
-      }
+      out.notes.push("Admission denied — may attempt another option or enlist normally.");
+      // Rrev11: PM p. 47 distinguishes admission failure from success
+      // failure. Admission failure = the school didn't accept you; you
+      // simply try another path, NO aging, NO draft. Aging and the forced
+      // short-term draft apply only on success-failure (washed out after
+      // being accepted).
       return out;
     }
     out.admitted = true;
