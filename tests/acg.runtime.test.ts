@@ -191,6 +191,49 @@ describe("Scout ACG runtime", () => {
     expect(c.acgState!.rankCode).toBe("IS-1");
   });
 
+  it("R12: college graduate auto-enlists into Scouts (no enlistment roll)", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const c = freshAcgChar();
+    c.acgState = {
+      pathway: "scout", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: ["college"], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      honorsGraduations: [],
+    };
+    c.beginAcg("scout");
+    expect(c.acgState!.division).toBe("bureaucracy");
+    expect(c.acgState!.rankCode).toBe("IS-1");
+    expect(c.drafted).toBe(false);
+  });
+
+  it("R12: college honors graduate enters Scouts at IS-10", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const c = freshAcgChar();
+    c.acgState = {
+      pathway: "scout", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: ["college"], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      honorsGraduations: ["college"],
+    };
+    c.beginAcg("scout");
+    expect(c.acgState!.rankCode).toBe("IS-10");
+    expect(c.acgState!.division).toBe("bureaucracy");
+  });
+
+  it("R12: non-college scout enlists into Field as before", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    const c = freshAcgChar();
+    c.beginAcg("scout");
+    expect(c.acgState!.division).toBe("field");
+    expect(c.acgState!.rankCode).toBe("IS-1");
+  });
+
   it("Up-or-out reenlistment denies if rank too low for terms served", () => {
     // Enlist with max rolls so the character actually joins.
     vi.spyOn(Math, "random").mockReturnValue(0.999);
