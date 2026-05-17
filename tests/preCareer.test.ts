@@ -328,6 +328,65 @@ describe("R1: pre-career state preserved into beginAcg", () => {
   });
 });
 
+describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", () => {
+  it("preCareerDraftedInto=navy overrides chosen pathway to navy", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.useAcg = true;
+    c.choiceMode = "auto";
+    c.acgState = {
+      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: [], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      preCareerDraftedInto: "navy",
+      preCareerFirstTermShort: true,
+    };
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    c.beginAcg("mercenary");
+    expect(c.service).toBe("navy");
+    expect(c.acgPathway).toBe("navy");
+    expect(c.drafted).toBe(true);
+    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
+  });
+
+  it("preCareerDraftedInto=army overrides to mercenary/army", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.useAcg = true;
+    c.choiceMode = "auto";
+    c.acgState = {
+      pathway: "navy", rankCode: "E1", isOfficer: false, year: 1,
+      currentAssignment: null, inCommand: false, justRetained: false,
+      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
+      schoolsAttended: [], decorations: [], browniePoints: 0,
+      browniePointsSpent: 0, decorationDmStrategy: 0,
+      preCareerDraftedInto: "army",
+    };
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    c.beginAcg("navy");
+    expect(c.service).toBe("army");
+    expect(c.acgPathway).toBe("mercenary");
+  });
+});
+
+describe("Rrev6: service is set even when beginAcg pathway queues a choice", () => {
+  it("interactive Navy enlistment with pending choice still leaves service=navy", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.useAcg = true;
+    c.choiceMode = "interactive";
+    c.attributes.social = 9; // triggers navy branch choice
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    c.beginAcg("navy", { fleet: "imperialNavy" });
+    // The branch choice may be pending, but service must already be set.
+    expect(c.service).toBe("navy");
+  });
+});
+
 describe("R5: honors gates", () => {
   it("Flight School rejects non-commissioned college honors graduates", () => {
     // Manually build state: college honors but no commission. Bypass dice.

@@ -369,16 +369,42 @@ export class Character {
     } = {},
   ): void {
     this.useAcg = true;
-    this.acgPathway = pathway;
-    // Pre-career may have set acgState already with skills, BPs, honors,
-    // commission, and short-term/draft flags. Carry ALL of that forward
-    // instead of resetting — earlier code only preserved state when a
-    // commission was earned, which dropped college-graduate state needed
-    // for Medical/Flight School eligibility, Scout IS-10, etc.
     const prev = this.acgState;
     const hasCommission = prev?.preCareerCommission === true;
+
+    // Rrev2: pre-career failure may force the character into a specific
+    // service (PM p. 47). Override the user's pathway/options when a
+    // draft is pending.
+    let effPathway = pathway;
+    const draft = prev?.preCareerDraftedInto;
+    if (draft === "navy") {
+      effPathway = "navy";
+      options = { ...options, fleet: options.fleet ?? "imperialNavy" };
+    } else if (draft === "army") {
+      effPathway = "mercenary";
+      options = { ...options, service: "army" };
+    } else if (draft === "marines") {
+      effPathway = "mercenary";
+      options = { ...options, service: "marines" };
+    }
+    this.acgPathway = effPathway;
+
+    // Rrev6: set this.service BEFORE the pathway-specific enlistment runs.
+    // Pathway enlist functions can queue interactive choices, throwing
+    // ChoicePendingError; if service is set after, the character is left
+    // with service="other" while acgState says e.g. "navy". Order matters.
+    if (effPathway === "mercenary") {
+      this.service = (options.service === "marines" ? "marines" : "army") as ServiceKey;
+    } else if (effPathway === "navy") {
+      this.service = "navy" as ServiceKey;
+    } else if (effPathway === "scout") {
+      this.service = "scouts" as ServiceKey;
+    } else if (effPathway === "merchantPrince") {
+      this.service = "merchants" as ServiceKey;
+    }
+
     this.acgState = {
-      pathway,
+      pathway: effPathway,
       rankCode: hasCommission ? prev!.rankCode : "E1",
       isOfficer: hasCommission ? prev!.isOfficer : false,
       year: 1,
@@ -403,6 +429,10 @@ export class Character {
       ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
     };
     if (hasCommission) this.commissioned = true;
+    if (draft) {
+      this.drafted = true;
+      this.history.push(`Drafted into ${this.service} (pre-career failure).`);
+    }
     // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
     // clamped to Early Stellar minimum.
     if (pathway === "navy") {
@@ -422,26 +452,24 @@ export class Character {
     // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
     // the character's pendingChoices stand. The UI resolves them and the
     // pause-and-resume machinery in runAcgYear handles subsequent flow.
+    // service was already set above — pathway functions only manipulate
+    // acgState.
     try {
-    switch (pathway) {
-      case "mercenary":
-        mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
-        this.service = (options.service === "marines" ? "marines" : "army") as ServiceKey;
-        break;
-      case "navy":
-        navyEnlist(this, options.fleet ?? "imperialNavy");
-        this.service = "navy" as ServiceKey;
-        break;
-      case "scout":
-        this.acgState.division = options.division ?? "field";
-        scoutEnlist(this);
-        this.service = "scouts" as ServiceKey;
-        break;
-      case "merchantPrince":
-        merchantEnlist(this, options.lineType ?? "Free Trader");
-        this.service = "merchants" as ServiceKey;
-        break;
-    }
+      switch (effPathway) {
+        case "mercenary":
+          mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
+          break;
+        case "navy":
+          navyEnlist(this, options.fleet ?? "imperialNavy");
+          break;
+        case "scout":
+          this.acgState.division = options.division ?? "field";
+          scoutEnlist(this);
+          break;
+        case "merchantPrince":
+          merchantEnlist(this, options.lineType ?? "Free Trader");
+          break;
+      }
     } catch (err) {
       if (!(err instanceof ChoicePendingError)) throw err;
       // Pending choice queued — UI will resolve it.
