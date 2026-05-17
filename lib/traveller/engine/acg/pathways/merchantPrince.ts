@@ -561,11 +561,52 @@ export function merchantStartOfTerm(ch: Character): void {
     ch.history.push("Failed to pass exam for O1 within 4 years — reverted to enlisted (E1).");
     return;
   }
-  // Officers: yearly promotion exam runs at start of term (manual p. 61).
-  // Exam target is the next rank's exam throw from ranksAndPromotions data.
-  attemptMerchantPromotionExam(ch);
-  // Reset per-term examDm bonus.
-  ch.acgState!.examDm = 0;
+}
+
+/** PM p. 61 end-of-term promotion exam. Runs AFTER assignments so DMs
+ *  accumulated from this term's special-duty schools (e.g. Business
+ *  School's +1 to exam for O6+) apply correctly. Enlisted characters
+ *  serving Route assignments may also take the exam — passing earns
+ *  a commission. */
+export function merchantEndOfTerm(ch: Character): void {
+  if (!ch.acgState) return;
+  if (ch.acgState.isOfficer) {
+    attemptMerchantPromotionExam(ch);
+  } else if (lastAssignmentIsRoute(ch)) {
+    attemptMerchantEnlistedCommissionExam(ch);
+  }
+  ch.acgState.examDm = 0;
+}
+
+function lastAssignmentIsRoute(ch: Character): boolean {
+  const history = ch.acgState?.assignmentHistory ?? [];
+  if (history.length === 0) return false;
+  return history[history.length - 1] === "Route";
+}
+
+function attemptMerchantEnlistedCommissionExam(ch: Character): void {
+  const data = dataFor(ch);
+  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const officerLadder = data.ranksAndPromotions as Record<string, {
+    officer?: Array<[string, string, string, string | null]>;
+  }>;
+  const sizeKey = size === "Large" ? "large" : size === "Small" ? "small" : "freeTrader";
+  const o1 = officerLadder[sizeKey]?.officer?.[0];
+  if (!o1) return;
+  // Officer ladder row format: [rankCode, title, examTarget, note?].
+  const target = parseInt(String(o1[2]), 10);
+  if (Number.isNaN(target)) return;
+  const dm = ch.acgState!.examDm ?? 0;
+  const r = roll(2);
+  ch.verboseHistory(
+    `Merchant enlisted-route commission exam: ${r} + ${dm} vs ${target}+`,
+  );
+  if (r + dm >= target) {
+    ch.acgState!.isOfficer = true;
+    ch.acgState!.rankCode = "O1";
+    ch.commissioned = true;
+    ch.history.push("Earned a commission via Route-assignment promotion exam.");
+  }
 }
 
 function attemptMerchantPromotionExam(ch: Character): void {
@@ -634,5 +675,6 @@ export function getMerchantPrincePathway() {
     retention: merchantRetention,
     reenlist: merchantReenlist,
     startOfTerm: merchantStartOfTerm,
+    endOfTerm: merchantEndOfTerm,
   };
 }

@@ -190,6 +190,12 @@ export function runAcgTerm(ch: Character): void {
   }
   if (ch.deceased || !ch.activeDuty) return;
 
+  // Per-pathway end-of-term hook. Merchant promotion exam runs here so the
+  // DMs accumulated from this term's special-duty schools (Business
+  // School: +1 exam DM for O6+ etc.) apply to the exam (PM p. 61).
+  if (p.endOfTerm) p.endOfTerm(ch);
+  if (ch.deceased || !ch.activeDuty) return;
+
   // PM ACG checklist (mtChecklist step 7): Conclude Current Term → enforce
   // the Int+Edu skill cap (PM p. 39), Aging, then Reenlistment, then Muster
   // Out. Aging fires after the cap so a player's reduced Edu doesn't shrink
