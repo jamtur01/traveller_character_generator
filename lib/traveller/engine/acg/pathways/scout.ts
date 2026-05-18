@@ -27,6 +27,10 @@ import { applyAcgSkillCell } from "./mercenary";
 import { applyScoutSchool } from "../schools";
 import { resetIfComplete } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
+import {
+  buildPathwaySpecFromConfig, type PathwayCallbacks,
+  type ResolveAssignmentConfig,
+} from "../jsonPhases";
 import { recordTransfer } from "../types";
 import { event as ev } from "../../../history";
 
@@ -289,73 +293,13 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     promotion: applyDmRules(resTable.dms, ch, "promotion"),
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
-  runPhases(SCOUT_SPEC, { ch, assignment, resTable, res, dms });
+  runPhases(getScoutSpec(ch), { ch, assignment, resTable, res, dms });
 }
 
-// Scout: no decoration phase (manual omits one). Promotion phase only
-// fires in Bureaucracy (administrator ladder); Field has no promotion.
-const SCOUT_SPEC: PathwaySpec = {
-  phases: [
-    {
-      phase: "survival",
-      target: (ctx) => ctx.res.survival,
-      dm: (ctx) => ctx.dms.survival,
-      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
-        "Survival", r.roll, r.dm,
-        typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-        r.success, ctx.assignment,
-      )),
-      mitigation: (ctx, r) => ({
-        rollName: "survival",
-        rollValue: r.roll,
-        dm: r.dm,
-        target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-        margin: r.margin,
-        consequence: "Invalided out of Scout service",
-        onMitigated: (c) => {
-          c.resumeActive();
-          c.log(ev.statusChange("revived", "BP spend saved Scout survival"));
-        },
-      }),
-      onFail: () => ({
-        endChargen: { kind: "retired", reason: "invalided out of Scout service" },
-      }),
-    },
-    {
-      phase: "promotion",
-      skip: (ctx) => {
-        const acg = ctx.ch.requireAcgState();
-        if (ctx.res.promotion === "none") return true;
-        if (acg.division !== "bureaucracy") return true;
-        return acg.isOfficer && acg.promotedThisTerm;
-      },
-      target: (ctx) => ctx.res.promotion,
-      dm: (ctx) => ctx.dms.promotion,
-      mitigation: (ctx, r) => ({
-        rollName: "promotion",
-        rollValue: r.roll, dm: r.dm,
-        target: typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
-        margin: r.margin,
-        consequence: "Earn promotion (administrator ladder)",
-      }),
-      onPass: (ctx) => promoteScout(ctx.ch),
-    },
-    {
-      phase: "skills",
-      skip: (ctx) => ctx.res.skills === "none",
-      target: (ctx) => ctx.res.skills,
-      dm: (ctx) => ctx.dms.skills,
-      mitigation: (ctx, r) => ({
-        rollName: "skills",
-        rollValue: r.roll, dm: r.dm,
-        target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
-        margin: r.margin,
-        consequence: "Earn a skill this assignment",
-      }),
-      onPass: (ctx) => scoutRollSkill(ctx.ch),
-    },
-  ],
-  finalize: (ctx) => {
+const SCOUT_CALLBACKS: PathwayCallbacks = {
+  promoteScout: (ctx) => promoteScout(ctx.ch),
+  scoutRollSkill: (ctx) => scoutRollSkill(ctx.ch),
+  scoutFinalize: (ctx) => {
     // Special/War mission → extra skill from the dedicated column (PM
     // p. 57): "the extra training and preparation for the assignment
     // results in an extra skill".
@@ -365,6 +309,26 @@ const SCOUT_SPEC: PathwaySpec = {
     ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
   },
 };
+
+const SCOUT_SPEC_CACHE = new Map<string, PathwaySpec>();
+function getScoutSpec(ch: Character): PathwaySpec {
+  let spec = SCOUT_SPEC_CACHE.get(ch.editionId);
+  if (spec) return spec;
+  const data = dataFor(ch);
+  const config = (data as ScoutData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+  }).resolveAssignment;
+  if (!config) {
+    throw new Error(
+      `Edition "${ch.editionId}" scout block is missing resolveAssignment config.`,
+    );
+  }
+  spec = buildPathwaySpecFromConfig(config, SCOUT_CALLBACKS, {
+    combatAssignments: () => [],
+  });
+  SCOUT_SPEC_CACHE.set(ch.editionId, spec);
+  return spec;
+}
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const data = dataFor(ch);
