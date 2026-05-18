@@ -10,9 +10,13 @@ import { runTermSteps } from "../engine/runner";
 /** Run one service term. Increments terms/age (basic chargen only —
  *  ACG does its own per-year accounting). */
 export function doServiceTermStep(ch: Character): void {
-  // Consume per-term markers from the prior term.
-  ch.mandatoryReenlistment = false;
-  ch.shortTermThisTerm = false;
+  // Consume per-term status markers from the prior term — a
+  // mandatory-reenlist is served by entering this term; an unhandled
+  // shortTerm (rare) is reset on term entry.
+  if (ch.chargenStatus.kind === "mandatoryReenlist"
+      || ch.chargenStatus.kind === "shortTerm") {
+    ch.resumeActive();
+  }
   // Reset per-term anagathics flags; intent for this term is set below
   // from anagathicsStandingOrder (or by an explicit pre-survival call).
   ch.anagathicsActiveThisTerm = false;

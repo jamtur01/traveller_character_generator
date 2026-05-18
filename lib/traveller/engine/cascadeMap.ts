@@ -29,9 +29,7 @@ export function cascadePoolForLabel(
   const key = aliasesFor(editionId)[label.toLowerCase().trim()];
   if (!key) return undefined;
   const edition = getEdition(editionId);
-  const cascades = (edition.data as { cascadeSkills?: Record<string, readonly string[]> })
-    .cascadeSkills;
-  return cascades?.[key];
+  return edition.data.cascadeSkills?.[key];
 }
 
 /** Is this label a cascade alias in the given edition? Used by the
@@ -54,9 +52,7 @@ export function cascadePoolByKey(
   editionId: string,
 ): readonly string[] {
   const edition = getEdition(editionId);
-  const cascades = (edition.data as { cascadeSkills?: Record<string, readonly string[]> })
-    .cascadeSkills;
-  const pool = cascades?.[cascadeKey];
+  const pool = edition.data.cascadeSkills?.[cascadeKey];
   if (!pool) {
     throw new Error(
       `Edition "${editionId}" has no cascade pool "${cascadeKey}"`,

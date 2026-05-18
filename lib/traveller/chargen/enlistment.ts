@@ -1,6 +1,7 @@
 // Basic-chargen enlistment: pick a service (or accept the player's
 // choice), roll, draft on failure, apply service skills + homeworld
-// skills. ACG enlistment is handled by the ACG runner separately.
+// skills. Also ACG enlistment entry (beginAcg) — initializes acgState
+// and runs pathway-specific enlistment.
 
 import type { Character } from "../character";
 import { getEdition } from "../editions";
@@ -13,6 +14,140 @@ import {
 import {
   applyHomeworldSkills, availableServicesForHomeworld,
 } from "../engine/homeworld";
+import { ChoicePendingError } from "../engine/choices";
+import { mercenaryEnlist } from "../engine/acg/pathways/mercenary";
+import { navyEnlist } from "../engine/acg/pathways/navy";
+import { scoutEnlist } from "../engine/acg/pathways/scout";
+import { merchantEnlist } from "../engine/acg/pathways/merchantPrince";
+
+/** Options for beginAcg — pathway-specific enlistment parameters. */
+export interface BeginAcgOptions {
+  combatArm?: string;
+  service?: "army" | "marines";
+  fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
+  division?: "field" | "bureaucracy";
+  lineType?: string;
+  /** Subsector tech code (PM p. 52: Navy characters must know this).
+   *  Defaults to homeworld tech, clamped to Early Stellar minimum. */
+  subsectorTechCode?: string;
+}
+
+/** Begin Advanced Character Generation. Initializes acgState for the
+ *  chosen pathway and runs pathway-specific enlistment with the
+ *  pathway-appropriate options. After this call, subsequent
+ *  doServiceTermStep() invocations run the ACG per-year cycle. */
+export function beginAcg(
+  ch: Character,
+  pathway: "mercenary" | "navy" | "scout" | "merchantPrince",
+  options: BeginAcgOptions = {},
+): void {
+  ch.useAcg = true;
+  const prev = ch.acgState;
+  const hasCommission = prev?.preCareerCommission === true;
+
+  // Rrev2: pre-career failure may force the character into a specific
+  // service (PM p. 47). Override the user's pathway/options when a
+  // draft is pending.
+  let effPathway = pathway;
+  const draft = prev?.preCareerDraftedInto;
+  if (draft === "navy") {
+    effPathway = "navy";
+    options = { ...options, fleet: options.fleet ?? "imperialNavy" };
+  } else if (draft === "army") {
+    effPathway = "mercenary";
+    options = { ...options, service: "army" };
+  } else if (draft === "marines") {
+    effPathway = "mercenary";
+    options = { ...options, service: "marines" };
+  }
+  ch.acgPathway = effPathway;
+
+  // Rrev6: set ch.service BEFORE the pathway-specific enlistment runs.
+  // Pathway enlist functions can queue interactive choices, throwing
+  // ChoicePendingError; if service is set after, the character is left
+  // with service="other" while acgState says e.g. "navy". Order matters.
+  if (effPathway === "mercenary") {
+    ch.service = (options.service === "marines" ? "marines" : "army") as ServiceKey;
+  } else if (effPathway === "navy") {
+    ch.service = "navy" as ServiceKey;
+  } else if (effPathway === "scout") {
+    ch.service = "scouts" as ServiceKey;
+  } else if (effPathway === "merchantPrince") {
+    ch.service = "merchants" as ServiceKey;
+  }
+
+  ch.acgState = {
+    pathway: effPathway,
+    rankCode: hasCommission ? prev!.rankCode : "E1",
+    isOfficer: hasCommission ? prev!.isOfficer : false,
+    year: 1,
+    currentAssignment: null,
+    inCommand: false,
+    justRetained: false,
+    retainedAssignment: null,
+    promotedThisTerm: false,
+    injuredThisYear: false,
+    assignmentHistory: [],
+    combatRibbons: 0,
+    commandClusters: 0,
+    schoolsAttended: prev?.schoolsAttended ? [...prev.schoolsAttended] : [],
+    decorations: prev?.decorations ? [...prev.decorations] : [],
+    browniePoints: prev?.browniePoints ?? 0,
+    browniePointsSpent: prev?.browniePointsSpent ?? 0,
+    decorationDmStrategy: 0,
+    ...(prev?.honorsGraduations ? { honorsGraduations: [...prev.honorsGraduations] } : {}),
+    ...(hasCommission ? { preCareerCommission: true } : {}),
+    ...(prev?.preCareerBranch !== undefined ? { preCareerBranch: prev.preCareerBranch } : {}),
+    ...(prev?.preCareerFirstTermShort ? { preCareerFirstTermShort: true } : {}),
+    ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
+    ...(prev?.attemptMerchantAcademy !== undefined
+      ? { attemptMerchantAcademy: prev.attemptMerchantAcademy } : {}),
+  };
+  if (hasCommission) ch.commissioned = true;
+  if (draft) {
+    ch.drafted = true;
+    ch.log(ev.drafted(`${ch.service} (pre-career failure)`));
+  }
+  // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
+  // clamped to Early Stellar minimum.
+  if (pathway === "navy") {
+    const homeworldTech = ch.homeworld?.tech;
+    const order = (getEdition(ch.editionId).data as {
+      homeworld?: { techCodeOrder?: string[] };
+    }).homeworld?.techCodeOrder ?? [];
+    let subsectorTech = options.subsectorTechCode ?? homeworldTech;
+    const earlyIdx = order.indexOf("Early Stellar");
+    if (subsectorTech && order.length > 0 && earlyIdx >= 0) {
+      const idx = order.indexOf(subsectorTech);
+      if (idx < earlyIdx) subsectorTech = "Early Stellar";
+    }
+    if (subsectorTech) ch.acgState.subsectorTechCode = subsectorTech;
+  }
+  // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
+  // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
+  // the character's pendingChoices stand. The UI resolves them and the
+  // pause-and-resume machinery in runAcgYear handles subsequent flow.
+  try {
+    switch (effPathway) {
+      case "mercenary":
+        mercenaryEnlist(ch, options.service ?? "army", options.combatArm ?? "Infantry");
+        break;
+      case "navy":
+        navyEnlist(ch, options.fleet ?? "imperialNavy");
+        break;
+      case "scout":
+        ch.acgState.division = options.division ?? "field";
+        scoutEnlist(ch);
+        break;
+      case "merchantPrince":
+        merchantEnlist(ch, options.lineType ?? "Free Trader");
+        break;
+    }
+  } catch (err) {
+    if (!(err instanceof ChoicePendingError)) throw err;
+    // Pending choice queued — UI will resolve it.
+  }
+}
 
 /** Apply the joined service's startAge from edition data. */
 export function applyServiceStartAge(ch: Character, svc: ServiceKey): void {

@@ -134,6 +134,14 @@ export interface CanonData {
   rules?: Record<string, unknown>;
   /** Aging table — rows keyed by end-of-term number. */
   aging?: Record<string, unknown>;
+  /** Cascade-skill pools (Blade Combat → [Cutlass, ...], etc.). MT
+   *  declares many; CT has none and omits the field. */
+  cascadeSkills?: Record<string, readonly string[]>;
+  /** Homeworld generation tables — UWP traits, default skills, career
+   *  availability. MT only; CT omits. Exact shape declared in
+   *  engine/homeworld.ts (HomeworldData) and re-exported via a
+   *  ref-import to avoid circular type-only dependencies. */
+  homeworld?: import("../engine/homeworld").HomeworldData;
   /** MegaTraveller Advanced Character Generation data. Editions without
    *  an advanced chargen system omit this block; editions that have it
    *  declare it under this key. The engine exposes `editionHasAcg(id)` /

@@ -128,7 +128,7 @@ describe("doReenlistmentStep", () => {
     c.showHistory = "none";
     c.service = "navy";
     c.terms = 2;
-    c.mandatoryReenlistment = true;
+    c.enterMandatoryReenlist();
     // Pin survival pass (12) and commission fail (2) so the term resolves.
     pinRolls(6, 6, 1, 1);
     c.doServiceTermStep();

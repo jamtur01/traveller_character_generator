@@ -13,16 +13,13 @@ import {
   editionHasHomeworld,
   generateAndApplyHomeworld, type Homeworld,
 } from "./engine/homeworld";
-import { mercenaryEnlist } from "./engine/acg/pathways/mercenary";
 import {
   applyPreCareerResult, attemptPreCareer, type PreCareerOption,
 } from "./engine/acg/preCareer";
-import { navyEnlist } from "./engine/acg/pathways/navy";
-import { scoutEnlist } from "./engine/acg/pathways/scout";
-import { merchantEnlist } from "./engine/acg/pathways/merchantPrince";
 import { generateGender, generateName } from "./names";
 import { attrShort, extendedHex } from "./formatting";
 import {
+  finalizeAcgRankForMuster as finalizeAcgRankForMusterImpl,
   musterOutBenefit as musterOutBenefitImpl,
   musterOutCash as musterOutCashImpl,
   musterOutPay as musterOutPayImpl,
@@ -31,6 +28,8 @@ import {
 import {
   doEnlistment as doEnlistmentImpl,
   applyServiceStartAge as applyServiceStartAgeImpl,
+  beginAcg as beginAcgImpl,
+  type BeginAcgOptions,
 } from "./chargen/enlistment";
 import { doServiceTermStep as doServiceTermStepImpl } from "./chargen/term";
 import { doReenlistmentStep as doReenlistmentStepImpl } from "./chargen/reenlist";
@@ -103,22 +102,17 @@ export class Character {
   commissioned = false;
   rank = 0;
   retirementPay = 0;
-  /** Canonical chargen lifecycle state — the terminal-state machine.
-   *  Per-term modifiers (shortTermThisTerm, mandatoryReenlistment) are
-   *  orthogonal booleans below since they can coexist with retired
-   *  status (e.g. anagathics retry fail ends chargen mid-short-term).
-   *  Set via enterMustered / endChargenRetired / endChargenDeceased /
-   *  endChargenDischarged / resumeActive helpers. */
+  /** Canonical chargen lifecycle state — 6-state discriminated union.
+   *  Set via enterShortTerm / enterMandatoryReenlist / endChargenRetired
+   *  / endChargenDeceased / endChargenDischarged / enterMustered /
+   *  resumeActive helpers. */
   chargenStatus: ChargenStatus = { kind: "active" };
 
-  /** Per-term modifier: this term is a short (2-year) term per PM p. 16
-   *  short-term rule. Skip-promotion logic and doReenlistmentStep
-   *  read this. Reset to false at the start of each new term. */
-  shortTermThisTerm = false;
-
-  /** Per-character marker that the next term is forced. Set by a
-   *  reenlistment roll of 12; consumed at the start of the next term. */
-  mandatoryReenlistment = false;
+  /** Count of short terms served. Each one was 2 years (not 4) and
+   *  does not count toward mustering-out benefit rolls. Persists past
+   *  the shortTerm status transition (so muster-out accounting works
+   *  after the character has moved on to retired/mustered). */
+  shortTermsCount = 0;
 
   /** Remembers whether muster-out followed a retirement (vs. a court-
    *  martial discharge or forced muster). Read by the `retired` getter
@@ -132,7 +126,8 @@ export class Character {
    *  but the term continues — special-duty + skill rolls still fire
    *  because isChargenEnded is the runner's halt signal, not activeDuty. */
   get activeDuty(): boolean {
-    return this.chargenStatus.kind === "active" && !this.shortTermThisTerm;
+    return this.chargenStatus.kind === "active"
+      || this.chargenStatus.kind === "mandatoryReenlist";
   }
   get deceased(): boolean {
     return this.chargenStatus.kind === "deceased";
@@ -146,19 +141,25 @@ export class Character {
   get musteredOut(): boolean {
     return this.chargenStatus.kind === "mustered";
   }
+  get shortTermThisTerm(): boolean {
+    return this.chargenStatus.kind === "shortTerm";
+  }
+  get mandatoryReenlistment(): boolean {
+    return this.chargenStatus.kind === "mandatoryReenlist";
+  }
 
   /** Per-term "short term forced by survival failure" entry point.
    *  PM p. 16: failure to make the survival throw forces a 2-year term;
    *  special-duty + skill rolls still fire. */
-  enterShortTerm(_reason: string): void {
-    this.shortTermThisTerm = true;
+  enterShortTerm(reason: string): void {
+    this.chargenStatus = { kind: "shortTerm", reason };
     this.shortTermsCount += 1;
   }
 
   /** Rolled 12 on reenlistment → must serve another term. Consumed at
    *  the start of the next term via resumeActive(). */
   enterMandatoryReenlist(): void {
-    this.mandatoryReenlistment = true;
+    this.chargenStatus = { kind: "mandatoryReenlist" };
   }
 
   /** Restore active status (called at the start of each term and by
@@ -212,12 +213,6 @@ export class Character {
   musterRolls = 0;
   /** Human-readable log of each muster-out roll's outcome. */
   musterLog: string[] = [];
-  /**
-   * Count of short terms served. Each one was 2 years (not 4) and does not
-   * count toward mustering-out benefit rolls. (The boolean
-   * `shortTermThisTerm` is now derived from `chargenStatus`.)
-   */
-  shortTermsCount = 0;
   /**
    * Anagathics state (MT PM p. 15). Apparent age is what the Aging table
    * uses each term; chronological `age` advances normally. Frozen each
@@ -464,134 +459,12 @@ export class Character {
     };
   }
 
-  /**
-   * Begin Advanced Character Generation. Initializes acgState for the
-   * chosen pathway and runs pathway-specific enlistment with the
-   * pathway-appropriate options. After this call, subsequent
-   * doServiceTermStep() invocations run the ACG per-year cycle.
-   */
+  /** Begin Advanced Character Generation — implementation in chargen/enlistment.ts. */
   beginAcg(
     pathway: "mercenary" | "navy" | "scout" | "merchantPrince",
-    options: {
-      combatArm?: string;
-      service?: "army" | "marines";
-      fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
-      division?: "field" | "bureaucracy";
-      lineType?: string;
-      /** Subsector tech code (PM p. 52: Navy characters must know this).
-       *  Defaults to homeworld tech, clamped to Early Stellar minimum per
-       *  PM rule ("always no less than Early Stellar"). */
-      subsectorTechCode?: string;
-    } = {},
+    options: BeginAcgOptions = {},
   ): void {
-    this.useAcg = true;
-    const prev = this.acgState;
-    const hasCommission = prev?.preCareerCommission === true;
-
-    // Rrev2: pre-career failure may force the character into a specific
-    // service (PM p. 47). Override the user's pathway/options when a
-    // draft is pending.
-    let effPathway = pathway;
-    const draft = prev?.preCareerDraftedInto;
-    if (draft === "navy") {
-      effPathway = "navy";
-      options = { ...options, fleet: options.fleet ?? "imperialNavy" };
-    } else if (draft === "army") {
-      effPathway = "mercenary";
-      options = { ...options, service: "army" };
-    } else if (draft === "marines") {
-      effPathway = "mercenary";
-      options = { ...options, service: "marines" };
-    }
-    this.acgPathway = effPathway;
-
-    // Rrev6: set this.service BEFORE the pathway-specific enlistment runs.
-    // Pathway enlist functions can queue interactive choices, throwing
-    // ChoicePendingError; if service is set after, the character is left
-    // with service="other" while acgState says e.g. "navy". Order matters.
-    if (effPathway === "mercenary") {
-      this.service = (options.service === "marines" ? "marines" : "army") as ServiceKey;
-    } else if (effPathway === "navy") {
-      this.service = "navy" as ServiceKey;
-    } else if (effPathway === "scout") {
-      this.service = "scouts" as ServiceKey;
-    } else if (effPathway === "merchantPrince") {
-      this.service = "merchants" as ServiceKey;
-    }
-
-    this.acgState = {
-      pathway: effPathway,
-      rankCode: hasCommission ? prev!.rankCode : "E1",
-      isOfficer: hasCommission ? prev!.isOfficer : false,
-      year: 1,
-      currentAssignment: null,
-      inCommand: false,
-      justRetained: false,
-      retainedAssignment: null,
-      promotedThisTerm: false,
-      injuredThisYear: false,
-      assignmentHistory: [],
-      combatRibbons: 0,
-      commandClusters: 0,
-      schoolsAttended: prev?.schoolsAttended ? [...prev.schoolsAttended] : [],
-      decorations: prev?.decorations ? [...prev.decorations] : [],
-      browniePoints: prev?.browniePoints ?? 0,
-      browniePointsSpent: prev?.browniePointsSpent ?? 0,
-      decorationDmStrategy: 0,
-      ...(prev?.honorsGraduations ? { honorsGraduations: [...prev.honorsGraduations] } : {}),
-      ...(hasCommission ? { preCareerCommission: true } : {}),
-      ...(prev?.preCareerBranch !== undefined ? { preCareerBranch: prev.preCareerBranch } : {}),
-      ...(prev?.preCareerFirstTermShort ? { preCareerFirstTermShort: true } : {}),
-      ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
-      ...(prev?.attemptMerchantAcademy !== undefined
-        ? { attemptMerchantAcademy: prev.attemptMerchantAcademy } : {}),
-    };
-    if (hasCommission) this.commissioned = true;
-    if (draft) {
-      this.drafted = true;
-      this.log(ev.drafted(`${this.service} (pre-career failure)`));
-    }
-    // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
-    // clamped to Early Stellar minimum.
-    if (pathway === "navy") {
-      const homeworldTech = this.homeworld?.tech;
-      const order = (getEdition(this.editionId).data as {
-        homeworld?: { techCodeOrder?: string[] };
-      }).homeworld?.techCodeOrder ?? [];
-      let subsectorTech = options.subsectorTechCode ?? homeworldTech;
-      const earlyIdx = order.indexOf("Early Stellar");
-      if (subsectorTech && order.length > 0 && earlyIdx >= 0) {
-        const idx = order.indexOf(subsectorTech);
-        if (idx < earlyIdx) subsectorTech = "Early Stellar";
-      }
-      if (subsectorTech) this.acgState.subsectorTechCode = subsectorTech;
-    }
-    // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
-    // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
-    // the character's pendingChoices stand. The UI resolves them and the
-    // pause-and-resume machinery in runAcgYear handles subsequent flow.
-    // service was already set above — pathway functions only manipulate
-    // acgState.
-    try {
-      switch (effPathway) {
-        case "mercenary":
-          mercenaryEnlist(this, options.service ?? "army", options.combatArm ?? "Infantry");
-          break;
-        case "navy":
-          navyEnlist(this, options.fleet ?? "imperialNavy");
-          break;
-        case "scout":
-          this.acgState.division = options.division ?? "field";
-          scoutEnlist(this);
-          break;
-        case "merchantPrince":
-          merchantEnlist(this, options.lineType ?? "Free Trader");
-          break;
-      }
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
-      // Pending choice queued — UI will resolve it.
-    }
+    beginAcgImpl(this, pathway, options);
   }
 
   /** Apply the user's pick for a pending choice. */
@@ -1087,10 +960,9 @@ export class Character {
       // pass/fail in the history.
       const passed = svc.checkSurvival(this);
       if (!passed) {
-        // endChargenRetired flips status to "retired", which the runner
-        // checks to halt further term steps. Eligibility for retirement
-        // pension is computed at muster-out time via isRetirementEligible.
-        this.shortTermThisTerm = true;
+        // Increment shortTermsCount (muster-out accounting doesn't count
+        // this term) and transition to retired. The intermediate
+        // shortTerm status is skipped since chargen ends immediately.
         this.shortTermsCount += 1;
         this.endChargenRetired("failed anagathics retry survival");
       }
@@ -1241,27 +1113,9 @@ export class Character {
    *  ranks remain 0 (basic chargen has no enlisted rank concept).
    *  Also applies the SEH automatic +1 rank if pending. Idempotent: safe
    *  to call before muster regardless of pathway. */
+  /** ACG rank → basic-chargen rank projection — implementation in chargen/muster.ts. */
   finalizeAcgRankForMuster(): void {
-    if (!this.useAcg || !this.acgState) return;
-    // SEH automatic +1 rank at muster (manual p. 46). Consume the flag so
-    // repeated calls don't re-apply.
-    if (this.acgState.sehPromotionPending && this.acgState.isOfficer) {
-      const m = this.acgState.rankCode.match(/^O(\d+)$/);
-      if (m) {
-        const next = Math.min(10, parseInt(m[1]!, 10) + 1);
-        this.acgState.rankCode = `O${next}`;
-        this.log(ev.promoted(this.acgState.rankCode, "SEH"));
-      }
-      this.acgState.sehPromotionPending = false;
-    }
-    if (this.acgState.isOfficer) {
-      const m = this.acgState.rankCode.match(/^O(\d+)$/);
-      if (m) {
-        const n = parseInt(m[1]!, 10);
-        this.rank = Math.min(6, n);
-        this.commissioned = true;
-      }
-    }
+    finalizeAcgRankForMusterImpl(this);
   }
 
   /** Number of muster-out rolls — implementation in chargen/muster.ts. */
