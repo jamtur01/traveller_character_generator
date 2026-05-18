@@ -4,7 +4,7 @@
 // Players' Manual p. 46-47.
 
 import { roll } from "../../random";
-import { getEdition } from "../../editions";
+import { getEdition, getAcgPathway } from "../../editions";
 import type { Character } from "../../character";
 import { event as ev } from "../../history";
 
@@ -65,11 +65,8 @@ function matchesDecorationFlag(
   const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
   // Decoration tiers may live on the pathway or in `common` (the shared
   // PM block). Check pathway first, then fall back to common.
-  const pathway = ch.acgState?.pathway;
   const sources = [
-    pathway
-      ? (acg?.[pathway] as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined)
-      : undefined,
+    getAcgPathway(ch.editionId, ch.acgState?.pathway),
     acg?.common,
   ];
   for (const src of sources) {
@@ -92,17 +89,11 @@ function matchesDecorationFlag(
 export function resolveDecorationTier(
   ch: Character, margin: number,
 ): "SEH" | "MCG" | "MCUF" | null {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const pdata = acg?.[ch.acgState?.pathway ?? "mercenary"] as {
-    decorationTiers?: { tiers?: Array<{ minMargin: number; award: string }> };
-  } | undefined;
-  const common = acg?.common as {
-    decorationTiers?: { tiers?: Array<{ minMargin: number; award: string }> };
-  } | undefined;
-  const tiers = pdata?.decorationTiers?.tiers
-    ?? common?.decorationTiers?.tiers
-    ?? [];
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
+  const pdata = getAcgPathway(ch.editionId, ch.acgState?.pathway ?? "mercenary");
+  const tiers = (pdata?.decorationTiers?.tiers
+    ?? acg?.common?.decorationTiers?.tiers
+    ?? []) as Array<{ minMargin: number; award: string }>;
   for (const t of tiers) {
     if (margin >= t.minMargin) {
       return t.award as "SEH" | "MCG" | "MCUF";
@@ -235,10 +226,7 @@ function resultDmWhenMatches(
   }
   if (when.currentAssignmentIs === "combat") {
     if (!assignment) return false;
-    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
-    const pathway = ch.acgState?.pathway;
-    if (!acg || !pathway) return false;
-    const pw = acg[pathway] as { combatAssignments?: string[] } | undefined;
+    const pw = getAcgPathway(ch.editionId, ch.acgState?.pathway);
     if (!pw?.combatAssignments?.includes(assignment)) return false;
   }
   if (when.currentAssignmentIs === "training") {
@@ -263,10 +251,7 @@ function resultDmApplies(
   }
   if (lc.includes("combat assignment")) {
     if (!assignment) return false;
-    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
-    const pathway = ch.acgState?.pathway;
-    if (!acg || !pathway) return false;
-    const pw = acg[pathway] as { combatAssignments?: string[] } | undefined;
+    const pw = getAcgPathway(ch.editionId, ch.acgState?.pathway);
     return pw?.combatAssignments?.includes(assignment) ?? false;
   }
   if (lc.includes("training")) return assignment === "Training";
