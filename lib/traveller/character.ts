@@ -10,7 +10,7 @@ import type { HistoryEvent } from "./history";
 import { event as ev, formatEvent } from "./history";
 import type { AcgState } from "./engine/acg/types";
 import {
-  applyHomeworldSkills, availableServicesForHomeworld, editionHasHomeworld,
+  editionHasHomeworld,
   generateAndApplyHomeworld, type Homeworld,
 } from "./engine/homeworld";
 import { mercenaryEnlist } from "./engine/acg/pathways/mercenary";
@@ -19,15 +19,21 @@ import {
 } from "./engine/acg/preCareer";
 import { navyEnlist } from "./engine/acg/pathways/navy";
 import { scoutEnlist } from "./engine/acg/pathways/scout";
-import {
-  applyReducedPassageBenefit,
-  merchantEnlist,
-  merchantFinalizeMuster,
-} from "./engine/acg/pathways/merchantPrince";
-import { scoutFinalizeMuster } from "./engine/acg/pathways/scout";
-import { runAcgTerm, runAcgReenlist } from "./engine/acg/runner";
+import { merchantEnlist } from "./engine/acg/pathways/merchantPrince";
 import { generateGender, generateName } from "./names";
-import { attrShort, extendedHex, numCommaSep } from "./formatting";
+import { attrShort, extendedHex } from "./formatting";
+import {
+  musterOutBenefit as musterOutBenefitImpl,
+  musterOutCash as musterOutCashImpl,
+  musterOutPay as musterOutPayImpl,
+  musterOutRolls as musterOutRollsImpl,
+} from "./chargen/muster";
+import {
+  doEnlistment as doEnlistmentImpl,
+  applyServiceStartAge as applyServiceStartAgeImpl,
+} from "./chargen/enlistment";
+import { doServiceTermStep as doServiceTermStepImpl } from "./chargen/term";
+import { doReenlistmentStep as doReenlistmentStepImpl } from "./chargen/reenlist";
 import type {
   AttributeKey,
   Attributes,
@@ -38,11 +44,8 @@ import type {
   Skill,
 } from "./types";
 import type { ChargenStatus } from "./types";
-import {
-  getDraftServices, getEditionServices, getEnlistableServices,
-} from "./services";
+import { getEditionServices } from "./services";
 import { DEFAULT_EDITION_ID, getEdition } from "./editions";
-import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
 export class Character {
@@ -927,210 +930,28 @@ export class Character {
 
   // ---------- enlistment ----------
 
+  /** Basic-chargen enlistment — implementation in chargen/enlistment.ts. */
   doEnlistment(method: string): ServiceKey {
-    const enlistable = getEnlistableServices(this.editionId);
-    const draftPool = getDraftServices(this.editionId);
-    // ACG enlistment is handled by the ACG runner (Character.doAcgEnlist).
-    // Basic-flow doEnlistment is only called for non-ACG characters.
-    if (this.useAcg) {
-      throw new Error(
-        "doEnlistment is for basic chargen only; ACG characters should use the ACG runner",
-      );
-    }
-    // Gate the enlistable list by homeworld tech / social rules (MT
-    // only; CT returns the full list unchanged).
-    const gated = this.homeworld
-      ? availableServicesForHomeworld(this, this.homeworld, enlistable)
-      : enlistable;
-    let preferredService: ServiceKey;
-    if (method && method !== "random") {
-      preferredService = method as ServiceKey;
-      if (this.homeworld && !gated.includes(preferredService)) {
-        this.log(ev.enlistmentAttempt(
-          preferredService, 0, 0, 0, false,
-          `homeworld tech ${this.homeworld.tech} forbids`,
-        ));
-        // Force pick from gated list.
-        preferredService = arnd(gated);
-      }
-    } else {
-      preferredService = arnd(gated);
-    }
-
-    // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
-    if (this.attributes.social >= 10 && (!method || method === "random")) {
-      this.log(ev.enlistmentAttempt(
-        "Nobility", 0, 0, 0, true,
-        "distinguished by social standing (Soc 10+, auto-enrolled)",
-      ));
-      this.applyServiceStartAge("nobles");
-      this.service = "nobles";
-      // R15: apply service-conditioned homeworld default skills (Vacc Suit-0,
-      // Gun Combat-0, tech-keyed vehicles/computer) — previously skipped on
-      // the auto-noble path.
-      if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
-      const skills = this.editionService("nobles").getServiceSkills(this);
-      for (const sk of skills) this.addSkill(sk, 1, "Nobility service skill");
-      return "nobles";
-    }
-
-    const pref = this.editionService(preferredService);
-    const dm = pref.enlistmentDM(this.attributes);
-    const en = roll(2);
-    const succeeded = en + dm >= pref.enlistmentThrow;
-    this.log(ev.enlistmentAttempt(
-      pref.serviceName, en, dm, pref.enlistmentThrow, succeeded,
-    ));
-    if (succeeded) {
-      this.applyServiceStartAge(preferredService);
-      // Now that service is set, apply service-conditioned homeworld
-      // default skills (Vacc Suit-0 for Navy/Marines/etc; Gun Combat-0
-      // for non-barbarians). MT only — CT has no homeworld.
-      this.service = preferredService;
-      if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
-      const skills = pref.getServiceSkills(this);
-      for (const sk of skills) this.addSkill(sk, 1, `${pref.serviceName} service skill`);
-      return preferredService;
-    }
-    this.drafted = true;
-    const draftService = arnd(draftPool);
-    this.log(ev.drafted(draftService));
-    this.applyServiceStartAge(draftService);
-    this.service = draftService;
-    if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
-    const draftDef = this.editionService(draftService);
-    const skills = draftDef.getServiceSkills(this);
-    for (const sk of skills) this.addSkill(sk, 1, `${draftDef.serviceName} service skill`);
-    return draftService;
+    return doEnlistmentImpl(this, method);
   }
 
-  /** Apply the joined service's startAge from edition data. CotI's belter
-   *  and barbarian start-at-14 rule comes through this path; MT services
-   *  all declare startAge=18. Editions encode this declaratively. */
-  private applyServiceStartAge(svc: ServiceKey) {
-    const edition = getEdition(this.editionId);
-    const data = edition.data.services[svc];
-    if (data?.startAge !== undefined) this.age = data.startAge;
+  /** Apply the joined service's startAge from edition data. */
+  applyServiceStartAge(svc: ServiceKey): void {
+    applyServiceStartAgeImpl(this, svc);
   }
 
   // ---------- service term ----------
 
-  doServiceTermStep() {
-    // Consume per-term markers from the prior term.
-    this.mandatoryReenlistment = false;
-    this.shortTermThisTerm = false;
-    // Reset per-term anagathics flags; intent for this term is set below
-    // from anagathicsStandingOrder (or by an explicit pre-survival call).
-    this.anagathicsActiveThisTerm = false;
-    this.anagathicsWithdrawalThisTerm = false;
-    this.wantsAnagathicsThisTerm = false;
-    this.log(ev.section("--------------------------------------------"));
-    if (this.useAcg && this.acgState) {
-      // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
-      // assignments per term). The ACG runner handles term/age increments
-      // because mid-term death has different semantics.
-      const isFirstTerm = this.terms === 0;
-      const shortTerm = isFirstTerm
-        && this.acgState.preCareerFirstTermShort === true;
-      this.log(ev.termBegin(
-        this.terms + 1, this.age,
-        shortTerm
-          ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
-          : undefined,
-      ));
-      runAcgTerm(this);
-      return;
-    }
-    this.terms += 1;
-    this.age += 4;
-    this.log(ev.termBegin(this.terms, this.age));
-    // Anagathics supply check happens before survival (per PM p. 15)
-    // — supply outcome modifies the survival DM. Log order: termBegin
-    // → anagathics → survival so the story reads naturally.
-    this.preSurvivalAnagathicsHook();
-    // Basic chargen: delegate the step sequence to the engine runner.
-    runTermSteps(this);
+  /** Run one service term — implementation in chargen/term.ts. */
+  doServiceTermStep(): void {
+    doServiceTermStepImpl(this);
   }
 
   // ---------- reenlistment ----------
 
-  doReenlistmentStep() {
-    // PM p. 16: short-term forces the character to leave after 2 years
-    // — no reenlistment roll. Without this guard the engine would still
-    // roll and log a misleading "Eligible to reenlist" line even though
-    // activeDuty was already set false by survival failure.
-    if (this.shortTermThisTerm) return;
-    // F2/F3: PM p. 16 disability conditions force muster regardless of
-    // the reenlistment roll. Block reenlist for both basic and ACG flows.
-    const dis = this.isDisabled();
-    if (dis.disabled) {
-      this.endChargenRetired(`disability: ${dis.reasons.join("; ")}`);
-      return;
-    }
-    if (this.useAcg && this.acgState) {
-      const keep = runAcgReenlist(this);
-      if (!keep) {
-        const reason = this.acgState.reenlistDenialReason;
-        delete this.acgState.reenlistDenialReason;
-        // Denied: chargen continues to muster-out, so we don't fire
-        // endChargen* — just record the reenlist outcome and let the
-        // status flip to mustered when the UI rolls benefits.
-        this.chargenStatus = { kind: "retired", reason: reason ?? "denied reenlistment" };
-        this.endedAsRetired = this.isRetirementEligible();
-        this.log(ev.reenlistment("denied", undefined, undefined, reason));
-      } else if (this.mandatoryReenlistment) {
-        this.log(ev.reenlistment("mandatory"));
-      } else {
-        this.log(ev.reenlistment("voluntary"));
-      }
-      return;
-    }
-    const def = this.serviceDef();
-    const reenlistRoll = roll(2);
-    const target = def.reenlistThrow;
-    if (reenlistRoll === 12) {
-      this.enterMandatoryReenlist();
-      this.log(ev.reenlistment("mandatory", reenlistRoll, target));
-    } else if (
-      // CT mandates retirement at end of term 7. MT does not (voluntary
-      // any-term per PM p. 17). Read the cap from edition rules.
-      (() => {
-        const rules = getEdition(this.editionId).data.rules as {
-          reenlistment?: { mandatoryRetireAfterTerm?: number };
-        } | undefined;
-        const cap = rules?.reenlistment?.mandatoryRetireAfterTerm ?? 7;
-        return this.terms >= cap;
-      })() && !(
-        getEdition(this.editionId).data.rules as {
-          reenlistment?: { voluntaryAnyTerms?: boolean };
-        } | undefined)?.reenlistment?.voluntaryAnyTerms
-    ) {
-      this.endedAsRetired = true;
-      this.chargenStatus = { kind: "retired", reason: "mandatory retirement" };
-      this.log(ev.reenlistment("retired", reenlistRoll, target));
-    } else if (def.inverseReenlist) {
-      if (reenlistRoll >= target) {
-        this.endedAsRetired = this.isRetirementEligible();
-        this.chargenStatus = { kind: "retired", reason: "released from service" };
-        this.log(ev.reenlistment("released", reenlistRoll, target));
-      } else {
-        this.log(ev.reenlistment("heldOver", reenlistRoll, target));
-      }
-    } else if (reenlistRoll < target) {
-      // PM p. 17: a character denied reenlistment after 5+ terms still
-      // retires (and gets the cash-table +1 retirement DM), unless their
-      // service is on the no-retirement excludedServices list (Barbarians,
-      // Pirates, Rogues, Scouts per MT).
-      this.endedAsRetired = this.isRetirementEligible();
-      this.chargenStatus = { kind: "retired", reason: "denied reenlistment" };
-      this.log(ev.reenlistment("denied", reenlistRoll, target));
-    } else {
-      // The throw only determines eligibility. The player still gets to
-      // choose between Run Term and Muster Out at the next term phase, so
-      // we record the rule outcome (eligible) rather than the player's
-      // pending decision.
-      this.log(ev.reenlistment("voluntary", reenlistRoll, target));
-    }
+  /** End-of-term reenlistment — implementation in chargen/reenlist.ts. */
+  doReenlistmentStep(): void {
+    doReenlistmentStepImpl(this);
   }
 
   /** True when this character qualifies for retirement: at least the
@@ -1461,142 +1282,24 @@ export class Character {
     }
   }
 
+  /** Number of muster-out rolls — implementation in chargen/muster.ts. */
   musterOutRolls(): number {
-    this.finalizeAcgRankForMuster();
-    // Reads rules.musterOutRolls from the active edition.
-    //   perTerm × qualifyingTerms (default 1) + the additionalRolls of
-    //   whichever rankBand contains this character's rank.
-    // Short terms (MT survival-failure) don't count toward muster benefits.
-    const rules = (
-      getEdition(this.editionId).data.rules as {
-        musterOutRolls?: {
-          perTerm?: number;
-          rankBands?: { ranks: number[]; additionalRolls: number }[];
-          rankExtraRolls?: { rankMin: number; rankMax: number; additionalRolls: number }[];
-        };
-      }
-    ).musterOutRolls;
-    const perTerm = rules?.perTerm ?? 1;
-    const acgPartial = this.acgState?.partialTerms ?? 0;
-    const anagathicsTerms = this.anagathicsBenefitForfeitedTerms;
-    const qualifyingTerms = Math.max(
-      0,
-      this.terms - this.shortTermsCount - acgPartial - anagathicsTerms,
-    );
-    let r = perTerm * qualifyingTerms;
-    // PM p. 17: rank extra rolls are cumulative — rank 5-6 gets +3,
-    // rank 3-4 gets +2, rank 1-2 gets +1. Prefer rankExtraRolls (the
-    // canonical form) when present; otherwise fall through to the legacy
-    // rankBands flat-additional form.
-    if (rules?.rankExtraRolls?.length) {
-      const band = rules.rankExtraRolls.find(
-        (b) => this.rank >= b.rankMin && this.rank <= b.rankMax,
-      );
-      if (band) r += band.additionalRolls;
-    } else {
-      const band = rules?.rankBands?.find((b) => b.ranks.includes(this.rank));
-      if (band) r += band.additionalRolls;
-    }
-    // ACG court-martial outcomes reduce mustering-out rolls (DD = -3,
-    // death sentence zeros benefits via a very negative penalty).
-    if (this.useAcg && this.acgState?.musterRollPenalty) {
-      r = Math.max(0, r + this.acgState.musterRollPenalty);
-    }
-    return r;
+    return musterOutRollsImpl(this);
   }
 
-  musterOutCash(cashDM: number) {
-    const rawRoll = roll(1);
-    const idx = Math.min(7, Math.max(1, rawRoll + cashDM));
-    const cash = this.serviceDef().musterCash[idx] ?? 0;
-    this.credits += cash;
-    this.musterLog.push(`Cr${numCommaSep(cash)} cash`);
-    this.log(ev.musterCash(cash, rawRoll, cashDM));
+  /** One muster-out cash roll. */
+  musterOutCash(cashDM: number): void {
+    musterOutCashImpl(this, cashDM);
   }
 
-  musterOutBenefit(benefitsDM: number) {
-    // Snapshot before, then describe what changed after the service's roll
-    // table mutates us — works regardless of which mutation it picked.
-    const beforeBenefitsLen = this.benefits.length;
-    const beforeAttrs = { ...this.attributes };
-    const beforeSkillLevels = new Map<string, number>();
-    for (const [n, l] of this.skills) beforeSkillLevels.set(n, l);
-    const beforeMortgage = this.mortgage;
-
-    this.serviceDef().musterBenefits(this, benefitsDM);
-
-    const newBenefitsList = this.benefits.slice(beforeBenefitsLen);
-    const newBenefitsSet = new Set(newBenefitsList);
-
-    const parts: string[] = [...newBenefitsList];
-    for (const k of Object.keys(this.attributes) as AttributeKey[]) {
-      const delta = this.attributes[k] - beforeAttrs[k];
-      if (delta !== 0) {
-        const sign = delta > 0 ? "+" : "";
-        parts.push(`${sign}${delta} ${attrShort(k)}`);
-      }
-    }
-    for (const [n, l] of this.skills) {
-      const prev = beforeSkillLevels.get(n);
-      if (prev === undefined) {
-        // Bug fix: first weapon-benefit roll adds the weapon at level 0 AND
-        // adds the benefit name. Suppress the redundant level-0 skill entry.
-        if (l === 0 && newBenefitsSet.has(n)) continue;
-        parts.push(l === 0 ? n : `${n}-${l}`);
-      } else if (l > prev) {
-        parts.push(`${n}-${l}`);
-      }
-    }
-    if (this.mortgage < beforeMortgage) {
-      parts.push(`Free Trader mortgage -${beforeMortgage - this.mortgage} yrs`);
-    }
-    this.musterLog.push(parts.length > 0 ? parts.join(", ") : "No benefit");
+  /** One muster-out benefit roll. */
+  musterOutBenefit(benefitsDM: number): void {
+    musterOutBenefitImpl(this, benefitsDM);
   }
 
-  musterOutPay() {
-    // Court-martial DD or death-sentence forfeits pension (PM p. 47).
-    const pensionForfeit = !!(this.useAcg && this.acgState?.pensionForfeit);
-    const retirement = (
-      getEdition(this.editionId).data.rules as {
-        retirement?: {
-          eligibleAfterCompletedTerm?: number;
-          basePensionCredits?: number;
-          pensionCreditsPerTerm?: number;
-          excludedServices?: string[];
-          anagathicTermsExcluded?: boolean;
-        };
-      }
-    ).retirement;
-    const eligibleAfter = retirement?.eligibleAfterCompletedTerm ?? 5;
-    const basePension = retirement?.basePensionCredits ?? 4000;
-    const perTerm = retirement?.pensionCreditsPerTerm ?? 2000;
-    const excluded = new Set(
-      retirement?.excludedServices ?? ["scouts", "other"],
-    );
-    const anagathicsExcluded = retirement?.anagathicTermsExcluded ?? false;
-    const qualifyingTerms = anagathicsExcluded
-      ? this.terms - (this.anagathicsBenefitForfeitedTerms ?? 0)
-      : this.terms;
-    if (!pensionForfeit && qualifyingTerms >= eligibleAfter &&
-        !excluded.has(this.service as string)) {
-      this.retirementPay = basePension + (qualifyingTerms - eligibleAfter) * perTerm;
-      const label = `${numCommaSep(this.retirementPay)}/yr Retirement Pay`;
-      this.log(ev.raw(label, "simple"));
-      this.addBenefit(label);
-    } else if (pensionForfeit && this.terms >= eligibleAfter) {
-      this.log(ev.statusChange("pensionForfeit", "dishonorable discharge or death sentence"));
-    }
-    // ACG Merchant Free Trader Owner/Captain auto-benefit.
-    if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
-      merchantFinalizeMuster(this);
-      // F13: Reduced Passage benefit per PM p. 61 line 3851 — ex-merchants
-      // may purchase stand-by middle passages at half price.
-      applyReducedPassageBenefit(this);
-    }
-    // ACG Scout Detached Duty permanent-assignment benefit.
-    if (this.useAcg && this.acgState?.pathway === "scout") {
-      scoutFinalizeMuster(this);
-    }
+  /** Retirement-pay + per-pathway finalizers. */
+  musterOutPay(): void {
+    musterOutPayImpl(this);
   }
 
   // ---------- titles ----------
