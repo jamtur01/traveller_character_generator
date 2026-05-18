@@ -336,7 +336,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
         out.autoEnlistPathway = "mercenary";
-        ch.logRaw(`OTC commission earned`, "verbose");
+        ch.log(ev.promoted("O1", "OTC"));
         // F15 — PM p. 47 line 2782-2783: "A character in OTC is
         // automatically enlisted in (and commissioned as an officer in)
         // the Army or the Marines." Branch is a player choice.
@@ -350,7 +350,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             onResolve: (c, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
               c.acgState!.preCareerBranch = branch;
-              c.logRaw(`OTC commission earned (${chosen}).`);
+              c.log(ev.promoted("O1", `OTC (${chosen})`));
             },
           });
           // Pending choice — set a default so non-pause callers see something.
@@ -370,7 +370,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         out.branch = "navy";
         out.autoEnlistPathway = "navy";
         out.notes.push("NOTC commission earned (Navy).");
-        ch.logRaw(`NOTC commission earned`, "verbose");
+        ch.log(ev.promoted("O1", "NOTC"));
       }
     }
   }

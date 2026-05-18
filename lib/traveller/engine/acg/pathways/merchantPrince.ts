@@ -353,7 +353,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         },
       });
       if (mit.newMargin < 0) {
-        ch.logRaw("Failed survival; mustered out of merchant service.");
+        ch.log(ev.endGeneration("retired", "mustered out of merchant service"));
         ch.activeDuty = false;
         return;
       }

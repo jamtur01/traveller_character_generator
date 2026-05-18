@@ -161,7 +161,7 @@ export function mercenaryEnlist(
   ch.drafted = true;
   const draftedService = drafted.toLowerCase() as "army" | "marines";
   const draftSpec = data.enlistment[draftedService];
-  ch.logRaw(`Drafted into the ${drafted}.`);
+  ch.log(ev.drafted(drafted));
   ch.acgState!.branch = drafted;
   ch.acgState!.rankCode = draftSpec.startingRank;
   ch.acgState!.isOfficer = false; // drafted = enlisted; no OCS first term
@@ -176,8 +176,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   const data = dataFor(ch);
   const fixed = data.initialTraining[0];
   if (fixed) {
-    ch.logRaw(`Initial Training: ${fixed}-1`);
-    ch.addSkill(fixed, 1);
+    ch.addSkill(fixed, 1, "Initial Training");
   }
 
   const armKey = labelToColumnKey(ch.acgState!.combatArm!);
@@ -192,8 +191,7 @@ export function mercenaryInitialTraining(ch: Character): void {
     throw new Error(`MOS table missing column "${armKey}" for combat arm "${ch.acgState!.combatArm}"`);
   }
   ch.acgState!.mos = mosSkill;
-  ch.addSkill(mosSkill, 1);
-  ch.logRaw(`MOS assigned: ${mosSkill}-1`);
+  ch.addSkill(mosSkill, 1, "MOS");
 }
 
 /** Officer command-duty roll. Success places officer in command position,
@@ -319,7 +317,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       },
     });
     if (mit.newMargin < 0) {
-      ch.logRaw("Failed survival; invalided out of mercenary service.");
+      ch.log(ev.endGeneration("retired", "invalided out of mercenary service"));
       ch.activeDuty = false;
       return;
     }
@@ -330,7 +328,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
     if (combatAssignments.includes(assignment)) {
       ch.acgState!.decorations.push("Purple Heart");
-      ch.logRaw(`Wounded in ${assignment}; awarded Purple Heart.`);
+      ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
       ch.acgState!.injuredThisYear = true;
     }
   }

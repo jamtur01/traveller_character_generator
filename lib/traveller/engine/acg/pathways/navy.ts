@@ -206,7 +206,7 @@ export function navyEnlist(
     ch.acgState!.fleet = "imperialNavy";
     ch.acgState!.rankCode = data.enlistment.startingRank;
     ch.acgState!.isOfficer = false;
-    ch.logRaw("Drafted into the Imperial Navy.");
+    ch.log(ev.drafted("Imperial Navy"));
   }
 
   // Branch assignment — different column for officers vs enlisted.
@@ -470,7 +470,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       },
     });
     if (mit.newMargin < 0) {
-      ch.logRaw("Failed survival; invalided out of Navy service.");
+      ch.log(ev.endGeneration("retired", "invalided out of Navy service"));
       ch.activeDuty = false;
       return;
     }
@@ -479,7 +479,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   if (sv.margin === 0 && typeof res.survival === "number" &&
       combatAssignments.includes(assignment)) {
     ch.acgState!.decorations.push("Purple Heart");
-    ch.logRaw(`Wounded in ${assignment}; awarded Purple Heart.`);
+    ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
     ch.acgState!.injuredThisYear = true;
   }
 

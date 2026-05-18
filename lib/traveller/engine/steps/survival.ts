@@ -16,6 +16,7 @@
 //                  rewind age (preserved for any callers relying on the
 //                  old behavior; not used by current MT JSON).
 
+import { event as ev } from "../../history";
 import type { StepFn } from "./types";
 
 export const survivalStep: StepFn = ({ character, service, edition }) => {
@@ -37,7 +38,7 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
     );
     return;
   }
-  character.logRaw("Death in service.");
+  character.log(ev.endGeneration("deceased", "killed in service"));
   character.deceased = true;
   character.activeDuty = false;
 };

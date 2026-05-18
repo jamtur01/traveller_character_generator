@@ -119,7 +119,7 @@ export function scoutEnlist(ch: Character): void {
       }
       ch.drafted = true;
       ch.acgState!.rankCode = data.enlistment.startingRank;
-      ch.logRaw("Drafted into the Scout Service.");
+      ch.log(ev.drafted("Scout Service"));
     }
     ch.acgState!.division = "field";
   }
@@ -147,8 +147,7 @@ export function scoutInitialTraining(ch: Character): void {
   const office = ch.acgState!.office ?? "Survey";
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
-    ch.logRaw(`Initial Training (${office}): ${skill}-1`);
-    ch.addSkill(skill, 1);
+    ch.addSkill(skill, 1, `Initial Training (${office})`);
   } else {
     ch.logRaw(`Initial Training (${office}): no skill specified in data`);
   }
@@ -290,7 +289,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       },
     });
     if (mit.newMargin < 0) {
-      ch.logRaw("Failed survival; invalided out of Scout service.");
+      ch.log(ev.endGeneration("retired", "invalided out of Scout service"));
       ch.activeDuty = false;
       return;
     }
