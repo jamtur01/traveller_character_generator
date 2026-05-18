@@ -230,9 +230,7 @@ export function runAcgTerm(ch: Character): void {
   if (dis.disabled) {
     ch.activeDuty = false;
     if (ch.isRetirementEligible()) ch.retired = true;
-    ch.logRaw(
-      `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
-    );
+    ch.log(ev.endGeneration("retired", `disability: ${dis.reasons.join("; ")}`));
     return;
   }
 
