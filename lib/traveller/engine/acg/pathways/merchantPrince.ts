@@ -24,7 +24,7 @@
 //   - Reenlistment: 4+ (DM +1 if officer).
 
 import type { Character } from "../../../character";
-import { getEdition } from "../../../editions";
+import { getEdition, getAcgPathway } from "../../../editions";
 import { roll } from "../../../random";
 import {
   applyDmRules, applyStructuredDms, labelToColumnKey,
@@ -41,6 +41,24 @@ import { event as ev } from "../../../history";
 const PATHWAY = "merchantPrince";
 
 interface MerchantData {
+  /** PM p. 63 special-duty rules: Commission grants O0 (or rank-by-
+   *  line-type), with a deadline to make O1 before reverting. Deck
+   *  rank-O4 holders auto-transfer departments per PM p. 61. */
+  specialRules?: {
+    specialDutyCommission?: {
+      defaultRank?: string;
+      rankByLineType?: Record<string, string>;
+      passO1DeadlineYears?: number;
+      revertOnDeadlineToRank?: string;
+    };
+    deckAutoTransferAtRank?: {
+      department: string;
+      rankCode: string;
+      destinationDepartment: string;
+    };
+    reducedPassage?: unknown;
+    [k: string]: unknown;
+  };
   enlistment: {
     columns: string[];
     rows: Array<{
@@ -530,12 +548,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     if (!ch.acgState!.isOfficer) {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
-      const rule = (data as { specialRules?: { specialDutyCommission?: {
-        defaultRank?: string;
-        rankByLineType?: Record<string, string>;
-        passO1DeadlineYears?: number;
-        revertOnDeadlineToRank?: string;
-      } } }).specialRules?.specialDutyCommission;
+      const rule = data.specialRules?.specialDutyCommission;
       const lineType = ch.acgState!.lineType ?? "";
       const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
       ch.acgState!.isOfficer = true;
@@ -621,17 +634,13 @@ export function merchantReenlist(ch: Character): boolean {
  *  the character's benefits list at muster-out. Rule lives in JSON
  *  (advancedCharacterGeneration.merchantPrince.specialRules.reducedPassage). */
 export function applyReducedPassageBenefit(ch: Character): void {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const mp = acg?.merchantPrince as { specialRules?: {
-    reducedPassage?: {
-      appliesAfterMuster?: boolean;
-      passage?: string;
-      pricePercent?: number;
-      conditions?: string;
-    };
-  } } | undefined;
-  const rp = mp?.specialRules?.reducedPassage;
+  const mp = getAcgPathway(ch.editionId, "merchantPrince") as MerchantData | undefined;
+  const rp = mp?.specialRules?.reducedPassage as {
+    appliesAfterMuster?: boolean;
+    passage?: string;
+    pricePercent?: number;
+    conditions?: string;
+  } | undefined;
   if (!rp?.appliesAfterMuster) return;
   const label = `Reduced Passage (${rp.passage ?? "Mid Psg"} at ${rp.pricePercent ?? 50}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
   if (ch.benefits.includes(label)) return;
@@ -681,9 +690,7 @@ export function merchantStartOfTerm(ch: Character): void {
   // O0 holders revert to enlisted if they haven't passed O1 within the
   // commission deadline (PM p. 63). All thresholds in JSON.
   const data = dataFor(ch);
-  const rule = (data as { specialRules?: { specialDutyCommission?: {
-    defaultRank?: string; revertOnDeadlineToRank?: string;
-  } } }).specialRules?.specialDutyCommission;
+  const rule = data.specialRules?.specialDutyCommission;
   const o0Rank = rule?.defaultRank ?? "O0";
   const revertRank = rule?.revertOnDeadlineToRank ?? "E1";
   const deadline = ch.acgState!.commissionO0DeadlineYear;
@@ -705,9 +712,7 @@ export function merchantStartOfTerm(ch: Character): void {
 function applyDeckAutoTransferIfDue(ch: Character): void {
   if (!ch.acgState?.isOfficer) return;
   const data = dataFor(ch);
-  const rule = (data as { specialRules?: { deckAutoTransferAtRank?: {
-    rankCode: string; destinationDepartment: string;
-  } } }).specialRules?.deckAutoTransferAtRank;
+  const rule = data.specialRules?.deckAutoTransferAtRank;
   if (!rule) return;
   if (ch.acgState.rankCode !== rule.rankCode) return;
   if (ch.acgState.department === rule.destinationDepartment) return;

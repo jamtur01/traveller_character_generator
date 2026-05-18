@@ -48,4 +48,17 @@ export function listEditions(): EditionMeta[] {
   return Object.values(REGISTRY).map((e) => e.meta);
 }
 
+/** Typed dynamic-key access to a pathway's ACG data. Centralizes the
+ *  one needed cast (AcgData's index signature is `unknown` because
+ *  `common` is structurally different from pathways) so consumers can
+ *  read `getAcgPathway(ch, "mercenary")?.combatAssignments` without
+ *  declaring an inline shape every time. */
+export function getAcgPathway(
+  editionId: string, key: string | undefined | null,
+): import("./types").AcgPathwayData | undefined {
+  if (!key) return undefined;
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
+  return acg?.[key] as import("./types").AcgPathwayData | undefined;
+}
+
 export type { Edition, EditionMeta } from "./types";

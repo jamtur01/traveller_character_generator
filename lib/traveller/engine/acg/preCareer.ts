@@ -481,10 +481,9 @@ function applyOptionSpecifics(
   opt: PreCareerOption,
   out: PreCareerResult,
 ): void {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
+  const pco = acg?.common?.preCareerOptions?.[opt] as
     Record<string, unknown> | undefined;
-  const pco = (acg?.common as { preCareerOptions?: Record<string, unknown> } | undefined)
-    ?.preCareerOptions?.[opt] as Record<string, unknown> | undefined;
   if (!pco) return;
 
   // Automatic skills granted to all graduates (e.g. Combat Rifleman for
@@ -597,19 +596,17 @@ function parseDynamicSkill(s: string): [string, number] {
  *  data sourced from advancedCharacterGeneration.merchantPrince.skillTables.department).
  */
 function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): void {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const mp = acg?.merchantPrince as { skillTables?: { department?: {
-    columns: string[]; rows: Array<Record<string, unknown>>;
-  } } } | undefined;
-  const dept = mp?.skillTables?.department;
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
+  const dept = (acg?.merchantPrince?.skillTables as
+    { department?: { columns: string[]; rows: Array<Record<string, unknown>> } }
+    | undefined)?.department;
   if (!dept) return;
   const departments = dept.columns.filter((c) => c !== "die");
   if (departments.length === 0) return;
   // Skill-attempt parameters from the Academy spec (JSON pco.skills).
-  const pco = (acg?.common as { preCareerOptions?: { merchantAcademy?: { skills?: unknown } } } | undefined)
-    ?.preCareerOptions?.merchantAcademy;
-  const skillsSpec = pco?.skills as { throwTarget?: number; rolls?: number } | undefined;
+  const pco = acg?.common?.preCareerOptions?.merchantAcademy as
+    { skills?: { throwTarget?: number; rolls?: number } } | undefined;
+  const skillsSpec = pco?.skills;
   const skillsTarget = skillsSpec?.throwTarget ?? 4;
   const skillsCount = skillsSpec?.rolls ?? 3;
   const apply = (choice: string): void => {

@@ -8,7 +8,7 @@
 // This module dispatches the effect objects against the character.
 
 import type { Character } from "../../character";
-import { getEdition } from "../../editions";
+import { getEdition, getAcgPathway } from "../../editions";
 import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
 import { applyAcgSkillCell } from "./pathways/mercenary";
@@ -324,12 +324,8 @@ interface OcsAdvancement {
  *  mercenary; analogous data for navy if/when added). Falls back to
  *  default-to-O1 if the data is missing. */
 function readOcsAdvancement(ch: Character): OcsAdvancement | null {
-  const pathway = ch.acgState?.pathway;
-  if (!pathway) return null;
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const pathwayData = acg?.[pathway] as { ocsAdvancement?: OcsAdvancement } | undefined;
-  return pathwayData?.ocsAdvancement ?? null;
+  const pw = getAcgPathway(ch.editionId, ch.acgState?.pathway);
+  return (pw?.ocsAdvancement as OcsAdvancement | undefined) ?? null;
 }
 
 function attacheOrAide(
@@ -375,10 +371,9 @@ interface ScoutSchoolMeta {
 }
 
 function scoutSchoolMeta(ch: Character, school: string): ScoutSchoolMeta | null {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const scout = acg?.scout as { schoolMeta?: Record<string, ScoutSchoolMeta> } | undefined;
-  return scout?.schoolMeta?.[school] ?? null;
+  const scout = getAcgPathway(ch.editionId, "scout");
+  const meta = scout?.schoolMeta as Record<string, ScoutSchoolMeta> | undefined;
+  return meta?.[school] ?? null;
 }
 
 function scoutCanAttendSchool(ch: Character, school: string): boolean {

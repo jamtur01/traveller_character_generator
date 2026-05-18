@@ -4,7 +4,7 @@
 
 import { roll } from "../../random";
 import type { Character } from "../../character";
-import { getEdition } from "../../editions";
+import { getEdition, getAcgPathway } from "../../editions";
 import type {
   AssignmentResolution, AssignmentTable, ResolutionTarget,
 } from "./types";
@@ -251,11 +251,10 @@ function mercenaryArmSkillSet(ch: Character): Set<string> {
   const out = new Set<string>();
   const acg = ch.acgState;
   if (!acg) return out;
-  const editionAcg = getEdition(ch.editionId).data
-    .advancedCharacterGeneration as { mercenary?: {
-      mos?: { columns: string[]; rows: Array<Record<string, unknown>> };
-    } } | undefined;
-  const mos = editionAcg?.mercenary?.mos;
+  const mercenary = getAcgPathway(ch.editionId, "mercenary");
+  const mos = mercenary?.mos as {
+    columns: string[]; rows: Array<Record<string, unknown>>;
+  } | undefined;
   if (!mos) return out;
   const arm = acg.combatArm ?? "";
   const col = arm.charAt(0).toLowerCase() + arm.slice(1);
@@ -270,13 +269,10 @@ function merchantDepartmentSkillSet(ch: Character): Set<string> {
   const out = new Set<string>();
   const acg = ch.acgState;
   if (!acg?.department) return out;
-  const editionAcg = getEdition(ch.editionId).data
-    .advancedCharacterGeneration as { merchantPrince?: {
-      skillTables?: { department?: {
-        columns: string[]; rows: Array<Record<string, unknown>>;
-      } };
-    } } | undefined;
-  const dept = editionAcg?.merchantPrince?.skillTables?.department;
+  const merchant = getAcgPathway(ch.editionId, "merchantPrince");
+  const dept = (merchant?.skillTables as
+    { department?: { columns: string[]; rows: Array<Record<string, unknown>> } }
+    | undefined)?.department;
   if (!dept) return out;
   const col = acg.department.charAt(0).toLowerCase() + acg.department.slice(1);
   for (const row of dept.rows) {
