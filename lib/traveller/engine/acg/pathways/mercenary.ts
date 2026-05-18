@@ -113,7 +113,7 @@ export function mercenaryEnlist(
   if (elig) {
     const armGate = elig.armGates?.[combatArm];
     if (armGate?.honorsGraduateOf) {
-      const honors = ch.acgState!.honorsGraduations ?? [];
+      const honors = ch.requireAcgState().honorsGraduations ?? [];
       if (!honors.includes(armGate.honorsGraduateOf)) {
         throw new Error(
           armGate.errorMessage ?? `Combat arm "${combatArm}" gated by ${armGate.honorsGraduateOf} honors.`,
@@ -129,13 +129,13 @@ export function mercenaryEnlist(
       }
     }
   }
-  ch.acgState!.combatArm = combatArm;
-  ch.acgState!.branch = service === "army" ? "Army" : "Marines";
+  ch.requireAcgState().combatArm = combatArm;
+  ch.requireAcgState().branch = service === "army" ? "Army" : "Marines";
 
   const svcLabel = `${service === "army" ? "Army" : "Marines"} (${combatArm})`;
   // Academy/OTC graduates skip the enlistment roll — they are automatically
   // enlisted at the rank set by pre-career (O1 for Military Academy or OTC).
-  if (ch.acgState!.preCareerCommission) {
+  if (ch.requireAcgState().preCareerCommission) {
     ch.log(ev.enlistmentAttempt(`${svcLabel} (academy/OTC)`, 0, 0, 0, true));
     return;
   }
@@ -150,8 +150,8 @@ export function mercenaryEnlist(
   const succeeded = r + dm >= enlistSpec.target;
   ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
   if (succeeded) {
-    ch.acgState!.rankCode = enlistSpec.startingRank;
-    ch.acgState!.isOfficer = enlistSpec.startingRank.startsWith("O");
+    ch.requireAcgState().rankCode = enlistSpec.startingRank;
+    ch.requireAcgState().isOfficer = enlistSpec.startingRank.startsWith("O");
     return;
   }
 
@@ -169,9 +169,9 @@ export function mercenaryEnlist(
   const draftedService = drafted.toLowerCase() as "army" | "marines";
   const draftSpec = data.enlistment[draftedService];
   ch.log(ev.drafted(drafted));
-  ch.acgState!.branch = drafted;
-  ch.acgState!.rankCode = draftSpec.startingRank;
-  ch.acgState!.isOfficer = false; // drafted = enlisted; no OCS first term
+  ch.requireAcgState().branch = drafted;
+  ch.requireAcgState().rankCode = draftSpec.startingRank;
+  ch.requireAcgState().isOfficer = false; // drafted = enlisted; no OCS first term
 }
 
 /** Initial training: first year of term 1. The first entry in
@@ -186,7 +186,7 @@ export function mercenaryInitialTraining(ch: Character): void {
     ch.addSkill(fixed, 1, "Initial Training");
   }
 
-  const armKey = labelToColumnKey(ch.acgState!.combatArm!);
+  const armKey = labelToColumnKey(ch.requireAcgState().combatArm!);
   let dm = 0;
   const hwTech = ch.homeworld?.tech;
   if (hwTech === "Avg Stellar" || hwTech === "High Stellar") dm += 1;
@@ -195,9 +195,9 @@ export function mercenaryInitialTraining(ch: Character): void {
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
   const mosSkill = row[armKey] as string | undefined;
   if (!mosSkill) {
-    throw new Error(`MOS table missing column "${armKey}" for combat arm "${ch.acgState!.combatArm}"`);
+    throw new Error(`MOS table missing column "${armKey}" for combat arm "${ch.requireAcgState().combatArm}"`);
   }
-  ch.acgState!.mos = mosSkill;
+  ch.requireAcgState().mos = mosSkill;
   ch.addSkill(mosSkill, 1, "MOS");
 }
 
@@ -205,46 +205,47 @@ export function mercenaryInitialTraining(ch: Character): void {
  *  failure (or opting out) → staff position. Combat arm + service
  *  determine the target. */
 export function mercenaryCommandDuty(ch: Character): void {
-  if (!ch.acgState!.isOfficer) {
-    ch.acgState!.inCommand = false;
+  if (!ch.requireAcgState().isOfficer) {
+    ch.requireAcgState().inCommand = false;
     return;
   }
   const data = dataFor(ch);
-  const arm = ch.acgState!.combatArm!;
-  const svc = (ch.acgState!.branch === "Marines" ? "marines" : "army");
+  const arm = ch.requireAcgState().combatArm!;
+  const svc = (ch.requireAcgState().branch === "Marines" ? "marines" : "army");
   const row = data.commandDuty.rows.find((r) => r.branch === arm);
   if (!row) {
-    ch.acgState!.inCommand = false;
+    ch.requireAcgState().inCommand = false;
     return;
   }
   const parsed = parseResolutionTarget(row[svc]);
   if (parsed.target === "auto") {
-    ch.acgState!.inCommand = true;
+    ch.requireAcgState().inCommand = true;
     return;
   }
   if (parsed.target === "none" || typeof parsed.target !== "number") {
-    ch.acgState!.inCommand = false;
+    ch.requireAcgState().inCommand = false;
     return;
   }
   const dm = applyDmRules(data.commandDuty.dms, ch, "promotion"); // DMs apply by rule strings
   const r = roll(2);
   const success = r + dm >= parsed.target;
   ch.log(ev.commandDuty(success, r, dm, parsed.target));
-  ch.acgState!.inCommand = success;
+  ch.requireAcgState().inCommand = success;
 }
 
 /** Roll the year's assignment. Returns the assignment label (e.g., "Raid"). */
 export function mercenaryRollAssignment(ch: Character): string {
+  const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (ch.acgState!.justRetained && ch.acgState!.retainedAssignment) {
-    const retained = ch.acgState!.retainedAssignment;
-    ch.acgState!.justRetained = false;
-    ch.acgState!.retainedAssignment = null;
+  if (acg.justRetained && acg.retainedAssignment) {
+    const retained = acg.retainedAssignment;
+    acg.justRetained = false;
+    acg.retainedAssignment = null;
     // Runner emits ev.assignmentRolled with retained=true (captured before
     // this pathway clears the flag).
     return retained;
   }
-  const armKey = labelToColumnKey(ch.acgState!.combatArm!);
+  const armKey = labelToColumnKey(acg.combatArm!);
   const r = roll(2);
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Mercenary assignment table missing row for die=${r}`);
@@ -254,7 +255,7 @@ export function mercenaryRollAssignment(ch: Character): string {
   }
   // Apply per-service reroutes from JSON (Marines: counterinsurgency/internal
   // security become Ship's Troops, per manual p. 48).
-  const branchKey = ch.acgState!.branch === "Marines" ? "marines" : null;
+  const branchKey = ch.requireAcgState().branch === "Marines" ? "marines" : null;
   const reroute = branchKey ? data.assignmentReroutes?.[branchKey] : undefined;
   if (reroute && reroute.fromAssignments.includes(assignment)) {
     assignment = reroute.toAssignment;
@@ -266,7 +267,7 @@ export function mercenaryRollAssignment(ch: Character): string {
  *  Updates Character state in place. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  const arm = ch.acgState!.combatArm ?? "Infantry";
+  const arm = ch.requireAcgState().combatArm ?? "Infantry";
   const resKey = data.combatArmResolution?.[arm] ?? "commando";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
@@ -284,7 +285,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       `${assignment}: garrison-style — automatic survival, no rewards`,
       "verbose",
     ));
-    ch.acgState!.assignmentHistory.push(assignment);
+    ch.requireAcgState().assignmentHistory.push(assignment);
     return;
   }
   const res = lookupResolution(resTable, assignment);
@@ -298,7 +299,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       typeof res.decoration === "number") {
     promptDecorationDmTradeoff(ch);
   }
-  const decStrategy = ch.acgState!.decorationDmStrategy;
+  const decStrategy = ch.requireAcgState().decorationDmStrategy;
   const survivalDmFromStrategy = -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
   // ^ negative strategy (e.g., -2) means apply -2 to survival and +2 to deco.
 
@@ -341,9 +342,9 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   if (sv.margin === 0 && typeof res.survival === "number") {
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
     if (combatAssignments.includes(assignment)) {
-      ch.acgState!.decorations.push("Purple Heart");
+      ch.requireAcgState().decorations.push("Purple Heart");
       ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
-      ch.acgState!.injuredThisYear = true;
+      ch.requireAcgState().injuredThisYear = true;
     }
   }
 
@@ -356,11 +357,11 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 
   // --- Promotion ---
   if (res.promotion !== "none" &&
-      !(ch.acgState!.isOfficer && res.promotionOfficersBarred) &&
-      !(ch.acgState!.isOfficer && ch.acgState!.promotedThisTerm)) {
-    const penalty = ch.acgState!.nextPromotionPenalty ?? 0;
+      !(ch.requireAcgState().isOfficer && res.promotionOfficersBarred) &&
+      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
+    const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
     const effectiveDm = promoDm + penalty;
-    if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0; // consumed
+    if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0; // consumed
     const pr = rollVsTarget(res.promotion, effectiveDm);
     ch.log(ev.roll(
       "Promotion", pr.roll, effectiveDm,
@@ -438,15 +439,15 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   }
 
   if (combatAssignments.includes(assignment)) {
-    ch.acgState!.combatRibbons += 1;
+    ch.requireAcgState().combatRibbons += 1;
     ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
-    if (ch.acgState!.inCommand && ch.acgState!.isOfficer) {
-      ch.acgState!.commandClusters += 1;
+    if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
+      ch.requireAcgState().commandClusters += 1;
       ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
     }
   }
 
-  ch.acgState!.assignmentHistory.push(assignment);
+  ch.requireAcgState().assignmentHistory.push(assignment);
 }
 
 function promptDecorationDmTradeoff(ch: Character): void {
@@ -458,11 +459,11 @@ function promptDecorationDmTradeoff(ch: Character): void {
     options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
       "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
     onResolve: (c, choice) => {
-      if (choice.startsWith("-2")) c.acgState!.decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) c.acgState!.decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) c.acgState!.decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) c.acgState!.decorationDmStrategy = 2;
-      else c.acgState!.decorationDmStrategy = 0;
+      if (choice.startsWith("-2")) c.requireAcgState().decorationDmStrategy = -2;
+      else if (choice.startsWith("-1")) c.requireAcgState().decorationDmStrategy = -1;
+      else if (choice.startsWith("+1")) c.requireAcgState().decorationDmStrategy = 1;
+      else if (choice.startsWith("+2")) c.requireAcgState().decorationDmStrategy = 2;
+      else c.requireAcgState().decorationDmStrategy = 0;
     },
   });
 }
@@ -483,8 +484,8 @@ function rollMercenarySkill(ch: Character): void {
   // toAssignment so the string lives in one place.
   const data = dataFor(ch);
   const shipsTroopsLabel = data.assignmentReroutes?.marines?.toAssignment ?? "Ship's Troops";
-  if (ch.acgState!.branch === "Marines" &&
-      ch.acgState!.currentAssignment === shipsTroopsLabel) {
+  if (ch.requireAcgState().branch === "Marines" &&
+      ch.requireAcgState().currentAssignment === shipsTroopsLabel) {
     rollMercenarySkillFromColumn(ch, "shipboard");
     return;
   }
@@ -509,15 +510,15 @@ function mercenaryDefaultSkillColumn(ch: Character): string {
   const data = dataFor(ch);
   const pol = data.skillColumnPolicy;
   if (!pol) return "ncoSkills";
-  if (ch.acgState!.isOfficer) {
-    return ch.acgState!.inCommand ? pol.officerInCommand : pol.officerStaff;
+  if (ch.requireAcgState().isOfficer) {
+    return ch.requireAcgState().inCommand ? pol.officerInCommand : pol.officerStaff;
   }
   // Enlisted: rank below the NCO threshold uses Army/Marine Life column.
-  const rank = ch.acgState!.rankCode;
+  const rank = ch.requireAcgState().rankCode;
   const enlistedNum = parseInt(rank.replace(/[^\d]/g, ""), 10) || 0;
   const ncoMin = parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 3;
   if (enlistedNum < ncoMin) {
-    const branch = ch.acgState!.branch ?? "";
+    const branch = ch.requireAcgState().branch ?? "";
     return pol.enlistedLowRankColumns[branch] ?? pol.enlistedLowRankColumns["army"] ?? "armyLife";
   }
   return pol.enlistedNcoColumn;
@@ -525,15 +526,15 @@ function mercenaryDefaultSkillColumn(ch: Character): string {
 
 function mercenaryAvailableSkillColumns(ch: Character): string[] {
   const cols: string[] = [];
-  const lifeCol = ch.acgState!.branch === "Marines" ? "marineLife" : "armyLife";
+  const lifeCol = ch.requireAcgState().branch === "Marines" ? "marineLife" : "armyLife";
   cols.push(lifeCol);
-  const rankNum = parseInt(ch.acgState!.rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  if (!ch.acgState!.isOfficer && rankNum >= 3) cols.push("ncoSkills");
-  if (ch.acgState!.isOfficer) {
-    if (ch.acgState!.inCommand) cols.push("commandSkills");
+  const rankNum = parseInt(ch.requireAcgState().rankCode.replace(/[^\d]/g, ""), 10) || 0;
+  if (!ch.requireAcgState().isOfficer && rankNum >= 3) cols.push("ncoSkills");
+  if (ch.requireAcgState().isOfficer) {
+    if (ch.requireAcgState().inCommand) cols.push("commandSkills");
     else cols.push("staffSkills");
   }
-  if (ch.acgState!.branch === "Marines") cols.push("shipboard");
+  if (ch.requireAcgState().branch === "Marines") cols.push("shipboard");
   return cols;
 }
 
@@ -572,19 +573,19 @@ export function applyAcgSkillCell(ch: Character, cell: string, source?: string):
 /** Advance the rank by one step per the pathway's rank ladder. */
 function promoteMercenary(ch: Character): void {
   const data = dataFor(ch);
-  if (ch.acgState!.isOfficer) {
+  if (ch.requireAcgState().isOfficer) {
     const codes = data.ranks.officer.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.acgState!.promotedThisTerm = true;
+      ch.requireAcgState().rankCode = codes[idx + 1]!;
+      ch.requireAcgState().promotedThisTerm = true;
       ch.log(ev.promoted(data.ranks.officer[idx + 1]![1]));
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.acgState!.rankCode = codes[idx + 1]!;
+      ch.requireAcgState().rankCode = codes[idx + 1]!;
       ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
     }
   }
@@ -595,7 +596,7 @@ function promoteMercenary(ch: Character): void {
  *  module which applies the school's specific skill awards. */
 export function mercenarySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
-  const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
+  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.specialAssignments.dms, ch);
   const rollOnce = (): string | null => {
     const r = Math.max(1, Math.min(7, roll(1) + dm));
@@ -636,7 +637,7 @@ export function mercenaryRetention(ch: Character, _assignment: string): void {
  *  and evaluated via the shared structured-DM evaluator. */
 export function mercenaryReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const svc = ch.acgState!.branch === "Marines" ? "marines" : "army";
+  const svc = ch.requireAcgState().branch === "Marines" ? "marines" : "army";
   const spec = data.reenlistment[svc];
   const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);

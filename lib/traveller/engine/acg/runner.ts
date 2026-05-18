@@ -39,7 +39,7 @@ function runStep(
   } catch (e) {
     if (e instanceof ChoicePendingError) {
       // Preserve where we paused so resumption picks the right step.
-      ch.acgState!.pausedAtStep = stepName;
+      ch.requireAcgState().pausedAtStep = stepName;
       return false;
     }
     throw e;

@@ -156,7 +156,7 @@ export function merchantEnlist(
   lineType: string,
 ): void {
   const data = dataFor(ch);
-  ch.acgState!.lineType = lineType;
+  ch.requireAcgState().lineType = lineType;
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
   if (!row) {
     throw new Error(`Unknown merchant line type "${lineType}"`);
@@ -187,13 +187,13 @@ export function merchantEnlist(
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
   // Merchants as Purser Department Medic per PM p. 47). Otherwise default
   // to E1 enlisted.
-  if (!ch.acgState!.preCareerCommission) {
-    ch.acgState!.rankCode = "E1";
-    ch.acgState!.isOfficer = false;
-  } else if (ch.acgState!.schoolsAttended.includes("medicalSchool")) {
-    ch.acgState!.department = "Purser";
+  if (!ch.requireAcgState().preCareerCommission) {
+    ch.requireAcgState().rankCode = "E1";
+    ch.requireAcgState().isOfficer = false;
+  } else if (ch.requireAcgState().schoolsAttended.includes("medicalSchool")) {
+    ch.requireAcgState().department = "Purser";
     ch.log(ev.enlistmentAttempt(
-      `Merchants Purser Department Medic (medical school direct commission, ${ch.acgState!.rankCode})`,
+      `Merchants Purser Department Medic (medical school direct commission, ${ch.requireAcgState().rankCode})`,
       0, 0, 0, true,
     ));
   }
@@ -211,7 +211,7 @@ export function merchantEnlist(
   // honors — the Academy's applyMerchantDepartmentSkills records the
   // pick in acgState.department, and honors graduates "may select the
   // department to which he will be assigned" per the PM).
-  if (!ch.acgState!.department) {
+  if (!ch.requireAcgState().department) {
     merchantAssignDepartment(ch);
   }
 }
@@ -246,28 +246,29 @@ function offerMerchantAcademy(ch: Character): void {
 
 function merchantAssignDepartment(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
   if (size === "FreeTrader") {
-    ch.acgState!.department = "Free Trader";
+    ch.requireAcgState().department = "Free Trader";
     return;
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
   const r = roll(1);
   const row = data.departmentAssignment.rows.find((row) => row.die === r);
-  if (!row) { ch.acgState!.department = "Purser"; return; }
-  ch.acgState!.department = String(row[lineCol] ?? "Purser");
+  if (!row) { ch.requireAcgState().department = "Purser"; return; }
+  ch.requireAcgState().department = String(row[lineCol] ?? "Purser");
   // acgState.department is read by subsequent assignment / skill rolls.
 }
 
 export function merchantRollAssignment(ch: Character): string {
+  const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (ch.acgState!.justRetained && ch.acgState!.retainedAssignment) {
-    const retained = ch.acgState!.retainedAssignment;
-    ch.acgState!.justRetained = false;
-    ch.acgState!.retainedAssignment = null;
+  if (acg.justRetained && acg.retainedAssignment) {
+    const retained = acg.retainedAssignment;
+    acg.justRetained = false;
+    acg.retainedAssignment = null;
     return retained;
   }
-  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const size = lineSizeFor(data, acg.lineType ?? "");
   const lineCol = assignmentColumnFor(size);
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
   const dm = (data.specificAssignment.dms ?? [])
@@ -309,23 +310,23 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     return;
   }
   // Available Position check (officers only).
-  if (ch.acgState!.isOfficer) {
+  if (ch.requireAcgState().isOfficer) {
     merchantCheckAvailablePosition(ch);
   }
 
   const data = dataFor(ch);
-  const deptKey = labelToColumnKey(ch.acgState!.department ?? "Deck");
+  const deptKey = labelToColumnKey(ch.requireAcgState().department ?? "Deck");
   // Free Trader characters resolve against the freeTraderTrade table regardless
   // of department (Free Traders are a single-department service).
-  const useFreeTraderTable = ch.acgState!.lineType === "Free Trader";
+  const useFreeTraderTable = ch.requireAcgState().lineType === "Free Trader";
   const resTable = useFreeTraderTable
     ? data.assignmentResolution.freeTraderTrade
     : data.assignmentResolution[deptKey];
   if (!resTable) {
     throw new Error(
       `Merchant: no resolution sub-table for department ` +
-      `"${ch.acgState!.department}" (key "${deptKey}", lineType: ` +
-      `"${ch.acgState!.lineType}", edition: ${ch.editionId}).`,
+      `"${ch.requireAcgState().department}" (key "${deptKey}", lineType: ` +
+      `"${ch.requireAcgState().lineType}", edition: ${ch.editionId}).`,
     );
   }
   const resolutionTable = resTable;
@@ -414,29 +415,29 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     if (bnMargin >= 0) merchantAwardBonus(ch);
   }
 
-  ch.acgState!.assignmentHistory.push(assignment);
+  ch.requireAcgState().assignmentHistory.push(assignment);
 }
 
 function merchantCheckAvailablePosition(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
   if (size === "FreeTrader") return;
   const col = size === "Large" ? "largeLine" : "smallLine";
-  const row = data.availablePositions.rows.find((r) => r.department === ch.acgState!.department);
+  const row = data.availablePositions.rows.find((r) => r.department === ch.requireAcgState().department);
   if (!row) return;
   const target = parseResolutionTarget(row[col]).target;
   const dm = applyStructuredDms(data.availablePositions.dms, ch);
   const r = roll(2);
   // Reset any prior temporary effective rank before evaluating this year.
-  ch.acgState!.effectiveRankCode = null;
+  ch.requireAcgState().effectiveRankCode = null;
   if (typeof target === "number" && r + dm < target) {
     // No position available — serve one rank lower for this year's skill
     // column selection (manual p. 60). The permanent rank is unchanged.
-    const m = ch.acgState!.rankCode.match(/^O(\d+)$/);
+    const m = ch.requireAcgState().rankCode.match(/^O(\d+)$/);
     if (m) {
       const cur = parseInt(m[1]!, 10);
       const lower = Math.max(0, cur - 1);
-      ch.acgState!.effectiveRankCode = lower === 0 ? "O0" : `O${lower}`;
+      ch.requireAcgState().effectiveRankCode = lower === 0 ? "O0" : `O${lower}`;
     }
     // effectiveRankCode is observable; the failed position throw is reflected
     // implicitly by the absence of a Promotion event this year.
@@ -457,7 +458,7 @@ function merchantRollSkill(ch: Character): void {
     });
     return;
   }
-  const tableKey = tables[(ch.acgState!.year - 1) % tables.length]!;
+  const tableKey = tables[(ch.requireAcgState().year - 1) % tables.length]!;
   merchantRollFromTable(ch, tableKey);
 }
 
@@ -499,7 +500,7 @@ function merchantAwardBonus(ch: Character): void {
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const data = dataFor(ch);
   const order = data.enlistment.rows.map((r) => r.typeOfLine);
-  const idx = order.indexOf(ch.acgState!.lineType ?? "");
+  const idx = order.indexOf(ch.requireAcgState().lineType ?? "");
   if (idx < 0) return;
   // PM p. 60: "It is not possible to transfer up to a megacorporation."
   // The enlistment table is ordered Megacorp → ... → Free Trader (index 0
@@ -516,10 +517,10 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const from = order[idx]!;
   const to = order[newIdx]!;
   recordTransfer(
-    ch.acgState!, "lineType", from, to,
-    ch.acgState!.yearsServed ?? 0,
+    ch.requireAcgState(), "lineType", from, to,
+    ch.requireAcgState().yearsServed ?? 0,
   );
-  ch.acgState!.lineType = to;
+  ch.requireAcgState().lineType = to;
   ch.log(ev.transferred(to, "line", from));
 }
 
@@ -530,10 +531,10 @@ export function merchantSpecialAssignment(ch: Character): void {
   const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.specialDuty.rows.find((row) => row.die === r);
   if (!row) return;
-  const col = ch.acgState!.isOfficer ? "officers" : "deckHands";
+  const col = ch.requireAcgState().isOfficer ? "officers" : "deckHands";
   const sa = row[col];
   if (typeof sa !== "string") return;
-  ch.acgState!.schoolsAttended.push(sa);
+  ch.requireAcgState().schoolsAttended.push(sa);
   ch.log(ev.schoolAssigned(sa, "merchantPrince"));
   awardBrownie(ch, 1, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
@@ -545,27 +546,27 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   // (grant rank O0 → enlisted becomes officer) and Department Test (allow
   // promotion examination this term).
   if (sa === "Commission") {
-    if (!ch.acgState!.isOfficer) {
+    if (!ch.requireAcgState().isOfficer) {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
       const rule = data.specialRules?.specialDutyCommission;
-      const lineType = ch.acgState!.lineType ?? "";
+      const lineType = ch.requireAcgState().lineType ?? "";
       const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
-      ch.acgState!.isOfficer = true;
-      ch.acgState!.rankCode = rank;
+      ch.requireAcgState().isOfficer = true;
+      ch.requireAcgState().rankCode = rank;
       ch.commissioned = true;
       // O0 holders must pass exam for O1 within passO1DeadlineYears or
       // revert to enlisted (PM p. 63).
       if (rank === (rule?.defaultRank ?? "O0") && rule?.passO1DeadlineYears) {
-        ch.acgState!.commissionO0DeadlineYear =
-          (ch.acgState!.yearsServed ?? 0) + rule.passO1DeadlineYears;
+        ch.requireAcgState().commissionO0DeadlineYear =
+          (ch.requireAcgState().yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
-      ch.log(ev.promoted(ch.acgState!.rankCode, "Merchant commission"));
+      ch.log(ev.promoted(ch.requireAcgState().rankCode, "Merchant commission"));
     }
     return;
   }
   if (sa === "Department Test") {
-    ch.acgState!.canTakeDeptTest = true;
+    ch.requireAcgState().canTakeDeptTest = true;
     return;
   }
   const key = labelToColumnKey(sa);
@@ -587,15 +588,15 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   if (res.effect) {
     const transfer = res.effect.match(/Transfer to (\w+)/i);
     if (transfer) {
-      const from = ch.acgState!.department ?? "";
+      const from = ch.requireAcgState().department ?? "";
       const to = transfer[1]!;
-      recordTransfer(ch.acgState!, "department", from, to,
-        ch.acgState!.yearsServed ?? 0);
-      ch.acgState!.department = to;
+      recordTransfer(ch.requireAcgState(), "department", from, to,
+        ch.requireAcgState().yearsServed ?? 0);
+      ch.requireAcgState().department = to;
       ch.log(ev.transferred(to, "department", from));
     }
     if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
-      ch.acgState!.examDm = (ch.acgState!.examDm ?? 0) + 1;
+      ch.requireAcgState().examDm = (ch.requireAcgState().examDm ?? 0) + 1;
     }
   }
 }
@@ -614,7 +615,7 @@ export function merchantReenlist(ch: Character): boolean {
   const r = roll(2);
   const target = data.reenlistment.target;
   const keep = r === 12 || r + dm >= target;
-  const dept = ch.acgState!.department ?? "";
+  const dept = ch.requireAcgState().department ?? "";
   ch.log(ev.roll("Reenlistment", r, dm, target, keep, `merchant ${dept}`));
   if (r === 12) {
     ch.enterMandatoryReenlist();
@@ -678,12 +679,12 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 
 export function merchantStartOfTerm(ch: Character): void {
   // Enlisted ranks advance every 4 years (per manual p. 60).
-  if (!ch.acgState!.isOfficer && ch.terms > 0) {
-    const code = ch.acgState!.rankCode;
+  if (!ch.requireAcgState().isOfficer && ch.terms > 0) {
+    const code = ch.requireAcgState().rankCode;
     const m = code.match(/^E(\d+)$/);
     if (m) {
       const n = parseInt(m[1]!, 10);
-      ch.acgState!.rankCode = `E${n + 1}`;
+      ch.requireAcgState().rankCode = `E${n + 1}`;
     }
     return;
   }
@@ -693,14 +694,14 @@ export function merchantStartOfTerm(ch: Character): void {
   const rule = data.specialRules?.specialDutyCommission;
   const o0Rank = rule?.defaultRank ?? "O0";
   const revertRank = rule?.revertOnDeadlineToRank ?? "E1";
-  const deadline = ch.acgState!.commissionO0DeadlineYear;
+  const deadline = ch.requireAcgState().commissionO0DeadlineYear;
   if (deadline !== undefined &&
-      ch.acgState!.rankCode === o0Rank &&
-      (ch.acgState!.yearsServed ?? 0) >= deadline) {
-    ch.acgState!.isOfficer = false;
-    ch.acgState!.rankCode = revertRank;
+      ch.requireAcgState().rankCode === o0Rank &&
+      (ch.requireAcgState().yearsServed ?? 0) >= deadline) {
+    ch.requireAcgState().isOfficer = false;
+    ch.requireAcgState().rankCode = revertRank;
     ch.commissioned = false;
-    delete ch.acgState!.commissionO0DeadlineYear;
+    delete ch.requireAcgState().commissionO0DeadlineYear;
     ch.log(ev.statusChange("demoted", `failed O1 exam in time — reverted to ${revertRank}`));
     return;
   }
@@ -750,7 +751,7 @@ function lastAssignmentIsRoute(ch: Character): boolean {
 
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
   const officerLadder = data.ranksAndPromotions as Record<string, {
     officer?: Array<[string, string, string, string | null]>;
   }>;
@@ -760,14 +761,14 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   // Officer ladder row format: [rankCode, title, examTarget, note?].
   const target = parseInt(String(o1[2]), 10);
   if (Number.isNaN(target)) return;
-  const dm = ch.acgState!.examDm ?? 0;
+  const dm = ch.requireAcgState().examDm ?? 0;
   const r = roll(2);
   ch.log(ev.roll(
     "Commission", r, dm, target, r + dm >= target, "Merchant enlisted-route exam",
   ));
   if (r + dm >= target) {
-    ch.acgState!.isOfficer = true;
-    ch.acgState!.rankCode = "O1";
+    ch.requireAcgState().isOfficer = true;
+    ch.requireAcgState().rankCode = "O1";
     ch.commissioned = true;
     ch.log(ev.promoted("O1", "Route-assignment promotion exam"));
   }
@@ -775,27 +776,27 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
 
 function attemptMerchantPromotionExam(ch: Character): void {
   const data = dataFor(ch);
-  if (!ch.acgState!.isOfficer) return;
+  if (!ch.requireAcgState().isOfficer) return;
   // Need data for the officer rank ladder + targets.
   const officerLadder = data.ranksAndPromotions as Record<string, {
     officer?: Array<[string, string, string, string | null]>;
   }>;
   // ranksAndPromotions has per-line-type blocks; pick the line.
-  const size = lineSizeFor(data, ch.acgState!.lineType ?? "");
+  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
   const key = size === "Large" ? "largeMerchantLine"
     : size === "Small" ? "smallMerchantLine" : "freeTraders";
   const ladder = officerLadder[key]?.officer;
   if (!Array.isArray(ladder)) return;
   const codes = ladder.map((r) => r[0]);
-  const idx = codes.indexOf(ch.acgState!.rankCode);
+  const idx = codes.indexOf(ch.requireAcgState().rankCode);
   if (idx < 0 || idx >= codes.length - 1) return;
   const nextRow = ladder[idx + 1]!;
   const targetStr = nextRow[2];
   const target = parseInt(String(targetStr).replace(/[^\d]/g, ""), 10);
   if (!Number.isFinite(target)) return;
-  const penalty = ch.acgState!.nextPromotionPenalty ?? 0;
-  const dm = (ch.acgState!.examDm ?? 0) + penalty;
-  if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
+  const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
+  const dm = (ch.requireAcgState().examDm ?? 0) + penalty;
+  if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0;
   const r = roll(2);
   ch.log(ev.roll(
     "Promotion", r, dm, target, r + dm >= target,
@@ -803,7 +804,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
     + (penalty ? `, reprimand penalty ${penalty}` : ""),
   ));
   if (r + dm >= target) {
-    ch.acgState!.rankCode = nextRow[0] as string;
+    ch.requireAcgState().rankCode = nextRow[0] as string;
     ch.log(ev.promoted(nextRow[1]));
     // Skill granted on promotion (column 3 in the ladder rows, when set).
     const skillGrant = nextRow[3];
