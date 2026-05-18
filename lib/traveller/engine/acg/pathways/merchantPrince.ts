@@ -295,25 +295,28 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // invocation can call us multiple times in the same notional year).
   resetIfComplete(ch);
   if (assignment === "Transfer Up") {
-    transferMerchantLine(ch, "up");
+    applyOnce(ch, "merchantTransferUpApplied", () => transferMerchantLine(ch, "up"));
     // Reroll specific assignment in the new line. Recurse once.
     const next = merchantRollAssignment(ch);
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }
+    markComplete(ch);
     return;
   }
   if (assignment === "Transfer Down") {
-    transferMerchantLine(ch, "down");
+    applyOnce(ch, "merchantTransferDownApplied", () => transferMerchantLine(ch, "down"));
     const next = merchantRollAssignment(ch);
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }
+    markComplete(ch);
     return;
   }
   // "Special" routes through the Special Duty table (manual p. 60-63).
   if (assignment === "Special") {
     merchantSpecialAssignment(ch);
+    markComplete(ch);
     return;
   }
   // Available Position check (officers only).

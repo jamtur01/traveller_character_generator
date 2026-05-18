@@ -434,14 +434,20 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     }>;
     const rule = specials[assignment];
     if (rule) {
-      if (assignment === "Frozen Watch") {
-        ch.requireAcgState().frozenWatchYears = (ch.requireAcgState().frozenWatchYears ?? 0) + 1;
-      }
-      if (rule.physicalAgeDelta !== undefined) {
-        ch.requireAcgState().physicalAgeOffset = (ch.requireAcgState().physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
-      }
-      ch.requireAcgState().assignmentHistory.push(assignment);
-      if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
+      // Gate side effects with applyOnce so a direct test invocation
+      // (which bypasses runAcgYear's year-boundary cleanup) doesn't
+      // re-fire frozenWatchYears++, physicalAgeOffset++, history push.
+      applyOnce(ch, "navySpecialRuleApplied", () => {
+        if (assignment === "Frozen Watch") {
+          ch.requireAcgState().frozenWatchYears = (ch.requireAcgState().frozenWatchYears ?? 0) + 1;
+        }
+        if (rule.physicalAgeDelta !== undefined) {
+          ch.requireAcgState().physicalAgeOffset = (ch.requireAcgState().physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
+        }
+        ch.requireAcgState().assignmentHistory.push(assignment);
+        if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
+      });
+      markComplete(ch);
       return;
     }
     throw new Error(
