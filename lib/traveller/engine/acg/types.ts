@@ -5,6 +5,53 @@
 
 export type AcgPathwayId = "mercenary" | "navy" | "scout" | "merchantPrince";
 
+/** Per-pathway field markers. The AcgState union is structurally the
+ *  same shape across pathways (so legacy callers and cross-cutting code
+ *  like cloneCharacter / serialization / cross-pathway switching can
+ *  keep working) — these interfaces narrow the `pathway` discriminator
+ *  AND tighten the pathway-specific fields so pathway code calling
+ *  `ch.requireMercenaryAcg()` gets a non-optional `combatArm` etc. */
+export interface MercenaryAcgFields {
+  pathway: "mercenary";
+  combatArm: string;
+}
+export interface NavyAcgFields {
+  pathway: "navy";
+  fleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
+}
+export interface ScoutAcgFields {
+  pathway: "scout";
+  division: "field" | "bureaucracy";
+}
+export interface MerchantAcgFields {
+  pathway: "merchantPrince";
+  lineType: string;
+}
+
+/** AcgState narrowed to a particular pathway. Field-level optionality
+ *  preserved; only the pathway discriminator is tightened. Use the
+ *  Character.requireXxxAcg() helpers to obtain a value of this type. */
+export type MercenaryAcgState = AcgState & MercenaryAcgFields;
+export type NavyAcgState = AcgState & NavyAcgFields;
+export type ScoutAcgState = AcgState & ScoutAcgFields;
+export type MerchantAcgState = AcgState & MerchantAcgFields;
+
+/** Type guards. */
+export function isMercenaryAcg(acg: AcgState): acg is MercenaryAcgState {
+  return acg.pathway === "mercenary" && typeof acg.combatArm === "string";
+}
+export function isNavyAcg(acg: AcgState): acg is NavyAcgState {
+  return acg.pathway === "navy" && (
+    acg.fleet === "imperialNavy" || acg.fleet === "reserveFleet" || acg.fleet === "systemSquadron"
+  );
+}
+export function isScoutAcg(acg: AcgState): acg is ScoutAcgState {
+  return acg.pathway === "scout" && (acg.division === "field" || acg.division === "bureaucracy");
+}
+export function isMerchantAcg(acg: AcgState): acg is MerchantAcgState {
+  return acg.pathway === "merchantPrince" && typeof acg.lineType === "string";
+}
+
 /** Resolution targets for one assignment row. Targets are either a
  *  numeric throw, "auto" (always succeeds), or "none" (no roll). */
 export type ResolutionTarget = number | "auto" | "none";

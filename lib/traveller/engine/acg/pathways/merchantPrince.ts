@@ -337,18 +337,19 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   }
 
   const data = dataFor(ch);
-  const deptKey = labelToColumnKey(ch.requireAcgState().department ?? "Deck");
+  const acg = ch.requireMerchantAcg();
+  const deptKey = labelToColumnKey(acg.department ?? "Deck");
   // Free Trader characters resolve against the freeTraderTrade table regardless
   // of department (Free Traders are a single-department service).
-  const useFreeTraderTable = ch.requireAcgState().lineType === "Free Trader";
+  const useFreeTraderTable = acg.lineType === "Free Trader";
   const resTable = useFreeTraderTable
     ? data.assignmentResolution.freeTraderTrade
     : data.assignmentResolution[deptKey];
   if (!resTable) {
     throw new Error(
       `Merchant: no resolution sub-table for department ` +
-      `"${ch.requireAcgState().department}" (key "${deptKey}", lineType: ` +
-      `"${ch.requireAcgState().lineType}", edition: ${ch.editionId}).`,
+      `"${acg.department}" (key "${deptKey}", lineType: ` +
+      `"${acg.lineType}", edition: ${ch.editionId}).`,
     );
   }
   const resolutionTable = resTable;
