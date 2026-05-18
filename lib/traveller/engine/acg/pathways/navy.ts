@@ -504,24 +504,24 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
 function promoteNavy(ch: Character): void {
   const data = dataFor(ch);
-  const fleet = ch.requireAcgState().fleet ?? "imperialNavy";
+  const acg = ch.requireNavyAcg();
   const caps = data.rankCaps ?? { imperialNavy: 10, reserveFleet: 8, systemSquadron: 7 };
-  const cap = caps[fleet as keyof typeof caps] ?? 10;
+  const cap = caps[acg.fleet] ?? 10;
 
-  if (ch.requireAcgState().isOfficer) {
+  if (acg.isOfficer) {
     const codes = data.ranks.officer.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
+    const idx = codes.indexOf(acg.rankCode);
     const targetIdx = Math.min(idx + 1, cap - 1);
     if (idx >= 0 && idx < targetIdx && targetIdx < codes.length) {
-      ch.requireAcgState().rankCode = codes[targetIdx]!;
-      ch.requireAcgState().promotedThisTerm = true;
+      acg.rankCode = codes[targetIdx]!;
+      acg.promotedThisTerm = true;
       ch.log(ev.promoted(data.ranks.officer[targetIdx]![1]));
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
+    const idx = codes.indexOf(acg.rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.requireAcgState().rankCode = codes[idx + 1]!;
+      acg.rankCode = codes[idx + 1]!;
       ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
     }
   }

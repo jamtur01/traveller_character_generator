@@ -8,7 +8,13 @@ import { genChoiceId, ChoicePendingError } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
 import type { HistoryEvent } from "./history";
 import { event as ev, formatEvent } from "./history";
-import type { AcgState } from "./engine/acg/types";
+import type {
+  AcgState, MercenaryAcgState, NavyAcgState,
+  ScoutAcgState, MerchantAcgState,
+} from "./engine/acg/types";
+import {
+  isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg,
+} from "./engine/acg/types";
 import {
   editionHasHomeworld,
   generateAndApplyHomeworld, type Homeworld,
@@ -329,6 +335,40 @@ export class Character {
       throw new Error("requireAcgState called on non-ACG character");
     }
     return this.acgState;
+  }
+
+  /** Pathway-narrowed accessors. Throw if the character isn't on the
+   *  expected pathway (or if the pathway-specific fields haven't been
+   *  populated yet — e.g., requireMercenaryAcg before enlist sets
+   *  combatArm). Use within pathway code so reads of pathway-specific
+   *  fields (combatArm, fleet, division, lineType) are non-optional. */
+  requireMercenaryAcg(): MercenaryAcgState {
+    const acg = this.requireAcgState();
+    if (!isMercenaryAcg(acg)) {
+      throw new Error(`Expected mercenary acgState, got pathway=${acg.pathway}`);
+    }
+    return acg;
+  }
+  requireNavyAcg(): NavyAcgState {
+    const acg = this.requireAcgState();
+    if (!isNavyAcg(acg)) {
+      throw new Error(`Expected navy acgState, got pathway=${acg.pathway}`);
+    }
+    return acg;
+  }
+  requireScoutAcg(): ScoutAcgState {
+    const acg = this.requireAcgState();
+    if (!isScoutAcg(acg)) {
+      throw new Error(`Expected scout acgState, got pathway=${acg.pathway}`);
+    }
+    return acg;
+  }
+  requireMerchantAcg(): MerchantAcgState {
+    const acg = this.requireAcgState();
+    if (!isMerchantAcg(acg)) {
+      throw new Error(`Expected merchantPrince acgState, got pathway=${acg.pathway}`);
+    }
+    return acg;
   }
 
   // Accessor surfaces for the PDF renderer / UI — these read/write

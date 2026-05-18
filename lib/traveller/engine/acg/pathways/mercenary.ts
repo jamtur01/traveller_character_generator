@@ -192,7 +192,8 @@ export function mercenaryInitialTraining(ch: Character): void {
     ch.addSkill(fixed, 1, "Initial Training");
   }
 
-  const armKey = labelToColumnKey(ch.requireAcgState().combatArm!);
+  const acg = ch.requireMercenaryAcg();
+  const armKey = labelToColumnKey(acg.combatArm);
   let dm = 0;
   const hwTech = ch.homeworld?.tech;
   if (hwTech === "Avg Stellar" || hwTech === "High Stellar") dm += 1;
@@ -201,9 +202,9 @@ export function mercenaryInitialTraining(ch: Character): void {
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
   const mosSkill = row[armKey] as string | undefined;
   if (!mosSkill) {
-    throw new Error(`MOS table missing column "${armKey}" for combat arm "${ch.requireAcgState().combatArm}"`);
+    throw new Error(`MOS table missing column "${armKey}" for combat arm "${acg.combatArm}"`);
   }
-  ch.requireAcgState().mos = mosSkill;
+  acg.mos = mosSkill;
   ch.addSkill(mosSkill, 1, "MOS");
 }
 
@@ -216,8 +217,9 @@ export function mercenaryCommandDuty(ch: Character): void {
     return;
   }
   const data = dataFor(ch);
-  const arm = ch.requireAcgState().combatArm!;
-  const svc = (ch.requireAcgState().branch === "Marines" ? "marines" : "army");
+  const acg = ch.requireMercenaryAcg();
+  const arm = acg.combatArm;
+  const svc = (acg.branch === "Marines" ? "marines" : "army");
   const row = data.commandDuty.rows.find((r) => r.branch === arm);
   if (!row) {
     ch.requireAcgState().inCommand = false;
@@ -317,7 +319,8 @@ function getSpec(ch: Character): PathwaySpec {
 /** Resolve one assignment via the JSON-driven phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  const arm = ch.requireAcgState().combatArm ?? "Infantry";
+  const acg = ch.requireMercenaryAcg();
+  const arm = acg.combatArm;
   const resKey = data.combatArmResolution?.[arm] ?? "commando";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
