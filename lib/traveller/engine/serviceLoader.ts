@@ -76,15 +76,18 @@ export function buildServiceDef(
 
   const checkSurvival = (ch: Character): boolean => {
     let dm = evaluateDM(serviceData.checks.survival.dm, ch);
-    // PM p. 15: anagathics user takes -1 survival DM (-2 for Nobles, since
-    // "society generally frowns on nobles who take anagathics"). The DM
-    // applies for every term in which the character desires anagathics,
-    // whether or not the supply was secured.
+    // PM p. 15: anagathics user takes a survival DM (a steeper one for
+    // the noble service, since "society generally frowns on nobles who
+    // take anagathics"). The DM applies for every term in which the
+    // character desires anagathics, whether or not the supply was
+    // secured. Magnitudes live in JSON (rules.anagathics).
     if (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm) {
-      const penalty = ch.service === "nobles" ? -2 : -1;
-      dm += penalty;
-      // Penalty is reflected in the survival roll's dm; anagathics
-      // supply state has its own ev.anagathics events.
+      const anag = edition.rules.anagathics;
+      const noblePenalty = anag?.nobleSurvivalDm;
+      const standardPenalty = anag?.survivalDm ?? 0;
+      const nobleService = anag?.nobleService;
+      const isNoble = nobleService !== undefined && ch.service === nobleService;
+      dm += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
     }
     const sv = roll(2);
     const succeeded = sv + dm >= survivalThrow;

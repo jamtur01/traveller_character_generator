@@ -41,8 +41,10 @@ describe("Marine Tradition (F5)", () => {
     });
     applyCell(c, "Blade Cbt", "skill");
     expect(c.skills.length).toBe(1);
-    // The first cascade pick is Axe (from MT bladeCombat pool); it must
-    // NOT be Large Blade (the forced one).
+    // The save passed, so the cascade picks normally. The picked blade
+    // must NOT be Large Blade — otherwise the tradition logic regressed
+    // and is forcing Large Blade in spite of the save.
+    expect(c.skills[0]![0]).not.toBe("Large Blade");
     vi.restoreAllMocks();
   });
 

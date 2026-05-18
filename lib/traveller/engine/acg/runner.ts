@@ -77,11 +77,27 @@ export function runAcgYear(ch: Character): void {
   const acg = ch.acgState;
 
   // First year of the first term is initial training (no normal cycle).
+  // Mark initialTrainingDone BEFORE invoking the pathway so that if a
+  // pickOrDefer inside p.initialTraining throws ChoicePendingError, the
+  // resume path doesn't re-enter the function and double-apply side
+  // effects (skill rolls, MOS assignments). The deferred work lives in
+  // ch.pendingChoices; the UI resolves it, then re-invokes runAcgYear
+  // which lands in the finalization branch below.
   if (ch.terms === 0 && acg.year === 1 && p.initialTraining &&
       !acg.initialTrainingDone) {
+    acg.initialTrainingDone = true;
     const ok = runStep(ch, "commandDuty", () => p.initialTraining!(ch));
     if (!ok) return;
-    acg.initialTrainingDone = true;
+    ch.age += 1;
+    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
+    acg.year += 1;
+    acg.pausedAtStep = null;
+    return;
+  }
+  // Post-pause finalization: initial training started but paused on a
+  // choice. The UI has now resolved the choice (and re-invoked us);
+  // finish year 1 of term 1 without falling into the normal cycle.
+  if (ch.terms === 0 && acg.year === 1 && acg.initialTrainingDone) {
     ch.age += 1;
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
@@ -240,14 +256,10 @@ export function runAcgTerm(ch: Character): void {
     return;
   }
 
-  // End-of-term reenlistment check. Pre-existing: doReenlistmentStep
-  // also calls runAcgReenlist (which calls this same p.reenlist), so
-  // we just flip status without firing endChargen* here — the caller's
-  // doReenlistmentStep handles the endGeneration logging path.
-  const keep = p.reenlist(ch);
-  if (!keep) {
-    ch.chargenStatus = { kind: "retired", reason: "denied reenlistment" };
-  }
+  // End-of-term reenlistment is owned by the orchestrator step
+  // doReenlistmentStep (which calls runAcgReenlist → p.reenlist). Firing
+  // it here too would double-roll dice, double-emit ev.reenlistment, and
+  // double-queue interactive branch-change choices.
 }
 
 /** Reenlistment check at the end of a term. */

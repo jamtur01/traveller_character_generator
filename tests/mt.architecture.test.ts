@@ -160,6 +160,10 @@ describe("MT survival failure routes through non-death short-term path", () => {
 
 describe("trigger='term' automatic skills fire at the matching term", () => {
   it("MT Belter gets Zero-G Environ-1 at the start of term 3", () => {
+    // Pin Math.random high so every survival / promotion / skill roll
+    // passes — otherwise this test is a flake (the Belter survival
+    // target is 9; ~85% pass per term means ~61% chance of clean run).
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
@@ -175,9 +179,11 @@ describe("trigger='term' automatic skills fire at the matching term", () => {
     expect(c.terms).toBe(3);
     const level = c.skills.find((s) => s[0] === "Zero-G Environ")?.[1] ?? 0;
     expect(level).toBeGreaterThanOrEqual(1);
+    vi.restoreAllMocks();
   });
 
   it("trigger='term' entries do NOT fire on other terms", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
@@ -192,6 +198,7 @@ describe("trigger='term' automatic skills fire at the matching term", () => {
     expect(c.terms).toBe(2);
     const level = c.skills.find((s) => s[0] === "Zero-G Environ")?.[1] ?? 0;
     expect(level).toBe(0);
+    vi.restoreAllMocks();
   });
 });
 
