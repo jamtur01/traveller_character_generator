@@ -340,9 +340,9 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       let years = 0;
       for (let i = 0; i < dice; i++) years += roll(1);
       ch.age += years;
-      ch.logRaw(`Imprisoned for ${years} years (${dice}D rolled); service ends.`);
+      ch.log(ev.endGeneration("retired", `imprisoned ${years} years (${dice}D rolled)`));
     } else {
-      ch.logRaw("Imprisoned; service ends.");
+      ch.log(ev.endGeneration("retired", "imprisoned"));
     }
     ch.activeDuty = false;
     ch.acgState.dishonorablyDischarged = true;
@@ -382,9 +382,9 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       const killedTxt = ch.acgState.guardsKilledInEscape
         ? ` Killed ${ch.acgState.guardsKilledInEscape} guards in escape.`
         : "";
-      ch.logRaw(`Sentenced to death; escaped.${bountyTxt}${killedTxt}`);
+      ch.log(ev.endGeneration("retired", `death sentence; escaped.${bountyTxt}${killedTxt}`));
     } else {
-      ch.logRaw("Sentenced to death. No benefits or pension.");
+      ch.log(ev.endGeneration("deceased", "executed (death sentence; no benefits or pension)"));
       ch.deceased = true;
     }
     return;

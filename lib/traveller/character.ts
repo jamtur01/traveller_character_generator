@@ -961,9 +961,7 @@ export class Character {
     if (dis.disabled) {
       this.activeDuty = false;
       if (this.isRetirementEligible()) this.retired = true;
-      this.logRaw(
-        `Forced muster-out (disability: ${dis.reasons.join("; ")}).`,
-      );
+      this.log(ev.endGeneration("retired", `disability: ${dis.reasons.join("; ")}`));
       return;
     }
     if (this.useAcg && this.acgState) {
@@ -1160,10 +1158,7 @@ export class Character {
     } else {
       // Not currently on anagathics and the roll missed — record the
       // failed availability roll at verbose for full visibility.
-      this.logRaw(
-        `Anagathics availability roll ${r} (DM ${dm}) vs ${target}+ — unavailable`,
-        "verbose",
-      );
+      this.log(ev.anagathics("unavailable", r, target));
     }
     return success;
   }
@@ -1181,7 +1176,7 @@ export class Character {
         this.shortTermThisTerm = true;
         this.shortTermsCount += 1;
         this.activeDuty = false;
-        this.logRaw("Forced to muster out after failed retry survival roll.");
+        this.log(ev.endGeneration("retired", "failed anagathics retry survival"));
       }
       return passed;
     } catch {
@@ -1216,7 +1211,7 @@ export class Character {
     this.onAnagathics = false;
     this.anagathicsActiveThisTerm = false;
     this.anagathicsWithdrawalThisTerm = true;
-    this.logRaw("Stopped taking anagathics; withdrawal effects pending.");
+    this.log(ev.anagathics("withdrawal"));
   }
 
   // ---------- aging ----------
@@ -1312,8 +1307,7 @@ export class Character {
       if (this.deceased) break;
       if (this.attributes[a] <= crisisThreshold) {
         const cr = roll(2);
-        this.logRaw(
-          `Aging crisis due to ${a} dropping to ${crisisThreshold} or less, roll ${cr} vs ${crisisSave}`, "verbose");
+        this.log(ev.roll(`Aging crisis (${a})`, cr, 0, crisisSave, cr >= crisisSave));
         if (cr < crisisSave) {
           this.log(ev.endGeneration("deceased", "aging crisis"));
           this.deceased = true;
