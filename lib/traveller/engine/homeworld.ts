@@ -8,17 +8,22 @@ import { getEdition } from "../editions";
 import { event as ev } from "../history";
 import type { ServiceKey } from "../types";
 
+/** A rolled homeworld profile (UPP-style coding). The valid values for
+ *  each field are sourced from the active edition JSON's `homeworld`
+ *  block (populationOrder, lawOrder, atmosphereOrder, hydrosphereOrder,
+ *  starportOrder, techCodeOrder, sizeOrder) — kept as `string` here so
+ *  the JSON remains the single source of truth. */
 export interface Homeworld {
-  starport: "A" | "B" | "C" | "D" | "E" | "X";
-  size: "Asteroid" | "Small" | "Medium" | "Large";
-  atmosphere: "Vacuum" | "Thin" | "Standard" | "Dense" | "Exotic";
-  hydrosphere: "Desert" | "Dry" | "Wet World" | "Water World";
-  population: "Low Pop" | "Mod Pop" | "High Pop";
-  law: "No Law" | "Low Law" | "Mod Law" | "High Law" | "Ext Law";
-  tech: "Pre-Industrial" | "Industrial" | "Pre-Stellar" | "Early Stellar" | "Avg Stellar" | "High Stellar";
+  starport: string;
+  size: string;
+  atmosphere: string;
+  hydrosphere: string;
+  population: string;
+  law: string;
+  tech: string;
 }
 
-interface HomeworldData {
+export interface HomeworldData {
   populationOrder?: string[];
   lawOrder?: string[];
   atmosphereOrder?: string[];
@@ -85,9 +90,7 @@ function meetsOrder(
 }
 
 function dataFor(editionId: string): HomeworldData | null {
-  const ed = getEdition(editionId);
-  const hw = (ed.data as { homeworld?: HomeworldData }).homeworld;
-  return hw ?? null;
+  return getEdition(editionId).data.homeworld ?? null;
 }
 
 /** Returns true if the active edition declares a homeworld block (MT does,

@@ -37,25 +37,19 @@ interface RestrictionsData {
   weaponSkillMaxLaw: Record<string, string>;
 }
 
-interface HomeworldData {
-  techCodeOrder: string[];
-  lawOrder?: string[];
-}
-
 function dataFor(ch: Character): {
   r: RestrictionsData;
   techOrder: string[];
   lawOrder: string[];
 } | null {
   const ed = getEdition(ch.editionId);
-  const rules = (ed.data as {
-    rules?: { homeworldSkillRestrictions?: RestrictionsData };
-    homeworld?: HomeworldData;
-  }).rules;
-  const hw = (ed.data as { homeworld?: HomeworldData }).homeworld;
+  const rules = (ed.data.rules as {
+    homeworldSkillRestrictions?: RestrictionsData;
+  } | undefined);
+  const hw = ed.data.homeworld;
   if (!rules?.homeworldSkillRestrictions || !hw?.techCodeOrder) return null;
   return {
-    r: rules.homeworldSkillRestrictions,
+    r: rules.homeworldSkillRestrictions as RestrictionsData,
     techOrder: hw.techCodeOrder,
     lawOrder: hw.lawOrder ?? [],
   };

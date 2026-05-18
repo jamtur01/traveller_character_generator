@@ -47,13 +47,17 @@ export type Gender = "male" | "female";
 
 export type ShowHistory = "verbose" | "simple" | "none" | "debug";
 
-/** Discriminated chargen lifecycle state. `shortTermThisTerm` remains a
- *  separate orthogonal flag because it can coexist with active /
- *  retired (anagathics retry failure ends chargen mid-short-term).
- *  Mandatory reenlistment is also orthogonal — it's a pending action,
- *  consumed at the start of the next term. */
+/** Discriminated chargen lifecycle state. Per PM:
+ *  - active: currently serving normally
+ *  - shortTerm: this term cut to 2 years by survival failure (PM p. 16);
+ *    special-duty + skills still roll, then muster out
+ *  - mandatoryReenlist: rolled 12 on reenlistment, must serve another term;
+ *    consumed at the start of the next term
+ *  - retired / deceased / mustered: terminal states (chargen ended) */
 export type ChargenStatus =
   | { kind: "active" }
+  | { kind: "shortTerm"; reason?: string }
+  | { kind: "mandatoryReenlist" }
   | { kind: "retired"; reason?: string }
   | { kind: "deceased"; reason?: string }
   | { kind: "mustered" };

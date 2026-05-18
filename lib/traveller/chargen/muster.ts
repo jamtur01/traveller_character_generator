@@ -13,10 +13,36 @@ import { merchantFinalizeMuster, applyReducedPassageBenefit }
   from "../engine/acg/pathways/merchantPrince";
 import { scoutFinalizeMuster } from "../engine/acg/pathways/scout";
 
+/** Project the ACG officer rankCode onto basic-chargen `rank` (1-6) for
+ *  muster-out DMs and rank-band extra rolls. Also consumes any pending
+ *  SEH automatic +1 rank. Idempotent: safe to call before muster
+ *  regardless of pathway. */
+export function finalizeAcgRankForMuster(ch: Character): void {
+  if (!ch.useAcg || !ch.acgState) return;
+  // SEH automatic +1 rank at muster (manual p. 46). Consume the flag.
+  if (ch.acgState.sehPromotionPending && ch.acgState.isOfficer) {
+    const m = ch.acgState.rankCode.match(/^O(\d+)$/);
+    if (m) {
+      const next = Math.min(10, parseInt(m[1]!, 10) + 1);
+      ch.acgState.rankCode = `O${next}`;
+      ch.log(ev.promoted(ch.acgState.rankCode, "SEH"));
+    }
+    ch.acgState.sehPromotionPending = false;
+  }
+  if (ch.acgState.isOfficer) {
+    const m = ch.acgState.rankCode.match(/^O(\d+)$/);
+    if (m) {
+      const n = parseInt(m[1]!, 10);
+      ch.rank = Math.min(6, n);
+      ch.commissioned = true;
+    }
+  }
+}
+
 /** Number of muster-out rolls the character earns. PM p. 17 / TTB p. 18:
  *  perTerm × qualifyingTerms + rank-band extras, minus ACG penalties. */
 export function musterOutRolls(ch: Character): number {
-  ch.finalizeAcgRankForMuster();
+  finalizeAcgRankForMuster(ch);
   const rules = getEdition(ch.editionId).rules.musterOutRolls;
   const perTerm = rules?.perTerm ?? 1;
   const acgPartial = ch.acgState?.partialTerms ?? 0;

@@ -156,7 +156,11 @@ describe("anagathics integration (B5)", () => {
        .mockReturnValueOnce(2); // retry survival roll: fail → force muster-out
       expect(c.tryAnagathics()).toBe(false);
       expect(c.activeDuty).toBe(false);
-      expect(c.shortTermThisTerm).toBe(true);
+      // shortTermsCount is incremented (this term doesn't count for
+      // muster benefits); status transitions directly to retired since
+      // chargen ends here — the intermediate shortTerm state is skipped.
+      expect(c.shortTermsCount).toBeGreaterThanOrEqual(1);
+      expect(c.chargenStatus.kind).toBe("retired");
     });
 
     it("retry disabled when allowRetry=false", () => {
