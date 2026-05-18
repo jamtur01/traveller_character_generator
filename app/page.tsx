@@ -370,17 +370,15 @@ export default function Home() {
     if (prev.mandatoryReenlistment) return;
     const c = cloneCharacter(prev);
     // Voluntary muster — flip to "retired" (pension eligibility is
-    // checked inside endChargenRetired via isRetirementEligible).
+    // checked inside endChargenRetired via isRetirementEligible). The
+    // endChargenRetired helper logs ev.endGeneration("retired", reason)
+    // which already conveys "voluntary muster after N terms"; an extra
+    // statusChange("voluntaryMuster") here would just duplicate the line.
     c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
-    c.log(ev.statusChange(
-      "voluntaryMuster",
-      `after ${intToOrdinal(c.terms)} term of service`,
-    ));
     c.enterMustered();
     c.musterRolls = c.musterOutRolls();
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.log(ev.endGeneration("mustered"));
       commit(c, "end");
     } else {
       commit(c, "muster");
