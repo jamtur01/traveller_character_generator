@@ -54,7 +54,7 @@ function freshCharacter(svc: ServiceKey): Character {
   };
   c.skills = [];
   c.benefits = [];
-  c.history = [];
+  c.events = [];
   c.musterLog = [];
   c.service = svc;
   c.forceTable = true;
