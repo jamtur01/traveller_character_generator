@@ -116,15 +116,15 @@ function tryMarineTradition(
   }
   // Save failed — forced to receive the named skill at level 1. If the
   // forced skill is itself a PM Includes-skill umbrella (e.g., "Large
-  // Blade" → Broadsword/Cutlass/Sword), expand the same way the cascade
-  // onResolve does so the Marine actually gets the constituent weapons.
+  // Blade" → Broadsword/Cutlass/Sword), expand all-or-nothing so the
+  // Marine gets every constituent weapon (PM doesn't describe a partial
+  // expansion state).
   ch.log(ev.marineTradition("forced", {
     forcedSkill: rule.forcedSkill, roll: r, dm, target,
   }));
   const expansion = includesExpansion(ch.editionId, rule.forcedSkill);
   if (expansion) {
     for (const inner of expansion) {
-      if (!acquireSkillWithRestrictionCheck(ch, inner.skill)) continue;
       ch.addSkill(inner.skill, inner.level, source);
     }
   } else {
@@ -219,13 +219,14 @@ export function applyCell(
         c.log(ev.cascadePick(label, name));
         // PM Includes-skills: picking an umbrella name (Axe, Large Blade,
         // Polearm, Handgun, Combat Rifleman, ATV, Heavy Weapons, etc.)
-        // grants every constituent skill at the listed level. Without
-        // expansion the player would only get level-1 in the umbrella,
-        // losing the underlying weapon-specific skills.
+        // grants every constituent skill at the listed level. The
+        // restriction check fires ONCE for the umbrella (above); the
+        // expansion is all-or-nothing — PM doesn't describe a partial-
+        // expansion state where a character ends up with some but not
+        // all constituents.
         const expansion = includesExpansion(c.editionId, name);
         if (expansion && mode !== "muster") {
           for (const inner of expansion) {
-            if (!acquireSkillWithRestrictionCheck(c, inner.skill)) continue;
             c.addSkill(inner.skill, inner.level, grantSource);
           }
           return;
@@ -281,11 +282,12 @@ export function applyCell(
   // F1: PM Includes-skills expand to all constituent skills at level 1
   // each (e.g., ATV → Tracked Vehicle + Wheeled Vehicle; Handgun → Body
   // Pistol, Pistol, Revolver, Snub Pistol). Data lives in the edition's
-  // `includesSkills` block.
+  // `includesSkills` block. The restriction check fires once for the
+  // umbrella (below); the expansion is all-or-nothing.
   const expansion = includesExpansion(ch.editionId, skillName);
   if (expansion) {
+    if (!acquireSkillWithRestrictionCheck(ch, skillName)) return;
     for (const inner of expansion) {
-      if (!acquireSkillWithRestrictionCheck(ch, inner.skill)) continue;
       ch.addSkill(inner.skill, inner.level, grantSource);
     }
     return;

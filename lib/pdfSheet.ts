@@ -518,10 +518,12 @@ function drawSupplement(doc: jsPDF, c: Character) {
   if (other.length > 0) fieldValue(doc, X0 + 6, y + 26, other.join(", "), W - 12, 11);
   y += 40;
 
-  // Service History — skip the entire section if the filtered history
-  // is empty (e.g., showHistory === "none"). Drawing an empty boxed
-  // section under a "SERVICE HISTORY DETAIL" header is just wasted page.
-  if (c.history.length > 0) {
+  // Service History — skip the entire section when the player has
+  // turned history off ("none") or when there's nothing to render.
+  // renderHistory("none") doesn't filter events out (it preserves the
+  // legacy semantic that the gate is at the display layer); the gate
+  // is here.
+  if (c.showHistory !== "none" && c.history.length > 0) {
     y += 4;
     sectionBar(doc, X0, y, W, 28, "SERVICE HISTORY DETAIL");
     y += 28;

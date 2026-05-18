@@ -180,16 +180,6 @@ export default function Home() {
   const resolvePending = (choiceId: string, optionIdx: number) => {
     const prev = characterRef.current;
     if (!prev) return;
-    // Inspect the choice context BEFORE resolving — once resolveChoice
-    // runs, the entry is removed from pendingChoices and the context is
-    // lost. We need this to detect a deferred muster-cascade resolution
-    // so we can finalize the muster roll (musterChoice paused before
-    // decrementing musterRolls so the cascade-resolved roll counts as
-    // one benefit/cash roll, not zero).
-    const pendingChoice = prev.pendingChoices.find((p) => p.id === choiceId);
-    const choiceSource = (pendingChoice?.context as { source?: string } | undefined)?.source;
-    const wasMusterChoice = phase === "muster" && choiceSource === "muster";
-
     const c = cloneCharacter(prev);
     // resolveChoice may itself queue a nested cascade (e.g., resolving a
     // skill-table pick rolls a cascade cell). Catch ChoicePendingError so
@@ -218,14 +208,18 @@ export default function Home() {
       return;
     }
 
-    // Muster cascade finalization. musterChoice deferred the
-    // musterRolls -= 1 + post-roll routing until the cascade resolved;
-    // do it now so the player doesn't get unlimited free benefit rolls.
-    if (wasMusterChoice) {
+    // Muster roll finalization. musterChoice set c.pendingMusterRoll
+    // when its cascade paused; resolve the entire choice chain (the
+    // cascade plus any nested choices it queued, e.g. an addSkill →
+    // enforceSkillCap "reduceSkill" prompt) before finalizing the roll.
+    // This persists across multiple resolvePending calls because the
+    // sentinel lives on the character.
+    if (c.pendingMusterRoll) {
+      c.pendingMusterRoll = false;
       c.musterRolls -= 1;
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.log(ev.endGeneration("mustered"));
+        c.markMustered();
         commit(c, "end");
         return;
       }
@@ -349,7 +343,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.log(ev.endGeneration("mustered"));
+        c.markMustered();
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -422,7 +416,7 @@ export default function Home() {
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
-        c.log(ev.endGeneration("mustered"));
+        c.markMustered();
         commit(c, "end");
       } else {
         commit(c, "muster");
@@ -485,19 +479,20 @@ export default function Home() {
       }
     } catch (err) {
       // Benefit-table cells can resolve to a cascade (Blade/Gun) which
-      // throws ChoicePendingError in interactive mode. Commit the clone
-      // with the queued cascade choice in pendingChoices so the UI
-      // surfaces it. Don't decrement musterRolls — the choice resolution
-      // will complete the roll via resolvePending.
+      // throws ChoicePendingError in interactive mode. Set a sentinel
+      // and commit; resolvePending finalizes the roll (decrement + post-
+      // roll routing) when the entire choice chain drains, including
+      // any nested choices the cascade onResolve queues (e.g. skillCap).
       if (!(err instanceof ChoicePendingError)) throw err;
-      commit(c, "muster");
+      c.pendingMusterRoll = true;
+      commit(c, phase);
       return;
     }
     c.musterRolls -= 1;
 
     if (c.musterRolls === 0) {
       c.musterOutPay();
-      c.log(ev.endGeneration("mustered"));
+      c.markMustered();
       commit(c, "end");
     } else if (c.musterCashUsed >= maxCashRolls(c)) {
       commit(c, "muster_no_cash");
