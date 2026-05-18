@@ -319,13 +319,12 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       margin: sv.margin,
       consequence: "Invalided out of Mercenary service",
       onMitigated: (c) => {
-        c.activeDuty = true;
+        c.resumeActive();
         c.log(ev.statusChange("revived", "BP spend saved Mercenary survival"));
       },
     });
     if (mit.newMargin < 0) {
-      ch.log(ev.endGeneration("retired", "invalided out of Mercenary service"));
-      ch.activeDuty = false;
+      ch.endChargenRetired("invalided out of Mercenary service");
       return;
     }
     // Survived via brownie point spending.
@@ -643,7 +642,7 @@ export function mercenaryReenlist(ch: Character): boolean {
   const keep = r + dm >= spec.target;
   ch.log(ev.roll("Reenlistment", r, dm, spec.target, keep, `mercenary ${svc}`));
   if (r === 12) {
-    ch.mandatoryReenlistment = true;
+    ch.enterMandatoryReenlist();
     offerArmChange(ch, data);
     return true;
   }

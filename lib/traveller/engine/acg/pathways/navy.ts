@@ -470,13 +470,12 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       margin: sv.margin,
       consequence: "Invalided out of Navy service",
       onMitigated: (c) => {
-        c.activeDuty = true;
+        c.resumeActive();
         c.log(ev.statusChange("revived", "BP spend saved Navy survival"));
       },
     });
     if (mit.newMargin < 0) {
-      ch.log(ev.endGeneration("retired", "invalided out of Navy service"));
-      ch.activeDuty = false;
+      ch.endChargenRetired("invalided out of Navy service");
       return;
     }
   }
@@ -659,7 +658,7 @@ export function navyReenlist(ch: Character): boolean {
   if (!spec) {
     // Legacy single-target form (kept for back-compat).
     const r = roll(2);
-    if (r === 12) { ch.mandatoryReenlistment = true; return true; }
+    if (r === 12) { ch.enterMandatoryReenlist(); return true; }
     return r >= (data.reenlistment.target ?? 6);
   }
   let dm = 0;
@@ -684,7 +683,7 @@ export function navyReenlist(ch: Character): boolean {
   const r = roll(2);
   ch.log(ev.roll("Reenlistment", r, dm, spec.target, r + dm >= spec.target, `navy ${fleet}`));
   if (r === 12) {
-    ch.mandatoryReenlistment = true;
+    ch.enterMandatoryReenlist();
     offerNavyBranchChange(ch);
     return true;
   }

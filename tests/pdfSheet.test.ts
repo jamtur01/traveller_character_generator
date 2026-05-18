@@ -99,7 +99,7 @@ describe("buildCharacterSheetPdf", () => {
     c.name = "DoomedSpacer";
     c.service = "scouts";
     c.terms = 1;
-    c.deceased = true;
+    c.chargenStatus = { kind: "deceased", reason: "test fixture" };
     const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
     const text = Buffer.from(bytes).toString("latin1");
     // The † U+2020 is mojibake-encoded by jsPDF latin1 as "†" → "â€ "

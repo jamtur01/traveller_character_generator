@@ -47,6 +47,17 @@ export type Gender = "male" | "female";
 
 export type ShowHistory = "verbose" | "simple" | "none" | "debug";
 
+/** Discriminated chargen lifecycle state. `shortTermThisTerm` remains a
+ *  separate orthogonal flag because it can coexist with active /
+ *  retired (anagathics retry failure ends chargen mid-short-term).
+ *  Mandatory reenlistment is also orthogonal — it's a pending action,
+ *  consumed at the start of the next term. */
+export type ChargenStatus =
+  | { kind: "active" }
+  | { kind: "retired"; reason?: string }
+  | { kind: "deceased"; reason?: string }
+  | { kind: "mustered" };
+
 export interface ServiceDef {
   serviceName: string;
   memberName: string;

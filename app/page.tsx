@@ -296,7 +296,7 @@ export default function Home() {
     // reenlistment roll fails, so the UI must route involuntary musters
     // here rather than dropping back into another term loop.
     if (!c.activeDuty) {
-      c.musteredOut = true;
+      c.enterMustered();
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();
@@ -320,16 +320,14 @@ export default function Home() {
     // second 2D roll, no second aging — both already happened.
     if (prev.mandatoryReenlistment) return;
     const c = cloneCharacter(prev);
-    c.activeDuty = false;
-    // Retirement eligibility reads rules.retirement.excludedServices so MT
-    // and CT enforce their own lists (MT: Barbarians, Pirates, Rogues,
-    // Scouts excluded; CT: Scouts + Other).
-    if (c.isRetirementEligible()) c.retired = true;
+    // Voluntary muster — flip to "retired" (pension eligibility is
+    // checked inside endChargenRetired via isRetirementEligible).
+    c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
     c.log(ev.statusChange(
       "voluntaryMuster",
       `after ${intToOrdinal(c.terms)} term of service`,
     ));
-    c.musteredOut = true;
+    c.enterMustered();
     c.musterRolls = c.musterOutRolls();
     if (c.musterRolls === 0) {
       c.musterOutPay();
@@ -365,7 +363,7 @@ export default function Home() {
     }
 
     if (!c.activeDuty) {
-      c.musteredOut = true;
+      c.enterMustered();
       c.musterRolls = c.musterOutRolls();
       if (c.musterRolls === 0) {
         c.musterOutPay();

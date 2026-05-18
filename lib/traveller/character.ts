@@ -37,6 +37,7 @@ import type {
   ShowHistory,
   Skill,
 } from "./types";
+import type { ChargenStatus } from "./types";
 import {
   getDraftServices, getEditionServices, getEnlistableServices,
 } from "./services";
@@ -96,13 +97,112 @@ export class Character {
   skills: Skill[] = [];
   drafted = false;
   service: ServiceKey = "other";
-  deceased = false;
   commissioned = false;
   rank = 0;
-  activeDuty = true;
-  musteredOut = false;
-  retired = false;
   retirementPay = 0;
+  /** Canonical chargen lifecycle state — the terminal-state machine.
+   *  Per-term modifiers (shortTermThisTerm, mandatoryReenlistment) are
+   *  orthogonal booleans below since they can coexist with retired
+   *  status (e.g. anagathics retry fail ends chargen mid-short-term).
+   *  Set via enterMustered / endChargenRetired / endChargenDeceased /
+   *  endChargenDischarged / resumeActive helpers. */
+  chargenStatus: ChargenStatus = { kind: "active" };
+
+  /** Per-term modifier: this term is a short (2-year) term per PM p. 16
+   *  short-term rule. Skip-promotion logic and doReenlistmentStep
+   *  read this. Reset to false at the start of each new term. */
+  shortTermThisTerm = false;
+
+  /** Per-character marker that the next term is forced. Set by a
+   *  reenlistment roll of 12; consumed at the start of the next term. */
+  mandatoryReenlistment = false;
+
+  /** Remembers whether muster-out followed a retirement (vs. a court-
+   *  martial discharge or forced muster). Read by the `retired` getter
+   *  so retirement-pension eligibility persists into the muster-out
+   *  phase. Written by endChargenRetired / endChargenDischarged. */
+  endedAsRetired = false;
+
+  // --- Derived getters for back-compat with existing readers --- //
+  /** True while the character is serving normally. Short-term flips
+   *  this to false (PM p. 16: short-term character is leaving service)
+   *  but the term continues — special-duty + skill rolls still fire
+   *  because isChargenEnded is the runner's halt signal, not activeDuty. */
+  get activeDuty(): boolean {
+    return this.chargenStatus.kind === "active" && !this.shortTermThisTerm;
+  }
+  get deceased(): boolean {
+    return this.chargenStatus.kind === "deceased";
+  }
+  /** True when the character retired *with* pension eligibility (the
+   *  "retired" PDF checkbox). DD / forced-muster characters end with
+   *  status="retired" but endedAsRetired=false. */
+  get retired(): boolean {
+    return this.endedAsRetired;
+  }
+  get musteredOut(): boolean {
+    return this.chargenStatus.kind === "mustered";
+  }
+
+  /** Per-term "short term forced by survival failure" entry point.
+   *  PM p. 16: failure to make the survival throw forces a 2-year term;
+   *  special-duty + skill rolls still fire. */
+  enterShortTerm(_reason: string): void {
+    this.shortTermThisTerm = true;
+    this.shortTermsCount += 1;
+  }
+
+  /** Rolled 12 on reenlistment → must serve another term. Consumed at
+   *  the start of the next term via resumeActive(). */
+  enterMandatoryReenlist(): void {
+    this.mandatoryReenlistment = true;
+  }
+
+  /** Restore active status (called at the start of each term and by
+   *  brownie-point revival paths that flip a forced-muster back to
+   *  active). */
+  resumeActive(): void {
+    this.chargenStatus = { kind: "active" };
+  }
+
+  /** True when chargen has formally ended (deceased / left service /
+   *  mustered-out). The engine runner reads this to halt term steps. */
+  get isChargenEnded(): boolean {
+    return this.chargenStatus.kind === "deceased"
+      || this.chargenStatus.kind === "retired"
+      || this.chargenStatus.kind === "mustered";
+  }
+
+  /** Terminate chargen as retired. Atomically updates status, logs the
+   *  endGeneration event, and (by default) consults isRetirementEligible
+   *  for pension eligibility. Court-martial paths that strip the pension
+   *  pass `withPension: false`. */
+  endChargenRetired(reason: string, withPension?: boolean): void {
+    this.endedAsRetired = withPension ?? this.isRetirementEligible();
+    this.chargenStatus = { kind: "retired", reason };
+    this.log(ev.endGeneration("retired", reason));
+  }
+
+  /** Court-martial discharge — chargen ends, but the character continues
+   *  to muster-out (with the appropriate penalty flags on acgState). No
+   *  pension. */
+  endChargenDischarged(): void {
+    this.endedAsRetired = false;
+    this.chargenStatus = { kind: "retired", reason: "discharged" };
+  }
+
+  /** Terminate chargen as deceased. */
+  endChargenDeceased(reason: string): void {
+    this.chargenStatus = { kind: "deceased", reason };
+    this.log(ev.endGeneration("deceased", reason));
+  }
+
+  /** Transition to mustered-out state. Caller is responsible for the
+   *  endGeneration("mustered") event since the UI controls when
+   *  muster-out completes (after benefit rolls finish). */
+  enterMustered(): void {
+    this.chargenStatus = { kind: "mustered" };
+  }
   forceTable = false;
   forceTableIndex = 1;
   musterCashUsed = 0;
@@ -110,22 +210,9 @@ export class Character {
   /** Human-readable log of each muster-out roll's outcome. */
   musterLog: string[] = [];
   /**
-   * True when the most recent reenlistment roll was 12. Per TTB p. 18 the
-   * character must serve another term regardless of personal preference, so
-   * the UI suppresses voluntary muster-out until the forced term completes.
-   */
-  mandatoryReenlistment = false;
-  /**
-   * True for the current term when MT's short-term rule fired: the character
-   * failed survival, served only 2 years of the 4-year term, and the term is
-   * not counted for mustering-out benefits. Commission/promotion are skipped
-   * for the term; special duty/skills can still happen. Per MT PM p. 16.
-   * Reset at the start of each term in doServiceTermStep.
-   */
-  shortTermThisTerm = false;
-  /**
    * Count of short terms served. Each one was 2 years (not 4) and does not
-   * count toward mustering-out benefit rolls.
+   * count toward mustering-out benefit rolls. (The boolean
+   * `shortTermThisTerm` is now derived from `chargenStatus`.)
    */
   shortTermsCount = 0;
   /**
@@ -929,7 +1016,7 @@ export class Character {
   // ---------- service term ----------
 
   doServiceTermStep() {
-    // A mandatory reenlistment is consumed by serving the term it forced.
+    // Consume per-term markers from the prior term.
     this.mandatoryReenlistment = false;
     this.shortTermThisTerm = false;
     // Reset per-term anagathics flags; intent for this term is set below
@@ -977,17 +1064,19 @@ export class Character {
     // the reenlistment roll. Block reenlist for both basic and ACG flows.
     const dis = this.isDisabled();
     if (dis.disabled) {
-      this.activeDuty = false;
-      if (this.isRetirementEligible()) this.retired = true;
-      this.log(ev.endGeneration("retired", `disability: ${dis.reasons.join("; ")}`));
+      this.endChargenRetired(`disability: ${dis.reasons.join("; ")}`);
       return;
     }
     if (this.useAcg && this.acgState) {
       const keep = runAcgReenlist(this);
       if (!keep) {
-        this.activeDuty = false;
         const reason = this.acgState.reenlistDenialReason;
         delete this.acgState.reenlistDenialReason;
+        // Denied: chargen continues to muster-out, so we don't fire
+        // endChargen* — just record the reenlist outcome and let the
+        // status flip to mustered when the UI rolls benefits.
+        this.chargenStatus = { kind: "retired", reason: reason ?? "denied reenlistment" };
+        this.endedAsRetired = this.isRetirementEligible();
         this.log(ev.reenlistment("denied", undefined, undefined, reason));
       } else if (this.mandatoryReenlistment) {
         this.log(ev.reenlistment("mandatory"));
@@ -1000,7 +1089,7 @@ export class Character {
     const reenlistRoll = roll(2);
     const target = def.reenlistThrow;
     if (reenlistRoll === 12) {
-      this.mandatoryReenlistment = true;
+      this.enterMandatoryReenlist();
       this.log(ev.reenlistment("mandatory", reenlistRoll, target));
     } else if (
       // CT mandates retirement at end of term 7. MT does not (voluntary
@@ -1016,23 +1105,24 @@ export class Character {
           reenlistment?: { voluntaryAnyTerms?: boolean };
         } | undefined)?.reenlistment?.voluntaryAnyTerms
     ) {
-      this.activeDuty = false;
-      this.retired = true;
+      this.endedAsRetired = true;
+      this.chargenStatus = { kind: "retired", reason: "mandatory retirement" };
       this.log(ev.reenlistment("retired", reenlistRoll, target));
     } else if (def.inverseReenlist) {
       if (reenlistRoll >= target) {
-        this.activeDuty = false;
+        this.endedAsRetired = this.isRetirementEligible();
+        this.chargenStatus = { kind: "retired", reason: "released from service" };
         this.log(ev.reenlistment("released", reenlistRoll, target));
       } else {
         this.log(ev.reenlistment("heldOver", reenlistRoll, target));
       }
     } else if (reenlistRoll < target) {
-      this.activeDuty = false;
       // PM p. 17: a character denied reenlistment after 5+ terms still
       // retires (and gets the cash-table +1 retirement DM), unless their
       // service is on the no-retirement excludedServices list (Barbarians,
       // Pirates, Rogues, Scouts per MT).
-      if (this.isRetirementEligible()) this.retired = true;
+      this.endedAsRetired = this.isRetirementEligible();
+      this.chargenStatus = { kind: "retired", reason: "denied reenlistment" };
       this.log(ev.reenlistment("denied", reenlistRoll, target));
     } else {
       // The throw only determines eligibility. The player still gets to
@@ -1194,15 +1284,12 @@ export class Character {
       // pass/fail in the history.
       const passed = svc.checkSurvival(this);
       if (!passed) {
+        // endChargenRetired flips status to "retired", which the runner
+        // checks to halt further term steps. Eligibility for retirement
+        // pension is computed at muster-out time via isRetirementEligible.
         this.shortTermThisTerm = true;
         this.shortTermsCount += 1;
-        this.activeDuty = false;
-        // Set retired so the runner's term-step loop stops here — without
-        // it the engine would run a second survival roll plus emit
-        // misleading "Promotion skipped" / "Commission skipped" events
-        // after ev.endGeneration.
-        this.retired = true;
-        this.log(ev.endGeneration("retired", "failed anagathics retry survival"));
+        this.endChargenRetired("failed anagathics retry survival");
       }
       return passed;
     } catch {
@@ -1336,9 +1423,7 @@ export class Character {
         const cr = roll(2);
         this.log(ev.roll(`Aging crisis (${attrShort(a)})`, cr, 0, crisisSave, cr >= crisisSave));
         if (cr < crisisSave) {
-          this.log(ev.endGeneration("deceased", "aging crisis"));
-          this.deceased = true;
-          this.activeDuty = false;
+          this.endChargenDeceased("aging crisis");
         } else {
           this.attributes[a] = 1;
         }

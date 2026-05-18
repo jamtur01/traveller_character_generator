@@ -30,15 +30,11 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
     if (onFailure === "shortTerm") {
       character.age -= 2;
     }
-    character.shortTermThisTerm = true;
-    character.shortTermsCount += 1;
-    character.activeDuty = false;
+    character.enterShortTerm("injured in service — only 2 years of this term served");
     character.log(ev.statusChange(
       "shortTerm", "injured in service — only 2 years of this term served",
     ));
     return;
   }
-  character.log(ev.endGeneration("deceased", "killed in service"));
-  character.deceased = true;
-  character.activeDuty = false;
+  character.endChargenDeceased("killed in service");
 };

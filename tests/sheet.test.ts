@@ -24,7 +24,8 @@ function jamison(): Character {
   ];
   c.benefits = ["Free Trader"];
   c.mortgage = 10;
-  c.retired = true;
+  c.endedAsRetired = true;
+  c.chargenStatus = { kind: "retired", reason: "test fixture" };
   return c;
 }
 
@@ -81,7 +82,7 @@ describe("formatCharacterSheet — deceased characters", () => {
     c.showHistory = "none";
     c.service = "navy";
     c.name = "Doomed Spacer";
-    c.deceased = true;
+    c.chargenStatus = { kind: "deceased", reason: "test fixture" };
     c.terms = 2;
     c.credits = 0;
     c.skills = [["Vacc Suit", 1]];
