@@ -10,7 +10,9 @@ import type { StepFn } from "./types";
 export const promotionStep: StepFn = ({ character, service, config, edition }) => {
   if (character.deceased) return;
   if (character.shortTermThisTerm) {
-    character.logRaw("Skipping promotion (short term after survival failure).", "verbose");
+    character.log(ev.statusChange(
+      "promotionSkipped", "short term after survival failure",
+    ));
     return;
   }
   if (!character.commissioned) return;

@@ -16,11 +16,15 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   if (character.deceased) return;
   if (character.commissioned) return;
   if (character.shortTermThisTerm) {
-    character.logRaw("Skipping commission (short term after survival failure).", "verbose");
+    character.log(ev.statusChange(
+      "commissionSkipped", "short term after survival failure",
+    ));
     return;
   }
   if (character.drafted && character.terms === 1) {
-    character.logRaw("Skipping commission because of draft.", "verbose");
+    character.log(ev.statusChange(
+      "commissionSkipped", "drafted in first term",
+    ));
     return;
   }
   if (service.commissionThrow === undefined) return;

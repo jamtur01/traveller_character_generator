@@ -142,6 +142,17 @@ export type HistoryEvent =
       outcome: "found" | "lost" | "withdrawal" | "unavailable";
       roll?: number; target?: number;
     }
+  // Aging save (per attribute, per term). Anagathics auto-saves emit
+  // outcome "auto" without dice; normal aging emits "passed"/"failed"
+  // with the two 2D rolls and the save target. The downstream
+  // ev.attributeChange (only fires on failure) records the actual delta.
+  | {
+      kind: "agingSave";
+      level: HistoryLevel;
+      attribute: string;
+      outcome: "auto" | "passed" | "failed";
+      dice?: [number, number]; save?: number;
+    }
   // Pre-career attempt.
   | {
       kind: "preCareer";
@@ -171,7 +182,7 @@ export type HistoryEvent =
       kind: "assignmentRolled";
       level: HistoryLevel;
       assignment: string; term?: number; year?: number;
-      retained?: boolean;
+      retained?: boolean; note?: string;
     }
   // Bonus skill point granted when a roll exceeds its target by the
   // configured overshoot threshold (PM commission/promotion/special-duty
@@ -209,7 +220,9 @@ export type HistoryEvent =
       level: HistoryLevel;
       kind_:
         | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
-        | "purpleHeart" | "demoted" | "ocsDenied";
+        | "purpleHeart" | "demoted" | "ocsDenied" | "ocsWaiver"
+        | "shortTerm" | "revived" | "promotionSkipped" | "commissionSkipped"
+        | "voluntaryMuster";
       note?: string;
     }
   // Branch / arm / department change at reenlist (cross-training).
@@ -313,6 +326,15 @@ export const event = {
     ...(target !== undefined ? { target } : {}),
     ...(reason !== undefined ? { reason } : {}),
   }),
+  agingSave: (
+    attribute: string,
+    outcome: "auto" | "passed" | "failed",
+    extras?: { dice?: [number, number]; save?: number },
+  ): HistoryEvent => ({
+    kind: "agingSave", level: "verbose", attribute, outcome,
+    ...(extras?.dice ? { dice: extras.dice } : {}),
+    ...(extras?.save !== undefined ? { save: extras.save } : {}),
+  }),
   anagathics: (
     outcome: "found" | "lost" | "withdrawal" | "unavailable",
     roll?: number, target?: number,
@@ -347,12 +369,14 @@ export const event = {
     ...(extras?.target !== undefined ? { target: extras.target } : {}),
   }),
   assignmentRolled: (
-    assignment: string, term?: number, year?: number, retained?: boolean,
+    assignment: string, term?: number, year?: number,
+    retained?: boolean, note?: string,
   ): HistoryEvent => ({
     kind: "assignmentRolled", level: "verbose", assignment,
     ...(term !== undefined ? { term } : {}),
     ...(year !== undefined ? { year } : {}),
     ...(retained !== undefined ? { retained } : {}),
+    ...(note !== undefined ? { note } : {}),
   }),
   bonusSkillPoint: (source: string, overshoot: number): HistoryEvent => ({
     kind: "bonusSkillPoint", level: "verbose", source, overshoot,
@@ -373,7 +397,9 @@ export const event = {
   statusChange: (
     kind_:
       | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
-      | "purpleHeart" | "demoted" | "ocsDenied",
+      | "purpleHeart" | "demoted" | "ocsDenied" | "ocsWaiver"
+      | "shortTerm" | "revived" | "promotionSkipped" | "commissionSkipped"
+      | "voluntaryMuster",
     note?: string,
   ): HistoryEvent => ({
     kind: "statusChange", level: "simple", kind_,
@@ -492,6 +518,22 @@ export function formatEvent(e: HistoryEvent): string {
         case "unavailable": return `Anagathics: unavailable.`;
       }
     }
+    case "agingSave": {
+      switch (e.outcome) {
+        case "auto":
+          return `Aging save (${e.attribute}): auto-saved (anagathics).`;
+        case "passed": {
+          const detail = e.dice && e.save !== undefined
+            ? ` (${e.dice[0]}/${e.dice[1]} vs ${e.save}+)` : "";
+          return `Aging save (${e.attribute}): passed${detail}.`;
+        }
+        case "failed": {
+          const detail = e.dice && e.save !== undefined
+            ? ` (${e.dice[0]}/${e.dice[1]} vs ${e.save}+)` : "";
+          return `Aging save (${e.attribute}): failed${detail}.`;
+        }
+      }
+    }
     case "preCareer": {
       const note = e.note ? ` — ${e.note}` : "";
       switch (e.result) {
@@ -519,7 +561,8 @@ export function formatEvent(e: HistoryEvent): string {
       const where = e.term !== undefined && e.year !== undefined
         ? ` (term ${e.term} year ${e.year})` : "";
       const retained = e.retained ? " (retained)" : "";
-      return `Assignment: ${e.assignment}${where}${retained}.`;
+      const note = e.note ? ` — ${e.note}` : "";
+      return `Assignment: ${e.assignment}${where}${retained}${note}.`;
     }
     case "bonusSkillPoint":
       return `${e.source} overshoot +${e.overshoot}: +1 bonus skill point.`;
@@ -548,6 +591,18 @@ export function formatEvent(e: HistoryEvent): string {
           return `Demoted${note}.`;
         case "ocsDenied":
           return `OCS denied${note}.`;
+        case "ocsWaiver":
+          return `OCS waiver granted${note}.`;
+        case "shortTerm":
+          return `Short term${note}.`;
+        case "revived":
+          return `Revived${note}.`;
+        case "promotionSkipped":
+          return `Promotion skipped${note}.`;
+        case "commissionSkipped":
+          return `Commission skipped${note}.`;
+        case "voluntaryMuster":
+          return `Voluntarily mustered out${note}.`;
       }
     }
     case "crossTrained": {

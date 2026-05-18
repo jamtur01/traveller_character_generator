@@ -44,18 +44,6 @@ import { DEFAULT_EDITION_ID, getEdition } from "./editions";
 import { runTermSteps } from "./engine/runner";
 import { formatCharacterSheet } from "./sheet";
 
-/** Look up the display name for the skill-table index from the edition's
- *  `skillTableMeta` block. Falls back to the table key if no display name
- *  is declared. */
-export function skillTableDisplayName(editionId: string, index: number): string {
-  const meta = (getEdition(editionId).data as {
-    skillTableMeta?: { order?: string[]; displayNames?: Record<string, string> };
-  }).skillTableMeta;
-  const key = meta?.order?.[index - 1];
-  if (!key) return `table ${index}`;
-  return meta?.displayNames?.[key] ?? key;
-}
-
 export class Character {
   age = 18;
   gender: Gender = generateGender();
@@ -565,7 +553,6 @@ export class Character {
     const table = this.forceTable
       ? this.forceTableIndex
       : rndInt(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
-    this.logRaw(`Rolling on ${skillTableDisplayName(this.editionId, table)} table`, "verbose");
     return table;
   }
 
@@ -657,7 +644,7 @@ export class Character {
     } | undefined)?.attributeCaps;
     const max = caps?.max ?? 15;
     if (this.attributes[attrib] > max) {
-      this.logRaw(`${attrib} would exceed ${max}; capping at ${max}.`, "verbose");
+      // Post-state in the ev.attributeChange below shows the capped value.
       this.attributes[attrib] = max;
     }
     const socialMin = caps?.socialMin ?? 1;
@@ -1288,8 +1275,7 @@ export class Character {
       const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
       const n = Math.min(2, ranked.length);
       for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
-      this.logRaw(
-        `Anagathics auto-saves: ${[...autoSaves].join(", ")} (2 of ${effects.length})`, "verbose");
+      for (const attr of autoSaves) this.log(ev.agingSave(attr, "auto"));
     }
     for (const [attr, eff] of effects) {
       if (autoSaves.has(attr)) continue;
@@ -1297,8 +1283,10 @@ export class Character {
         const r1 = roll(2);
         const r2 = roll(2);
         const failed = r1 < eff.save || r2 < eff.save;
-        this.logRaw(
-          `Anagathics withdrawal aging ${attr}: ${r1}/${r2} vs ${eff.save} → ${failed ? "failed" : "passed"}`, "verbose");
+        this.log(ev.agingSave(
+          attr, failed ? "failed" : "passed",
+          { dice: [r1, r2], save: eff.save },
+        ));
         if (failed) this.improveAttribute(attr, eff.delta);
       } else {
         this.ageAttribute(attr, eff.save, eff.delta);
