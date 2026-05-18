@@ -299,8 +299,7 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
     if (!isTechOnly) continue;
     if (evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) {
       if (ch.checkSkill(entry.skill) < 0) {
-        ch.addSkill(entry.skill, entry.level);
-        ch.logRaw(`Homeworld grants ${entry.skill}-${entry.level}`, "verbose");
+        ch.addSkill(entry.skill, entry.level, "Homeworld");
       }
     }
   }
