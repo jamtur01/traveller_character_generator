@@ -37,6 +37,10 @@ import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
+import {
+  buildPathwaySpecFromConfig, type PathwayCallbacks,
+  type ResolveAssignmentConfig,
+} from "../jsonPhases";
 import type { AssignmentResolution, ResolutionTarget } from "../types";
 import { recordTransfer } from "../types";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
@@ -383,81 +387,45 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     bonus: applyDmRules(resolutionTable.dms, ch, "bonus"),
   };
   // The bonus phase is merchant-specific; carry its target on a custom
-  // context field that the bonus phase reads. Cleanest pattern given
-  // the synthetic res doesn't have a bonus slot in AssignmentResolution.
+  // res-extension field that the loader's bonus phase reads.
   const bonusTarget = bonusRow && !skipBonus
     ? parseResolutionTarget(bonusRow[colKey]).target
     : "none";
-  runPhases(merchantSpec(bonusTarget), { ch, assignment, resTable: resolutionTable, res, dms });
+  const resWithBonus = res as AssignmentResolution & { bonus?: ResolutionTarget };
+  resWithBonus.bonus = bonusTarget;
+  runPhases(getMerchantSpec(ch), { ch, assignment, resTable: resolutionTable, res, dms });
 }
 
-/** Build the merchant phase spec. Factory so the bonus phase's target
- *  (derived from the per-row resolution table) can close over it. */
-function merchantSpec(bonusTarget: ResolutionTarget): PathwaySpec {
-  return {
-    phases: [
-      {
-        phase: "survival",
-        skip: (ctx) => ctx.res.survival === "none",
-        target: (ctx) => ctx.res.survival,
-        dm: (ctx) => ctx.dms.survival,
-        logRoll: (ctx, r) => ctx.ch.log(ev.roll(
-          "Survival", r.roll, r.dm,
-          typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-          r.success, ctx.assignment,
-        )),
-        mitigation: (ctx, r) => ({
-          rollName: "survival",
-          rollValue: r.roll, dm: r.dm,
-          target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-          margin: r.margin,
-          consequence: "Mustered out of Merchant service",
-          onMitigated: (c) => {
-            c.resumeActive();
-            c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
-          },
-        }),
-        onFail: () => ({
-          endChargen: { kind: "retired", reason: "mustered out of Merchant service" },
-        }),
-      },
-      {
-        phase: "skills",
-        skip: (ctx) => ctx.res.skills === "none",
-        target: (ctx) => ctx.res.skills,
-        dm: (ctx) => ctx.dms.skills,
-        mitigation: (ctx, r) => ({
-          rollName: "skills",
-          rollValue: r.roll, dm: r.dm,
-          target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
-          margin: r.margin,
-          consequence: "Earn a skill this assignment",
-        }),
-        onPass: (ctx) => merchantRollSkill(ctx.ch),
-      },
-      {
-        phase: "bonus",
-        skip: () => bonusTarget === "none",
-        target: () => bonusTarget,
-        dm: (ctx) => ctx.dms.bonus ?? 0,
-        mitigation: (_ctx, r) => ({
-          rollName: "bonus",
-          rollValue: r.roll, dm: r.dm,
-          target: typeof bonusTarget === "number" ? bonusTarget : 0,
-          margin: r.margin,
-          consequence: "Earn Merchant bonus",
-        }),
-        onPass: (ctx) => merchantAwardBonus(ctx.ch),
-      },
-    ],
-    finalize: (ctx) => {
-      const acg = ctx.ch.requireAcgState();
-      acg.assignmentHistory.push(ctx.assignment);
-      // PM p. 61: enlisted commission exam is available "if they are
-      // serving on a Route assignment" during the current term.
-      if (ctx.assignment === "Route") acg.routeAssignmentThisTerm = true;
-    },
-  };
+const MERCHANT_CALLBACKS: PathwayCallbacks = {
+  merchantRollSkill: (ctx) => merchantRollSkill(ctx.ch),
+  merchantAwardBonus: (ctx) => merchantAwardBonus(ctx.ch),
+  merchantFinalize: (ctx) => {
+    const acg = ctx.ch.requireAcgState();
+    acg.assignmentHistory.push(ctx.assignment);
+    // PM p. 61: enlisted commission exam is available "if they are
+    // serving on a Route assignment" during the current term.
+    if (ctx.assignment === "Route") acg.routeAssignmentThisTerm = true;
+  },
+};
+
+const MERCHANT_SPEC_CACHE = new Map<string, PathwaySpec>();
+function getMerchantSpec(ch: Character): PathwaySpec {
+  let spec = MERCHANT_SPEC_CACHE.get(ch.editionId);
+  if (spec) return spec;
+  const data = dataFor(ch);
+  const config = (data as MerchantData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+  }).resolveAssignment;
+  if (!config) {
+    throw new Error(
+      `Edition "${ch.editionId}" merchantPrince block is missing resolveAssignment config.`,
+    );
+  }
+  spec = buildPathwaySpecFromConfig(config, MERCHANT_CALLBACKS, {
+    combatAssignments: () => [],
+  });
+  MERCHANT_SPEC_CACHE.set(ch.editionId, spec);
+  return spec;
 }
 
 function merchantCheckAvailablePosition(ch: Character): void {

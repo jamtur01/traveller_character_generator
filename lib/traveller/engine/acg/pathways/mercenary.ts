@@ -30,12 +30,15 @@ import {
   parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
-import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
 import { applyMercenarySchool } from "../schools";
 import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
+import {
+  buildPathwaySpecFromConfig, type PathwayCallbacks,
+  type ResolveAssignmentConfig,
+} from "../jsonPhases";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../types";
 
@@ -266,153 +269,13 @@ export function mercenaryRollAssignment(ch: Character): string {
   return assignment;
 }
 
-// PM p. 64 Mercenary checklist order: Survival → Promotion → Decoration
-// → Skills. (The prose at p. 49 lists "survival, decoration, promotion,
-// and skills" but the checklist on p. 64 is authoritative.) Phase order
-// matters: promotion-conferred command status can affect court-martial
-// dm and a promotion consumes the term's promote slot before a
-// decoration could trigger one.
-const MERCENARY_SPEC: PathwaySpec = {
-  preRun: (ctx) => {
-    // Interactive decoration-DM tradeoff prompt — runs once before
-    // dice are rolled.
-    if (ctx.ch.choiceMode === "interactive" &&
-        ctx.res.decoration !== "none" &&
-        typeof ctx.res.survival === "number" &&
-        typeof ctx.res.decoration === "number") {
-      promptDecorationDmTradeoff(ctx.ch);
-    }
-  },
-  phases: [
-    {
-      phase: "survival",
-      target: (ctx) => ctx.res.survival,
-      dm: (ctx) => ctx.dms.survival,
-      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
-        "Survival", r.roll, r.dm,
-        typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-        r.success, ctx.assignment,
-      )),
-      mitigation: (ctx, r) => ({
-        rollName: "survival",
-        rollValue: r.roll,
-        dm: r.dm,
-        target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
-        margin: r.margin,
-        consequence: "Invalided out of Mercenary service",
-        onMitigated: (c) => {
-          c.resumeActive();
-          c.log(ev.statusChange("revived", "BP spend saved Mercenary survival"));
-        },
-      }),
-      onFail: () => ({
-        endChargen: { kind: "retired", reason: "invalided out of Mercenary service" },
-      }),
-      onExact: (ctx) => {
-        // Combat-assignment Purple Heart on a just-pass.
-        const data = dataFor(ctx.ch);
-        if (typeof ctx.res.survival !== "number") return;
-        if (!(data.combatAssignments ?? []).includes(ctx.assignment)) return;
-        ctx.ch.requireAcgState().decorations.push("Purple Heart");
-        ctx.ch.log(ev.decoration("Purple Heart", `Wounded in ${ctx.assignment}`));
-        ctx.ch.requireAcgState().injuredThisYear = true;
-      },
-    },
-    {
-      phase: "promotion",
-      skip: (ctx) => {
-        const acg = ctx.ch.requireAcgState();
-        return ctx.res.promotion === "none"
-          || (acg.isOfficer && ctx.res.promotionOfficersBarred === true)
-          || (acg.isOfficer && acg.promotedThisTerm);
-      },
-      target: (ctx) => ctx.res.promotion,
-      dm: (ctx) => {
-        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
-        return ctx.dms.promotion + penalty;
-      },
-      logRoll: (ctx, r) => {
-        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
-        ctx.ch.log(ev.roll(
-          "Promotion", r.roll, r.dm,
-          typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
-          r.success,
-          `${ctx.assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
-        ));
-        // Consume the reprimand penalty (idempotent: only fires once
-        // because logRoll is gated by applyOnce).
-        if (penalty < 0) ctx.ch.requireAcgState().nextPromotionPenalty = 0;
-      },
-      mitigation: (ctx, r) => ({
-        rollName: "promotion",
-        rollValue: r.roll,
-        dm: r.dm,
-        target: typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
-        margin: r.margin,
-        consequence: "Earn promotion",
-      }),
-      onPass: (ctx) => promoteMercenary(ctx.ch),
-    },
-    {
-      phase: "decoration",
-      skip: (ctx) => ctx.res.decoration === "none",
-      target: (ctx) => ctx.res.decoration,
-      dm: (ctx) => ctx.dms.decoration,
-      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
-        "Decoration", r.roll, r.dm,
-        typeof ctx.res.decoration === "number" ? ctx.res.decoration : 0,
-        r.margin >= 0,
-        `${ctx.assignment} (margin ${r.margin})`,
-      )),
-      mitigation: (ctx, r) => ({
-        rollName: "decoration",
-        rollValue: r.roll,
-        dm: r.dm,
-        target: typeof ctx.res.decoration === "number" ? ctx.res.decoration : 0,
-        margin: r.margin,
-        consequence: r.margin <= -6 ? "Avoid court-martial referral" : "Earn MCUF",
-      }),
-      onPass: (ctx, r) => {
-        // The cached margin reflects post-mit; resolveDecorationTier
-        // needs to consume the same value.
-        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
-        const margin = cached?.marginAfterMit ?? r.margin;
-        const tier = resolveDecorationTier(ctx.ch, margin);
-        if (tier) awardDecoration(ctx.ch, tier);
-      },
-      onFail: (ctx, r) => {
-        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
-        const margin = cached?.marginAfterMit ?? r.margin;
-        const tier = resolveDecorationTier(ctx.ch, margin);
-        if (tier) {
-          awardDecoration(ctx.ch, tier);
-        } else if (margin <= -6) {
-          runCourtMartial(ctx.ch, ctx.assignment);
-        }
-      },
-    },
-    {
-      phase: "skills",
-      skip: (ctx) => ctx.res.skills === "none",
-      target: (ctx) => ctx.res.skills,
-      dm: (ctx) => ctx.dms.skills,
-      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
-        "Skills", r.roll, r.dm,
-        typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
-        r.success, ctx.assignment,
-      )),
-      mitigation: (ctx, r) => ({
-        rollName: "skills",
-        rollValue: r.roll,
-        dm: r.dm,
-        target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
-        margin: r.margin,
-        consequence: "Earn a skill this assignment",
-      }),
-      onPass: (ctx) => rollMercenarySkill(ctx.ch),
-    },
-  ],
-  finalize: (ctx) => {
+// Pathway phase ordering and per-phase parameters come from JSON
+// (data.advancedCharacterGeneration.mercenary.resolveAssignment). The TS
+// registry below provides the named callbacks the JSON references.
+const MERCENARY_CALLBACKS: PathwayCallbacks = {
+  promoteMercenary: (ctx) => promoteMercenary(ctx.ch),
+  rollMercenarySkill: (ctx) => rollMercenarySkill(ctx.ch),
+  mercenaryFinalize: (ctx) => {
     const data = dataFor(ctx.ch);
     const combat = (data.combatAssignments ?? []).includes(ctx.assignment);
     if (combat) {
@@ -428,8 +291,30 @@ const MERCENARY_SPEC: PathwaySpec = {
   },
 };
 
-/** Resolve one assignment (survival → promotion → decoration → skills).
- *  Updates Character state in place via the declarative phase runner. */
+/** Lazy-built PathwaySpec, cached per edition. The build pulls the
+ *  JSON config + callback registry. */
+const SPEC_CACHE = new Map<string, PathwaySpec>();
+function getSpec(ch: Character): PathwaySpec {
+  let spec = SPEC_CACHE.get(ch.editionId);
+  if (spec) return spec;
+  const data = dataFor(ch);
+  const config = (data as MercenaryData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+  }).resolveAssignment;
+  if (!config) {
+    throw new Error(
+      `Edition "${ch.editionId}" mercenary block is missing resolveAssignment ` +
+      `config — add it to data/editions/${ch.editionId}.json`,
+    );
+  }
+  spec = buildPathwaySpecFromConfig(config, MERCENARY_CALLBACKS, {
+    combatAssignments: (c) => dataFor(c).combatAssignments ?? [],
+  });
+  SPEC_CACHE.set(ch.editionId, spec);
+  return spec;
+}
+
+/** Resolve one assignment via the JSON-driven phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
   const arm = ch.requireAcgState().combatArm ?? "Infantry";
@@ -465,25 +350,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     promotion: applyDmRules(resTable.dms, ch, "promotion"),
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
-  runPhases(MERCENARY_SPEC, { ch, assignment, resTable, res, dms });
-}
-
-function promptDecorationDmTradeoff(ch: Character): void {
-  ch.pickOrDefer({
-    kind: "decorationDmTradeoff",
-    label:
-      "Take a -N DM on survival in exchange for +N on decoration? " +
-      "(Negative survival ↔ positive decoration; pick 0 to keep things straight.)",
-    options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
-      "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
-    onResolve: (c, choice) => {
-      if (choice.startsWith("-2")) c.requireAcgState().decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) c.requireAcgState().decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) c.requireAcgState().decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) c.requireAcgState().decorationDmStrategy = 2;
-      else c.requireAcgState().decorationDmStrategy = 0;
-    },
-  });
+  runPhases(getSpec(ch), { ch, assignment, resTable, res, dms });
 }
 
 /** Roll one skill from a column appropriate for current rank/duty.

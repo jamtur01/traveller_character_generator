@@ -4113,6 +4113,38 @@
       }
     },
     "mercenary": {
+      "resolveAssignment": {
+        "$rule": "PM p. 64 checklist: Survival → Promotion → Decoration → Skills.",
+        "preRun": "decorationDmTradeoff",
+        "phases": [
+          {
+            "kind": "survival",
+            "consequence": "Invalided out of Mercenary service",
+            "onMitigatedRevive": "BP spend saved Mercenary survival",
+            "endChargenOnFail": { "kind": "retired", "reason": "invalided out of Mercenary service" },
+            "purpleHeartOnExactCombat": true
+          },
+          {
+            "kind": "promotion",
+            "consequence": "Earn promotion",
+            "onPass": "promoteMercenary",
+            "consumeNextPromotionPenalty": true,
+            "logPenaltyInNote": true
+          },
+          {
+            "kind": "decoration",
+            "consequenceMild": "Earn MCUF",
+            "consequenceSevere": "Avoid court-martial referral",
+            "courtMartialMarginThreshold": -6
+          },
+          {
+            "kind": "skills",
+            "consequence": "Earn a skill this assignment",
+            "onPass": "rollMercenarySkill"
+          }
+        ],
+        "finalize": "mercenaryFinalize"
+      },
       "sourcePrintedPages": [
         48,
         49,
@@ -5066,6 +5098,37 @@
       }
     },
     "navy": {
+      "resolveAssignment": {
+        "$rule": "PM p. 64 navy checklist: Survival → Decoration → Promotion → Skills (decoration first so court-martial can pre-empt promotion).",
+        "preRun": "decorationDmTradeoff",
+        "phases": [
+          {
+            "kind": "survival",
+            "consequence": "Invalided out of Navy service",
+            "onMitigatedRevive": "BP spend saved Navy survival",
+            "endChargenOnFail": { "kind": "retired", "reason": "invalided out of Navy service" },
+            "purpleHeartOnExactCombat": true
+          },
+          {
+            "kind": "decoration",
+            "consequenceMild": "Earn MCUF",
+            "consequenceSevere": "Avoid court-martial",
+            "courtMartialMarginThreshold": -6
+          },
+          {
+            "kind": "promotion",
+            "consequence": "Earn promotion",
+            "onPass": "promoteNavy",
+            "consumeNextPromotionPenalty": true
+          },
+          {
+            "kind": "skills",
+            "consequence": "Earn a skill this assignment",
+            "onPass": "navyBranchSkillRoll"
+          }
+        ],
+        "finalize": "navyFinalize"
+      },
       "sourcePrintedPages": [
         52,
         53,
@@ -6185,6 +6248,29 @@
       }
     },
     "scout": {
+      "resolveAssignment": {
+        "$rule": "PM p. 65 scout checklist: Survival → Promotion (Bureaucracy only) → Skills. No decoration phase.",
+        "phases": [
+          {
+            "kind": "survival",
+            "consequence": "Invalided out of Scout service",
+            "onMitigatedRevive": "BP spend saved Scout survival",
+            "endChargenOnFail": { "kind": "retired", "reason": "invalided out of Scout service" }
+          },
+          {
+            "kind": "promotion",
+            "consequence": "Earn promotion (administrator ladder)",
+            "onPass": "promoteScout",
+            "skipIfNotBureaucracy": true
+          },
+          {
+            "kind": "skills",
+            "consequence": "Earn a skill this assignment",
+            "onPass": "scoutRollSkill"
+          }
+        ],
+        "finalize": "scoutFinalize"
+      },
       "sourcePrintedPages": [
         56,
         57,
@@ -7140,6 +7226,28 @@
       }
     },
     "merchantPrince": {
+      "resolveAssignment": {
+        "$rule": "PM p. 65 merchant checklist: Survival → Skills → Bonus (no decoration / promotion; promotion is via the end-of-term exam).",
+        "phases": [
+          {
+            "kind": "survival",
+            "consequence": "Mustered out of Merchant service",
+            "onMitigatedRevive": "BP spend saved Merchant survival",
+            "endChargenOnFail": { "kind": "retired", "reason": "mustered out of Merchant service" }
+          },
+          {
+            "kind": "skills",
+            "consequence": "Earn a skill this assignment",
+            "onPass": "merchantRollSkill"
+          },
+          {
+            "kind": "bonus",
+            "consequence": "Earn Merchant bonus",
+            "onPass": "merchantAwardBonus"
+          }
+        ],
+        "finalize": "merchantFinalize"
+      },
       "specialRules": {
         "$comment": "Rule-driven merchant transitions per PM p. 60-61.",
         "specialDutyCommission": {
