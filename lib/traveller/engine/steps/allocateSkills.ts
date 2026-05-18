@@ -22,9 +22,8 @@ interface SkillEligibility {
 export const allocateSkillsStep: StepFn = ({
   character, service, edition, config,
 }) => {
-  const elig = (
-    edition.data.rules as { skillEligibility?: SkillEligibility }
-  ).skillEligibility;
+  const elig = edition.rules.skillEligibility as
+    SkillEligibility | undefined;
   const exceptions = elig?.perTermExceptions ?? {};
   const subsequent = elig?.subsequentTerm ?? 1;
   const initial = elig?.initialTerm ?? subsequent;

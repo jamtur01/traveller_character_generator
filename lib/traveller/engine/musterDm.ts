@@ -38,9 +38,8 @@ interface MusterRules {
 }
 
 function rules(ch: Character): MusterRules | undefined {
-  return (getEdition(ch.editionId).data.rules as {
-    musterOutRolls?: MusterRules;
-  }).musterOutRolls;
+  return getEdition(ch.editionId).rules.musterOutRolls as
+    MusterRules | undefined;
 }
 
 /** Cash-table DM for this character under the active edition's rules. */

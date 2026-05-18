@@ -17,15 +17,7 @@ import { scoutFinalizeMuster } from "../engine/acg/pathways/scout";
  *  perTerm × qualifyingTerms + rank-band extras, minus ACG penalties. */
 export function musterOutRolls(ch: Character): number {
   ch.finalizeAcgRankForMuster();
-  const rules = (
-    getEdition(ch.editionId).data.rules as {
-      musterOutRolls?: {
-        perTerm?: number;
-        rankBands?: { ranks: number[]; additionalRolls: number }[];
-        rankExtraRolls?: { rankMin: number; rankMax: number; additionalRolls: number }[];
-      };
-    }
-  ).musterOutRolls;
+  const rules = getEdition(ch.editionId).rules.musterOutRolls;
   const perTerm = rules?.perTerm ?? 1;
   const acgPartial = ch.acgState?.partialTerms ?? 0;
   const anagathicsTerms = ch.anagathicsBenefitForfeitedTerms;
@@ -99,17 +91,7 @@ export function musterOutBenefit(ch: Character, benefitsDM: number): void {
 /** Apply retirement pay (if eligible) and run per-pathway finalizers. */
 export function musterOutPay(ch: Character): void {
   const pensionForfeit = !!(ch.useAcg && ch.acgState?.pensionForfeit);
-  const retirement = (
-    getEdition(ch.editionId).data.rules as {
-      retirement?: {
-        eligibleAfterCompletedTerm?: number;
-        basePensionCredits?: number;
-        pensionCreditsPerTerm?: number;
-        excludedServices?: string[];
-        anagathicTermsExcluded?: boolean;
-      };
-    }
-  ).retirement;
+  const retirement = getEdition(ch.editionId).rules.retirement;
   const eligibleAfter = retirement?.eligibleAfterCompletedTerm ?? 5;
   const basePension = retirement?.basePensionCredits ?? 4000;
   const perTerm = retirement?.pensionCreditsPerTerm ?? 2000;

@@ -209,4 +209,7 @@ export interface Edition {
   meta: EditionMeta;
   data: CanonData;
   hooks: EditionHooks;
+  /** Schema-validated typed view of `data.rules`. Engine code should
+   *  prefer this over `data.rules as { ... }`. */
+  rules: import("./schema").RulesData;
 }
