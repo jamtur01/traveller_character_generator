@@ -1460,7 +1460,7 @@ export class Character {
     if (!pensionForfeit && qualifyingTerms >= eligibleAfter &&
         !excluded.has(this.service as string)) {
       this.retirementPay = basePension + (qualifyingTerms - eligibleAfter) * perTerm;
-      this.benefits.push(
+      this.addBenefit(
         `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
       );
     } else if (pensionForfeit && this.terms >= eligibleAfter) {

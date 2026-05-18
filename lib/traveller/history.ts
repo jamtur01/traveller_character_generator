@@ -134,11 +134,13 @@ export type HistoryEvent =
       level: HistoryLevel;
       reason: string;
     }
-  // Mustering-out cash roll.
+  // Cash awarded — muster-out cash roll, or in-service bonus (Merchant
+  // Bonus per PM p. 60). `source` describes which path produced the cash.
   | {
       kind: "musterCash";
       level: HistoryLevel;
       amount: number; tableRoll: number; dm: number;
+      source?: string;
     }
   // Brownie-point award / spend.
   | {
@@ -296,8 +298,11 @@ export const event = {
   noEffect: (reason: string): HistoryEvent => ({
     kind: "noEffect", level: "debug", reason,
   }),
-  musterCash: (amount: number, tableRoll: number, dm: number): HistoryEvent => ({
+  musterCash: (
+    amount: number, tableRoll: number, dm: number, source?: string,
+  ): HistoryEvent => ({
     kind: "musterCash", level: "verbose", amount, tableRoll, dm,
+    ...(source !== undefined ? { source } : {}),
   }),
   skillReduced: (skill: string, lvl: number, reason: string): HistoryEvent => ({
     kind: "skillReduced", level: "verbose", skill, skillLevel: lvl, reason,
@@ -538,8 +543,10 @@ export function formatEvent(e: HistoryEvent): string {
       return `Mortgage payoff: ${e.years} years on ${e.ship}.`;
     case "noEffect":
       return `No effect (${e.reason}).`;
-    case "musterCash":
-      return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)}).`;
+    case "musterCash": {
+      const src = e.source ? ` — ${e.source}` : "";
+      return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)})${src}.`;
+    }
     case "browniePoint": {
       const sign = e.delta >= 0 ? "+" : "";
       return `Brownie points ${sign}${e.delta}: ${e.reason} (now ${e.balance}).`;

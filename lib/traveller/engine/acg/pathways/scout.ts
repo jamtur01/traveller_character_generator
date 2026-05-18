@@ -466,10 +466,10 @@ export function scoutFinalizeMuster(ch: Character): void {
   ch.log(ev.decoration("Permanent Detached Duty", "PM p. 57"));
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {
-    ch.benefits.push("Scout/Courier (Detached Duty)");
+    ch.addBenefit("Scout/Courier (Detached Duty)");
   }
   ch.retirementPay = (ch.retirementPay ?? 0) + 4000;
-  ch.benefits.push("Cr4,000/yr Detached Duty stipend");
+  ch.addBenefit("Cr4,000/yr Detached Duty stipend");
 }
 
 /** Retention is Navy-only in MT. Kept as a no-op for back-compat. */
