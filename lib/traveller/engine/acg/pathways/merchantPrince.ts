@@ -639,6 +639,7 @@ export function applyReducedPassageBenefit(ch: Character): void {
   if (!rp?.appliesAfterMuster) return;
   const label = `Reduced Passage (${rp.passage ?? "Mid Psg"} at ${rp.pricePercent ?? 50}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
   if (ch.benefits.includes(label)) return;
+  ch.log(ev.raw(label, "simple"));
   ch.addBenefit(label);
 }
 
@@ -824,6 +825,7 @@ export function merchantFinalizeMuster(ch: Character): void {
   if (n < 5) return;
   if (ch.acgState.freeTraderShipEarned) return;
   ch.acgState.freeTraderShipEarned = true;
+  ch.log(ev.raw("Free Trader ship (Owner/Captain)", "simple"));
   ch.addBenefit("Free Trader");
   ch.musterLog.push("Free Trader ship (Owner/Captain)");
 }

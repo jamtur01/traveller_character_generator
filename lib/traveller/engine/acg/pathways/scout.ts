@@ -466,9 +466,11 @@ export function scoutFinalizeMuster(ch: Character): void {
   ch.log(ev.decoration("Permanent Detached Duty", "PM p. 57"));
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {
+    ch.log(ev.raw("Scout/Courier (Detached Duty)", "simple"));
     ch.addBenefit("Scout/Courier (Detached Duty)");
   }
   ch.retirementPay = (ch.retirementPay ?? 0) + 4000;
+  ch.log(ev.raw("Cr4,000/yr Detached Duty stipend", "simple"));
   ch.addBenefit("Cr4,000/yr Detached Duty stipend");
 }
 
