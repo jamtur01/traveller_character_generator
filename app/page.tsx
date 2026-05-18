@@ -180,6 +180,16 @@ export default function Home() {
   const resolvePending = (choiceId: string, optionIdx: number) => {
     const prev = characterRef.current;
     if (!prev) return;
+    // Inspect the choice context BEFORE resolving — once resolveChoice
+    // runs, the entry is removed from pendingChoices and the context is
+    // lost. We need this to detect a deferred muster-cascade resolution
+    // so we can finalize the muster roll (musterChoice paused before
+    // decrementing musterRolls so the cascade-resolved roll counts as
+    // one benefit/cash roll, not zero).
+    const pendingChoice = prev.pendingChoices.find((p) => p.id === choiceId);
+    const choiceSource = (pendingChoice?.context as { source?: string } | undefined)?.source;
+    const wasMusterChoice = phase === "muster" && choiceSource === "muster";
+
     const c = cloneCharacter(prev);
     // resolveChoice may itself queue a nested cascade (e.g., resolving a
     // skill-table pick rolls a cascade cell). Catch ChoicePendingError so
@@ -205,6 +215,25 @@ export default function Home() {
     // More choices still pending — stay in the current phase.
     if (c.pendingChoices.length > 0) {
       commit(c, phase);
+      return;
+    }
+
+    // Muster cascade finalization. musterChoice deferred the
+    // musterRolls -= 1 + post-roll routing until the cascade resolved;
+    // do it now so the player doesn't get unlimited free benefit rolls.
+    if (wasMusterChoice) {
+      c.musterRolls -= 1;
+      if (c.musterRolls === 0) {
+        c.musterOutPay();
+        c.log(ev.endGeneration("mustered"));
+        commit(c, "end");
+        return;
+      }
+      if (c.musterCashUsed >= maxCashRolls(c)) {
+        commit(c, "muster_no_cash");
+        return;
+      }
+      commit(c, "muster");
       return;
     }
 

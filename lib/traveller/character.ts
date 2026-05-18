@@ -397,28 +397,6 @@ export class Character {
     throw new ChoicePendingError(id);
   }
 
-  /**
-   * Deferred (non-blocking) choice. Same as pickOrDefer in auto mode, but
-   * in interactive mode queues the choice WITHOUT throwing — the engine
-   * continues past the call site. Used for post-roll adjustments that
-   * mustn't pause the step (e.g., a BP-review prompt that would otherwise
-   * force the entire resolveAssignment to re-run on resume and re-roll
-   * survival/decoration/promotion/skills). The onResolve closure handles
-   * retroactive side effects (revival, retroactive award) when the player
-   * eventually decides.
-   */
-  queueChoice(req: ChoiceRequest<string>): void {
-    if (this.choiceMode === "auto") {
-      const pool = req.preferred && req.preferred.length > 0
-        ? req.preferred
-        : req.options;
-      req.onResolve(this, arnd(pool));
-      return;
-    }
-    const id = genChoiceId();
-    this.pendingChoices.push({ id, ...req });
-  }
-
   /** Service definition for this character's current service key, looked up
    *  in this character's edition's service map. Throws if the service key is
    *  not part of the active edition — that's an edition-isolation violation

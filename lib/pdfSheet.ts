@@ -7,13 +7,44 @@ import { numCommaSep } from "./traveller/formatting";
 
 /** Edition-aware pistol / blade sets for the "Equipment Qualified On"
  *  rows. Pistols are the subset of the edition's gun pool ending in
- *  "Pistol" (plus Revolver — TTB lists it alongside the pistols). */
+ *  "Pistol" (plus Revolver — TTB lists it alongside the pistols).
+ *
+ *  PM Includes-skill umbrellas (e.g. MT "Handgun" → Body Pistol /
+ *  Pistol / Revolver / Snub Pistol; "Large Blade" → Broadsword /
+ *  Cutlass / Sword) expand to constituent skills at chargen-grant time.
+ *  After expansion the character holds the constituents, NOT the
+ *  umbrella name. Fold each umbrella's includesSkills entry into the
+ *  set so the filter still recognises a Marine's Cutlass-1 as a blade. */
 function pistolsFor(editionId: string): Set<string> {
+  const out = new Set<string>();
   const guns = cascadePoolByKey("gunCombat", editionId);
-  return new Set(guns.filter((g) => g.endsWith("Pistol") || g === "Revolver"));
+  for (const g of guns) {
+    if (g.endsWith("Pistol") || g === "Revolver") out.add(g);
+    for (const inner of expandIncludes(editionId, g)) {
+      if (inner.endsWith("Pistol") || inner === "Revolver") out.add(inner);
+    }
+  }
+  return out;
 }
 function bladesFor(editionId: string): Set<string> {
-  return new Set(cascadePoolByKey("bladeCombat", editionId));
+  const out = new Set<string>(cascadePoolByKey("bladeCombat", editionId));
+  for (const name of cascadePoolByKey("bladeCombat", editionId)) {
+    for (const inner of expandIncludes(editionId, name)) out.add(inner);
+  }
+  return out;
+}
+
+/** Read the edition's includesSkills entry for `name` and return its
+ *  constituent skill names (level info stripped). Empty array if not an
+ *  Includes-skill umbrella. */
+function expandIncludes(editionId: string, name: string): string[] {
+  const data = getEdition(editionId).data.includesSkills;
+  if (!data) return [];
+  const entry = data[name];
+  if (!Array.isArray(entry)) return [];
+  return entry
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.replace(/-\d+$/, "").trim());
 }
 
 /** Ship/passage display names sourced from the edition's benefitDetails:
@@ -184,7 +215,12 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 160, y, 160, r3H);
   fieldLabel(doc, X0 + 164, y + 10, "5. Military Rank");
-  const rankText = c.serviceDef().ranks[c.rank] || "";
+  // ACG characters store rank only in acgState.rankCode (e.g. "O3").
+  // c.rank is 0 for ACG-only flows, so the basic ladder would render
+  // blank. Fall back to the ACG rank code when present.
+  const rankText = c.useAcg && c.acgState?.rankCode
+    ? c.acgState.rankCode
+    : (c.serviceDef().ranks[c.rank] || "");
   fieldValue(doc, X0 + 166, y + 26, rankText, 152);
 
   doc.rect(X0 + 320, y, 220, r3H);
@@ -236,6 +272,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 130, y, 130, r3H);
   fieldLabel(doc, X0 + 134, y + 10, "13. Final Rank");
+  // rankText defined above already routes through acgState.rankCode for ACG.
   fieldValue(doc, X0 + 136, y + 26, rankText, 122);
 
   doc.rect(X0 + 260, y, 130, r3H);
@@ -257,8 +294,20 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   doc.rect(X0, y, W, 50);
   fieldLabel(doc, X0 + 4, y + 10, "15. Special Assignments");
   const assignments: string[] = [];
-  if (c.commissioned) assignments.push("Commissioned officer");
+  if (c.commissioned || (c.useAcg && c.acgState?.isOfficer)) {
+    assignments.push("Commissioned officer");
+  }
   if (c.ship) assignments.push("Starship benefit awarded");
+  if (c.useAcg && c.acgState) {
+    const schools = c.acgState.schoolsAttended ?? [];
+    if (schools.length > 0) assignments.push(`Schools: ${schools.join(", ")}`);
+    if ((c.acgState.combatRibbons ?? 0) > 0) {
+      assignments.push(`Combat Ribbons: ${c.acgState.combatRibbons}`);
+    }
+    if ((c.acgState.commandClusters ?? 0) > 0) {
+      assignments.push(`Command Clusters: ${c.acgState.commandClusters}`);
+    }
+  }
   if (assignments.length > 0)
     fieldValue(doc, X0 + 6, y + 26, assignments.join("; "), W - 12);
   y += 50;
@@ -272,6 +321,17 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
     "16. Awards and Decorations",
     "(include Combat Command Credits, Commendations, Medals, etc)",
   );
+  if (c.useAcg && c.acgState) {
+    const decs = c.acgState.decorations ?? [];
+    if (decs.length > 0) {
+      const decLines = doc.splitTextToSize(decs.join(", "), W - 12) as string[];
+      let ly = y + 26;
+      for (const line of decLines.slice(0, 2)) {
+        doc.text(line, X0 + 6, ly);
+        ly += 11;
+      }
+    }
+  }
   y += 50;
 
   // 17. Equipment Qualified On

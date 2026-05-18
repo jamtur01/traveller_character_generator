@@ -251,6 +251,10 @@ export interface AcgState {
   /** Scout: marks that applyScoutTransferToBureaucracy already ran this
    *  year. Re-entry from pause/resume skips the transfer side effects. */
   transferAppliedThisYear?: boolean;
+  /** Scout: cached post-transfer assignment so the recursive resolve
+   *  doesn't re-roll non-deterministically on pause/resume. Cleared at
+   *  year boundary alongside transferAppliedThisYear. */
+  scoutTransferNextAssign?: string;
 
   // Merchant Prince: per-term flags consumed at end-of-term.
   /** Merchant Prince: true if any year of the current term was a Route

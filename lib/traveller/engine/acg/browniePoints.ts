@@ -21,7 +21,7 @@ const CACHEABLE_PHASES: ReadonlySet<SubStepKey> =
   new Set<SubStepKey>(["survival", "promotion", "decoration", "skills", "bonus"]);
 
 export interface MitigationRequest {
-  rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial";
+  rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial" | "bonus";
   rollValue: number;
   dm: number;
   target: number;
@@ -155,10 +155,10 @@ function queueBpReview(
   // resolveAssignment is idempotent on resume via the per-year
   // sub-step cache (AcgState.thisYearOutcomes): dice rolls and
   // auto-mitigation spends are cached, so re-running after the player
-  // resolves the prompt doesn't re-roll or double-spend. queueChoice
-  // (non-throwing) is the wrong primitive for life-or-death rolls —
-  // it would let endChargenRetired fire before the player has a chance
-  // to spend more BPs to revive.
+  // resolves the prompt doesn't re-roll or double-spend. A non-throwing
+  // queue is the wrong primitive for life-or-death rolls — it would
+  // let endChargenRetired fire before the player has a chance to spend
+  // more BPs to revive.
   ch.pickOrDefer({
     kind: "bpSpend",
     label:
@@ -170,7 +170,13 @@ function queueBpReview(
     onResolve: (c, chosen) => {
       const m = chosen.match(/Spend (\d+) more/);
       const extra = m ? parseInt(m[1]!, 10) : 0;
-      if (extra <= 0) return;
+      const phase = req.rollName as SubStepKey;
+      if (extra <= 0) {
+        // Player declined to spend more. The cache still holds the
+        // auto-mitigation result (result.spent, result.newMargin) which
+        // the resumed pathway will read — that's correct (no change).
+        return;
+      }
       const actual = Math.min(extra, c.requireAcgState().browniePoints);
       c.requireAcgState().browniePoints -= actual;
       c.requireAcgState().browniePointsSpent += actual;
@@ -183,11 +189,20 @@ function queueBpReview(
         rollName: req.rollName,
         spent: actual,
       };
-      // F16: if the total spend (auto + extra) is enough to push the
-      // margin to ≥ 0 and the request carries an onMitigated callback,
-      // run it now to apply the success outcome retroactively.
+      // Update the sub-step cache so the resumed pathway sees the
+      // post-spend totals. Without this the cache returns the original
+      // autoMitigate values and the pathway re-fires the failure branch
+      // (e.g. endChargenRetired) even though the player just bought
+      // their way out.
       const totalSpent = result.spent + actual;
       const finalMargin = req.margin + totalSpent;
+      if (CACHEABLE_PHASES.has(phase)) {
+        cacheMitigation(c, phase, totalSpent, finalMargin);
+      }
+      // F16: if the total spend pushed the margin to ≥ 0 and the
+      // request carries an onMitigated callback, run it now to apply
+      // the success outcome retroactively (revival / retroactive
+      // decoration / etc.).
       if (finalMargin >= 0 && req.onMitigated) {
         req.onMitigated(c);
       }
