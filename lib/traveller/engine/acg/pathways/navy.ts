@@ -189,9 +189,9 @@ export function navyEnlist(
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
   const r = roll(2);
-  ch.logRaw(`Navy enlist (${fleet}): roll ${r} + ${dm} vs ${spec.target}`, "verbose");
-
-  if (r + dm >= spec.target) {
+  const succeeded = r + dm >= spec.target;
+  ch.log(ev.roll(`Navy enlist (${fleet})`, r, dm, spec.target, succeeded));
+  if (succeeded) {
     ch.logRaw(`Enlisted in the ${fleet} Navy.`);
     ch.acgState!.rankCode = data.enlistment.startingRank;
     ch.acgState!.isOfficer = data.enlistment.startingRank.startsWith("O");
@@ -674,7 +674,7 @@ export function navyReenlist(ch: Character): boolean {
     else if (d.condition === "officer" && isOfficer) dm += d.dm;
   }
   const r = roll(2);
-  ch.logRaw(`Navy reenlist (${fleet}): ${r} + ${dm} vs ${spec.target}`, "verbose");
+  ch.log(ev.roll(`Navy reenlist (${fleet})`, r, dm, spec.target, r + dm >= spec.target));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerNavyBranchChange(ch);

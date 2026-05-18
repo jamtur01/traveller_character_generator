@@ -6378,7 +6378,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6388,7 +6388,7 @@
               "routine": "3+",
               "mission": "4+",
               "specialMission": "5+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             },
             {
               "result": "Skills",
@@ -6397,7 +6397,7 @@
               "routine": "7+",
               "mission": "6+",
               "specialMission": "6+",
-              "warMission": "7+"
+              "wartimeMission": "7+"
             }
           ],
           "dms": [
@@ -6414,7 +6414,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6424,7 +6424,7 @@
               "routine": "4+",
               "mission": "5+",
               "specialMission": "6+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             },
             {
               "result": "Skills",
@@ -6433,7 +6433,7 @@
               "routine": "7+",
               "mission": "7+",
               "specialMission": "6+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             }
           ],
           "dms": [
@@ -6450,7 +6450,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6460,7 +6460,7 @@
               "routine": "4+",
               "mission": "5+",
               "specialMission": "7+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             },
             {
               "result": "Skills",
@@ -6469,7 +6469,7 @@
               "routine": "8+",
               "mission": "7+",
               "specialMission": "5+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             }
           ],
           "dms": [
@@ -6486,7 +6486,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6496,7 +6496,7 @@
               "routine": "auto",
               "mission": "3+",
               "specialMission": "3+",
-              "warMission": "5+"
+              "wartimeMission": "5+"
             },
             {
               "result": "Promotion",
@@ -6505,7 +6505,7 @@
               "routine": "7+",
               "mission": "7+",
               "specialMission": "6+",
-              "warMission": "5+"
+              "wartimeMission": "5+"
             },
             {
               "result": "Skills",
@@ -6514,7 +6514,7 @@
               "routine": "7+",
               "mission": "7+",
               "specialMission": "7+",
-              "warMission": "7+"
+              "wartimeMission": "7+"
             }
           ],
           "dms": [
@@ -6530,7 +6530,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6540,7 +6540,7 @@
               "routine": "auto",
               "mission": "3+",
               "specialMission": "4+",
-              "warMission": "5+"
+              "wartimeMission": "5+"
             },
             {
               "result": "Promotion",
@@ -6549,7 +6549,7 @@
               "routine": "8+",
               "mission": "7+",
               "specialMission": "6+",
-              "warMission": "4+"
+              "wartimeMission": "4+"
             },
             {
               "result": "Skills",
@@ -6558,7 +6558,7 @@
               "routine": "8+",
               "mission": "6+",
               "specialMission": "5+",
-              "warMission": "4+"
+              "wartimeMission": "4+"
             }
           ],
           "dms": [
@@ -6575,7 +6575,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6585,7 +6585,7 @@
               "routine": "auto",
               "mission": "3+",
               "specialMission": "5+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             },
             {
               "result": "Promotion",
@@ -6594,7 +6594,7 @@
               "routine": "9+",
               "mission": "8+",
               "specialMission": "7+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             },
             {
               "result": "Skills",
@@ -6603,7 +6603,7 @@
               "routine": "7+",
               "mission": "6+",
               "specialMission": "7+",
-              "warMission": "6+"
+              "wartimeMission": "6+"
             }
           ],
           "dms": [
@@ -6619,7 +6619,7 @@
             "routine",
             "mission",
             "specialMission",
-            "warMission"
+            "wartimeMission"
           ],
           "rows": [
             {
@@ -6629,7 +6629,7 @@
               "routine": "auto",
               "mission": "4+",
               "specialMission": "6+",
-              "warMission": "7+"
+              "wartimeMission": "7+"
             },
             {
               "result": "Promotion",
@@ -6638,7 +6638,7 @@
               "routine": "8+",
               "mission": "7+",
               "specialMission": "5+",
-              "warMission": "5+"
+              "wartimeMission": "5+"
             },
             {
               "result": "Skills",
@@ -6647,7 +6647,7 @@
               "routine": "7+",
               "mission": "6+",
               "specialMission": "6+",
-              "warMission": "3+"
+              "wartimeMission": "3+"
             }
           ],
           "dms": [
