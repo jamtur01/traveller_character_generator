@@ -25,10 +25,14 @@ function makeMarine(): Character {
 describe("Marine Tradition (F5)", () => {
   it("Marine receiving Blade Combat is forced to Large Blade on failed save", () => {
     const c = makeMarine();
-    // Roll low (2) on the save → tradition forces Large Blade
+    // Roll low (2) on the save → tradition forces Large Blade.
+    // Large Blade is a PM Includes-skill umbrella that expands to its
+    // constituent weapons (Broadsword, Cutlass, Sword) at level 1 each.
     vi.spyOn(Math, "random").mockReturnValue(0);
     applyCell(c, "Blade Cbt", "skill");
-    expect(c.skills).toEqual([["Large Blade", 1]]);
+    const skillNames = c.skills.map(([n]) => n).sort();
+    expect(skillNames).toEqual(["Broadsword", "Cutlass", "Sword"]);
+    for (const [, level] of c.skills) expect(level).toBe(1);
     vi.restoreAllMocks();
   });
 
@@ -44,29 +48,40 @@ describe("Marine Tradition (F5)", () => {
       return 0;                    // pick first option in pool
     });
     applyCell(c, "Blade Cbt", "skill");
-    expect(c.skills.length).toBe(1);
-    // The save passed, so the cascade picks normally. The picked blade
-    // must NOT be Large Blade — otherwise the tradition logic regressed
+    // The save passed, so the cascade picks normally. The first option
+    // in the bladeCombat pool is "Axe" which expands per Includes-skill
+    // to [Battle Axe, Hand Axe]. The picked skills must NOT include
+    // Large Blade or its constituents — otherwise tradition regressed
     // and is forcing Large Blade in spite of the save.
-    expect(c.skills[0]![0]).not.toBe("Large Blade");
+    expect(c.skills.length).toBeGreaterThanOrEqual(1);
+    const skillNames = c.skills.map(([n]) => n);
+    expect(skillNames).not.toContain("Large Blade");
+    expect(skillNames).not.toContain("Broadsword");
+    expect(skillNames).not.toContain("Cutlass");
+    expect(skillNames).not.toContain("Sword");
     vi.restoreAllMocks();
   });
 
-  it("Already-Large-Blade-1 gets DM-3 on the save (11 + DM-3 = 8 fails)", () => {
+  it("Already-Large-Blade-1 (expanded constituents) gets DM-3 on the save (11 + DM-3 = 8 fails)", () => {
     // Roll 5,6 = 11. With DM-3 → 8, fails the 9+ save → forced Large Blade.
     // Without the DM, 11 ≥ 9 would pass → cascade picks. The differing
     // outcome between the two tests in this block (this one vs. the next)
     // is what proves the DM is wired.
+    //
+    // Large Blade is a PM Includes-skill umbrella. A Marine who's received
+    // it once has its constituent weapons (Broadsword/Cutlass/Sword) at
+    // level 1. The tradition DM check recognises this expanded form.
     const c = makeMarine();
-    c.skills = [["Large Blade", 1]];
+    c.skills = [["Broadsword", 1], ["Cutlass", 1], ["Sword", 1]];
     const sequence = [4 / 6 + 0.001, 5 / 6 + 0.001]; // d6=5, d6=6 → roll 11
     let i = 0;
     vi.spyOn(Math, "random").mockImplementation(
       () => sequence[i++ % sequence.length]!,
     );
     applyCell(c, "Blade Cbt", "skill");
-    // Forced Large Blade: existing Large Blade-1 gets bumped to Large Blade-2.
-    expect(c.skills).toEqual([["Large Blade", 2]]);
+    // Forced Large Blade: each constituent bumps from 1 → 2.
+    const byName = Object.fromEntries(c.skills);
+    expect(byName).toEqual({ "Broadsword": 2, "Cutlass": 2, "Sword": 2 });
     expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(true);
     vi.restoreAllMocks();
   });
@@ -86,7 +101,9 @@ describe("Marine Tradition (F5)", () => {
     );
     applyCell(c, "Blade Cbt", "skill");
     // Save passed → cascade picked SOMETHING, but not forced Large Blade.
-    expect(c.skills.length).toBe(1);
+    // The cascade pick may itself be an Includes-skill umbrella (e.g.,
+    // "Axe" → Battle Axe + Hand Axe) so length ≥ 1, not exactly 1.
+    expect(c.skills.length).toBeGreaterThanOrEqual(1);
     expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(false);
     vi.restoreAllMocks();
   });

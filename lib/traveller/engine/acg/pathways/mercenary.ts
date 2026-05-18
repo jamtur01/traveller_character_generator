@@ -27,12 +27,15 @@ import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
   applyDmRules, applyStructuredDms, labelToColumnKey, lookupResolution,
-  parseResolutionTarget, rollVsTarget,
+  parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
 import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyMercenarySchool } from "../schools";
+import {
+  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+} from "../subStepCache";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../types";
 
@@ -266,6 +269,10 @@ export function mercenaryRollAssignment(ch: Character): string {
 /** Resolve one assignment (survival → decoration → promotion → skills).
  *  Updates Character state in place. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
+  // Reset per-year sub-step cache if a prior resolveAssignment ran to
+  // completion (the runner clears at year boundary, but direct test
+  // invocation can call us multiple times in the same notional year).
+  resetIfComplete(ch);
   const data = dataFor(ch);
   const arm = ch.requireAcgState().combatArm ?? "Infantry";
   const resKey = data.combatArmResolution?.[arm] ?? "commando";
@@ -309,12 +316,14 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
   // --- Survival ---
-  const sv = rollVsTarget(res.survival, survDm);
-  ch.log(ev.roll(
-    "Survival", sv.roll, survDm,
-    typeof res.survival === "number" ? res.survival : 0,
-    sv.success, assignment,
-  ));
+  const sv = rollPhaseDice(ch, "survival", res.survival, survDm);
+  applyOnce(ch, "survivalLogged", () => {
+    ch.log(ev.roll(
+      "Survival", sv.roll, survDm,
+      typeof res.survival === "number" ? res.survival : 0,
+      sv.success, assignment,
+    ));
+  });
   if (!sv.success) {
     // Try brownie-point mitigation before invaliding out. The onMitigated
     // callback (F16) reverses the muster-out if the player later spends
@@ -333,7 +342,9 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       },
     });
     if (mit.newMargin < 0) {
-      ch.endChargenRetired("invalided out of Mercenary service");
+      applyOnce(ch, "survivalEndChargen", () => {
+        ch.endChargenRetired("invalided out of Mercenary service");
+      });
       return;
     }
     // Survived via brownie point spending.
@@ -342,9 +353,11 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   if (sv.margin === 0 && typeof res.survival === "number") {
     // Survival rolled exactly: combat wound → Purple Heart (no BP).
     if (combatAssignments.includes(assignment)) {
-      ch.requireAcgState().decorations.push("Purple Heart");
-      ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
-      ch.requireAcgState().injuredThisYear = true;
+      applyOnce(ch, "purpleHeartAwarded", () => {
+        ch.requireAcgState().decorations.push("Purple Heart");
+        ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
+        ch.requireAcgState().injuredThisYear = true;
+      });
     }
   }
 
@@ -361,14 +374,18 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
     const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
     const effectiveDm = promoDm + penalty;
-    if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0; // consumed
-    const pr = rollVsTarget(res.promotion, effectiveDm);
-    ch.log(ev.roll(
-      "Promotion", pr.roll, effectiveDm,
-      typeof res.promotion === "number" ? res.promotion : 0,
-      pr.success,
-      `${assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
-    ));
+    applyOnce(ch, "promotionPenaltyConsumed", () => {
+      if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0; // consumed
+    });
+    const pr = rollPhaseDice(ch, "promotion", res.promotion, effectiveDm);
+    applyOnce(ch, "promotionLogged", () => {
+      ch.log(ev.roll(
+        "Promotion", pr.roll, effectiveDm,
+        typeof res.promotion === "number" ? res.promotion : 0,
+        pr.success,
+        `${assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
+      ));
+    });
     let promoMargin = pr.margin;
     if (!pr.success) {
       const target = typeof res.promotion === "number" ? res.promotion : 0;
@@ -382,18 +399,22 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       });
       promoMargin = mit.newMargin;
     }
-    if (promoMargin >= 0) promoteMercenary(ch);
+    if (promoMargin >= 0) {
+      applyOnce(ch, "promotionApplied", () => promoteMercenary(ch));
+    }
   }
 
   // --- Decoration ---
   if (res.decoration !== "none") {
-    const dec = rollVsTarget(res.decoration, decDm);
-    ch.log(ev.roll(
-      "Decoration", dec.roll, decDm,
-      typeof res.decoration === "number" ? res.decoration : 0,
-      dec.margin >= 0,
-      `${assignment} (margin ${dec.margin})`,
-    ));
+    const dec = rollPhaseDice(ch, "decoration", res.decoration, decDm);
+    applyOnce(ch, "decorationLogged", () => {
+      ch.log(ev.roll(
+        "Decoration", dec.roll, decDm,
+        typeof res.decoration === "number" ? res.decoration : 0,
+        dec.margin >= 0,
+        `${assignment} (margin ${dec.margin})`,
+      ));
+    });
     let effMargin = dec.margin;
     if (dec.margin < 0) {
       const target = typeof res.decoration === "number" ? res.decoration : 0;
@@ -410,18 +431,22 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       effMargin = mit.newMargin;
     }
     const tierAward = resolveDecorationTier(ch, effMargin);
-    if (tierAward) awardDecoration(ch, tierAward);
-    else if (effMargin <= -6) runCourtMartial(ch, assignment);
+    applyOnce(ch, "decorationApplied", () => {
+      if (tierAward) awardDecoration(ch, tierAward);
+      else if (effMargin <= -6) runCourtMartial(ch, assignment);
+    });
   }
 
   // --- Skills ---
   if (res.skills !== "none") {
-    const sk = rollVsTarget(res.skills, skillDm);
-    ch.log(ev.roll(
-      "Skills", sk.roll, skillDm,
-      typeof res.skills === "number" ? res.skills : 0,
-      sk.success, assignment,
-    ));
+    const sk = rollPhaseDice(ch, "skills", res.skills, skillDm);
+    applyOnce(ch, "skillsLogged", () => {
+      ch.log(ev.roll(
+        "Skills", sk.roll, skillDm,
+        typeof res.skills === "number" ? res.skills : 0,
+        sk.success, assignment,
+      ));
+    });
     let skMargin = sk.margin;
     if (!sk.success) {
       const target = typeof res.skills === "number" ? res.skills : 0;
@@ -435,19 +460,26 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       });
       skMargin = mit.newMargin;
     }
-    if (skMargin >= 0) rollMercenarySkill(ch);
-  }
-
-  if (combatAssignments.includes(assignment)) {
-    ch.requireAcgState().combatRibbons += 1;
-    ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
-    if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
-      ch.requireAcgState().commandClusters += 1;
-      ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
+    if (skMargin >= 0) {
+      applyOnce(ch, "skillsApplied", () => rollMercenarySkill(ch));
     }
   }
 
-  ch.requireAcgState().assignmentHistory.push(assignment);
+  applyOnce(ch, "combatRibbonsAwarded", () => {
+    if (combatAssignments.includes(assignment)) {
+      ch.requireAcgState().combatRibbons += 1;
+      ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
+      if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
+        ch.requireAcgState().commandClusters += 1;
+        ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
+      }
+    }
+  });
+
+  applyOnce(ch, "assignmentHistoryRecorded", () => {
+    ch.requireAcgState().assignmentHistory.push(assignment);
+  });
+  markComplete(ch);
 }
 
 function promptDecorationDmTradeoff(ch: Character): void {

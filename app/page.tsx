@@ -146,7 +146,17 @@ export default function Home() {
       commit(c, c.useAcg ? "acg_enlist" : "career");
       return;
     }
-    const r = c.doPreCareer(opt);
+    let r: ReturnType<typeof c.doPreCareer>;
+    try {
+      r = c.doPreCareer(opt);
+    } catch (err) {
+      // Interactive pre-career (OTC branch pick, college honors paths)
+      // throws ChoicePendingError; commit the clone with the queued
+      // choice in pendingChoices so the UI can present it.
+      if (!(err instanceof ChoicePendingError)) throw err;
+      commit(c, "pre_career");
+      return;
+    }
     // Record the auto-enlist pathway (used as a default on the enlist
     // screen) but DON'T route to enlist yet. Per PM p. 47, academy honors
     // graduates may chain into Medical or Flight School before service
@@ -285,8 +295,18 @@ export default function Home() {
     // basic chargen. ACG handles aging + reenlistment inside runAcgTerm
     // already, so we skip the duplicate aging call here for ACG characters.
     // The Int+Edu cap is still enforced in case homeworld defaults pushed
-    // the total over (rare, but possible at low Int/Edu).
-    if (!c.useAcg) c.enforceSkillCap();
+    // the total over (rare, but possible at low Int/Edu). In MT interactive
+    // mode the cap throws ChoicePendingError to prompt the player which
+    // skill to reduce — surface the choice via commit.
+    if (!c.useAcg) {
+      try {
+        c.enforceSkillCap();
+      } catch (err) {
+        if (!(err instanceof ChoicePendingError)) throw err;
+        commit(c, "term");
+        return;
+      }
+    }
     if (!c.useAcg && !c.deceased) c.doAging();
     if (c.deceased) {
       commit(c, "end");
@@ -342,8 +362,16 @@ export default function Home() {
    *  Called once skillPoints reach 0 and no cascade choices remain. */
   const finishTerm = (c: Character) => {
     // PM checklist: after the last skill pick, enforce the Int+Edu skill
-    // cap (PM p. 39), then age, then run reenlistment.
-    c.enforceSkillCap();
+    // cap (PM p. 39), then age, then run reenlistment. In MT interactive
+    // mode the cap throws ChoicePendingError to prompt the player which
+    // skill to reduce; commit so the UI surfaces it.
+    try {
+      c.enforceSkillCap();
+    } catch (err) {
+      if (!(err instanceof ChoicePendingError)) throw err;
+      commit(c, "term");
+      return;
+    }
     if (!c.deceased) c.doAging();
     if (c.deceased) {
       commit(c, "end");
@@ -421,11 +449,22 @@ export default function Home() {
     const cashDM = cashDmFor(c);
     const benefitsDM = benefitDmFor(c);
 
-    if (kind === "cash") {
-      c.musterOutCash(cashDM);
-      c.musterCashUsed += 1;
-    } else {
-      c.musterOutBenefit(benefitsDM);
+    try {
+      if (kind === "cash") {
+        c.musterOutCash(cashDM);
+        c.musterCashUsed += 1;
+      } else {
+        c.musterOutBenefit(benefitsDM);
+      }
+    } catch (err) {
+      // Benefit-table cells can resolve to a cascade (Blade/Gun) which
+      // throws ChoicePendingError in interactive mode. Commit the clone
+      // with the queued cascade choice in pendingChoices so the UI
+      // surfaces it. Don't decrement musterRolls — the choice resolution
+      // will complete the roll via resolvePending.
+      if (!(err instanceof ChoicePendingError)) throw err;
+      commit(c, "muster");
+      return;
     }
     c.musterRolls -= 1;
 
