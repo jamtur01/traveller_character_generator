@@ -346,7 +346,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             context: { source: "otcBranch" },
             onResolve: (c, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
-              c.acgState!.preCareerBranch = branch;
+              c.requireAcgState().preCareerBranch = branch;
               c.log(ev.promoted("O1", `OTC (${chosen})`));
             },
           });
@@ -447,17 +447,17 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         context: { source: "medicalCommission" },
         onResolve: (c, chosen) => {
           if (chosen === "Army") {
-            c.acgState!.preCareerBranch = "army";
+            c.requireAcgState().preCareerBranch = "army";
             c.acgPathway = "mercenary";
           } else if (chosen === "Scouts") {
             // Scout branch isn't a value in the union — store separately.
-            c.acgState!.preCareerBranch = null;
+            c.requireAcgState().preCareerBranch = null;
             c.acgPathway = "scout";
           } else if (chosen === "Merchants (Purser)") {
-            c.acgState!.preCareerBranch = "merchants";
+            c.requireAcgState().preCareerBranch = "merchants";
             c.acgPathway = "merchantPrince";
           } else {
-            c.acgState!.preCareerBranch = "navy";
+            c.requireAcgState().preCareerBranch = "navy";
             c.acgPathway = "navy";
           }
         },

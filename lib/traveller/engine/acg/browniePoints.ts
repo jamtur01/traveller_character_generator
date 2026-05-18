@@ -81,15 +81,15 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   if (need > maxSpend) {
     return { spent: 0, newMargin: req.margin };
   }
-  if (ch.acgState!.browniePoints < need) {
+  if (ch.requireAcgState().browniePoints < need) {
     return { spent: 0, newMargin: req.margin };
   }
-  ch.acgState!.browniePoints -= need;
-  ch.acgState!.browniePointsSpent += need;
+  ch.requireAcgState().browniePoints -= need;
+  ch.requireAcgState().browniePointsSpent += need;
   ch.log(ev.browniePoint(
     -need,
     `Mitigated ${req.rollName} failure (avoided: ${req.consequence})`,
-    ch.acgState!.browniePoints,
+    ch.requireAcgState().browniePoints,
   ));
   return { spent: need, newMargin: 0 };
 }
@@ -139,15 +139,15 @@ function queueBpReview(
       const m = chosen.match(/Spend (\d+) more/);
       const extra = m ? parseInt(m[1]!, 10) : 0;
       if (extra <= 0) return;
-      const actual = Math.min(extra, c.acgState!.browniePoints);
-      c.acgState!.browniePoints -= actual;
-      c.acgState!.browniePointsSpent += actual;
+      const actual = Math.min(extra, c.requireAcgState().browniePoints);
+      c.requireAcgState().browniePoints -= actual;
+      c.requireAcgState().browniePointsSpent += actual;
       c.log(ev.browniePoint(
         -actual,
         `Additional spend post-${req.rollName}`,
-        c.acgState!.browniePoints,
+        c.requireAcgState().browniePoints,
       ));
-      c.acgState!.lastBpExtraSpend = {
+      c.requireAcgState().lastBpExtraSpend = {
         rollName: req.rollName,
         spent: actual,
       };

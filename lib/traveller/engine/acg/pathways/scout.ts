@@ -95,11 +95,11 @@ export function scoutEnlist(ch: Character): void {
   // into the Field. Read pre-career state to honor these rules.
   if (hasCollege) {
     ch.log(ev.enlistmentAttempt("Imperial Scout Service (college graduate)", 0, 0, 0, true));
-    ch.acgState!.rankCode = hasCollegeHonors
+    ch.requireAcgState().rankCode = hasCollegeHonors
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
-    ch.acgState!.isOfficer = false;
-    ch.acgState!.division = "bureaucracy";
+    ch.requireAcgState().isOfficer = false;
+    ch.requireAcgState().division = "bureaucracy";
   } else {
     let dm = 0;
     for (const d of data.enlistment.dms) {
@@ -110,31 +110,31 @@ export function scoutEnlist(ch: Character): void {
     const succeeded = r + dm >= data.enlistment.target;
     ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
     if (succeeded) {
-      ch.acgState!.rankCode = data.enlistment.startingRank;
-      ch.acgState!.isOfficer = false;
+      ch.requireAcgState().rankCode = data.enlistment.startingRank;
+      ch.requireAcgState().isOfficer = false;
     } else {
       const dr = roll(1);
       if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
         throw new Error("Scout draft rejection — choose another path");
       }
       ch.drafted = true;
-      ch.acgState!.rankCode = data.enlistment.startingRank;
+      ch.requireAcgState().rankCode = data.enlistment.startingRank;
       ch.log(ev.drafted("Scout Service"));
     }
-    ch.acgState!.division = "field";
+    ch.requireAcgState().division = "field";
   }
   scoutAssignOffice(ch);
 }
 
 function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
-  const division: "field" | "bureaucracy" = ch.acgState!.division ?? "field";
-  ch.acgState!.division = division;
+  const division: "field" | "bureaucracy" = ch.requireAcgState().division ?? "field";
+  ch.requireAcgState().division = division;
   const r = Math.max(2, Math.min(12, roll(2)));
   const row = data.officeAssignment.rows.find((row) => row.die === r);
-  if (!row) { ch.acgState!.office = "Survey"; return; }
+  if (!row) { ch.requireAcgState().office = "Survey"; return; }
   const off = row[division];
-  ch.acgState!.office = typeof off === "string" ? off : "Survey";
+  ch.requireAcgState().office = typeof off === "string" ? off : "Survey";
   // acgState.office + acgState.division are read by subsequent assignment rolls.
 }
 
@@ -144,7 +144,7 @@ function scoutAssignOffice(ch: Character): void {
  *  receives the skill shown." */
 export function scoutInitialTraining(ch: Character): void {
   const data = dataFor(ch);
-  const office = ch.acgState!.office ?? "Survey";
+  const office = ch.requireAcgState().office ?? "Survey";
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
     ch.addSkill(skill, 1, `Initial Training (${office})`);
@@ -158,7 +158,7 @@ export function scoutInitialTraining(ch: Character): void {
 
 function scoutRollSkill(ch: Character): void {
   const data = dataFor(ch);
-  const division = ch.acgState!.division ?? "field";
+  const division = ch.requireAcgState().division ?? "field";
   const table = data.skillTables[division];
   const r = roll(1);
   const row = table.rows.find((row) => row.die === r);
@@ -187,16 +187,17 @@ function isScoutAdministratorRank(rankCode: string): boolean {
 }
 
 export function scoutRollAssignment(ch: Character): string {
+  const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (ch.acgState!.justRetained && ch.acgState!.retainedAssignment) {
-    const retained = ch.acgState!.retainedAssignment;
-    ch.acgState!.justRetained = false;
-    ch.acgState!.retainedAssignment = null;
+  if (acg.justRetained && acg.retainedAssignment) {
+    const retained = acg.retainedAssignment;
+    acg.justRetained = false;
+    acg.retainedAssignment = null;
     return retained;
   }
-  const division = ch.acgState!.division ?? "field";
+  const division = ch.requireAcgState().division ?? "field";
   const adminEligible = division === "bureaucracy" &&
-    isScoutAdministratorRank(ch.acgState!.rankCode);
+    isScoutAdministratorRank(ch.requireAcgState().rankCode);
   // Default to taking the DM; interactive mode exposes the choice.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
@@ -230,7 +231,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   // Transfer assignment (Field → Bureaucracy, per manual p. 56). The Scout
   // may decline; if declined, reroll once. If transfer is on the reroll, it
   // is mandatory. In auto mode we accept the transfer.
-  if (assignment === "Transfer" && ch.acgState!.division === "field") {
+  if (assignment === "Transfer" && ch.requireAcgState().division === "field") {
     const accept = scoutDecideTransfer(ch, /*onReroll*/ false);
     if (accept) {
       applyScoutTransferToBureaucracy(ch);
@@ -251,15 +252,15 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   // to a service school."
   if (assignment === "Training" && data.schoolAssignment) {
     routeScoutToSchool(ch);
-    ch.acgState!.assignmentHistory.push(assignment);
+    ch.requireAcgState().assignmentHistory.push(assignment);
     return;
   }
   // Resolution sub-table keyed by office.
-  const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
+  const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
     throw new Error(
-      `Scout: no resolution sub-table for office "${ch.acgState!.office}" ` +
+      `Scout: no resolution sub-table for office "${ch.requireAcgState().office}" ` +
       `(key "${officeKey}", edition: ${ch.editionId}).`,
     );
   }
@@ -267,7 +268,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   if (!resTable.columns.includes(assignmentCol)) {
     throw new Error(
       `Scout: assignment "${assignment}" (col "${assignmentCol}") not in ` +
-      `resolution columns for office "${ch.acgState!.office}" ` +
+      `resolution columns for office "${ch.requireAcgState().office}" ` +
       `(available: ${resTable.columns.join(", ")}).`,
     );
   }
@@ -303,9 +304,9 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
 
   // Bureaucracy → administrator rank ladder is climbed via promotion
   // throws. Field → no promotion possible. Per manual.
-  const division = ch.acgState!.division ?? "field";
+  const division = ch.requireAcgState().division ?? "field";
   if (division === "bureaucracy" && res.promotion !== "none" &&
-      !(ch.acgState!.isOfficer && ch.acgState!.promotedThisTerm)) {
+      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
     const pr = rollVsTarget(res.promotion, promoDm);
     let promoMargin = pr.margin;
     if (!pr.success) {
@@ -342,12 +343,12 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     scoutRollSkillFromColumn(ch, "specialOrWarMission");
   }
 
-  ch.acgState!.assignmentHistory.push(assignment);
+  ch.requireAcgState().assignmentHistory.push(assignment);
 }
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const data = dataFor(ch);
-  const division = ch.acgState!.division ?? "field";
+  const division = ch.requireAcgState().division ?? "field";
   const table = data.skillTables[division];
   if (!table.columns.includes(column)) {
     // Fallback to the office's normal column if the manual column isn't
@@ -365,7 +366,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
-  const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
+  const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
   const r = roll(1);
   const row = data.schoolAssignment.rows.find((row) => row.die === r);
   if (!row) return;
@@ -395,22 +396,22 @@ function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
 
 function applyScoutTransferToBureaucracy(ch: Character): void {
   const data = dataFor(ch);
-  const fromDivision = ch.acgState!.division ?? "field";
-  recordTransfer(ch.acgState!, "division", fromDivision, "bureaucracy",
-    ch.acgState!.yearsServed ?? 0);
-  const fromOffice = ch.acgState!.office ?? "";
-  ch.acgState!.division = "bureaucracy";
+  const fromDivision = ch.requireAcgState().division ?? "field";
+  recordTransfer(ch.requireAcgState(), "division", fromDivision, "bureaucracy",
+    ch.requireAcgState().yearsServed ?? 0);
+  const fromOffice = ch.requireAcgState().office ?? "";
+  ch.requireAcgState().division = "bureaucracy";
   // Reroll office assignment under the Bureaucracy division.
   const r = Math.max(2, Math.min(12, roll(2)));
   const row = data.officeAssignment.rows.find((row) => row.die === r);
   const off = row?.bureaucracy;
   const newOffice = typeof off === "string" ? off : "Technical";
-  recordTransfer(ch.acgState!, "office", fromOffice, newOffice,
-    ch.acgState!.yearsServed ?? 0);
-  ch.acgState!.office = newOffice;
+  recordTransfer(ch.requireAcgState(), "office", fromOffice, newOffice,
+    ch.requireAcgState().yearsServed ?? 0);
+  ch.requireAcgState().office = newOffice;
   // Bureaucracy has rank; ordinary rank becomes terms served.
   const termsServed = Math.max(1, ch.terms);
-  ch.acgState!.rankCode = `IS-${Math.min(9, termsServed)}`;
+  ch.requireAcgState().rankCode = `IS-${Math.min(9, termsServed)}`;
   ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
   // Resolve a fresh assignment in the new division.
   const nextAssign = scoutRollAssignment(ch);
@@ -426,21 +427,21 @@ function promoteScout(ch: Character): void {
   // allowed to receive one new skill. Ordinary rank allows a skill from the
   // appropriate office column or the scout life column; administrator rank
   // allows a skill from the administrator rank column."
-  if (!ch.acgState!.isOfficer) {
+  if (!ch.requireAcgState().isOfficer) {
     const codes = data.ranks.ordinary.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.acgState!.rankCode = codes[idx + 1]!;
+      ch.requireAcgState().rankCode = codes[idx + 1]!;
       ch.log(ev.promoted(data.ranks.ordinary[idx + 1]![1]));
       // Ordinary promotion: one skill from office column or scout life.
       scoutRollSkill(ch);
     }
   } else {
     const codes = data.ranks.administrator.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.acgState!.rankCode = codes[idx + 1]!;
-      ch.acgState!.promotedThisTerm = true;
+      ch.requireAcgState().rankCode = codes[idx + 1]!;
+      ch.requireAcgState().promotedThisTerm = true;
       ch.log(ev.promoted(data.ranks.administrator[idx + 1]![1]));
       // Administrator promotion: one skill from administrator rank column.
       scoutRollSkillFromColumn(ch, "administratorRank");
@@ -484,9 +485,9 @@ export function scoutRetention(ch: Character, _assignment: string): void {
 export function scoutReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   // Up-or-out: ordinary rank must be ≥ terms served.
-  const rankNum = parseInt(ch.acgState!.rankCode.replace("IS-", ""), 10) || 0;
-  if (!ch.acgState!.isOfficer && rankNum < ch.terms) {
-    ch.acgState!.reenlistDenialReason = "up-or-out: insufficient rank";
+  const rankNum = parseInt(ch.requireAcgState().rankCode.replace("IS-", ""), 10) || 0;
+  if (!ch.requireAcgState().isOfficer && rankNum < ch.terms) {
+    ch.requireAcgState().reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }
   const r = roll(2);

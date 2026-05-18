@@ -132,13 +132,13 @@ export function navyEnlist(
   }
   const data = dataFor(ch);
   const spec = data.enlistment[fleet];
-  ch.acgState!.fleet = fleet;
+  ch.requireAcgState().fleet = fleet;
 
   // Naval Academy / NOTC / Medical-School graduates: read the fleet
   // assignment from JSON (navy.preCareerFleetAssignment).
-  if (ch.acgState!.preCareerCommission) {
+  if (ch.requireAcgState().preCareerCommission) {
     const policy = data.preCareerFleetAssignment;
-    const schools = ch.acgState!.schoolsAttended;
+    const schools = ch.requireAcgState().schoolsAttended;
     let forcedFleet: typeof fleet | null = null;
     let forcedBranch: string | null = null;
     if (policy) {
@@ -152,8 +152,9 @@ export function navyEnlist(
         }
       }
       // Otherwise consider preCareerBranch (e.g. college NOTC → Reserve Fleet).
-      if (!forcedFleet && ch.acgState!.preCareerBranch) {
-        const entry = policy.byPreCareerBranch?.[ch.acgState!.preCareerBranch];
+      const branch = ch.requireAcgState().preCareerBranch;
+      if (!forcedFleet && branch) {
+        const entry = policy.byPreCareerBranch?.[branch];
         if (entry?.fleet) {
           forcedFleet = entry.fleet as typeof fleet;
           forcedBranch = entry.branch ?? forcedBranch;
@@ -162,24 +163,24 @@ export function navyEnlist(
     }
     if (forcedFleet && fleet !== forcedFleet) {
       const fromFleet = fleet ?? undefined;
-      ch.acgState!.fleet = forcedFleet;
+      ch.requireAcgState().fleet = forcedFleet;
       ch.log(ev.transferred(
         forcedFleet, "fleet", fromFleet,
         "academy/NOTC commission (PM p. 52)",
       ));
     } else {
-      ch.acgState!.fleet = forcedFleet ?? fleet;
+      ch.requireAcgState().fleet = forcedFleet ?? fleet;
     }
     // Medical School graduate joins the Medical Branch automatically.
     if (forcedBranch) {
-      ch.acgState!.branch = forcedBranch;
+      ch.requireAcgState().branch = forcedBranch;
       ch.log(ev.enlistmentAttempt(
-        `${ch.acgState!.fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.acgState!.rankCode})`,
+        `${ch.requireAcgState().fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.requireAcgState().rankCode})`,
         0, 0, 0, true,
       ));
     } else {
       ch.log(ev.enlistmentAttempt(
-        `${ch.acgState!.fleet} Navy (academy/NOTC, ${ch.acgState!.rankCode})`,
+        `${ch.requireAcgState().fleet} Navy (academy/NOTC, ${ch.requireAcgState().rankCode})`,
         0, 0, 0, true,
       ));
       navyAssignBranch(ch);
@@ -196,8 +197,8 @@ export function navyEnlist(
   const succeeded = r + dm >= spec.target;
   ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
   if (succeeded) {
-    ch.acgState!.rankCode = data.enlistment.startingRank;
-    ch.acgState!.isOfficer = data.enlistment.startingRank.startsWith("O");
+    ch.requireAcgState().rankCode = data.enlistment.startingRank;
+    ch.requireAcgState().isOfficer = data.enlistment.startingRank.startsWith("O");
   } else {
     // Try draft.
     const dr = roll(1);
@@ -206,9 +207,9 @@ export function navyEnlist(
       throw new Error("Navy draft rejection — choose another path");
     }
     ch.drafted = true;
-    ch.acgState!.fleet = "imperialNavy";
-    ch.acgState!.rankCode = data.enlistment.startingRank;
-    ch.acgState!.isOfficer = false;
+    ch.requireAcgState().fleet = "imperialNavy";
+    ch.requireAcgState().rankCode = data.enlistment.startingRank;
+    ch.requireAcgState().isOfficer = false;
     ch.log(ev.drafted("Imperial Navy"));
   }
 
@@ -221,13 +222,13 @@ function navyAssignBranch(ch: Character): void {
   // Medical/Flight School graduates: automatic branch (manual p. 52).
   // Social 9+ characters may also pick any branch — that's a player choice
   // exposed in pickOrDefer.
-  const schools = ch.acgState!.schoolsAttended;
+  const schools = ch.requireAcgState().schoolsAttended;
   if (schools.includes("medicalSchool")) {
-    ch.acgState!.branch = "Medical";
+    ch.requireAcgState().branch = "Medical";
     return;
   }
   if (schools.includes("flightSchool")) {
-    ch.acgState!.branch = "Flight";
+    ch.requireAcgState().branch = "Flight";
     return;
   }
   if (ch.attributes.social >= 9 && data.branches && ch.choiceMode === "interactive") {
@@ -238,11 +239,11 @@ function navyAssignBranch(ch: Character): void {
       kind: "navyBranch",
       label: "Choose your Naval branch (Social 9+ may select).",
       options: filtered,
-      onResolve: (c, branch) => { c.acgState!.branch = branch; },
+      onResolve: (c, branch) => { c.requireAcgState().branch = branch; },
     });
     return;
   }
-  const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
+  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.branchAssignment.dms, ch);
   let rolled: string | null = null;
   // Re-roll if the rolled branch is Technical Services in a fleet that
@@ -257,7 +258,7 @@ function navyAssignBranch(ch: Character): void {
       break;
     }
   }
-  ch.acgState!.branch = rolled ?? (ch.acgState!.isOfficer ? "Line" : "Crew");
+  ch.requireAcgState().branch = rolled ?? (ch.requireAcgState().isOfficer ? "Line" : "Crew");
   // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }
 
@@ -292,8 +293,8 @@ export function navyInitialTraining(ch: Character): void {
   // ineligible for Officer Staff Skills.
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const isAcademyOrNotcOfficer = ch.acgState!.isOfficer &&
-    ch.acgState!.preCareerCommission === true;
+  const isAcademyOrNotcOfficer = ch.requireAcgState().isOfficer &&
+    ch.requireAcgState().preCareerCommission === true;
   if (isAcademyOrNotcOfficer && ch.choiceMode === "interactive") {
     // Officers may choose Branch Skills or Officer Staff Skills for each
     // of the two initial-training rolls. Expose as a player choice.
@@ -332,7 +333,7 @@ function navyBranchSkillRoll(ch: Character): void {
   const row = data.branchSkills.rows.find((row) => row.die === r);
   if (!row) return;
   // Convert branch to column key.
-  const col = labelToColumnKey(ch.acgState!.branch ?? "Line");
+  const col = labelToColumnKey(ch.requireAcgState().branch ?? "Line");
   const candidates = [col, col === "line" ? "lineCrew" : col,
     col === "crew" ? "lineCrew" : col];
   let skill: string | undefined;
@@ -340,13 +341,13 @@ function navyBranchSkillRoll(ch: Character): void {
     const v = row[c];
     if (typeof v === "string") { skill = v; break; }
   }
-  if (skill) applyAcgSkillCell(ch, skill, `Navy ${ch.acgState!.branch ?? "Line"} branch skills`);
+  if (skill) applyAcgSkillCell(ch, skill, `Navy ${ch.requireAcgState().branch ?? "Line"} branch skills`);
 }
 
 /** Command Duty roll (officers only). */
 export function navyCommandDuty(ch: Character): void {
-  if (!ch.acgState!.isOfficer) {
-    ch.acgState!.inCommand = false;
+  if (!ch.requireAcgState().isOfficer) {
+    ch.requireAcgState().inCommand = false;
     return;
   }
   // Per manual: not consulting the table results in assignment to staff.
@@ -358,7 +359,7 @@ export function navyCommandDuty(ch: Character): void {
       options: ["Roll for command", "Take staff position"],
       onResolve: (c, choice) => {
         if (choice === "Take staff position") {
-          c.acgState!.inCommand = false;
+          c.requireAcgState().inCommand = false;
           return;
         }
         navyRollCommandDuty(c);
@@ -371,26 +372,27 @@ export function navyCommandDuty(ch: Character): void {
 
 function navyRollCommandDuty(ch: Character): void {
   const data = dataFor(ch);
-  const branch = ch.acgState!.branch ?? "Line";
+  const branch = ch.requireAcgState().branch ?? "Line";
   const row = data.commandDuty.rows.find((r) => r.branch === branch);
-  if (!row) { ch.acgState!.inCommand = false; return; }
+  if (!row) { ch.requireAcgState().inCommand = false; return; }
   const parsed = parseResolutionTarget(row.target);
-  if (parsed.target === "auto") { ch.acgState!.inCommand = true; return; }
-  if (typeof parsed.target !== "number") { ch.acgState!.inCommand = false; return; }
+  if (parsed.target === "auto") { ch.requireAcgState().inCommand = true; return; }
+  if (typeof parsed.target !== "number") { ch.requireAcgState().inCommand = false; return; }
   const dm = applyStructuredDms(data.commandDuty.dms, ch);
   const r = roll(2);
   const success = r + dm >= parsed.target;
   ch.log(ev.commandDuty(success, r, dm, parsed.target));
-  ch.acgState!.inCommand = success;
+  ch.requireAcgState().inCommand = success;
 }
 
 /** Roll the year's assignment from the navy assignment table. */
 export function navyRollAssignment(ch: Character): string {
+  const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (ch.acgState!.justRetained && ch.acgState!.retainedAssignment) {
-    const retained = ch.acgState!.retainedAssignment;
-    ch.acgState!.justRetained = false;
-    ch.acgState!.retainedAssignment = null;
+  if (acg.justRetained && acg.retainedAssignment) {
+    const retained = acg.retainedAssignment;
+    acg.justRetained = false;
+    acg.retainedAssignment = null;
     return retained;
   }
   const dm = applyStructuredDms(data.assignment.dms, ch);
@@ -403,7 +405,7 @@ export function navyRollAssignment(ch: Character): string {
 /** Resolve assignment. Branch picks which resolution sub-table to use. */
 export function navyResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  const branch = ch.acgState!.branch ?? "Line";
+  const branch = ch.requireAcgState().branch ?? "Line";
   const resKey = data.branchResolution?.[branch] ?? "lineCrew";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) {
@@ -426,12 +428,12 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     const rule = specials[assignment];
     if (rule) {
       if (assignment === "Frozen Watch") {
-        ch.acgState!.frozenWatchYears = (ch.acgState!.frozenWatchYears ?? 0) + 1;
+        ch.requireAcgState().frozenWatchYears = (ch.requireAcgState().frozenWatchYears ?? 0) + 1;
       }
       if (rule.physicalAgeDelta !== undefined) {
-        ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
+        ch.requireAcgState().physicalAgeOffset = (ch.requireAcgState().physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
       }
-      ch.acgState!.assignmentHistory.push(assignment);
+      ch.requireAcgState().assignmentHistory.push(assignment);
       if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
       return;
     }
@@ -449,7 +451,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       typeof res.decoration === "number") {
     promptDecorationDmTradeoff(ch);
   }
-  const decStrategy = ch.acgState!.decorationDmStrategy;
+  const decStrategy = ch.requireAcgState().decorationDmStrategy;
   const survDm = applyDmRules(resTable.dms, ch, "survival") + (decStrategy < 0 ? decStrategy : 0);
   const decDm = applyDmRules(resTable.dms, ch, "decoration") - (decStrategy < 0 ? decStrategy : 0);
   const promoDm = applyDmRules(resTable.dms, ch, "promotion");
@@ -482,9 +484,9 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const combatAssignments = data.combatAssignments ?? [];
   if (sv.margin === 0 && typeof res.survival === "number" &&
       combatAssignments.includes(assignment)) {
-    ch.acgState!.decorations.push("Purple Heart");
+    ch.requireAcgState().decorations.push("Purple Heart");
     ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
-    ch.acgState!.injuredThisYear = true;
+    ch.requireAcgState().injuredThisYear = true;
   }
 
   if (res.decoration !== "none") {
@@ -506,11 +508,11 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   }
 
   if (res.promotion !== "none" &&
-      !(ch.acgState!.isOfficer && res.promotionOfficersBarred) &&
-      !(ch.acgState!.isOfficer && ch.acgState!.promotedThisTerm)) {
-    const penalty = ch.acgState!.nextPromotionPenalty ?? 0;
+      !(ch.requireAcgState().isOfficer && res.promotionOfficersBarred) &&
+      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
+    const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
     const effectiveDm = promoDm + penalty;
-    if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
+    if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0;
     const pr = rollVsTarget(res.promotion, effectiveDm);
     let promoMargin = pr.margin;
     if (!pr.success) {
@@ -541,15 +543,15 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   }
 
   if (combatAssignments.includes(assignment)) {
-    ch.acgState!.combatRibbons += 1;
+    ch.requireAcgState().combatRibbons += 1;
     ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
-    if (ch.acgState!.inCommand && ch.acgState!.isOfficer) {
-      ch.acgState!.commandClusters += 1;
+    if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
+      ch.requireAcgState().commandClusters += 1;
       ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
     }
   }
 
-  ch.acgState!.assignmentHistory.push(assignment);
+  ch.requireAcgState().assignmentHistory.push(assignment);
 }
 
 function promptDecorationDmTradeoff(ch: Character): void {
@@ -561,43 +563,43 @@ function promptDecorationDmTradeoff(ch: Character): void {
     options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
       "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
     onResolve: (c, choice) => {
-      if (choice.startsWith("-2")) c.acgState!.decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) c.acgState!.decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) c.acgState!.decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) c.acgState!.decorationDmStrategy = 2;
-      else c.acgState!.decorationDmStrategy = 0;
+      if (choice.startsWith("-2")) c.requireAcgState().decorationDmStrategy = -2;
+      else if (choice.startsWith("-1")) c.requireAcgState().decorationDmStrategy = -1;
+      else if (choice.startsWith("+1")) c.requireAcgState().decorationDmStrategy = 1;
+      else if (choice.startsWith("+2")) c.requireAcgState().decorationDmStrategy = 2;
+      else c.requireAcgState().decorationDmStrategy = 0;
     },
   });
 }
 
 function promoteNavy(ch: Character): void {
   const data = dataFor(ch);
-  const fleet = ch.acgState!.fleet ?? "imperialNavy";
+  const fleet = ch.requireAcgState().fleet ?? "imperialNavy";
   const caps = data.rankCaps ?? { imperialNavy: 10, reserveFleet: 8, systemSquadron: 7 };
   const cap = caps[fleet as keyof typeof caps] ?? 10;
 
-  if (ch.acgState!.isOfficer) {
+  if (ch.requireAcgState().isOfficer) {
     const codes = data.ranks.officer.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     const targetIdx = Math.min(idx + 1, cap - 1);
     if (idx >= 0 && idx < targetIdx && targetIdx < codes.length) {
-      ch.acgState!.rankCode = codes[targetIdx]!;
-      ch.acgState!.promotedThisTerm = true;
+      ch.requireAcgState().rankCode = codes[targetIdx]!;
+      ch.requireAcgState().promotedThisTerm = true;
       ch.log(ev.promoted(data.ranks.officer[targetIdx]![1]));
     }
   } else {
     const codes = data.ranks.enlisted.map((r) => r[0]);
-    const idx = codes.indexOf(ch.acgState!.rankCode);
+    const idx = codes.indexOf(ch.requireAcgState().rankCode);
     if (idx >= 0 && idx < codes.length - 1) {
-      ch.acgState!.rankCode = codes[idx + 1]!;
+      ch.requireAcgState().rankCode = codes[idx + 1]!;
       ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
     }
   }
 }
 
 export function navyRetention(ch: Character, assignment: string): void {
-  if (ch.acgState!.justRetained) {
-    ch.acgState!.justRetained = false;
+  if (ch.requireAcgState().justRetained) {
+    ch.requireAcgState().justRetained = false;
     return;
   }
   // Per manual p. 53: "no one can be retained in the same assignment more
@@ -609,10 +611,10 @@ export function navyRetention(ch: Character, assignment: string): void {
     Record<string, { noRetention?: boolean }>;
   const r = roll(1);
   if (r === 6 && !specials[assignment]?.noRetention) {
-    ch.acgState!.retainedAssignment = assignment;
-    ch.acgState!.justRetained = true;
+    ch.requireAcgState().retainedAssignment = assignment;
+    ch.requireAcgState().justRetained = true;
   } else {
-    ch.acgState!.retainedAssignment = null;
+    ch.requireAcgState().retainedAssignment = null;
   }
 }
 
@@ -624,7 +626,7 @@ export function navySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialAssignments) return;
   const dm = applyStructuredDms(data.specialAssignments.dms, ch);
-  const col = ch.acgState!.isOfficer ? "officer" : "enlisted";
+  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const rollOnce = (): string | null => {
     const r = Math.max(1, Math.min(7, roll(1) + dm));
     const row = data.specialAssignments!.rows.find((row) => row.die === r);
@@ -646,13 +648,13 @@ export function navySpecialAssignment(ch: Character): void {
       return;
     }
   }
-  ch.acgState!.assignmentHistory.push(assignment);
+  ch.requireAcgState().assignmentHistory.push(assignment);
   applySpecialAssignment(ch, "navy", assignment);
 }
 
 export function navyReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const fleet = ch.acgState!.fleet ?? "imperialNavy";
+  const fleet = ch.requireAcgState().fleet ?? "imperialNavy";
   const spec = data.reenlistment.perFleet?.[fleet];
   if (!spec) {
     // Legacy single-target form (kept for back-compat).
@@ -661,8 +663,8 @@ export function navyReenlist(ch: Character): boolean {
     return r >= (data.reenlistment.target ?? 6);
   }
   let dm = 0;
-  const rankNum = parseInt(ch.acgState!.rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  const isOfficer = ch.acgState!.isOfficer;
+  const rankNum = parseInt(ch.requireAcgState().rankCode.replace(/[^\d]/g, ""), 10) || 0;
+  const isOfficer = ch.requireAcgState().isOfficer;
   for (const d of spec.dms) {
     // Structured form preferred.
     if (d.when) {

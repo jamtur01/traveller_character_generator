@@ -285,6 +285,19 @@ export class Character {
    *  Lazily initialized when ACG begins. */
   acgState: AcgState | null = null;
 
+  /** Non-null assertion helper for ACG pathway code. Pathway functions
+   *  are only called when the character is on an ACG path, so acgState
+   *  is guaranteed populated — but the field type allows null because
+   *  basic-chargen characters never set it. Use this once per function
+   *  to get a typed local `const acg = ch.requireAcgState()` and skip
+   *  the `ch.acgState!.X` chains. */
+  requireAcgState(): AcgState {
+    if (!this.acgState) {
+      throw new Error("requireAcgState called on non-ACG character");
+    }
+    return this.acgState;
+  }
+
   // Accessor surfaces for the PDF renderer / UI — these read/write
   // through acgState. The setters lazy-init acgState with a default
   // mercenary pathway so existing callers that poke at acgBranch /
