@@ -163,11 +163,11 @@ export function merchantEnlist(
   } else if (typeof parsed.target === "number") {
     const dm = applyStructuredDms(data.enlistment.dms, ch);
     const r = roll(2);
-    ch.logRaw(`Merchant enlist (${lineType}): ${r} + ${dm} vs ${parsed.target}`, "verbose");
-    if (r + dm < parsed.target) {
+    const succeeded = r + dm >= parsed.target;
+    ch.log(ev.roll(`Merchant enlist (${lineType})`, r, dm, parsed.target, succeeded));
+    if (!succeeded) {
       throw new Error(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
     }
-    ch.logRaw(`Enlisted in ${lineType} merchant line.`);
   }
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
   // Merchants as Purser Department Medic per PM p. 47). Otherwise default

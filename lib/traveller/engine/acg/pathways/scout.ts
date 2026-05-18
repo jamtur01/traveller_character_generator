@@ -106,8 +106,9 @@ export function scoutEnlist(ch: Character): void {
       if (ch.attributes[attr] >= d.min) dm += d.dm;
     }
     const r = roll(2);
-    ch.logRaw(`Scout enlist: ${r} + ${dm} vs ${data.enlistment.target}`, "verbose");
-    if (r + dm >= data.enlistment.target) {
+    const succeeded = r + dm >= data.enlistment.target;
+    ch.log(ev.roll("Scout enlist", r, dm, data.enlistment.target, succeeded));
+    if (succeeded) {
       ch.logRaw("Enlisted in the Imperial Scout Service.");
       ch.acgState!.rankCode = data.enlistment.startingRank;
       ch.acgState!.isOfficer = false;
@@ -455,10 +456,9 @@ export function scoutFinalizeMuster(ch: Character): void {
   if (ch.acgState.office !== "Detached Duty") return;
   const r = roll(2);
   const dm = ch.terms;
-  if (r + dm < 9) {
-    ch.logRaw(`Detached Duty roll ${r} + ${dm} vs 9+ — no permanent detached duty.`, "verbose");
-    return;
-  }
+  const succeeded = r + dm >= 9;
+  ch.log(ev.roll("Detached Duty", r, dm, 9, succeeded));
+  if (!succeeded) return;
   ch.logRaw("Awarded permanent Detached Duty (PM p. 57).");
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {

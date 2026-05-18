@@ -624,13 +624,13 @@ export function mercenaryReenlist(ch: Character): boolean {
   const spec = data.reenlistment[svc];
   const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);
-  ch.logRaw(`Mercenary reenlist (${svc}): ${r} + ${dm} vs ${spec.target}`, "verbose");
+  const keep = r + dm >= spec.target;
+  ch.log(ev.roll(`Mercenary reenlist (${svc})`, r, dm, spec.target, keep));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerArmChange(ch, data);
     return true;
   }
-  const keep = r + dm >= spec.target;
   if (keep) offerArmChange(ch, data);
   return keep;
 }
