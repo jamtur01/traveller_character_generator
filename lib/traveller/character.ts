@@ -51,11 +51,32 @@ export class Character {
   showHistory: ShowHistory = "simple";
   terms = 0;
   credits = 0;
-  history: string[] = [];
-  /** Structured event log. Each entry mirrors a `history` push (plus
-   *  extra structure for typed events). HistoryPanel renders from here
-   *  when available, falling back to `history` for legacy entries. */
+  /** Structured event log — the source-of-truth for all chargen history.
+   *  The legacy `history` accessor below renders these on demand using
+   *  the current `showHistory` level. Consumers that need a different
+   *  visibility level should call `renderHistory(level)` directly. */
   events: HistoryEvent[] = [];
+
+  /** Render the typed event log to formatted strings, filtered to the
+   *  given level (defaults to this.showHistory). `none` matches the
+   *  legacy filter semantics — events accumulate but the display gate
+   *  (toString / sheet rendering) hides them. */
+  renderHistory(level: ShowHistory = this.showHistory): string[] {
+    const out: string[] = [];
+    for (const e of this.events) {
+      if (e.level === "debug" && level !== "debug") continue;
+      if (e.level === "verbose" && level === "simple") continue;
+      out.push(formatEvent(e));
+    }
+    return out;
+  }
+
+  /** Legacy accessor — derives from `events` each read. Existing
+   *  consumers (PDF, sheet, tests) still call `.history`; new code
+   *  should prefer `renderHistory()` or read events directly. */
+  get history(): string[] {
+    return this.renderHistory();
+  }
   benefits: string[] = [];
   ship = false;
   TAS = false;
@@ -684,12 +705,10 @@ export class Character {
   // import the event factory; they are thin shims over `log()`, not
   // independent paths.
 
-  /** Canonical single entry point for all chargen history. */
+  /** Canonical single entry point for all chargen history. Pushes to
+   *  the typed `events` array; `history` derives from it on read. */
   log(e: HistoryEvent) {
     this.events.push(e);
-    if (e.level === "debug" && this.showHistory !== "debug") return;
-    if (e.level === "verbose" && this.showHistory === "simple") return;
-    this.history.push(formatEvent(e));
   }
 
   /**
@@ -1526,7 +1545,6 @@ export function cloneCharacter(c: Character): Character {
   next.attributes = { ...c.attributes };
   next.skills = c.skills.map(([n, l]) => [n, l] as Skill);
   next.benefits = [...c.benefits];
-  next.history = [...c.history];
   next.events = [...c.events];
   next.musterLog = [...c.musterLog];
   // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate

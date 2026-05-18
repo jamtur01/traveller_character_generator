@@ -10,24 +10,24 @@ describe("cloneCharacter", () => {
     expect(b instanceof Character).toBe(true);
   });
 
-  it("deep-copies attributes/skills/benefits/history/musterLog", () => {
+  it("deep-copies attributes/skills/benefits/events/musterLog", () => {
     const a = new Character();
     a.skills = [["Pilot", 1]];
     a.benefits = ["High Passage"];
-    a.history = ["Enlisted"];
+    a.events = [{ kind: "raw", level: "simple", text: "Enlisted" }];
     a.musterLog = ["Cr5,000 cash"];
 
     const b = cloneCharacter(a);
     b.attributes.strength = 99;
     b.skills.push(["Vacc Suit", 1]);
     b.benefits.push("Low Passage");
-    b.history.push("Another");
+    b.events.push({ kind: "raw", level: "simple", text: "Another" });
     b.musterLog.push("Another");
 
     expect(a.attributes.strength).not.toBe(99);
     expect(a.skills).toHaveLength(1);
     expect(a.benefits).toHaveLength(1);
-    expect(a.history).toHaveLength(1);
+    expect(a.events).toHaveLength(1);
     expect(a.musterLog).toHaveLength(1);
   });
 

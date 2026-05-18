@@ -81,7 +81,7 @@ function freshCharacter(editionId: string, svc: ServiceKey): Character {
   };
   c.skills = [];
   c.benefits = [];
-  c.history = [];
+  c.events = [];
   c.musterLog = [];
   c.bladeBenefit = "";
   c.gunBenefit = "";
