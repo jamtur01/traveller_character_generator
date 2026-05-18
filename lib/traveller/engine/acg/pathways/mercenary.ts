@@ -31,11 +31,11 @@ import {
   type StructuredDm,
 } from "../tables";
 import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
-import { tryMitigate } from "../browniePoints";
 import { applyMercenarySchool } from "../schools";
 import {
-  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+  applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
+import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../types";
 
@@ -266,220 +266,206 @@ export function mercenaryRollAssignment(ch: Character): string {
   return assignment;
 }
 
-/** Resolve one assignment (survival → decoration → promotion → skills).
- *  Updates Character state in place. */
+// PM p. 64 Mercenary checklist order: Survival → Promotion → Decoration
+// → Skills. (The prose at p. 49 lists "survival, decoration, promotion,
+// and skills" but the checklist on p. 64 is authoritative.) Phase order
+// matters: promotion-conferred command status can affect court-martial
+// dm and a promotion consumes the term's promote slot before a
+// decoration could trigger one.
+const MERCENARY_SPEC: PathwaySpec = {
+  preRun: (ctx) => {
+    // Interactive decoration-DM tradeoff prompt — runs once before
+    // dice are rolled.
+    if (ctx.ch.choiceMode === "interactive" &&
+        ctx.res.decoration !== "none" &&
+        typeof ctx.res.survival === "number" &&
+        typeof ctx.res.decoration === "number") {
+      promptDecorationDmTradeoff(ctx.ch);
+    }
+  },
+  phases: [
+    {
+      phase: "survival",
+      target: (ctx) => ctx.res.survival,
+      dm: (ctx) => ctx.dms.survival,
+      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+        "Survival", r.roll, r.dm,
+        typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        r.success, ctx.assignment,
+      )),
+      mitigation: (ctx, r) => ({
+        rollName: "survival",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        margin: r.margin,
+        consequence: "Invalided out of Mercenary service",
+        onMitigated: (c) => {
+          c.resumeActive();
+          c.log(ev.statusChange("revived", "BP spend saved Mercenary survival"));
+        },
+      }),
+      onFail: () => ({
+        endChargen: { kind: "retired", reason: "invalided out of Mercenary service" },
+      }),
+      onExact: (ctx) => {
+        // Combat-assignment Purple Heart on a just-pass.
+        const data = dataFor(ctx.ch);
+        if (typeof ctx.res.survival !== "number") return;
+        if (!(data.combatAssignments ?? []).includes(ctx.assignment)) return;
+        ctx.ch.requireAcgState().decorations.push("Purple Heart");
+        ctx.ch.log(ev.decoration("Purple Heart", `Wounded in ${ctx.assignment}`));
+        ctx.ch.requireAcgState().injuredThisYear = true;
+      },
+    },
+    {
+      phase: "promotion",
+      skip: (ctx) => {
+        const acg = ctx.ch.requireAcgState();
+        return ctx.res.promotion === "none"
+          || (acg.isOfficer && ctx.res.promotionOfficersBarred === true)
+          || (acg.isOfficer && acg.promotedThisTerm);
+      },
+      target: (ctx) => ctx.res.promotion,
+      dm: (ctx) => {
+        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
+        return ctx.dms.promotion + penalty;
+      },
+      logRoll: (ctx, r) => {
+        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
+        ctx.ch.log(ev.roll(
+          "Promotion", r.roll, r.dm,
+          typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
+          r.success,
+          `${ctx.assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
+        ));
+        // Consume the reprimand penalty (idempotent: only fires once
+        // because logRoll is gated by applyOnce).
+        if (penalty < 0) ctx.ch.requireAcgState().nextPromotionPenalty = 0;
+      },
+      mitigation: (ctx, r) => ({
+        rollName: "promotion",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
+        margin: r.margin,
+        consequence: "Earn promotion",
+      }),
+      onPass: (ctx) => promoteMercenary(ctx.ch),
+    },
+    {
+      phase: "decoration",
+      skip: (ctx) => ctx.res.decoration === "none",
+      target: (ctx) => ctx.res.decoration,
+      dm: (ctx) => ctx.dms.decoration,
+      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+        "Decoration", r.roll, r.dm,
+        typeof ctx.res.decoration === "number" ? ctx.res.decoration : 0,
+        r.margin >= 0,
+        `${ctx.assignment} (margin ${r.margin})`,
+      )),
+      mitigation: (ctx, r) => ({
+        rollName: "decoration",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.decoration === "number" ? ctx.res.decoration : 0,
+        margin: r.margin,
+        consequence: r.margin <= -6 ? "Avoid court-martial referral" : "Earn MCUF",
+      }),
+      onPass: (ctx, r) => {
+        // The cached margin reflects post-mit; resolveDecorationTier
+        // needs to consume the same value.
+        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
+        const margin = cached?.marginAfterMit ?? r.margin;
+        const tier = resolveDecorationTier(ctx.ch, margin);
+        if (tier) awardDecoration(ctx.ch, tier);
+      },
+      onFail: (ctx, r) => {
+        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
+        const margin = cached?.marginAfterMit ?? r.margin;
+        const tier = resolveDecorationTier(ctx.ch, margin);
+        if (tier) {
+          awardDecoration(ctx.ch, tier);
+        } else if (margin <= -6) {
+          runCourtMartial(ctx.ch, ctx.assignment);
+        }
+      },
+    },
+    {
+      phase: "skills",
+      skip: (ctx) => ctx.res.skills === "none",
+      target: (ctx) => ctx.res.skills,
+      dm: (ctx) => ctx.dms.skills,
+      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+        "Skills", r.roll, r.dm,
+        typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
+        r.success, ctx.assignment,
+      )),
+      mitigation: (ctx, r) => ({
+        rollName: "skills",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
+        margin: r.margin,
+        consequence: "Earn a skill this assignment",
+      }),
+      onPass: (ctx) => rollMercenarySkill(ctx.ch),
+    },
+  ],
+  finalize: (ctx) => {
+    const data = dataFor(ctx.ch);
+    const combat = (data.combatAssignments ?? []).includes(ctx.assignment);
+    if (combat) {
+      ctx.ch.requireAcgState().combatRibbons += 1;
+      ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
+      const acg = ctx.ch.requireAcgState();
+      if (acg.inCommand && acg.isOfficer) {
+        acg.commandClusters += 1;
+        ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
+      }
+    }
+    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
+  },
+};
+
+/** Resolve one assignment (survival → promotion → decoration → skills).
+ *  Updates Character state in place via the declarative phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
-  // Reset per-year sub-step cache if a prior resolveAssignment ran to
-  // completion (the runner clears at year boundary, but direct test
-  // invocation can call us multiple times in the same notional year).
-  resetIfComplete(ch);
   const data = dataFor(ch);
   const arm = ch.requireAcgState().combatArm ?? "Infantry";
   const resKey = data.combatArmResolution?.[arm] ?? "commando";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
 
-  // Some assignments don't appear in resTable.columns (e.g., "Garrison",
-  // "Ship's Troops" exist; "Special Duty" doesn't — that's handled in the
-  // caller). Map the assignment label to a column key.
+  // Garrison-style escape: assignments not in resTable.columns survive
+  // with no decoration or skills.
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    // Garrison Duty: per manual, characters survive with no decoration or
-    // skills. Treat unrecognised assignments as garrison. The original
-    // ev.assignmentRolled fired in the runner; this just annotates the
-    // resolution outcome.
-    ch.log(ev.raw(
-      `${assignment}: garrison-style — automatic survival, no rewards`,
-      "verbose",
-    ));
-    ch.requireAcgState().assignmentHistory.push(assignment);
+    resetIfComplete(ch);
+    applyOnce(ch, "garrisonRecorded", () => {
+      ch.log(ev.raw(
+        `${assignment}: garrison-style — automatic survival, no rewards`,
+        "verbose",
+      ));
+      ch.requireAcgState().assignmentHistory.push(assignment);
+    });
+    markComplete(ch);
     return;
   }
   const res = lookupResolution(resTable, assignment);
 
-  // Decoration DM strategy: player may take negative survival DM in
-  // exchange for positive decoration DM. Interactive mode exposes the
-  // choice before the assignment is resolved.
-  if (ch.choiceMode === "interactive" &&
-      res.decoration !== "none" &&
-      typeof res.survival === "number" &&
-      typeof res.decoration === "number") {
-    promptDecorationDmTradeoff(ch);
-  }
+  // decorationDmStrategy maps to survival/decoration DM offsets. Negative
+  // strategy = take -N on survival, +N on decoration.
   const decStrategy = ch.requireAcgState().decorationDmStrategy;
   const survivalDmFromStrategy = -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
-  // ^ negative strategy (e.g., -2) means apply -2 to survival and +2 to deco.
-
-  const survDm = applyDmRules(resTable.dms, ch, "survival") + survivalDmFromStrategy;
-  const decDm = applyDmRules(resTable.dms, ch, "decoration") + Math.abs(decStrategy) * (decStrategy < 0 ? 1 : -1);
-  const promoDm = applyDmRules(resTable.dms, ch, "promotion");
-  const skillDm = applyDmRules(resTable.dms, ch, "skills");
-
-  // --- Survival ---
-  const sv = rollPhaseDice(ch, "survival", res.survival, survDm);
-  applyOnce(ch, "survivalLogged", () => {
-    ch.log(ev.roll(
-      "Survival", sv.roll, survDm,
-      typeof res.survival === "number" ? res.survival : 0,
-      sv.success, assignment,
-    ));
-  });
-  if (!sv.success) {
-    // Try brownie-point mitigation before invaliding out. The onMitigated
-    // callback (F16) reverses the muster-out if the player later spends
-    // enough BPs via the interactive review prompt to push the margin to
-    // ≥ 0. activeDuty toggles back to true on revival.
-    const mit = tryMitigate(ch, {
-      rollName: "survival",
-      rollValue: sv.roll,
-      dm: survDm,
-      target: typeof res.survival === "number" ? res.survival : 0,
-      margin: sv.margin,
-      consequence: "Invalided out of Mercenary service",
-      onMitigated: (c) => {
-        c.resumeActive();
-        c.log(ev.statusChange("revived", "BP spend saved Mercenary survival"));
-      },
-    });
-    if (mit.newMargin < 0) {
-      applyOnce(ch, "survivalEndChargen", () => {
-        ch.endChargenRetired("invalided out of Mercenary service");
-      });
-      return;
-    }
-    // Survived via brownie point spending.
-  }
-  const combatAssignments = data.combatAssignments ?? [];
-  if (sv.margin === 0 && typeof res.survival === "number") {
-    // Survival rolled exactly: combat wound → Purple Heart (no BP).
-    if (combatAssignments.includes(assignment)) {
-      applyOnce(ch, "purpleHeartAwarded", () => {
-        ch.requireAcgState().decorations.push("Purple Heart");
-        ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
-        ch.requireAcgState().injuredThisYear = true;
-      });
-    }
-  }
-
-  // PM p. 64 Mercenary checklist order: Survival → Promotion → Decoration
-  // → Skills. (The prose at p. 49 lists "survival, decoration, promotion,
-  // and skills" but the checklist on p. 64 is authoritative for resolution
-  // order.) The order matters because promotion-conferred command status
-  // can affect court-martial dm and a promotion may consume the term's
-  // promote slot before a decoration triggers a court-martial roll.
-
-  // --- Promotion ---
-  if (res.promotion !== "none" &&
-      !(ch.requireAcgState().isOfficer && res.promotionOfficersBarred) &&
-      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
-    const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
-    const effectiveDm = promoDm + penalty;
-    applyOnce(ch, "promotionPenaltyConsumed", () => {
-      if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0; // consumed
-    });
-    const pr = rollPhaseDice(ch, "promotion", res.promotion, effectiveDm);
-    applyOnce(ch, "promotionLogged", () => {
-      ch.log(ev.roll(
-        "Promotion", pr.roll, effectiveDm,
-        typeof res.promotion === "number" ? res.promotion : 0,
-        pr.success,
-        `${assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
-      ));
-    });
-    let promoMargin = pr.margin;
-    if (!pr.success) {
-      const target = typeof res.promotion === "number" ? res.promotion : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "promotion",
-        rollValue: pr.roll,
-        dm: effectiveDm,
-        target,
-        margin: pr.margin,
-        consequence: "Earn promotion",
-      });
-      promoMargin = mit.newMargin;
-    }
-    if (promoMargin >= 0) {
-      applyOnce(ch, "promotionApplied", () => promoteMercenary(ch));
-    }
-  }
-
-  // --- Decoration ---
-  if (res.decoration !== "none") {
-    const dec = rollPhaseDice(ch, "decoration", res.decoration, decDm);
-    applyOnce(ch, "decorationLogged", () => {
-      ch.log(ev.roll(
-        "Decoration", dec.roll, decDm,
-        typeof res.decoration === "number" ? res.decoration : 0,
-        dec.margin >= 0,
-        `${assignment} (margin ${dec.margin})`,
-      ));
-    });
-    let effMargin = dec.margin;
-    if (dec.margin < 0) {
-      const target = typeof res.decoration === "number" ? res.decoration : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "decoration",
-        rollValue: dec.roll,
-        dm: decDm,
-        target,
-        margin: dec.margin,
-        consequence: dec.margin <= -6
-          ? "Avoid court-martial referral"
-          : "Earn MCUF",
-      });
-      effMargin = mit.newMargin;
-    }
-    const tierAward = resolveDecorationTier(ch, effMargin);
-    applyOnce(ch, "decorationApplied", () => {
-      if (tierAward) awardDecoration(ch, tierAward);
-      else if (effMargin <= -6) runCourtMartial(ch, assignment);
-    });
-  }
-
-  // --- Skills ---
-  if (res.skills !== "none") {
-    const sk = rollPhaseDice(ch, "skills", res.skills, skillDm);
-    applyOnce(ch, "skillsLogged", () => {
-      ch.log(ev.roll(
-        "Skills", sk.roll, skillDm,
-        typeof res.skills === "number" ? res.skills : 0,
-        sk.success, assignment,
-      ));
-    });
-    let skMargin = sk.margin;
-    if (!sk.success) {
-      const target = typeof res.skills === "number" ? res.skills : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "skills",
-        rollValue: sk.roll,
-        dm: skillDm,
-        target,
-        margin: sk.margin,
-        consequence: "Earn a skill this assignment",
-      });
-      skMargin = mit.newMargin;
-    }
-    if (skMargin >= 0) {
-      applyOnce(ch, "skillsApplied", () => rollMercenarySkill(ch));
-    }
-  }
-
-  applyOnce(ch, "combatRibbonsAwarded", () => {
-    if (combatAssignments.includes(assignment)) {
-      ch.requireAcgState().combatRibbons += 1;
-      ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
-      if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
-        ch.requireAcgState().commandClusters += 1;
-        ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
-      }
-    }
-  });
-
-  applyOnce(ch, "assignmentHistoryRecorded", () => {
-    ch.requireAcgState().assignmentHistory.push(assignment);
-  });
-  markComplete(ch);
+  const dms = {
+    survival: applyDmRules(resTable.dms, ch, "survival") + survivalDmFromStrategy,
+    decoration: applyDmRules(resTable.dms, ch, "decoration")
+      + Math.abs(decStrategy) * (decStrategy < 0 ? 1 : -1),
+    promotion: applyDmRules(resTable.dms, ch, "promotion"),
+    skills: applyDmRules(resTable.dms, ch, "skills"),
+  };
+  runPhases(MERCENARY_SPEC, { ch, assignment, resTable, res, dms });
 }
 
 function promptDecorationDmTradeoff(ch: Character): void {
