@@ -289,9 +289,7 @@ function applyShipBenefit(
     if (ch.mortgage > 0) {
       const paid = Math.min(ch.mortgage, detail.repeatReducesMortgageYears);
       ch.mortgage -= paid;
-      ch.logRaw(
-        `${paid} years of ${label} mortgage paid off`,
-      "verbose");
+      ch.log(ev.mortgagePayoff(label, paid));
     } else {
       ch.logRaw("No benefit", "debug");
     }

@@ -224,12 +224,10 @@ function navyAssignBranch(ch: Character): void {
   const schools = ch.acgState!.schoolsAttended;
   if (schools.includes("medicalSchool")) {
     ch.acgState!.branch = "Medical";
-    ch.logRaw("Navy branch (auto from Medical School): Medical", "verbose");
     return;
   }
   if (schools.includes("flightSchool")) {
     ch.acgState!.branch = "Flight";
-    ch.logRaw("Navy branch (auto from Flight School): Flight", "verbose");
     return;
   }
   if (ch.attributes.social >= 9 && data.branches && ch.choiceMode === "interactive") {
@@ -260,7 +258,7 @@ function navyAssignBranch(ch: Character): void {
     }
   }
   ch.acgState!.branch = rolled ?? (ch.acgState!.isOfficer ? "Line" : "Crew");
-  ch.logRaw(`Navy branch: ${ch.acgState!.branch}`, "verbose");
+  // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }
 
 /** F7: PM p. 52 — "The Technical Services branch exists only in the
