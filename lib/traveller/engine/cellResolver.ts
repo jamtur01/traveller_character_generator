@@ -239,7 +239,7 @@ export function applyCell(
     const detail = benefitDetails?.[label];
     if (detail?.repeat === "no effect" || label === "Watch" || label === "Instruments") {
       if (ch.benefits.indexOf(label) > -1) {
-        ch.logRaw("No benefit", "debug");
+        ch.log(ev.noEffect(`repeat ${label} (non-stackable)`));
         return;
       }
       ch.addBenefit(label);
@@ -291,13 +291,13 @@ function applyShipBenefit(
       ch.mortgage -= paid;
       ch.log(ev.mortgagePayoff(label, paid));
     } else {
-      ch.logRaw("No benefit", "debug");
+      ch.log(ev.noEffect(`repeat ${label} but mortgage already paid`));
     }
     return;
   }
 
   if (already) {
-    ch.logRaw("No benefit", "debug");
+    ch.log(ev.noEffect(`repeat ${label} (already owned)`));
     return;
   }
   ch.addBenefit(label);
