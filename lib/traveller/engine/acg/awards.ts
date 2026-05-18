@@ -157,7 +157,11 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
     for (let i = 0; i < dieN; i++) gr += roll(1);
     const baseTotal = gr + dm;
     let total = baseTotal;
-    if (o.browniePointsAllowed && ch.acgState) {
+    // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
+    // PM p. 46 allows any number on a life-or-death roll, so auto modes
+    // spend the full amount needed.
+    if (o.browniePointsAllowed && ch.acgState
+        && ch.acgState.bpAutoPolicy !== "manual") {
       while (total < o.avoidTarget && ch.acgState.browniePoints > 0) {
         ch.acgState.browniePoints -= 1;
         ch.acgState.browniePointsSpent += 1;
@@ -187,7 +191,9 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   let dieTotal = 0;
   for (let i = 0; i < dieN; i++) dieTotal += roll(1);
   let r = dieTotal + dm;
-  if (ch.acgState) {
+  // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
+  // Auto modes drive the result toward Dismissed (r=1) within available BP.
+  if (ch.acgState && ch.acgState.bpAutoPolicy !== "manual") {
     while (r > 1 && ch.acgState.browniePoints > 0) {
       ch.acgState.browniePoints -= 1;
       ch.acgState.browniePointsSpent += 1;

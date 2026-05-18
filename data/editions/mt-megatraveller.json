@@ -414,6 +414,7 @@
       },
       "survivalDm": -1,
       "nobleSurvivalDm": -2,
+      "nobleService": "nobles",
       "agingAutoSavesPerTerm": 2,
       "cashRollCap": 2,
       "retry": {

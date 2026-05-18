@@ -26,12 +26,10 @@ export function doReenlistmentStep(ch: Character): void {
     if (!keep) {
       const reason = ch.acgState.reenlistDenialReason;
       delete ch.acgState.reenlistDenialReason;
-      // Denied: chargen continues to muster-out, so we don't fire
-      // endChargen* — just record the reenlist outcome and let the
-      // status flip to mustered when the UI rolls benefits.
-      ch.chargenStatus = { kind: "retired", reason: reason ?? "denied reenlistment" };
-      ch.endedAsRetired = ch.isRetirementEligible();
+      // The reenlistment event captures the per-roll context; endChargen*
+      // emits the canonical endGeneration marker. Both belong in events[].
       ch.log(ev.reenlistment("denied", undefined, undefined, reason));
+      ch.endChargenRetired(reason ?? "denied reenlistment");
     } else if (ch.mandatoryReenlistment) {
       ch.log(ev.reenlistment("mandatory"));
     } else {
@@ -53,16 +51,14 @@ export function doReenlistmentStep(ch: Character): void {
   const cap = reenlistRules?.mandatoryRetireAfterTerm ?? 7;
   const voluntaryAnyTerms = reenlistRules?.voluntaryAnyTerms === true;
   if (ch.terms >= cap && !voluntaryAnyTerms) {
-    ch.endedAsRetired = true;
-    ch.chargenStatus = { kind: "retired", reason: "mandatory retirement" };
     ch.log(ev.reenlistment("retired", reenlistRoll, target));
+    ch.endChargenRetired("mandatory retirement", true);
     return;
   }
   if (def.inverseReenlist) {
     if (reenlistRoll >= target) {
-      ch.endedAsRetired = ch.isRetirementEligible();
-      ch.chargenStatus = { kind: "retired", reason: "released from service" };
       ch.log(ev.reenlistment("released", reenlistRoll, target));
+      ch.endChargenRetired("released from service");
     } else {
       ch.log(ev.reenlistment("heldOver", reenlistRoll, target));
     }
@@ -72,9 +68,8 @@ export function doReenlistmentStep(ch: Character): void {
     // PM p. 17: a character denied reenlistment after 5+ terms still
     // retires (and gets the cash-table +1 retirement DM), unless their
     // service is on the no-retirement excludedServices list.
-    ch.endedAsRetired = ch.isRetirementEligible();
-    ch.chargenStatus = { kind: "retired", reason: "denied reenlistment" };
     ch.log(ev.reenlistment("denied", reenlistRoll, target));
+    ch.endChargenRetired("denied reenlistment");
     return;
   }
   // The throw only determines eligibility. The player still gets to

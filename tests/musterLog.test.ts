@@ -69,6 +69,10 @@ describe("musterOutBenefit — outcome descriptions", () => {
 
 describe("doBladeBenefit — second occurrence promotes to skill", () => {
   it("first call adds benefit + skill-0; second call bumps skill to 1", () => {
+    // Pin Math.random so the blade pick is deterministic — otherwise the
+    // optional-chain assertions below mask any regression that picks
+    // nothing at all.
+    vi.spyOn(Math, "random").mockReturnValue(0);
     const c = new Character();
     c.service = "marines";
     // First call sets blade benefit + skill-0.
@@ -82,6 +86,7 @@ describe("doBladeBenefit — second occurrence promotes to skill", () => {
     c.doBladeBenefit();
     expect(c.benefits.filter((b) => b === chosen)).toHaveLength(1);
     expect(c.skills.find(([n]) => n === chosen)?.[1]).toBe(1);
+    vi.restoreAllMocks();
   });
 });
 

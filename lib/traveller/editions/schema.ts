@@ -128,7 +128,25 @@ export const RulesSchema = z.object({
     noCommissionFirstTerm: z.boolean().optional(),
   }).optional(),
   // Anagathics availability + survival DM.
-  anagathics: z.unknown().optional(),
+  anagathics: z.object({
+    eligibility: z.object({
+      minAge: z.number().optional(),
+      minTerms: z.number().optional(),
+    }).passthrough().optional(),
+    availability: z.object({
+      target: z.number().optional(),
+      dms: z.object({
+        byStarport: z.record(z.string(), z.number()).optional(),
+        byTech: z.record(z.string(), z.number()).optional(),
+      }).optional(),
+    }).passthrough().optional(),
+    survivalDm: z.number().optional(),
+    nobleSurvivalDm: z.number().optional(),
+    nobleService: z.string().optional(),
+    agingAutoSavesPerTerm: z.number().optional(),
+    cashRollCap: z.number().optional(),
+    retry: z.unknown().optional(),
+  }).passthrough().optional(),
 }).passthrough();
 
 export type RulesData = z.infer<typeof RulesSchema>;

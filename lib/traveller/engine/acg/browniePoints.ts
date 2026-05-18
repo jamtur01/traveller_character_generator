@@ -127,7 +127,13 @@ function queueBpReview(
   for (let n = 1; n <= max; n++) {
     options.push(`Spend ${n} more brownie point(s)`);
   }
-  ch.pickOrDefer({
+  // Non-throwing: queue the review without halting the engine. The
+  // pathway's resolveAssignment runs to completion in one pass; the
+  // player resolves the BP-review later, and the onResolve closure
+  // applies any retroactive revival via req.onMitigated. Using
+  // pickOrDefer here would re-run the whole step on resume and re-roll
+  // survival/decoration/promotion/skills with the BP already spent.
+  ch.queueChoice({
     kind: "bpSpend",
     label:
       `${req.rollName} roll failed by ${Math.abs(req.margin)}; you have ${available} BP. ` +

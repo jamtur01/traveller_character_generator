@@ -193,6 +193,7 @@ export class Character {
   endChargenDischarged(): void {
     this.endedAsRetired = false;
     this.chargenStatus = { kind: "retired", reason: "discharged" };
+    this.log(ev.endGeneration("retired", "discharged"));
   }
 
   /** Terminate chargen as deceased. */
@@ -394,6 +395,28 @@ export class Character {
     const id = genChoiceId();
     this.pendingChoices.push({ id, ...req });
     throw new ChoicePendingError(id);
+  }
+
+  /**
+   * Deferred (non-blocking) choice. Same as pickOrDefer in auto mode, but
+   * in interactive mode queues the choice WITHOUT throwing — the engine
+   * continues past the call site. Used for post-roll adjustments that
+   * mustn't pause the step (e.g., a BP-review prompt that would otherwise
+   * force the entire resolveAssignment to re-run on resume and re-roll
+   * survival/decoration/promotion/skills). The onResolve closure handles
+   * retroactive side effects (revival, retroactive award) when the player
+   * eventually decides.
+   */
+  queueChoice(req: ChoiceRequest<string>): void {
+    if (this.choiceMode === "auto") {
+      const pool = req.preferred && req.preferred.length > 0
+        ? req.preferred
+        : req.options;
+      req.onResolve(this, arnd(pool));
+      return;
+    }
+    const id = genChoiceId();
+    this.pendingChoices.push({ id, ...req });
   }
 
   /** Service definition for this character's current service key, looked up
@@ -967,23 +990,22 @@ export class Character {
   /** Extra survival roll gating the anagathics retry (PM p. 15). On
    *  failure the character is forced into a short-term muster-out. */
   private rollAnagathicsRetrySurvival(): boolean {
-    try {
-      const svc = this.serviceDef();
-      // checkSurvival emits ev.roll("Survival", ...) which already records
-      // pass/fail in the history.
-      const passed = svc.checkSurvival(this);
-      if (!passed) {
-        // Increment shortTermsCount (muster-out accounting doesn't count
-        // this term) and transition to retired. The intermediate
-        // shortTerm status is skipped since chargen ends immediately.
-        this.shortTermsCount += 1;
-        this.endChargenRetired("failed anagathics retry survival");
-      }
-      return passed;
-    } catch {
-      // Pre-enlistment (no service yet) — retry not available.
-      return false;
+    // Pre-enlistment (no service yet) — retry not available. Gate before
+    // calling serviceDef() so a bare catch doesn't swallow real errors
+    // like ChoicePendingError thrown from checkSurvival.
+    if (!this.service) return false;
+    const svc = this.serviceDef();
+    // checkSurvival emits ev.roll("Survival", ...) which already records
+    // pass/fail in the history.
+    const passed = svc.checkSurvival(this);
+    if (!passed) {
+      // Increment shortTermsCount (muster-out accounting doesn't count
+      // this term) and transition to retired. The intermediate
+      // shortTerm status is skipped since chargen ends immediately.
+      this.shortTermsCount += 1;
+      this.endChargenRetired("failed anagathics retry survival");
     }
+    return passed;
   }
 
   /** Pre-survival anagathics hook (PM p. 15). Reads anagathicsStandingOrder
@@ -1188,5 +1210,16 @@ export function cloneCharacter(c: Character): Character {
   // when the handler bails on ChoicePendingError, stacking stale choices
   // across stages.
   next.pendingChoices = [...c.pendingChoices];
+  // chargenStatus is a discriminated union; the variant objects are
+  // immutable per the helpers, but freshly cloning avoids any chance of
+  // shared-reference aliasing on future field additions.
+  next.chargenStatus = { ...c.chargenStatus };
+  if (c.homeworld) next.homeworld = { ...c.homeworld };
+  // acgState contains nested arrays and objects (assignmentHistory,
+  // schoolsAttended, decorations, honorsGraduations, etc.). The UI
+  // mutates these via setters and the awards / school helpers; a shared
+  // reference leaks mutations back into the snapshot. structuredClone
+  // deep-copies all serializable shapes.
+  if (c.acgState) next.acgState = structuredClone(c.acgState);
   return next;
 }
