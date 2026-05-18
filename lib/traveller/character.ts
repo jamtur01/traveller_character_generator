@@ -665,7 +665,7 @@ export class Character {
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    this.log({ kind: "raw", level: "verbose", text: benefit });
+    this.log(ev.raw(benefit, "verbose"));
   }
 
   // ---------- single logging API ----------
@@ -708,7 +708,8 @@ export class Character {
       onResolve: (ch, blade) => {
         ch.bladeBenefit = blade;
         ch.addBenefit(blade);
-        ch.addSkill(blade, 0);
+        ch.log(ev.cascadePick("Blade Combat", blade));
+        ch.addSkill(blade, 0, "Blade benefit");
       },
     });
   }
@@ -729,7 +730,8 @@ export class Character {
       onResolve: (ch, gun) => {
         ch.gunBenefit = gun;
         ch.addBenefit(gun);
-        ch.addSkill(gun, 0);
+        ch.log(ev.cascadePick("Gun Combat", gun));
+        ch.addSkill(gun, 0, "Gun benefit");
       },
     });
   }
@@ -745,7 +747,7 @@ export class Character {
     const categorySkill = kind === "blade" ? "Blade Combat" : "Gun Combat";
     const current = kind === "blade" ? this.bladeBenefit : this.gunBenefit;
     if (this.choiceMode === "auto") {
-      this.addSkill(current);
+      this.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
       return;
     }
     const pool = cascadePoolByKey(cascadeKey, this.editionId);
@@ -759,11 +761,11 @@ export class Character {
       context: { source: "muster", benefit: "RepeatWeapon", current, category: categorySkill },
       onResolve: (ch, chosen) => {
         if (chosen === optBump) {
-          ch.addSkill(current);
+          ch.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
           return;
         }
         if (chosen === optCategory) {
-          ch.addSkill(categorySkill, 1);
+          ch.addSkill(categorySkill, 1, `Repeat ${kind} benefit (+1 category)`);
           return;
         }
         // "Pick a different weapon" — queue an inner cascade choice.
@@ -776,7 +778,8 @@ export class Character {
           context: { source: "muster", benefit: kind === "blade" ? "Blade" : "Gun" },
           onResolve: (c, weapon) => {
             c.addBenefit(weapon);
-            c.addSkill(weapon, 0);
+            c.log(ev.cascadePick(categorySkill, weapon));
+            c.addSkill(weapon, 0, `Repeat ${kind} benefit (different)`);
           },
         });
       },
@@ -855,7 +858,7 @@ export class Character {
       // the auto-noble path.
       if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
       const skills = this.editionService("nobles").getServiceSkills(this);
-      for (const sk of skills) this.addSkill(sk);
+      for (const sk of skills) this.addSkill(sk, 1, "Nobility service skill");
       return "nobles";
     }
 
@@ -874,7 +877,7 @@ export class Character {
       this.service = preferredService;
       if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
       const skills = pref.getServiceSkills(this);
-      for (const sk of skills) this.addSkill(sk);
+      for (const sk of skills) this.addSkill(sk, 1, `${pref.serviceName} service skill`);
       return preferredService;
     }
     this.drafted = true;
@@ -883,8 +886,9 @@ export class Character {
     this.applyServiceStartAge(draftService);
     this.service = draftService;
     if (this.homeworld) applyHomeworldSkills(this, this.homeworld);
-    const skills = this.editionService(draftService).getServiceSkills(this);
-    for (const sk of skills) this.addSkill(sk);
+    const draftDef = this.editionService(draftService);
+    const skills = draftDef.getServiceSkills(this);
+    for (const sk of skills) this.addSkill(sk, 1, `${draftDef.serviceName} service skill`);
     return draftService;
   }
 

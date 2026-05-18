@@ -301,7 +301,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   ch.log(ev.roll(
     "Survival", sv.roll, survDm,
     typeof res.survival === "number" ? res.survival : 0,
-    sv.success, `${assignment} (mercenary)`,
+    sv.success, assignment,
   ));
   if (!sv.success) {
     // Try brownie-point mitigation before invaliding out. The onMitigated
@@ -314,14 +314,14 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       dm: survDm,
       target: typeof res.survival === "number" ? res.survival : 0,
       margin: sv.margin,
-      consequence: "Invalided out of mercenary service",
+      consequence: "Invalided out of Mercenary service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.log(ev.statusChange("revived", "BP spend saved mercenary survival"));
+        c.log(ev.statusChange("revived", "BP spend saved Mercenary survival"));
       },
     });
     if (mit.newMargin < 0) {
-      ch.log(ev.endGeneration("retired", "invalided out of mercenary service"));
+      ch.log(ev.endGeneration("retired", "invalided out of Mercenary service"));
       ch.activeDuty = false;
       return;
     }
@@ -356,7 +356,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       "Promotion", pr.roll, effectiveDm,
       typeof res.promotion === "number" ? res.promotion : 0,
       pr.success,
-      `${assignment} (mercenary)${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
+      `${assignment}${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
     ));
     let promoMargin = pr.margin;
     if (!pr.success) {
@@ -381,7 +381,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       "Decoration", dec.roll, decDm,
       typeof res.decoration === "number" ? res.decoration : 0,
       dec.margin >= 0,
-      `${assignment} (mercenary, margin ${dec.margin})`,
+      `${assignment} (margin ${dec.margin})`,
     ));
     let effMargin = dec.margin;
     if (dec.margin < 0) {
@@ -409,7 +409,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     ch.log(ev.roll(
       "Skills", sk.roll, skillDm,
       typeof res.skills === "number" ? res.skills : 0,
-      sk.success, `${assignment} (mercenary)`,
+      sk.success, assignment,
     ));
     let skMargin = sk.margin;
     if (!sk.success) {

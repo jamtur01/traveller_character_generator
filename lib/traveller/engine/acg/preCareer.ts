@@ -25,6 +25,7 @@
 
 import type { Character } from "../../character";
 import { getEdition } from "../../editions";
+import { extendedHex } from "../../formatting";
 import { arnd, roll } from "../../random";
 import { awardBrownie } from "./awards";
 import { event as ev } from "../../history";
@@ -658,10 +659,12 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
     // attributes below 0 even though pre-career deltas are normally
     // positive — be defensive in case a future option declares one).
     ch.attributes[a] = Math.max(0, Math.min(15, ch.attributes[a] + delta));
-    ch.log(ev.attributeChange(attr, delta));
+    ch.log(ev.attributeChange(
+      attr, delta, `now ${extendedHex(ch.attributes[a])}`,
+    ));
   }
   for (const [skill, lvl] of r.skills) {
-    ch.addSkill(skill, lvl);
+    ch.addSkill(skill, lvl, preCareerLabel(opt, ch.editionId));
   }
   // Pre-career outcome notes describe what happened at the school. Map
   // each note to the typed preCareer event result kind so the renderer

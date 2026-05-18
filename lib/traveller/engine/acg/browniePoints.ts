@@ -12,6 +12,7 @@
 //     could mitigate; player decides whether to spend.
 
 import type { Character } from "../../character";
+import { event as ev } from "../../history";
 
 export interface MitigationRequest {
   rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial";
@@ -85,12 +86,11 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   }
   ch.acgState!.browniePoints -= need;
   ch.acgState!.browniePointsSpent += need;
-  ch.log({
-    kind: "browniePoint", level: "simple",
-    delta: -need,
-    reason: `Mitigated ${req.rollName} failure (avoided: ${req.consequence})`,
-    balance: ch.acgState!.browniePoints,
-  });
+  ch.log(ev.browniePoint(
+    -need,
+    `Mitigated ${req.rollName} failure (avoided: ${req.consequence})`,
+    ch.acgState!.browniePoints,
+  ));
   return { spent: need, newMargin: 0 };
 }
 
@@ -142,12 +142,11 @@ function queueBpReview(
       const actual = Math.min(extra, c.acgState!.browniePoints);
       c.acgState!.browniePoints -= actual;
       c.acgState!.browniePointsSpent += actual;
-      c.log({
-        kind: "browniePoint", level: "simple",
-        delta: -actual,
-        reason: `Additional spend post-${req.rollName}`,
-        balance: c.acgState!.browniePoints,
-      });
+      c.log(ev.browniePoint(
+        -actual,
+        `Additional spend post-${req.rollName}`,
+        c.acgState!.browniePoints,
+      ));
       c.acgState!.lastBpExtraSpend = {
         rollName: req.rollName,
         spent: actual,
@@ -176,10 +175,9 @@ export function spendBrowniePoints(
   ch.acgState.browniePoints -= spend;
   ch.acgState.browniePointsSpent += spend;
   if (spend > 0) {
-    ch.log({
-      kind: "browniePoint", level: "simple",
-      delta: -spend, reason: "Post-roll spend", balance: ch.acgState.browniePoints,
-    });
+    ch.log(ev.browniePoint(
+      -spend, "Post-roll spend", ch.acgState.browniePoints,
+    ));
   }
   return originalMargin + spend;
 }

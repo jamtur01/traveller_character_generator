@@ -359,7 +359,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         },
       });
       if (mit.newMargin < 0) {
-        ch.log(ev.endGeneration("retired", "mustered out of merchant service"));
+        ch.log(ev.endGeneration("retired", "mustered out of Merchant service"));
         ch.activeDuty = false;
         return;
       }
@@ -605,12 +605,15 @@ export function merchantReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   const dm = applyStructuredDms(data.reenlistment.dms, ch);
   const r = roll(2);
+  const target = data.reenlistment.target;
+  const keep = r === 12 || r + dm >= target;
+  const dept = ch.acgState!.department ?? "";
+  ch.log(ev.roll("Reenlistment", r, dm, target, keep, `merchant ${dept}`));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerMerchantDepartmentChange(ch, data);
     return true;
   }
-  const keep = r + dm >= data.reenlistment.target;
   if (keep) offerMerchantDepartmentChange(ch, data);
   return keep;
 }
@@ -760,7 +763,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const dm = ch.acgState!.examDm ?? 0;
   const r = roll(2);
   ch.log(ev.roll(
-    "Merchant enlisted-route commission exam", r, dm, target, r + dm >= target,
+    "Commission", r, dm, target, r + dm >= target, "Merchant enlisted-route exam",
   ));
   if (r + dm >= target) {
     ch.acgState!.isOfficer = true;
@@ -795,9 +798,9 @@ function attemptMerchantPromotionExam(ch: Character): void {
   if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
   const r = roll(2);
   ch.log(ev.roll(
-    `Merchant exam (rank ${codes[idx]}→${codes[idx + 1]})`
-    + (penalty ? ` (reprimand penalty ${penalty})` : ""),
-    r, dm, target, r + dm >= target,
+    "Promotion", r, dm, target, r + dm >= target,
+    `Merchant exam (${codes[idx]}→${codes[idx + 1]})`
+    + (penalty ? `, reprimand penalty ${penalty}` : ""),
   ));
   if (r + dm >= target) {
     ch.acgState!.rankCode = nextRow[0] as string;

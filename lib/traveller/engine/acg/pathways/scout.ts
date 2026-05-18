@@ -489,11 +489,14 @@ export function scoutReenlist(ch: Character): boolean {
     return false;
   }
   const r = roll(2);
+  const target = data.reenlistment.target;
+  const succeeded = r === 12 || r >= target;
+  ch.log(ev.roll("Reenlistment", r, 0, target, succeeded, "scout"));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     return true;
   }
-  return r >= data.reenlistment.target;
+  return r >= target;
 }
 
 export function getScoutPathway() {

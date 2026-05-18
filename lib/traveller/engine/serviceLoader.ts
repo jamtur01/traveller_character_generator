@@ -26,6 +26,13 @@ function skillTableKeyForIndex(editionData: unknown, idx: number): string | null
   return meta?.order?.[idx - 1] ?? null;
 }
 
+function skillTableDisplayNameForKey(editionData: unknown, key: string): string {
+  const meta = (editionData as {
+    skillTableMeta?: { displayNames?: Record<string, string> };
+  }).skillTableMeta;
+  return meta?.displayNames?.[key] ?? key;
+}
+
 export function buildServiceDef(
   serviceData: ServiceData,
   edition: Edition,
@@ -113,7 +120,7 @@ export function buildServiceDef(
     for (const e of serviceData.automaticSkills) {
       if (e.trigger !== "rank") continue;
       if (e.rank !== ch.rank) continue;
-      applyAutoEntry(ch, e);
+      applyAutoEntry(ch, e, `rank ${e.rank} auto-skill`);
     }
     if (doPromotionHook) doPromotionHook(ch);
   };
@@ -138,7 +145,7 @@ export function buildServiceDef(
       return;
     }
     ch.log(ev.musterBenefit(cell, rawRoll, dm));
-    applyCell(ch, cell, "muster", benefitDetails);
+    applyCell(ch, cell, "muster", benefitDetails, "Muster");
   };
 
   // --- skill acquisition -------------------------------------------------
@@ -175,9 +182,8 @@ export function buildServiceDef(
     const r = roll(1);
     const cell = table[r];
     if (cell == null) return;
-    // applyCell emits ev.skillLearned / ev.attributeChange for the
-    // resulting grant; the table+roll context lives in those events.
-    applyCell(ch, cell, "skill");
+    const source = skillTableDisplayNameForKey(edition.data, tableKey);
+    applyCell(ch, cell, "skill", undefined, source);
   }
 
   const def: ServiceDef = {
@@ -204,14 +210,16 @@ export function buildServiceDef(
 }
 
 /** Walk one automatic-skill entry — either a skill grant or an effect string. */
-function applyAutoEntry(ch: Character, e: AutoSkillEntry): void {
+function applyAutoEntry(
+  ch: Character, e: AutoSkillEntry, source?: string,
+): void {
   if (e.effect) {
-    applyCell(ch, e.effect, "skill");
+    applyCell(ch, e.effect, "skill", undefined, source);
     return;
   }
   if (e.skill) {
     const name = resolveAutoSkill(e.skill, ch);
-    ch.addSkill(name, e.level ?? 1);
+    ch.addSkill(name, e.level ?? 1, source);
   }
 }
 

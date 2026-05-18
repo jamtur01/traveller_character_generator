@@ -81,7 +81,9 @@ function applySkillLabelRename(editionId: string, label: string): string {
  *  cascade, it must be taken as the forced skill (Large Blade) unless a
  *  saving throw passes. Returns true if the tradition fired and handled
  *  the cell; false if it didn't apply (caller continues normally). */
-function tryMarineTradition(ch: Character, label: string): boolean {
+function tryMarineTradition(
+  ch: Character, label: string, source?: string,
+): boolean {
   const rule = (getEdition(ch.editionId).data as {
     rules?: {
       marineTradition?: {
@@ -123,7 +125,7 @@ function tryMarineTradition(ch: Character, label: string): boolean {
   ch.log(ev.marineTradition("forced", {
     forcedSkill: rule.forcedSkill, roll: r, dm, target,
   }));
-  ch.addSkill(rule.forcedSkill);
+  ch.addSkill(rule.forcedSkill, 1, source);
   return true;
 }
 
@@ -148,14 +150,19 @@ function includesExpansion(
 
 export type CellMode = "skill" | "muster";
 
-/** Apply one cell-label string to a character. */
+/** Apply one cell-label string to a character. `source` is recorded on
+ *  resulting ev.skillLearned events so the history attributes the grant
+ *  to its originating table (basic chargen skill table name) or to
+ *  "Muster". */
 export function applyCell(
   ch: Character,
   rawLabel: string,
   mode: CellMode,
   benefitDetails?: Record<string, BenefitDetail>,
+  source?: string,
 ): void {
   const label = rawLabel.trim();
+  const grantSource = source ?? (mode === "muster" ? "Muster" : undefined);
 
   // Attribute change ("+1 Intel", "-1 Social", "+2 Stren").
   const m = label.match(/^([+-]\d+)\s+(\w+)$/);
@@ -170,7 +177,7 @@ export function applyCell(
   // F5 Marine Tradition: PM p. 49. When a Marine receives Blade Combat,
   // it must be taken as Large Blade unless they pass a saving throw.
   // Data-driven via rules.marineTradition.
-  if (mode === "skill" && tryMarineTradition(ch, label)) return;
+  if (mode === "skill" && tryMarineTradition(ch, label, grantSource)) return;
 
   // Cascade label — resolve the pool via the character's edition.
   // A label might be a cascade alias in MT (e.g., "Gunnery" cascades to
@@ -208,7 +215,7 @@ export function applyCell(
         // skill roll is forfeited entirely.
         if (mode !== "muster" && !acquireSkillWithRestrictionCheck(c, name)) return;
         c.log(ev.cascadePick(label, name));
-        c.addSkill(name);
+        c.addSkill(name, 1, grantSource);
       },
     });
     return;
@@ -261,14 +268,14 @@ export function applyCell(
   if (expansion) {
     for (const inner of expansion) {
       if (!acquireSkillWithRestrictionCheck(ch, inner.skill)) continue;
-      ch.addSkill(inner.skill, inner.level);
+      ch.addSkill(inner.skill, inner.level, grantSource);
     }
     return;
   }
   // Homeworld limitation: literal vehicle/weapon cells (e.g., "Grav Belt")
   // also gate through the override roll. Non-restricted skills pass through.
   if (!acquireSkillWithRestrictionCheck(ch, skillName)) return;
-  ch.addSkill(skillName);
+  ch.addSkill(skillName, 1, grantSource);
 }
 
 function applyShipBenefit(

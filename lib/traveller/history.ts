@@ -355,6 +355,11 @@ export const event = {
     ...(target !== undefined ? { target } : {}),
     ...(reason !== undefined ? { reason } : {}),
   }),
+  browniePoint: (
+    delta: number, reason: string, balance: number,
+  ): HistoryEvent => ({
+    kind: "browniePoint", level: "simple", delta, reason, balance,
+  }),
   agingSave: (
     attribute: string,
     outcome: "auto" | "passed" | "failed",
