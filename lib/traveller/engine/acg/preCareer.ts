@@ -274,11 +274,9 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     out.admitted = true;
   } else {
     out.admitted = true;
-    if (flightAutoAdmit) {
-      ch.logRaw(
-        `Flight School admission automatic (PM p. 47 — commissioned college honors / Naval Academy honors).`,
-      "verbose");
-    }
+    // Flight School auto-admit (commissioned college honors / Naval Academy
+    // honors, PM p. 47) is silent here; the downstream ev.preCareer events
+    // record graduation/honors.
   }
 
   // Success.
@@ -383,7 +381,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     const offset = m ? parseInt(m[1]!, 10) : 0;
     const gain = Math.max(1, roll(1) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
-    ch.logRaw(`${preCareerLabel(opt, ch.editionId)} education gain: +${gain} Edu`, "verbose");
+    // Applied by applyPreCareerResult via improveAttribute → ev.attributeChange.
   }
 
   // Honors throw.
@@ -407,7 +405,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         const rollDelta = out.attributeChanges.education ?? 0;
         out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
       }
-      ch.logRaw(`${preCareerLabel(opt, ch.editionId)} honors achieved`, "verbose");
+      // ev.preCareer(opt, "honors") is emitted by applyPreCareerResult.
     }
   }
 

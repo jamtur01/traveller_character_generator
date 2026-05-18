@@ -182,7 +182,11 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
       }
     }
     if (total >= o.avoidTarget) {
-      ch.logRaw(`Court martial avoided (rolled ${baseTotal}, used ${total - baseTotal} BP, vs ${o.avoidTarget}+)`, "verbose");
+      const bpUsed = total - baseTotal;
+      const ctx = bpUsed > 0
+        ? `rolled ${baseTotal}, used ${bpUsed} BP, vs ${o.avoidTarget}+`
+        : `rolled ${baseTotal} vs ${o.avoidTarget}+`;
+      ch.log(ev.courtMartial(`avoided (${ctx})`));
       return;
     }
   }
@@ -217,7 +221,6 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         cm.dieResults[0]!);
   const result = outcome.result;
   ch.log(ev.courtMartial(result));
-  ch.logRaw(`Court Martial outcome (roll=${r}, dm=${dm}): ${result}`, "verbose");
 
   applyCourtMartialResult(ch, result);
 }

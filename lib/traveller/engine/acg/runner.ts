@@ -182,7 +182,8 @@ export function runAcgTerm(ch: Character): void {
   const isFirstTerm = ch.terms === 0;
   const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort) ? 3 : 4;
   if (isFirstTerm && ch.acgState.preCareerFirstTermShort) {
-    ch.logRaw("First term is a short (3-year) term due to pre-career failure.");
+    // The shortTerm flag is recorded in ev.termBegin (emitted in
+    // doServiceTermStep); consume the marker so subsequent terms run normally.
     delete ch.acgState.preCareerFirstTermShort;
   }
   for (let y = 0; y < termLength; y++) {

@@ -42,7 +42,7 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && total >= service.commissionThrow + overshootN) {
     character.skillPoints += 1;
-    character.logRaw(`Commission overshoot +${overshootN}: +1 bonus skill`, "verbose");
+    character.log(ev.bonusSkillPoint("Commission", overshootN));
   }
 
   service.doPromotion(character);

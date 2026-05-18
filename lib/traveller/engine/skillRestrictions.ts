@@ -20,6 +20,7 @@
 import { roll } from "../random";
 import type { Character } from "../character";
 import { getEdition } from "../editions";
+import { event as ev } from "../history";
 
 interface RestrictionsData {
   rule?: string;
@@ -110,9 +111,10 @@ export function rollSkillOverride(
 ): boolean {
   const r = roll(2);
   const passed = r >= target;
-  ch.logRaw(
-    `Homeworld restricts ${skillName}; override 2D ≥ ${target}: rolled ${r} → ${passed ? "acquired" : "forfeited"}`,
-  "verbose");
+  ch.log(ev.roll(
+    `Homeworld override (${skillName})`, r, 0, target, passed,
+    passed ? "skill acquired" : "skill forfeited",
+  ));
   return passed;
 }
 

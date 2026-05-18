@@ -518,7 +518,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const sa = row[col];
   if (typeof sa !== "string") return;
   ch.acgState!.schoolsAttended.push(sa);
-  ch.logRaw(`Merchant Special Duty: ${sa}`);
+  ch.log(ev.schoolAssigned(sa, "merchantPrince"));
   awardBrownie(ch, 1, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
 }
@@ -565,11 +565,12 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     const awarded: string[] = [];
     for (const skill of res.skills) {
       if (roll(1) >= tgt) {
-        ch.addSkill(skill, 1);
+        ch.addSkill(skill, 1, sa);
         awarded.push(skill);
       }
     }
-    if (awarded.length > 0) ch.logRaw(`${sa}: ${awarded.join(", ")}`);
+    // addSkill logs each skill grant individually with source=sa; no
+    // duplicate summary line needed.
   }
   // Department transfer effects (manual p. 60-61).
   if (res.effect) {
@@ -716,9 +717,7 @@ function applyDeckAutoTransferIfDue(ch: Character): void {
   recordTransfer(ch.acgState, "department", from, rule.destinationDepartment,
     ch.acgState.yearsServed ?? 0);
   ch.acgState.department = rule.destinationDepartment;
-  ch.logRaw(
-    `Auto-transferred to ${rule.destinationDepartment} department (rank ${rule.rankCode}, PM p. 61).`,
-  );
+  ch.log(ev.transferred(rule.destinationDepartment, "department", from));
 }
 
 /** PM p. 61 end-of-term promotion exam. Runs AFTER assignments so DMs
@@ -756,9 +755,9 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   if (Number.isNaN(target)) return;
   const dm = ch.acgState!.examDm ?? 0;
   const r = roll(2);
-  ch.logRaw(
-    `Merchant enlisted-route commission exam: ${r} + ${dm} vs ${target}+`,
-  "verbose");
+  ch.log(ev.roll(
+    "Merchant enlisted-route commission exam", r, dm, target, r + dm >= target,
+  ));
   if (r + dm >= target) {
     ch.acgState!.isOfficer = true;
     ch.acgState!.rankCode = "O1";
@@ -791,10 +790,11 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const dm = (ch.acgState!.examDm ?? 0) + penalty;
   if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0;
   const r = roll(2);
-  ch.logRaw(
-    `Merchant exam (rank ${codes[idx]}→${codes[idx + 1]}): ${r} + ${dm} vs ${target}+` +
-    (penalty ? ` (reprimand penalty ${penalty})` : ""),
-  "verbose");
+  ch.log(ev.roll(
+    `Merchant exam (rank ${codes[idx]}→${codes[idx + 1]})`
+    + (penalty ? ` (reprimand penalty ${penalty})` : ""),
+    r, dm, target, r + dm >= target,
+  ));
   if (r + dm >= target) {
     ch.acgState!.rankCode = nextRow[0] as string;
     ch.log(ev.promoted(nextRow[1]));

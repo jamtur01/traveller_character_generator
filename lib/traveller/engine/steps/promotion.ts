@@ -33,7 +33,7 @@ export const promotionStep: StepFn = ({ character, service, config, edition }) =
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && total >= service.promotionThrow + overshootN) {
     character.skillPoints += 1;
-    character.logRaw(`Promotion overshoot +${overshootN}: +1 bonus skill`, "verbose");
+    character.log(ev.bonusSkillPoint("Promotion", overshootN));
   }
 
   service.doPromotion(character);

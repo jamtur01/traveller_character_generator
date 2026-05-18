@@ -4,7 +4,7 @@
 // existing callers in character.ts and the test suite continue to work.
 
 import { arnd, roll } from "../random";
-import { skillTableDisplayName, type Character } from "../character";
+import { type Character } from "../character";
 import { event as ev } from "../history";
 import type { Attributes, ServiceDef } from "../types";
 import { cascadePoolForLabel } from "./cascadeMap";
@@ -76,7 +76,8 @@ export function buildServiceDef(
     if (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm) {
       const penalty = ch.service === "nobles" ? -2 : -1;
       dm += penalty;
-      ch.logRaw(`Anagathics survival DM ${penalty}`, "verbose");
+      // Penalty is reflected in the survival roll's dm; anagathics
+      // supply state has its own ev.anagathics events.
     }
     const sv = roll(2);
     const succeeded = sv + dm >= survivalThrow;
@@ -180,13 +181,8 @@ export function buildServiceDef(
     const r = roll(1);
     const cell = table[r];
     if (cell == null) return;
-    // Log both the table picked and the cell rolled at verbose so the
-    // history reflects every step (table chosen → die rolled → outcome
-    // applied via applyCell).
-    ch.logRaw(
-      `${skillTableDisplayName(ch.editionId, tableIdx)} table, rolled ${r}: ${cell}`,
-      "verbose",
-    );
+    // applyCell emits ev.skillLearned / ev.attributeChange for the
+    // resulting grant; the table+roll context lives in those events.
     applyCell(ch, cell, "skill");
   }
 
