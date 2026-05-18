@@ -240,7 +240,9 @@ export default function Home() {
         });
       } catch (err) {
         // beginAcg throws on enlistment rejection; surface to the user.
-        c.logRaw(`ACG enlistment failed: ${(err as Error).message}`);
+        // The character's chargen ends here, so emit endGeneration with
+        // the failure reason embedded.
+        c.log(ev.endGeneration("retired", `ACG enlistment failed: ${(err as Error).message}`));
         commit(c, "end");
         return;
       }
