@@ -44,3 +44,6 @@ next-env.d.ts
 # (Classic Traveller PDFs are copyrighted; only the player owning a licensed
 # copy may have them locally.)
 *.pdf
+
+# Local agent state (Claude Code scheduled tasks, etc.)
+/.claude/
