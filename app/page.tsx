@@ -5,19 +5,18 @@ import { Character, cloneCharacter } from "@/lib/traveller/character";
 import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
 import { DEFAULT_EDITION_ID, getEdition, listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
-import { runAcgYear } from "@/lib/traveller/engine/acg/runner";
+import * as session from "@/lib/traveller/chargen/session";
 import {
   isPreCareerEligible, preCareerLabel, preCareerUiSummary,
 } from "@/lib/traveller/engine/acg/preCareer";
-import { ChoicePendingError } from "@/lib/traveller/engine/choices";
-import { event as ev, formatEvent, visibleAt } from "@/lib/traveller/history";
+import { formatEvent, visibleAt } from "@/lib/traveller/history";
 import {
   getEditionServices,
   getEnlistableServices,
   serviceLabel,
 } from "@/lib/traveller/services";
 import { aggregateBenefits } from "@/lib/traveller/sheet";
-import { extendedHex, intToOrdinal, numCommaSep } from "@/lib/traveller/formatting";
+import { extendedHex, numCommaSep } from "@/lib/traveller/formatting";
 import type { AttributeKey, ServiceKey } from "@/lib/traveller/types";
 import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 
@@ -47,10 +46,6 @@ function mercenaryNonCommandoArms(editionId: string): string[] {
   const arms = merc?.combatArms ?? [];
   const gated = new Set(Object.keys(merc?.combatArmEligibility?.armGates ?? {}));
   return arms.filter((a) => !gated.has(a));
-}
-
-function pickSkillPhase(c: Character): Phase {
-  return c.attributes.education >= 8 ? "skill_adv" : "skill_basic";
 }
 
 export default function Home() {
@@ -96,409 +91,102 @@ export default function Home() {
     setPhase(p);
   };
 
-  const startCareer = () => {
-    const c = new Character();
-    c.editionId = edition;
-    c.showHistory = verbose ? "verbose" : "simple";
-    // MT homeworld generation (p. 12-13) — runs after attribute roll
-    // (which happens in the Character constructor) and BEFORE service
-    // selection. Gates which careers the character can enlist in.
-    c.generateHomeworld();
-    // Only enable interactive mode if the active edition opts in (CT does
-    // not). This makes the chosen edition's metadata the authority — the
-    // checkbox is disabled in that case but we double-guard the flag here.
-    const editionMeta = listEditions().find((e) => e.id === edition);
-    c.choiceMode = (interactiveMode && editionMeta?.supportsInteractive)
-      ? "interactive"
-      : "auto";
-    // ACG is only available on editions that declare it, and only when
-    // the user picks a pathway. Double-guard: ignore the flag if either
-    // condition fails.
-    if (useAcg && editionHasAcg(edition) && acgPathway) {
-      c.useAcg = true;
-      c.acgPathway = acgPathway;
-      // ACG characters get a pre-career phase first (college / academy /
-      // medical / flight school) before enlistment. Honors graduates can
-      // chain; academy graduates auto-route into their pathway. Sub-options
-      // (service, combat arm, fleet, etc.) are configured at acg_enlist
-      // after pre-career, since pre-career outcomes can change them
-      // (Naval Academy honors auto-routes to Navy; OTC chooses Army/Marines
-      // mid-college).
-      commit(c, "pre_career");
-      return;
-    }
-    commit(c, "career");
+  /** Apply a session snapshot to React state. Centralizes the
+   *  characterRef / setCharacter / setPhase plumbing. */
+  const applySnap = (snap: session.ChargenSnapshot) => {
+    commit(snap.character, snap.phase as Phase);
   };
 
-  /** Apply a pre-career option. Honors a chained-academic-progression: an
-   *  honors college grad may chain into medical/flight school; an academy
-   *  honors grad may try medical/flight. After the option completes, route
-   *  the player to either another pre-career attempt or to enlistment. */
-  const applyPreCareer = (opt:
-    | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
-    | "medicalSchool" | "flightSchool"
-    | "skip"
-  ) => {
+  const startCareer = () => {
+    const editionMeta = listEditions().find((e) => e.id === edition);
+    applySnap(session.startCareer({
+      edition,
+      verbose,
+      interactiveMode,
+      supportsInteractive: editionMeta?.supportsInteractive === true,
+      useAcg,
+      acgPathway,
+    }));
+  };
+
+  /** Apply a pre-career option. Session.applyPreCareer returns optional
+   *  UI hints (auto-enlist pathway, service, fleet) when an academy
+   *  outcome should pre-populate the enlistment form. */
+  const applyPreCareer = (opt: session.PreCareerOption) => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    if (opt === "skip") {
-      commit(c, c.useAcg ? "acg_enlist" : "career");
-      return;
+    const result = session.applyPreCareer(
+      { character: prev, phase: phase as session.ChargenPhase },
+      opt,
+    );
+    applySnap(result.snapshot);
+    if (result.hints) {
+      if (result.hints.acgPathway) setAcgPathway(result.hints.acgPathway);
+      if (result.hints.acgService) setAcgService(result.hints.acgService);
+      if (result.hints.acgFleet) setAcgFleet(result.hints.acgFleet);
     }
-    let r: ReturnType<typeof c.doPreCareer>;
-    try {
-      r = c.doPreCareer(opt);
-    } catch (err) {
-      // Interactive pre-career (OTC branch pick, college honors paths)
-      // throws ChoicePendingError; commit the clone with the queued
-      // choice in pendingChoices so the UI can present it.
-      if (!(err instanceof ChoicePendingError)) throw err;
-      commit(c, "pre_career");
-      return;
-    }
-    // Record the auto-enlist pathway (used as a default on the enlist
-    // screen) but DON'T route to enlist yet. Per PM p. 47, academy honors
-    // graduates may chain into Medical or Flight School before service
-    // begins — the player chooses Skip when they're done. PreCareerPhase
-    // gates which chain options are visible (medAvailable / flightAvailable),
-    // and once none remain available it only shows Skip.
-    if (r.autoEnlistPathway) {
-      c.acgPathway = r.autoEnlistPathway;
-      setAcgPathway(r.autoEnlistPathway);
-      // Pre-populate enlistment sub-options from the academy outcome so
-      // the acg_enlist screen reflects what pre-career decided.
-      const branch = c.acgState?.preCareerBranch;
-      if (branch === "army" || branch === "marines") setAcgService(branch);
-      if (r.autoEnlistPathway === "navy" && opt === "navalAcademy") {
-        setAcgFleet("imperialNavy");
-      }
-    }
-    commit(c, "pre_career");
   };
 
   const resolvePending = (choiceId: string, optionIdx: number) => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    // resolveChoice may itself queue a nested cascade (e.g., resolving a
-    // skill-table pick rolls a cascade cell). Catch ChoicePendingError so
-    // we still commit and let the UI surface the next choice.
-    try {
-      c.resolveChoice(choiceId, optionIdx);
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
-    }
-
-    // If the ACG runner had paused on this choice, resume it. After the
-    // queued closure ran, the year's state is consistent and runAcgYear
-    // continues from acgState.pausedAtStep. If more choices come up
-    // they'll throw again and we'll bounce back to the choice UI.
-    if (c.useAcg && c.acgState?.pausedAtStep && c.pendingChoices.length === 0) {
-      try {
-        runAcgYear(c);
-      } catch (err) {
-        if (!(err instanceof ChoicePendingError)) throw err;
-      }
-    }
-
-    // More choices still pending — stay in the current phase.
-    if (c.pendingChoices.length > 0) {
-      commit(c, phase);
-      return;
-    }
-
-    // Muster roll finalization. musterChoice set c.pendingMusterRoll
-    // when its cascade paused; resolve the entire choice chain (the
-    // cascade plus any nested choices it queued, e.g. an addSkill →
-    // enforceSkillCap "reduceSkill" prompt) before finalizing the roll.
-    // This persists across multiple resolvePending calls because the
-    // sentinel lives on the character.
-    if (c.pendingMusterRoll) {
-      c.pendingMusterRoll = false;
-      c.musterRolls -= 1;
-      if (c.musterRolls === 0) {
-        c.musterOutPay();
-        c.markMustered();
-        commit(c, "end");
-        return;
-      }
-      if (c.musterCashUsed >= maxCashRolls(c)) {
-        commit(c, "muster_no_cash");
-        return;
-      }
-      commit(c, "muster");
-      return;
-    }
-
-    // Basic-chargen: drive the workflow forward once the choice queue
-    // drains so the user sees a clean stage transition (skill → term-end,
-    // term → muster, muster → end). Without this, the user can complete
-    // a cascade and be left looking at a stale phase with no next action.
-    if (!c.useAcg && (phase === "skill_basic" || phase === "skill_adv")) {
-      if (c.skillPoints > 0) {
-        commit(c, pickSkillPhase(c));
-        return;
-      }
-      finishTerm(c);
-      return;
-    }
-    commit(c, phase);
+    applySnap(session.resolvePending(
+      { character: prev, phase: phase as session.ChargenPhase },
+      choiceId, optionIdx,
+    ));
   };
 
   const enlist = () => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    c.showHistory = verbose ? "verbose" : "simple";
-    if (c.useAcg && c.acgPathway) {
-      // Rrev5: persist merchant academy opt-in into acgState before
-      // beginAcg consumes it. Force lazy-init via browniePoints setter.
-      if (c.acgPathway === "merchantPrince" &&
-          (acgLineType === "Megacorp" || acgLineType === "Sector-wide") &&
-          acgMerchantAcademy) {
-        c.browniePoints = c.browniePoints;
-        if (c.acgState) c.acgState.attemptMerchantAcademy = true;
-      }
-      // ACG: bypass basic doEnlistment and call the pathway-specific
-      // enlist via beginAcg with the user's sub-option choices.
-      try {
-        c.beginAcg(c.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {
-          service: acgService,
-          combatArm: acgCombatArm,
-          fleet: acgFleet,
-          division: acgDivision,
-          lineType: acgLineType,
-          ...(acgSubsectorTech ? { subsectorTechCode: acgSubsectorTech } : {}),
-        });
-      } catch (err) {
-        // beginAcg throws on enlistment rejection; surface to the user.
-        // The character's chargen ends here, so emit endGeneration with
-        // the failure reason embedded.
-        c.log(ev.endGeneration("retired", `ACG enlistment failed: ${(err as Error).message}`));
-        commit(c, "end");
-        return;
-      }
-    } else {
-      c.service = c.doEnlistment(
-        preferredService === "random" ? "" : preferredService,
-      );
-    }
-    commit(c, "term");
+    applySnap(session.enlist(
+      { character: prev, phase: phase as session.ChargenPhase },
+      {
+        verbose,
+        preferredService,
+        acgService,
+        acgCombatArm,
+        acgFleet,
+        acgDivision,
+        acgLineType,
+        acgSubsectorTech,
+        acgMerchantAcademy,
+      },
+    ));
   };
 
   const runTerm = () => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    // CotI: Noble rank corresponds to Social Standing − 10 from the start
-    // (B Knight at Soc 11 through F Duke at Soc 15).
-    if (c.service === "nobles") {
-      if (c.attributes.social < 10) c.attributes.social = 10;
-      const startingRank = c.attributes.social - 10;
-      if (c.rank < startingRank && startingRank >= 1 && startingRank <= 5) {
-        c.rank = startingRank;
-        c.commissioned = true;
-      }
-    }
-    c.doServiceTermStep();
-
-    if (c.deceased) {
-      commit(c, "end");
-      return;
-    }
-    if (c.skillPoints > 0) {
-      // Aging deliberately deferred until after skill picks so the player's
-      // Edu (which gates the Advanced Education 8+ table) reflects pre-aging
-      // state. PM checklist: skills → aging → reenlistment.
-      commit(c, pickSkillPhase(c));
-      return;
-    }
-    // No skills to pick — proceed straight to aging + reenlistment for
-    // basic chargen. ACG handles aging + reenlistment inside runAcgTerm
-    // already, so we skip the duplicate aging call here for ACG characters.
-    // The Int+Edu cap is still enforced in case homeworld defaults pushed
-    // the total over (rare, but possible at low Int/Edu). In MT interactive
-    // mode the cap throws ChoicePendingError to prompt the player which
-    // skill to reduce — surface the choice via commit.
-    if (!c.useAcg) {
-      try {
-        c.enforceSkillCap();
-      } catch (err) {
-        if (!(err instanceof ChoicePendingError)) throw err;
-        commit(c, "term");
-        return;
-      }
-    }
-    if (!c.useAcg && !c.deceased) c.doAging();
-    if (c.deceased) {
-      commit(c, "end");
-      return;
-    }
-    // ACG: runAcgTerm flips activeDuty to false at end-of-term when the
-    // reenlistment roll fails, so the UI must route involuntary musters
-    // here rather than dropping back into another term loop.
-    if (!c.activeDuty) {
-      c.enterMustered();
-      c.musterRolls = c.musterOutRolls();
-      if (c.musterRolls === 0) {
-        c.musterOutPay();
-        c.markMustered();
-        commit(c, "end");
-      } else {
-        commit(c, "muster");
-      }
-      return;
-    }
-    commit(c, "term");
+    applySnap(session.runTerm({
+      character: prev, phase: phase as session.ChargenPhase,
+    }));
   };
 
   const attemptMusterOut = () => {
     const prev = characterRef.current;
     if (!prev) return;
-    // Per TTB p. 18 / PM p. 17: a roll-of-12 mandatory reenlistment forces
-    // another term regardless of the character's preference. The reenlist
-    // throw fired at the end of skill-picks already; this is the player's
-    // *voluntary* decision to leave when they were eligible to stay. No
-    // second 2D roll, no second aging — both already happened.
-    if (prev.mandatoryReenlistment) return;
-    const c = cloneCharacter(prev);
-    // Voluntary muster — flip to "retired" (pension eligibility is
-    // checked inside endChargenRetired via isRetirementEligible). The
-    // endChargenRetired helper logs ev.endGeneration("retired", reason)
-    // which already conveys "voluntary muster after N terms"; an extra
-    // statusChange("voluntaryMuster") here would just duplicate the line.
-    c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
-    c.enterMustered();
-    c.musterRolls = c.musterOutRolls();
-    if (c.musterRolls === 0) {
-      c.musterOutPay();
-      commit(c, "end");
-    } else {
-      commit(c, "muster");
-    }
-  };
-
-  /** End-of-term sequence: cap, aging, reenlistment, muster routing.
-   *  Called once skillPoints reach 0 and no cascade choices remain. */
-  const finishTerm = (c: Character) => {
-    // PM checklist: after the last skill pick, enforce the Int+Edu skill
-    // cap (PM p. 39), then age, then run reenlistment. In MT interactive
-    // mode the cap throws ChoicePendingError to prompt the player which
-    // skill to reduce; commit so the UI surfaces it.
-    try {
-      c.enforceSkillCap();
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
-      commit(c, "term");
-      return;
-    }
-    if (!c.deceased) c.doAging();
-    if (c.deceased) {
-      commit(c, "end");
-      return;
-    }
-
-    // Short-term characters (failed survival) are already mustering out;
-    // they don't take a reenlistment throw. Same for any path that already
-    // dropped activeDuty.
-    if (!c.shortTermThisTerm && c.activeDuty && !c.deceased) {
-      c.doReenlistmentStep();
-    }
-
-    if (c.deceased) {
-      commit(c, "end");
-      return;
-    }
-
-    if (!c.activeDuty) {
-      c.enterMustered();
-      c.musterRolls = c.musterOutRolls();
-      if (c.musterRolls === 0) {
-        c.musterOutPay();
-        c.markMustered();
-        commit(c, "end");
-      } else {
-        commit(c, "muster");
-      }
-      return;
-    }
-
-    commit(c, "term");
+    applySnap(session.attemptMusterOut({
+      character: prev, phase: phase as session.ChargenPhase,
+    }));
   };
 
   const pickSkill = (table: number) => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    if (table === 0) {
-      c.forceTable = false;
-    } else {
-      c.forceTable = true;
-      c.forceTableIndex = table;
-    }
-    // Spend the skill point up front. acquireSkill may queue a cascade
-    // (and throw ChoicePendingError) before the underlying skill grant
-    // resolves; that's still "this skill point", so don't double-spend
-    // on the cascade resolution.
-    c.skillPoints -= 1;
-    try {
-      getEditionServices(c.editionId)[c.service]!.acquireSkill(c);
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
-      // Cascade queued — commit so the UI surfaces it. The cascade
-      // resolution flows through resolvePending below.
-      commit(c, pickSkillPhase(c));
-      return;
-    }
-
-    if (c.skillPoints > 0) {
-      commit(c, pickSkillPhase(c));
-      return;
-    }
-
-    finishTerm(c);
+    applySnap(session.pickSkill(
+      { character: prev, phase: phase as session.ChargenPhase },
+      table,
+    ));
   };
 
   const musterChoice = (kind: "cash" | "benefit") => {
     const prev = characterRef.current;
     if (!prev) return;
-    const c = cloneCharacter(prev);
-    // Compute DMs from the active edition's rules.musterOutRolls block —
-    // CT and MT differ on which conditions apply (MT adds Retired and
-    // Prospecting-1 for select services).
-    const cashDM = cashDmFor(c);
-    const benefitsDM = benefitDmFor(c);
-
-    try {
-      if (kind === "cash") {
-        c.musterOutCash(cashDM);
-        c.musterCashUsed += 1;
-      } else {
-        c.musterOutBenefit(benefitsDM);
-      }
-    } catch (err) {
-      // Benefit-table cells can resolve to a cascade (Blade/Gun) which
-      // throws ChoicePendingError in interactive mode. Set a sentinel
-      // and commit; resolvePending finalizes the roll (decrement + post-
-      // roll routing) when the entire choice chain drains, including
-      // any nested choices the cascade onResolve queues (e.g. skillCap).
-      if (!(err instanceof ChoicePendingError)) throw err;
-      c.pendingMusterRoll = true;
-      commit(c, phase);
-      return;
-    }
-    c.musterRolls -= 1;
-
-    if (c.musterRolls === 0) {
-      c.musterOutPay();
-      c.markMustered();
-      commit(c, "end");
-    } else if (c.musterCashUsed >= maxCashRolls(c)) {
-      commit(c, "muster_no_cash");
-    } else {
-      commit(c, "muster");
-    }
+    applySnap(session.musterChoice(
+      { character: prev, phase: phase as session.ChargenPhase },
+      kind,
+    ));
   };
 
   const toggleVerbose = (v: boolean) => {
