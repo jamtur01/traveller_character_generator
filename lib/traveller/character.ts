@@ -6,7 +6,7 @@ import { arnd, rndInt, roll } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId, ChoicePendingError } from "./engine/choices";
 import { cascadePoolByKey } from "./engine/cascadeMap";
-import type { HistoryEvent, HistoryLevel } from "./history";
+import type { HistoryEvent } from "./history";
 import { event as ev, formatEvent } from "./history";
 import type { AcgState } from "./engine/acg/types";
 import {
@@ -684,17 +684,6 @@ export class Character {
     if (e.level === "debug" && this.showHistory !== "debug") return;
     if (e.level === "verbose" && this.showHistory === "simple") return;
     this.history.push(formatEvent(e));
-  }
-
-  /** Shorthand for `log(ev.raw(text, level))`. The level parameter is
-   *  required when not simple; this prevents the level from being
-   *  implicit in the method name (the old verboseHistory / debugHistory
-   *  wrappers obscured what was really just a level parameter). New
-   *  callsites should prefer `log()` with a typed event constructor
-   *  (`ev.skillLearned(...)`, etc.) — `logRaw` exists for legacy text
-   *  lines that don't yet have a typed event kind. */
-  logRaw(text: string, level: HistoryLevel = "simple") {
-    this.log(ev.raw(text, level));
   }
 
   /**

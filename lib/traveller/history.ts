@@ -10,10 +10,10 @@
 // log) has to parse the strings. Typed events let consumers stay in
 // structured-data land.
 //
-// Backward compatibility: a "raw" event kind wraps an arbitrary string
-// so legacy `character.logRaw("X")` sites that haven't been
-// migrated yet still produce a consumable event. Over time, those sites
-// migrate to typed event constructors and the raw fallback drops out.
+// `raw` event kind: wraps an arbitrary string for narrative lines that
+// are inherently free-text (data-driven `historyLine` rules from the
+// edition JSON, freeTrader pursuit prose) and don't merit their own
+// typed kind. All other chargen logging flows through typed constructors.
 //
 // Verbosity: the event's `level` field ("simple" | "verbose" | "debug")
 // drives whether a given UI mode renders it. Equivalent to the existing
@@ -132,6 +132,14 @@ export type HistoryEvent =
       kind: "mortgagePayoff";
       level: HistoryLevel;
       ship: string; years: number;
+    }
+  // Resolution produced no state change. Used by cell resolution for
+  // repeat receipts of non-stackable benefits (Watch / Instruments / a
+  // ship already owned at zero mortgage). Debug-level only.
+  | {
+      kind: "noEffect";
+      level: HistoryLevel;
+      reason: string;
     }
   // Mustering-out cash roll.
   | {
@@ -290,6 +298,9 @@ export const event = {
   }),
   mortgagePayoff: (ship: string, years: number): HistoryEvent => ({
     kind: "mortgagePayoff", level: "verbose", ship, years,
+  }),
+  noEffect: (reason: string): HistoryEvent => ({
+    kind: "noEffect", level: "debug", reason,
   }),
   musterCash: (amount: number, tableRoll: number, dm: number): HistoryEvent => ({
     kind: "musterCash", level: "verbose", amount, tableRoll, dm,
@@ -530,6 +541,8 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "mortgagePayoff":
       return `Mortgage payoff: ${e.years} years on ${e.ship}.`;
+    case "noEffect":
+      return `No effect (${e.reason}).`;
     case "musterCash":
       return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)}).`;
     case "browniePoint": {
