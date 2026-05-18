@@ -264,6 +264,52 @@ export interface AcgState {
    *  pause/resume cycle (the resumed run reads this instead of the
    *  already-cleared justRetained flag). Cleared at year boundary. */
   wasRetainedThisYear?: boolean;
+
+  /** Sub-step idempotence cache for resolveAssignment. Each phase stores
+   *  the dice outcome + any auto-mitigation spend so a pause/resume on
+   *  an interactive choice (BP review etc.) doesn't re-roll the phase
+   *  or double-spend brownie points. Phase-applied flags gate
+   *  non-idempotent side effects (decoration push, addSkill, etc.).
+   *  Cleared at year boundary by the runner. */
+  thisYearOutcomes?: ThisYearOutcomes;
+}
+
+/** Per-sub-step result captured for resume idempotence. */
+export interface SubStepOutcome {
+  /** Dice roll value (after dm). */
+  roll?: number;
+  /** Applied DM total. */
+  dm?: number;
+  /** Target throw. */
+  target?: number;
+  /** Pass / fail. */
+  success?: boolean;
+  /** Margin (positive = pass by N, negative = fail by N). */
+  margin?: number;
+  /** BPs auto-mitigated this sub-step (so re-runs return the cached
+   *  spend rather than spending again). */
+  autoMitigated?: number;
+  /** Margin after auto-mitigation. */
+  marginAfterMit?: number;
+}
+
+/** Per-year sub-step cache. Each key may hold a SubStepOutcome plus
+ *  side-effect "applied" flags to gate non-idempotent state changes. */
+export interface ThisYearOutcomes {
+  survival?: SubStepOutcome;
+  promotion?: SubStepOutcome;
+  decoration?: SubStepOutcome;
+  skills?: SubStepOutcome;
+  bonus?: SubStepOutcome;
+  /** Side-effect-applied flags keyed by a phase-local string. Pathway
+   *  code uses these to guard non-idempotent side effects (decoration
+   *  push, rank++, log calls) on re-entry. */
+  applied?: Record<string, boolean>;
+  /** True once a pathway's resolveAssignment ran to completion this
+   *  year. Lets pathways detect a stale prior-year cache when they're
+   *  invoked directly (outside runAcgYear which clears at year end)
+   *  and reset before starting fresh. */
+  complete?: boolean;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {

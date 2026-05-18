@@ -81,15 +81,27 @@ function tryMarineTradition(
   if (cascadeKeyForLabel(label, ch.editionId) !== rule.appliesToCascade) return false;
 
   // Saving throw: 2D vs target, with DMs if already skilled in the forced
-  // skill at the listed level.
+  // skill at the listed level. The tier skill may be a PM Includes-skill
+  // umbrella (e.g., "Large Blade"); check both the literal entry and the
+  // expanded constituents (Broadsword/Cutlass/Sword) so a Marine who
+  // received the umbrella expansion in a prior term still triggers the DM.
   const target = rule.savingThrow?.target ?? 9;
   let dm = 0;
   const tiers = (rule.dmIfAlreadySkillAtLeast ?? []).slice().sort(
     (a, b) => b.level - a.level,
   );
+  const skillLevel = (name: string): number => {
+    const idx = ch.skills.findIndex(([n]) => n === name);
+    return idx >= 0 ? (ch.skills[idx]?.[1] ?? 0) : 0;
+  };
   for (const tier of tiers) {
-    const idx = ch.skills.findIndex(([n]) => n === tier.skill);
-    if (idx >= 0 && (ch.skills[idx]?.[1] ?? 0) >= tier.level) {
+    if (skillLevel(tier.skill) >= tier.level) {
+      dm = tier.dm;
+      break;
+    }
+    const expansion = includesExpansion(ch.editionId, tier.skill);
+    if (expansion && expansion.length > 0 &&
+        expansion.every((inner) => skillLevel(inner.skill) >= tier.level)) {
       dm = tier.dm;
       break;
     }
@@ -102,11 +114,22 @@ function tryMarineTradition(
     ch.log(ev.marineTradition("saved", { roll: r, dm, target }));
     return false;
   }
-  // Save failed — forced to receive the named skill at level 1.
+  // Save failed — forced to receive the named skill at level 1. If the
+  // forced skill is itself a PM Includes-skill umbrella (e.g., "Large
+  // Blade" → Broadsword/Cutlass/Sword), expand the same way the cascade
+  // onResolve does so the Marine actually gets the constituent weapons.
   ch.log(ev.marineTradition("forced", {
     forcedSkill: rule.forcedSkill, roll: r, dm, target,
   }));
-  ch.addSkill(rule.forcedSkill, 1, source);
+  const expansion = includesExpansion(ch.editionId, rule.forcedSkill);
+  if (expansion) {
+    for (const inner of expansion) {
+      if (!acquireSkillWithRestrictionCheck(ch, inner.skill)) continue;
+      ch.addSkill(inner.skill, inner.level, source);
+    }
+  } else {
+    ch.addSkill(rule.forcedSkill, 1, source);
+  }
   return true;
 }
 
@@ -194,6 +217,19 @@ export function applyCell(
         // skill roll is forfeited entirely.
         if (mode !== "muster" && !acquireSkillWithRestrictionCheck(c, name)) return;
         c.log(ev.cascadePick(label, name));
+        // PM Includes-skills: picking an umbrella name (Axe, Large Blade,
+        // Polearm, Handgun, Combat Rifleman, ATV, Heavy Weapons, etc.)
+        // grants every constituent skill at the listed level. Without
+        // expansion the player would only get level-1 in the umbrella,
+        // losing the underlying weapon-specific skills.
+        const expansion = includesExpansion(c.editionId, name);
+        if (expansion && mode !== "muster") {
+          for (const inner of expansion) {
+            if (!acquireSkillWithRestrictionCheck(c, inner.skill)) continue;
+            c.addSkill(inner.skill, inner.level, grantSource);
+          }
+          return;
+        }
         c.addSkill(name, 1, grantSource);
       },
     });

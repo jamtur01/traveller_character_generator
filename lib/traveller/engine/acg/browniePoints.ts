@@ -13,6 +13,12 @@
 
 import type { Character } from "../../character";
 import { event as ev } from "../../history";
+import {
+  cacheMitigation, getCachedMitigation, type SubStepKey,
+} from "./subStepCache";
+
+const CACHEABLE_PHASES: ReadonlySet<SubStepKey> =
+  new Set<SubStepKey>(["survival", "promotion", "decoration", "skills", "bonus"]);
 
 export interface MitigationRequest {
   rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial";
@@ -48,8 +54,21 @@ export function tryMitigate(
   if (ch.acgState.browniePoints <= 0) return { spent: 0, newMargin: req.margin };
   if (req.margin >= 0) return { spent: 0, newMargin: req.margin }; // already a pass
 
+  // Resume case: if a prior pass through this phase already auto-
+  // mitigated (and possibly queued a BP review that paused the engine),
+  // return the cached spend/margin so re-runs don't double-charge BPs.
+  // The cache lives on AcgState.thisYearOutcomes and is cleared at year
+  // boundary by runAcgYear.
+  const phase = req.rollName as SubStepKey;
+  if (CACHEABLE_PHASES.has(phase)) {
+    const cached = getCachedMitigation(ch, phase);
+    if (cached) return cached;
+  }
+
   if (ch.choiceMode === "auto") {
-    return autoMitigate(ch, req);
+    const result = autoMitigate(ch, req);
+    if (CACHEABLE_PHASES.has(phase)) cacheMitigation(ch, phase, result.spent, result.newMargin);
+    return result;
   }
   return interactiveMitigate(ch, req);
 }
@@ -104,6 +123,11 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
  *  promotion (promotion), or grant a missed skill (skills). */
 function interactiveMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   const result = autoMitigate(ch, req);
+  // Cache the auto-spend BEFORE queueBpReview can throw, so the resumed
+  // pathway sees the same spent/newMargin instead of re-rolling and
+  // re-spending.
+  const phase = req.rollName as SubStepKey;
+  if (CACHEABLE_PHASES.has(phase)) cacheMitigation(ch, phase, result.spent, result.newMargin);
   queueBpReview(ch, req, result);
   return result;
 }
@@ -127,13 +151,15 @@ function queueBpReview(
   for (let n = 1; n <= max; n++) {
     options.push(`Spend ${n} more brownie point(s)`);
   }
-  // Non-throwing: queue the review without halting the engine. The
-  // pathway's resolveAssignment runs to completion in one pass; the
-  // player resolves the BP-review later, and the onResolve closure
-  // applies any retroactive revival via req.onMitigated. Using
-  // pickOrDefer here would re-run the whole step on resume and re-roll
-  // survival/decoration/promotion/skills with the BP already spent.
-  ch.queueChoice({
+  // Pause the engine on the BP-review prompt. The pathway's
+  // resolveAssignment is idempotent on resume via the per-year
+  // sub-step cache (AcgState.thisYearOutcomes): dice rolls and
+  // auto-mitigation spends are cached, so re-running after the player
+  // resolves the prompt doesn't re-roll or double-spend. queueChoice
+  // (non-throwing) is the wrong primitive for life-or-death rolls —
+  // it would let endChargenRetired fire before the player has a chance
+  // to spend more BPs to revive.
+  ch.pickOrDefer({
     kind: "bpSpend",
     label:
       `${req.rollName} roll failed by ${Math.abs(req.margin)}; you have ${available} BP. ` +

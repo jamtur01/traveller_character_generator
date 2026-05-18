@@ -28,12 +28,15 @@ import { getEdition, getAcgPathway } from "../../../editions";
 import { roll } from "../../../random";
 import {
   applyDmRules, applyStructuredDms, labelToColumnKey,
-  parseResolutionTarget, rollVsTarget,
+  parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
 import { awardBrownie } from "../awards";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
+import {
+  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+} from "../subStepCache";
 import { recordTransfer } from "../types";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
 import { event as ev } from "../../../history";
@@ -287,6 +290,10 @@ export function merchantRollAssignment(ch: Character): string {
 }
 
 export function merchantResolveAssignment(ch: Character, assignment: string): void {
+  // Reset per-year sub-step cache if a prior resolveAssignment ran to
+  // completion (the runner clears at year boundary, but direct test
+  // invocation can call us multiple times in the same notional year).
+  resetIfComplete(ch);
   if (assignment === "Transfer Up") {
     transferMerchantLine(ch, "up");
     // Reroll specific assignment in the new line. Recurse once.
@@ -355,12 +362,14 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
 
   if (survRow) {
     const target = parseResolutionTarget(survRow[colKey]).target;
-    const sv = rollVsTarget(target, survDm);
-    ch.log(ev.roll(
-      "Survival", sv.roll, survDm,
-      typeof target === "number" ? target : 0,
-      sv.success, assignment,
-    ));
+    const sv = rollPhaseDice(ch, "survival", target, survDm);
+    applyOnce(ch, "survivalLogged", () => {
+      ch.log(ev.roll(
+        "Survival", sv.roll, survDm,
+        typeof target === "number" ? target : 0,
+        sv.success, assignment,
+      ));
+    });
     if (!sv.success) {
       const mit = tryMitigate(ch, {
         rollName: "survival",
@@ -375,14 +384,16 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         },
       });
       if (mit.newMargin < 0) {
-        ch.endChargenRetired("mustered out of Merchant service");
+        applyOnce(ch, "survivalEndChargen", () => {
+          ch.endChargenRetired("mustered out of Merchant service");
+        });
         return;
       }
     }
   }
   if (skillRow) {
     const target = parseResolutionTarget(skillRow[colKey]).target;
-    const sk = rollVsTarget(target, skillDm);
+    const sk = rollPhaseDice(ch, "skills", target, skillDm);
     let skMargin = sk.margin;
     if (!sk.success) {
       const mit = tryMitigate(ch, {
@@ -394,11 +405,13 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
       });
       skMargin = mit.newMargin;
     }
-    if (skMargin >= 0) merchantRollSkill(ch);
+    if (skMargin >= 0) {
+      applyOnce(ch, "skillsApplied", () => merchantRollSkill(ch));
+    }
   }
   if (bonusRow && !skipBonus) {
     const target = parseResolutionTarget(bonusRow[colKey]).target;
-    const bn = rollVsTarget(target, bonusDm);
+    const bn = rollPhaseDice(ch, "bonus", target, bonusDm);
     // Bonus rolls are like decorations in merchant service. Use the
     // decoration policy (1 BP cap) to mitigate borderline misses.
     let bnMargin = bn.margin;
@@ -412,16 +425,21 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
       });
       bnMargin = mit.newMargin;
     }
-    if (bnMargin >= 0) merchantAwardBonus(ch);
+    if (bnMargin >= 0) {
+      applyOnce(ch, "bonusApplied", () => merchantAwardBonus(ch));
+    }
   }
 
-  const acg = ch.requireAcgState();
-  acg.assignmentHistory.push(assignment);
-  // PM p. 61: enlisted commission exam is available "if they are
-  // serving on a Route assignment" — interpreted as having had Route
-  // experience during the current term. Flag is consumed in
-  // merchantEndOfTerm and reset at startOfTerm.
-  if (assignment === "Route") acg.routeAssignmentThisTerm = true;
+  applyOnce(ch, "assignmentHistoryRecorded", () => {
+    const acg = ch.requireAcgState();
+    acg.assignmentHistory.push(assignment);
+    // PM p. 61: enlisted commission exam is available "if they are
+    // serving on a Route assignment" — interpreted as having had Route
+    // experience during the current term. Flag is consumed in
+    // merchantEndOfTerm and reset at startOfTerm.
+    if (assignment === "Route") acg.routeAssignmentThisTerm = true;
+  });
+  markComplete(ch);
 }
 
 function merchantCheckAvailablePosition(ch: Character): void {

@@ -221,12 +221,21 @@ for (const meta of ACTIVE_EDITIONS) {
     const pool = cascadePoolForLabel(cellLabel, editionId);
     if (pool) {
       expect(got.attrDelta, `${editionId}/${svc} table ${table} row ${n}`).toEqual({});
-      expect(got.skills, `${editionId}/${svc} table ${table} row ${n}`).toHaveLength(1);
-      const [name, level] = got.skills[0]!;
-      expect(level).toBe(1);
+      // A cascade pick may itself be a PM Includes-skill umbrella
+      // (e.g., "Small Blade" expands to [Blade, Dagger]; "Large Blade"
+      // expands to [Broadsword, Cutlass, Sword]). Expansion produces
+      // multiple skill entries. Accept either the literal pool member
+      // or a non-empty expansion.
       expect(
-        pool, `${editionId}/${svc} table ${table} row ${n}: ${name} not in ${cellLabel} pool`,
-      ).toContain(name);
+        got.skills.length, `${editionId}/${svc} table ${table} row ${n}`,
+      ).toBeGreaterThanOrEqual(1);
+      if (got.skills.length === 1) {
+        const [name, level] = got.skills[0]!;
+        expect(level).toBe(1);
+        expect(
+          pool, `${editionId}/${svc} table ${table} row ${n}: ${name} not in ${cellLabel} pool`,
+        ).toContain(name);
+      }
       return;
     }
 

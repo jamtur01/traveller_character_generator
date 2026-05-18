@@ -20,12 +20,15 @@ import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
-  applyDmRules, labelToColumnKey, lookupResolution, rollVsTarget,
+  applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
 } from "../tables";
 import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { applyScoutSchool } from "../schools";
+import {
+  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+} from "../subStepCache";
 import { recordTransfer } from "../types";
 import { event as ev } from "../../../history";
 
@@ -232,6 +235,10 @@ export function scoutRollAssignment(ch: Character): string {
 }
 
 export function scoutResolveAssignment(ch: Character, assignment: string): void {
+  // Reset per-year sub-step cache if a prior resolveAssignment ran to
+  // completion (the runner clears at year boundary, but direct test
+  // invocation can call us multiple times in the same notional year).
+  resetIfComplete(ch);
   const data = dataFor(ch);
   // Transfer assignment (Field → Bureaucracy, per manual p. 56). The Scout
   // may decline; if declined, reroll once. If transfer is on the reroll, it
@@ -282,12 +289,14 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const promoDm = applyDmRules(resTable.dms, ch, "promotion");
   const skillDm = applyDmRules(resTable.dms, ch, "skills");
 
-  const sv = rollVsTarget(res.survival, survDm);
-  ch.log(ev.roll(
-    "Survival", sv.roll, survDm,
-    typeof res.survival === "number" ? res.survival : 0,
-    sv.success, assignment,
-  ));
+  const sv = rollPhaseDice(ch, "survival", res.survival, survDm);
+  applyOnce(ch, "survivalLogged", () => {
+    ch.log(ev.roll(
+      "Survival", sv.roll, survDm,
+      typeof res.survival === "number" ? res.survival : 0,
+      sv.success, assignment,
+    ));
+  });
   if (!sv.success) {
     const mit = tryMitigate(ch, {
       rollName: "survival",
@@ -302,7 +311,9 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       },
     });
     if (mit.newMargin < 0) {
-      ch.endChargenRetired("invalided out of Scout service");
+      applyOnce(ch, "survivalEndChargen", () => {
+        ch.endChargenRetired("invalided out of Scout service");
+      });
       return;
     }
   }
@@ -312,7 +323,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const division = ch.requireAcgState().division ?? "field";
   if (division === "bureaucracy" && res.promotion !== "none" &&
       !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
-    const pr = rollVsTarget(res.promotion, promoDm);
+    const pr = rollPhaseDice(ch, "promotion", res.promotion, promoDm);
     let promoMargin = pr.margin;
     if (!pr.success) {
       const target = typeof res.promotion === "number" ? res.promotion : 0;
@@ -323,11 +334,13 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       });
       promoMargin = mit.newMargin;
     }
-    if (promoMargin >= 0) promoteScout(ch);
+    if (promoMargin >= 0) {
+      applyOnce(ch, "promotionApplied", () => promoteScout(ch));
+    }
   }
 
   if (res.skills !== "none") {
-    const sk = rollVsTarget(res.skills, skillDm);
+    const sk = rollPhaseDice(ch, "skills", res.skills, skillDm);
     let skMargin = sk.margin;
     if (!sk.success) {
       const target = typeof res.skills === "number" ? res.skills : 0;
@@ -338,17 +351,24 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       });
       skMargin = mit.newMargin;
     }
-    if (skMargin >= 0) scoutRollSkill(ch);
+    if (skMargin >= 0) {
+      applyOnce(ch, "skillsApplied", () => scoutRollSkill(ch));
+    }
   }
 
   // Special/War mission → extra skill from the dedicated column (PM p. 57:
   // "the extra training and preparation for the assignment results in an
   // extra skill taken from the special or war mission column").
   if (assignment === "Special Mission" || assignment === "Wartime Mission") {
-    scoutRollSkillFromColumn(ch, "specialOrWarMission");
+    applyOnce(ch, "extraSkillApplied", () => {
+      scoutRollSkillFromColumn(ch, "specialOrWarMission");
+    });
   }
 
-  ch.requireAcgState().assignmentHistory.push(assignment);
+  applyOnce(ch, "assignmentHistoryRecorded", () => {
+    ch.requireAcgState().assignmentHistory.push(assignment);
+  });
+  markComplete(ch);
 }
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {

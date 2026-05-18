@@ -151,6 +151,7 @@ export function runAcgYear(ch: Character): void {
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
     acg.pausedAtStep = null;
+    delete acg.thisYearOutcomes;
     return;
   }
 
@@ -187,6 +188,7 @@ export function runAcgYear(ch: Character): void {
   // already-applied side effects on pause/resume re-entry.
   delete acg.transferAppliedThisYear;
   delete acg.wasRetainedThisYear;
+  delete acg.thisYearOutcomes;
 }
 
 /** Run a full four-year term. Time is accounted per year inside runAcgYear,
