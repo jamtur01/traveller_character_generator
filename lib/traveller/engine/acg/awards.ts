@@ -314,7 +314,10 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 3;
     ch.acgState.pensionForfeit = true;
-    ch.logRaw("Dishonorably discharged: -3 mustering-out rolls, no pension.");
+    ch.log(ev.statusChange(
+      "dishonorablyDischarged",
+      "-3 mustering-out rolls, no pension",
+    ));
     return;
   }
 
@@ -330,7 +333,10 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       // shortTermThisTerm / equivalent jail flag).
       const months = roll(1) + roll(1);
       ch.acgState.jailMonthsThisYear = months;
-      ch.logRaw(`Jailed ${months} months — consumes this year of service.`);
+      ch.log(ev.statusChange(
+        "jailed",
+        `${months} months — consumes this year of service`,
+      ));
       return;
     }
     // "Jail 1D years; ..." or "Jail 2D years; ..."

@@ -1472,7 +1472,7 @@ export class Character {
         `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
       );
     } else if (pensionForfeit && this.terms >= eligibleAfter) {
-      this.logRaw("Pension forfeit due to dishonorable discharge or death sentence.");
+      this.log(ev.statusChange("pensionForfeit", "dishonorable discharge or death sentence"));
     }
     // ACG Merchant Free Trader Owner/Captain auto-benefit.
     if (this.useAcg && this.acgState?.pathway === "merchantPrince") {
