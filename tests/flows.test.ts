@@ -31,7 +31,7 @@ describe("doEnlistment", () => {
     c.attributes.social = 11;
     const svc = c.doEnlistment("");
     expect(svc).toBe("nobles");
-    expect(c.history.some((h) => h.includes("automatically enrolled"))).toBe(true);
+    expect(c.history.some((h) => h.includes("auto-enrolled"))).toBe(true);
   });
 
   it("auto-enrolls Soc 10+ when method explicitly 'random'", () => {

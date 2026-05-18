@@ -151,7 +151,10 @@ export function mercenaryEnlist(
   const draftRoll = roll(1);
   const drafted = data.enlistment.draft.results[String(draftRoll)];
   if (!drafted) {
-    ch.logRaw("Enlistment failed; draft did not assign mercenary service.");
+    ch.log(ev.enlistmentAttempt(
+      "mercenary", 0, 0, 0, false,
+      "draft did not assign mercenary service",
+    ));
     throw new Error("Mercenary draft rejection — choose another path");
   }
   ch.drafted = true;
@@ -229,7 +232,7 @@ export function mercenaryRollAssignment(ch: Character): string {
     const retained = ch.acgState!.retainedAssignment;
     ch.acgState!.justRetained = false;
     ch.acgState!.retainedAssignment = null;
-    ch.logRaw(`Assignment retained from previous year: ${retained}`, "verbose");
+    ch.log(ev.assignmentRolled(retained, ch.terms + 1, ch.acgState!.year, true));
     return retained;
   }
   const armKey = labelToColumnKey(ch.acgState!.combatArm!);
@@ -292,9 +295,11 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 
   // --- Survival ---
   const sv = rollVsTarget(res.survival, survDm);
-  ch.logRaw(
-    `Mercenary ${assignment} survival: ${sv.roll}${survDm ? ` + ${survDm}` : ""} vs ${res.survival} → ${sv.success ? "survived" : "INJURED/INVALIDED"}`,
-  "verbose");
+  ch.log(ev.roll(
+    "Survival", sv.roll, survDm,
+    typeof res.survival === "number" ? res.survival : 0,
+    sv.success, `${assignment} (mercenary)`,
+  ));
   if (!sv.success) {
     // Try brownie-point mitigation before invaliding out. The onMitigated
     // callback (F16) reverses the muster-out if the player later spends
@@ -344,10 +349,12 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
     const effectiveDm = promoDm + penalty;
     if (penalty < 0) ch.acgState!.nextPromotionPenalty = 0; // consumed
     const pr = rollVsTarget(res.promotion, effectiveDm);
-    ch.logRaw(
-      `Mercenary ${assignment} promotion: ${pr.roll}${effectiveDm ? ` + ${effectiveDm}` : ""} vs ${res.promotion}` +
-      (penalty ? ` (reprimand penalty ${penalty})` : ""),
-    "verbose");
+    ch.log(ev.roll(
+      "Promotion", pr.roll, effectiveDm,
+      typeof res.promotion === "number" ? res.promotion : 0,
+      pr.success,
+      `${assignment} (mercenary)${penalty ? ` — reprimand penalty ${penalty}` : ""}`,
+    ));
     let promoMargin = pr.margin;
     if (!pr.success) {
       const target = typeof res.promotion === "number" ? res.promotion : 0;
@@ -367,9 +374,12 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   // --- Decoration ---
   if (res.decoration !== "none") {
     const dec = rollVsTarget(res.decoration, decDm);
-    ch.logRaw(
-      `Mercenary ${assignment} decoration: ${dec.roll}${decDm ? ` + ${decDm}` : ""} vs ${res.decoration} → margin ${dec.margin}`,
-    "verbose");
+    ch.log(ev.roll(
+      "Decoration", dec.roll, decDm,
+      typeof res.decoration === "number" ? res.decoration : 0,
+      dec.margin >= 0,
+      `${assignment} (mercenary, margin ${dec.margin})`,
+    ));
     let effMargin = dec.margin;
     if (dec.margin < 0) {
       const target = typeof res.decoration === "number" ? res.decoration : 0;
@@ -393,9 +403,11 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   // --- Skills ---
   if (res.skills !== "none") {
     const sk = rollVsTarget(res.skills, skillDm);
-    ch.logRaw(
-      `Mercenary ${assignment} skills: ${sk.roll}${skillDm ? ` + ${skillDm}` : ""} vs ${res.skills}`,
-    "verbose");
+    ch.log(ev.roll(
+      "Skills", sk.roll, skillDm,
+      typeof res.skills === "number" ? res.skills : 0,
+      sk.success, `${assignment} (mercenary)`,
+    ));
     let skMargin = sk.margin;
     if (!sk.success) {
       const target = typeof res.skills === "number" ? res.skills : 0;
@@ -598,7 +610,6 @@ export function mercenarySpecialAssignment(ch: Character): void {
       return;
     }
   }
-  ch.logRaw(`Special Assignment: ${sa}`);
   applyMercenarySchool(ch, sa);
 }
 

@@ -234,6 +234,10 @@ export interface AcgState {
   /** Set true after the one-shot initial training fires (first year of
    *  first term). Prevents replay on resumption. */
   initialTrainingDone?: boolean;
+  /** Reason a reenlistment was denied by pathway logic (e.g. scout
+   *  up-or-out). Threaded into the next ev.reenlistment("denied") event;
+   *  consumed by character.ts after emission. */
+  reenlistDenialReason?: string;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {

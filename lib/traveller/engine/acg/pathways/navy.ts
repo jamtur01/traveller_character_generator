@@ -161,10 +161,12 @@ export function navyEnlist(
       }
     }
     if (forcedFleet && fleet !== forcedFleet) {
+      const fromFleet = fleet ?? undefined;
       ch.acgState!.fleet = forcedFleet;
-      ch.logRaw(
-        `Fleet adjusted to ${forcedFleet} per academy/NOTC commission (PM p. 52).`,
-      );
+      ch.log(ev.transferred(
+        forcedFleet, "fleet", fromFleet,
+        "academy/NOTC commission (PM p. 52)",
+      ));
     } else {
       ch.acgState!.fleet = forcedFleet ?? fleet;
     }
@@ -291,7 +293,6 @@ export function navyInitialTraining(ch: Character): void {
   // preCareerCommission flag set, we still treat the character as
   // ineligible for Officer Staff Skills.
   const data = dataFor(ch);
-  ch.logRaw("Initial Training in the Navy");
   if (!data.branchSkills) return;
   const isAcademyOrNotcOfficer = ch.acgState!.isOfficer &&
     ch.acgState!.preCareerCommission === true;

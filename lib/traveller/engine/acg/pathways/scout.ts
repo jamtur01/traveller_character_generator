@@ -365,7 +365,7 @@ function routeScoutToSchool(ch: Character): void {
   if (!row) return;
   const school = row[officeKey];
   if (typeof school !== "string") return;
-  ch.logRaw(`Training → ${school}`);
+  // applyScoutSchool emits ev.schoolAssigned for the school itself.
   applyScoutSchool(ch, school);
 }
 
@@ -405,9 +405,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // Bureaucracy has rank; ordinary rank becomes terms served.
   const termsServed = Math.max(1, ch.terms);
   ch.acgState!.rankCode = `IS-${Math.min(9, termsServed)}`;
-  ch.logRaw(
-    `Transferred to Scout Bureaucracy; office ${ch.acgState!.office}, rank ${ch.acgState!.rankCode}.`,
-  );
+  ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
   // Resolve a fresh assignment in the new division.
   const nextAssign = scoutRollAssignment(ch);
   if (nextAssign !== "Transfer") {
@@ -458,7 +456,7 @@ export function scoutFinalizeMuster(ch: Character): void {
   const succeeded = r + dm >= 9;
   ch.log(ev.roll("Detached Duty", r, dm, 9, succeeded));
   if (!succeeded) return;
-  ch.logRaw("Awarded permanent Detached Duty (PM p. 57).");
+  ch.log(ev.decoration("Permanent Detached Duty", "PM p. 57"));
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {
     ch.benefits.push("Scout/Courier (Detached Duty)");
@@ -480,7 +478,7 @@ export function scoutReenlist(ch: Character): boolean {
   // Up-or-out: ordinary rank must be ≥ terms served.
   const rankNum = parseInt(ch.acgState!.rankCode.replace("IS-", ""), 10) || 0;
   if (!ch.acgState!.isOfficer && rankNum < ch.terms) {
-    ch.logRaw("Up-or-out: insufficient rank to reenlist.");
+    ch.acgState!.reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }
   const r = roll(2);

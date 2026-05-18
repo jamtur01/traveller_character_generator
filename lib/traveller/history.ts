@@ -81,17 +81,24 @@ export type HistoryEvent =
       level: HistoryLevel;
       cascade: string; chosen: string;
     }
-  // Enlistment attempt.
+  // Enlistment attempt. `note` carries pathway-specific detail or gate
+  // reasons (e.g., "homeworld tech forbids", "auto-enlistment").
   | {
       kind: "enlistmentAttempt";
       level: HistoryLevel;
       service: string; roll: number; dm: number; target: number;
       succeeded: boolean;
+      note?: string;
     }
   // Drafted into a service (after failed enlistment).
   | { kind: "drafted"; level: HistoryLevel; service: string }
   // Term begins.
-  | { kind: "termBegin"; level: HistoryLevel; termNumber: number; age: number }
+  | {
+      kind: "termBegin";
+      level: HistoryLevel;
+      termNumber: number; age: number;
+      shortTerm?: boolean; shortTermReason?: string;
+    }
   // Survival / commission / promotion / special duty roll.
   | {
       kind: "roll";
@@ -108,7 +115,7 @@ export type HistoryEvent =
       kind: "reenlistment";
       level: HistoryLevel;
       outcome: "voluntary" | "mandatory" | "denied" | "retired" | "released" | "heldOver";
-      roll?: number; target?: number;
+      roll?: number; target?: number; reason?: string;
     }
   // Mustering-out benefit roll.
   | {
@@ -164,6 +171,15 @@ export type HistoryEvent =
       kind: "assignmentRolled";
       level: HistoryLevel;
       assignment: string; term?: number; year?: number;
+      retained?: boolean;
+    }
+  // Bonus skill point granted when a roll exceeds its target by the
+  // configured overshoot threshold (PM commission/promotion/special-duty
+  // double bonus).
+  | {
+      kind: "bonusSkillPoint";
+      level: HistoryLevel;
+      source: string; overshoot: number;
     }
   // ACG officer command-duty roll outcome.
   | {
@@ -191,7 +207,9 @@ export type HistoryEvent =
   | {
       kind: "statusChange";
       level: HistoryLevel;
-      kind_: "dishonorablyDischarged" | "jailed" | "pensionForfeit" | "purpleHeart" | "demoted";
+      kind_:
+        | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
+        | "purpleHeart" | "demoted" | "ocsDenied";
       note?: string;
     }
   // Branch / arm / department change at reenlist (cross-training).
@@ -205,7 +223,9 @@ export type HistoryEvent =
   | {
       kind: "transferred";
       level: HistoryLevel;
-      from?: string; to: string; kind_: "department" | "division" | "line";
+      from?: string; to: string;
+      kind_: "department" | "division" | "line" | "fleet";
+      reason?: string;
     };
 
 /** Constructors for the most common events. UI / engine emit via these
@@ -251,15 +271,23 @@ export const event = {
   }),
   enlistmentAttempt: (
     service: string, roll: number, dm: number, target: number, succeeded: boolean,
+    note?: string,
   ): HistoryEvent => ({
     kind: "enlistmentAttempt", level: "simple",
     service, roll, dm, target, succeeded,
+    ...(note !== undefined ? { note } : {}),
   }),
   drafted: (service: string): HistoryEvent => ({
     kind: "drafted", level: "simple", service,
   }),
-  termBegin: (termNumber: number, age: number): HistoryEvent => ({
+  termBegin: (
+    termNumber: number, age: number,
+    extras?: { shortTerm?: boolean; shortTermReason?: string },
+  ): HistoryEvent => ({
     kind: "termBegin", level: "verbose", termNumber, age,
+    ...(extras?.shortTerm !== undefined ? { shortTerm: extras.shortTerm } : {}),
+    ...(extras?.shortTermReason !== undefined
+      ? { shortTermReason: extras.shortTermReason } : {}),
   }),
   roll: (
     rollName: string, roll: number, dm: number, target: number,
@@ -278,11 +306,12 @@ export const event = {
   }),
   reenlistment: (
     outcome: "voluntary" | "mandatory" | "denied" | "retired" | "released" | "heldOver",
-    roll?: number, target?: number,
+    roll?: number, target?: number, reason?: string,
   ): HistoryEvent => ({
     kind: "reenlistment", level: "simple", outcome,
     ...(roll !== undefined ? { roll } : {}),
     ...(target !== undefined ? { target } : {}),
+    ...(reason !== undefined ? { reason } : {}),
   }),
   anagathics: (
     outcome: "found" | "lost" | "withdrawal" | "unavailable",
@@ -318,11 +347,15 @@ export const event = {
     ...(extras?.target !== undefined ? { target: extras.target } : {}),
   }),
   assignmentRolled: (
-    assignment: string, term?: number, year?: number,
+    assignment: string, term?: number, year?: number, retained?: boolean,
   ): HistoryEvent => ({
     kind: "assignmentRolled", level: "verbose", assignment,
     ...(term !== undefined ? { term } : {}),
     ...(year !== undefined ? { year } : {}),
+    ...(retained !== undefined ? { retained } : {}),
+  }),
+  bonusSkillPoint: (source: string, overshoot: number): HistoryEvent => ({
+    kind: "bonusSkillPoint", level: "verbose", source, overshoot,
   }),
   commandDuty: (
     inCommand: boolean, roll: number, dm: number, target: number,
@@ -338,7 +371,9 @@ export const event = {
     ...(source !== undefined ? { source } : {}),
   }),
   statusChange: (
-    kind_: "dishonorablyDischarged" | "jailed" | "pensionForfeit" | "purpleHeart" | "demoted",
+    kind_:
+      | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
+      | "purpleHeart" | "demoted" | "ocsDenied",
     note?: string,
   ): HistoryEvent => ({
     kind: "statusChange", level: "simple", kind_,
@@ -350,10 +385,14 @@ export const event = {
     kind: "crossTrained", level: "simple", destination, kind_,
   }),
   transferred: (
-    to: string, kind_: "department" | "division" | "line", from?: string,
+    to: string,
+    kind_: "department" | "division" | "line" | "fleet",
+    from?: string,
+    reason?: string,
   ): HistoryEvent => ({
     kind: "transferred", level: "simple", to, kind_,
     ...(from !== undefined ? { from } : {}),
+    ...(reason !== undefined ? { reason } : {}),
   }),
 };
 
@@ -393,12 +432,21 @@ export function formatEvent(e: HistoryEvent): string {
       return `${e.cascade} → ${e.chosen}`;
     case "enlistmentAttempt": {
       const verb = e.succeeded ? "accepted" : "denied";
-      return `Enlistment in ${e.service}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}`;
+      const note = e.note ? ` — ${e.note}` : "";
+      // Auto / gate cases have target=0 (no roll); render without dice.
+      if (e.target === 0 && e.roll === 0) {
+        return `Enlistment in ${e.service}: ${verb}${note}`;
+      }
+      return `Enlistment in ${e.service}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}${note}`;
     }
     case "drafted":
       return `Drafted into ${e.service}.`;
-    case "termBegin":
-      return `Term ${e.termNumber} (age ${e.age})`;
+    case "termBegin": {
+      const shortNote = e.shortTerm
+        ? ` — short term${e.shortTermReason ? ` (${e.shortTermReason})` : ""}`
+        : "";
+      return `Term ${e.termNumber} (age ${e.age})${shortNote}`;
+    }
     case "roll": {
       const ctx = e.context ? ` (${e.context})` : "";
       const verb = e.succeeded ? "passed" : "failed";
@@ -411,8 +459,12 @@ export function formatEvent(e: HistoryEvent): string {
     case "courtMartial":
       return `Court-martial: ${e.result}.`;
     case "reenlistment": {
-      const tail = e.roll !== undefined && e.target !== undefined
-        ? ` (${e.roll} vs ${e.target}+)` : "";
+      const tailBits: string[] = [];
+      if (e.roll !== undefined && e.target !== undefined) {
+        tailBits.push(`${e.roll} vs ${e.target}+`);
+      }
+      if (e.reason) tailBits.push(e.reason);
+      const tail = tailBits.length ? ` (${tailBits.join("; ")})` : "";
       switch (e.outcome) {
         case "voluntary": return `Eligible to reenlist${tail}.`;
         case "mandatory": return `Mandatory reenlistment${tail}.`;
@@ -466,8 +518,11 @@ export function formatEvent(e: HistoryEvent): string {
     case "assignmentRolled": {
       const where = e.term !== undefined && e.year !== undefined
         ? ` (term ${e.term} year ${e.year})` : "";
-      return `Assignment: ${e.assignment}${where}.`;
+      const retained = e.retained ? " (retained)" : "";
+      return `Assignment: ${e.assignment}${where}${retained}.`;
     }
+    case "bonusSkillPoint":
+      return `${e.source} overshoot +${e.overshoot}: +1 bonus skill point.`;
     case "commandDuty":
       return `Command duty roll ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ` +
         (e.inCommand ? "in command" : "staff position");
@@ -491,6 +546,8 @@ export function formatEvent(e: HistoryEvent): string {
           return `Awarded Purple Heart${note}.`;
         case "demoted":
           return `Demoted${note}.`;
+        case "ocsDenied":
+          return `OCS denied${note}.`;
       }
     }
     case "crossTrained": {
@@ -501,7 +558,8 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "transferred": {
       const fromTxt = e.from ? ` from ${e.from}` : "";
-      return `Transferred${fromTxt} to ${e.to} ${e.kind_}.`;
+      const reasonTxt = e.reason ? ` (${e.reason})` : "";
+      return `Transferred${fromTxt} to ${e.to} ${e.kind_}${reasonTxt}.`;
     }
   }
 }

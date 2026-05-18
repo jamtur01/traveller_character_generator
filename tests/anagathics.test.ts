@@ -79,14 +79,17 @@ describe("anagathics integration (B5)", () => {
 
   describe("survival DM", () => {
     it("applies -1 survival DM when wantsAnagathicsThisTerm is set", () => {
+      // Make Edu < 6 so the army +2 survival DM is suppressed and the only
+      // remaining modifier is the -1 anagathics penalty.
       const c = makeMtChar();
       c.service = "army";
+      c.attributes.education = 5;
       c.showHistory = "verbose";
       c.wantsAnagathicsThisTerm = true;
       const svc = getEditionServices(c.editionId)["army"]!;
       const rollSpy = vi.spyOn(random, "roll").mockReturnValue(6);
       svc.checkSurvival(c);
-      expect(c.history.some((h) => /Anagathics survival DM -1/.test(h))).toBe(true);
+      expect(c.history.some((h) => /Survival.*[−-]\s*1/.test(h))).toBe(true);
       rollSpy.mockRestore();
     });
 
@@ -99,7 +102,7 @@ describe("anagathics integration (B5)", () => {
       const svc = getEditionServices(c.editionId)["nobles"]!;
       const rollSpy = vi.spyOn(random, "roll").mockReturnValue(8);
       svc.checkSurvival(c);
-      expect(c.history.some((h) => /Anagathics survival DM -2/.test(h))).toBe(true);
+      expect(c.history.some((h) => /Survival.*[−-]\s*2/.test(h))).toBe(true);
       rollSpy.mockRestore();
     });
 

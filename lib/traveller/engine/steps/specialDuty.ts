@@ -26,6 +26,6 @@ export const specialDutyStep: StepFn = ({ character, edition, config }) => {
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && r >= target + overshootN) {
     character.skillPoints += 1;
-    character.logRaw(`Special Duty overshoot +${overshootN}: +1 bonus skill`, "verbose");
+    character.log(ev.bonusSkillPoint("Special Duty", overshootN));
   }
 };

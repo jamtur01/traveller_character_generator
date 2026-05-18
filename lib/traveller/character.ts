@@ -855,9 +855,10 @@ export class Character {
     if (method && method !== "random") {
       preferredService = method as ServiceKey;
       if (this.homeworld && !gated.includes(preferredService)) {
-        this.logRaw(
-          `Cannot enlist in ${preferredService}: homeworld tech ${this.homeworld.tech} forbids it.`,
-        );
+        this.log(ev.enlistmentAttempt(
+          preferredService, 0, 0, 0, false,
+          `homeworld tech ${this.homeworld.tech} forbids`,
+        ));
         // Force pick from gated list.
         preferredService = arnd(gated);
       }
@@ -867,9 +868,10 @@ export class Character {
 
     // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
     if (this.attributes.social >= 10 && (!method || method === "random")) {
-      this.logRaw(
-        "Distinguished by social standing, automatically enrolled in the Nobility.",
-      );
+      this.log(ev.enlistmentAttempt(
+        "Nobility", 0, 0, 0, true,
+        "distinguished by social standing (Soc 10+, auto-enrolled)",
+      ));
       this.applyServiceStartAge("nobles");
       this.service = "nobles";
       // R15: apply service-conditioned homeworld default skills (Vacc Suit-0,
@@ -941,7 +943,15 @@ export class Character {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
       // assignments per term). The ACG runner handles term/age increments
       // because mid-term death has different semantics.
-      this.log(ev.termBegin(this.terms + 1, this.age));
+      const isFirstTerm = this.terms === 0;
+      const shortTerm = isFirstTerm
+        && this.acgState.preCareerFirstTermShort === true;
+      this.log(ev.termBegin(
+        this.terms + 1, this.age,
+        shortTerm
+          ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
+          : undefined,
+      ));
       runAcgTerm(this);
       return;
     }
@@ -968,7 +978,9 @@ export class Character {
       const keep = runAcgReenlist(this);
       if (!keep) {
         this.activeDuty = false;
-        this.log(ev.reenlistment("denied"));
+        const reason = this.acgState.reenlistDenialReason;
+        delete this.acgState.reenlistDenialReason;
+        this.log(ev.reenlistment("denied", undefined, undefined, reason));
       } else if (!this.mandatoryReenlistment) {
         this.log(ev.reenlistment("voluntary"));
       }
@@ -1168,10 +1180,9 @@ export class Character {
   private rollAnagathicsRetrySurvival(): boolean {
     try {
       const svc = this.serviceDef();
+      // checkSurvival emits ev.roll("Survival", ...) which already records
+      // pass/fail in the history.
       const passed = svc.checkSurvival(this);
-      this.logRaw(
-        `Anagathics retry survival ${passed ? "passed" : "failed"}.`,
-      );
       if (!passed) {
         this.shortTermThisTerm = true;
         this.shortTermsCount += 1;

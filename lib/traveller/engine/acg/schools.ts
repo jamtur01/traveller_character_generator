@@ -97,7 +97,7 @@ function runEffect(
       if (!ch.acgState.crossTrainedArms.includes(newArm)) {
         ch.acgState.crossTrainedArms.push(newArm);
       }
-      ch.logRaw(`Cross-trained in ${newArm}`);
+      ch.log(ev.crossTrained(newArm, "combatArm"));
       return;
     }
     case "crossTrainBranch": {
@@ -114,9 +114,7 @@ function runEffect(
       if (!ch.acgState.crossTrainedBranches.includes(newBranch)) {
         ch.acgState.crossTrainedBranches.push(newBranch);
       }
-      ch.logRaw(
-        `Cross-trained in ${newBranch}; eligible to transfer at next reenlistment.`,
-      );
+      ch.log(ev.crossTrained(newBranch, "branch"));
       return;
     }
     case "rollOnMosTable": {
@@ -291,7 +289,10 @@ function ocsCommission(ch: Character): void {
     rules?: { draft?: { noCommissionFirstTerm?: boolean } };
   }).rules?.draft;
   if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
-    ch.logRaw("OCS denied: drafted characters cannot commission during their first term (PM p. 21).");
+    ch.log(ev.statusChange(
+      "ocsDenied",
+      "drafted characters cannot commission during their first term (PM p. 21)",
+    ));
     return;
   }
   // OCS rank-advancement tiers come from the pathway data
@@ -338,23 +339,23 @@ function attacheOrAide(
 ): void {
   if (!ch.acgState) return;
   const r = roll(1);
+  const label = pathway === "navy" ? "Naval Attache" : "Military Attache";
   if (r <= 4) {
-    promoteOfficer(ch, data);
+    promoteOfficer(ch, data, label);
     ch.improveAttribute("social", 1);
-    ch.logRaw(`${pathway === "navy" ? "Naval" : "Military"} Attache: promotion + 1 Social`);
   } else {
     ch.improveAttribute("social", 1);
-    const role = pathway === "navy" ? "an admiral" : "a general";
-    ch.logRaw(`Aide to ${role}: + 1 Social`);
   }
 }
 
-function promoteOfficer(ch: Character, data: PathwayData): void {
+function promoteOfficer(ch: Character, data: PathwayData, reason?: string): void {
   if (!ch.acgState || !data.ranks?.officer) return;
   const codes = data.ranks.officer.map((r) => r[0] as string);
   const idx = codes.indexOf(ch.acgState.rankCode);
   if (idx >= 0 && idx < codes.length - 1) {
     ch.acgState.rankCode = codes[idx + 1]!;
+    const newTitle = data.ranks.officer[idx + 1]![1] as string;
+    ch.log(ev.promoted(newTitle, reason));
   }
 }
 
