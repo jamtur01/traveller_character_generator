@@ -20,12 +20,12 @@ import {
   type StructuredDm,
 } from "../tables";
 import { awardDecoration, resolveDecorationTier, runCourtMartial } from "../awards";
-import { tryMitigate } from "../browniePoints";
 import { applySpecialAssignment } from "../schools";
 import { applyAcgSkillCell } from "./mercenary";
 import {
-  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+  applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
+import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { event as ev } from "../../../history";
 
 const PATHWAY = "navy";
@@ -405,12 +405,141 @@ export function navyRollAssignment(ch: Character): string {
   return String(row.assignment);
 }
 
+// Navy phase order: Survival → Decoration → Promotion → Skills.
+// (Different from mercenary's survival→promotion→decoration→skills:
+// navy resolves decoration first because court-martial-from-decoration
+// can pre-empt the promotion attempt this assignment.)
+const NAVY_SPEC: PathwaySpec = {
+  preRun: (ctx) => {
+    if (ctx.ch.choiceMode === "interactive" &&
+        ctx.res.decoration !== "none" &&
+        typeof ctx.res.survival === "number" &&
+        typeof ctx.res.decoration === "number") {
+      promptDecorationDmTradeoff(ctx.ch);
+    }
+  },
+  phases: [
+    {
+      phase: "survival",
+      target: (ctx) => ctx.res.survival,
+      dm: (ctx) => ctx.dms.survival,
+      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+        "Survival", r.roll, r.dm,
+        typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        r.success, ctx.assignment,
+      )),
+      mitigation: (ctx, r) => ({
+        rollName: "survival",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        margin: r.margin,
+        consequence: "Invalided out of Navy service",
+        onMitigated: (c) => {
+          c.resumeActive();
+          c.log(ev.statusChange("revived", "BP spend saved Navy survival"));
+        },
+      }),
+      onFail: () => ({
+        endChargen: { kind: "retired", reason: "invalided out of Navy service" },
+      }),
+      onExact: (ctx) => {
+        const data = dataFor(ctx.ch);
+        if (typeof ctx.res.survival !== "number") return;
+        if (!(data.combatAssignments ?? []).includes(ctx.assignment)) return;
+        ctx.ch.requireAcgState().decorations.push("Purple Heart");
+        ctx.ch.log(ev.decoration("Purple Heart", `Wounded in ${ctx.assignment}`));
+        ctx.ch.requireAcgState().injuredThisYear = true;
+      },
+    },
+    {
+      phase: "decoration",
+      skip: (ctx) => ctx.res.decoration === "none",
+      target: (ctx) => ctx.res.decoration,
+      dm: (ctx) => ctx.dms.decoration,
+      mitigation: (ctx, r) => ({
+        rollName: "decoration",
+        rollValue: r.roll, dm: r.dm,
+        target: typeof ctx.res.decoration === "number" ? ctx.res.decoration : 0,
+        margin: r.margin,
+        consequence: r.margin <= -6 ? "Avoid court-martial" : "Earn MCUF",
+      }),
+      onPass: (ctx, r) => {
+        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
+        const margin = cached?.marginAfterMit ?? r.margin;
+        const tier = resolveDecorationTier(ctx.ch, margin);
+        if (tier) awardDecoration(ctx.ch, tier);
+      },
+      onFail: (ctx, r) => {
+        const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
+        const margin = cached?.marginAfterMit ?? r.margin;
+        const tier = resolveDecorationTier(ctx.ch, margin);
+        if (tier) {
+          awardDecoration(ctx.ch, tier);
+        } else if (margin <= -6) {
+          runCourtMartial(ctx.ch, ctx.assignment);
+        }
+      },
+    },
+    {
+      phase: "promotion",
+      skip: (ctx) => {
+        const acg = ctx.ch.requireAcgState();
+        return ctx.res.promotion === "none"
+          || (acg.isOfficer && ctx.res.promotionOfficersBarred === true)
+          || (acg.isOfficer && acg.promotedThisTerm);
+      },
+      target: (ctx) => ctx.res.promotion,
+      dm: (ctx) => {
+        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
+        return ctx.dms.promotion + penalty;
+      },
+      logRoll: (ctx) => {
+        const penalty = ctx.ch.requireAcgState().nextPromotionPenalty ?? 0;
+        if (penalty < 0) ctx.ch.requireAcgState().nextPromotionPenalty = 0;
+      },
+      mitigation: (ctx, r) => ({
+        rollName: "promotion",
+        rollValue: r.roll, dm: r.dm,
+        target: typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
+        margin: r.margin,
+        consequence: "Earn promotion",
+      }),
+      onPass: (ctx) => promoteNavy(ctx.ch),
+    },
+    {
+      phase: "skills",
+      skip: (ctx) => ctx.res.skills === "none",
+      target: (ctx) => ctx.res.skills,
+      dm: (ctx) => ctx.dms.skills,
+      mitigation: (ctx, r) => ({
+        rollName: "skills",
+        rollValue: r.roll, dm: r.dm,
+        target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
+        margin: r.margin,
+        consequence: "Earn a skill this assignment",
+      }),
+      onPass: (ctx) => navyBranchSkillRoll(ctx.ch),
+    },
+  ],
+  finalize: (ctx) => {
+    const data = dataFor(ctx.ch);
+    const combat = (data.combatAssignments ?? []).includes(ctx.assignment);
+    if (combat) {
+      ctx.ch.requireAcgState().combatRibbons += 1;
+      ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
+      const acg = ctx.ch.requireAcgState();
+      if (acg.inCommand && acg.isOfficer) {
+        acg.commandClusters += 1;
+        ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
+      }
+    }
+    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
+  },
+};
+
 /** Resolve assignment. Branch picks which resolution sub-table to use. */
 export function navyResolveAssignment(ch: Character, assignment: string): void {
-  // Reset per-year sub-step cache if a prior resolveAssignment ran to
-  // completion (the runner clears at year boundary, but direct test
-  // invocation can call us multiple times in the same notional year).
-  resetIfComplete(ch);
   const data = dataFor(ch);
   const branch = ch.requireAcgState().branch ?? "Line";
   const resKey = data.branchResolution?.[branch] ?? "lineCrew";
@@ -424,9 +553,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    // Special-assignment rule: read mechanical overrides from
-    // navy.specialAssignmentRules in JSON (e.g. Frozen Watch: cold sleep
-    // — no skill roll, physical age frozen; PM p. 53).
+    // Special-assignment rule (Frozen Watch et al.) — PM p. 53.
     const specials = (data.specialAssignmentRules ?? {}) as Record<string, {
       noSkillRoll?: boolean;
       physicalAgeDelta?: number;
@@ -434,9 +561,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     }>;
     const rule = specials[assignment];
     if (rule) {
-      // Gate side effects with applyOnce so a direct test invocation
-      // (which bypasses runAcgYear's year-boundary cleanup) doesn't
-      // re-fire frozenWatchYears++, physicalAgeOffset++, history push.
+      resetIfComplete(ch);
       applyOnce(ch, "navySpecialRuleApplied", () => {
         if (assignment === "Frozen Watch") {
           ch.requireAcgState().frozenWatchYears = (ch.requireAcgState().frozenWatchYears ?? 0) + 1;
@@ -458,132 +583,14 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   }
 
   const res = lookupResolution(resTable, assignment);
-  if (ch.choiceMode === "interactive" &&
-      res.decoration !== "none" &&
-      typeof res.survival === "number" &&
-      typeof res.decoration === "number") {
-    promptDecorationDmTradeoff(ch);
-  }
   const decStrategy = ch.requireAcgState().decorationDmStrategy;
-  const survDm = applyDmRules(resTable.dms, ch, "survival") + (decStrategy < 0 ? decStrategy : 0);
-  const decDm = applyDmRules(resTable.dms, ch, "decoration") - (decStrategy < 0 ? decStrategy : 0);
-  const promoDm = applyDmRules(resTable.dms, ch, "promotion");
-  const skillDm = applyDmRules(resTable.dms, ch, "skills");
-
-  const sv = rollPhaseDice(ch, "survival", res.survival, survDm);
-  applyOnce(ch, "survivalLogged", () => {
-    ch.log(ev.roll(
-      "Survival", sv.roll, survDm,
-      typeof res.survival === "number" ? res.survival : 0,
-      sv.success, assignment,
-    ));
-  });
-  if (!sv.success) {
-    const mit = tryMitigate(ch, {
-      rollName: "survival",
-      rollValue: sv.roll,
-      dm: survDm,
-      target: typeof res.survival === "number" ? res.survival : 0,
-      margin: sv.margin,
-      consequence: "Invalided out of Navy service",
-      onMitigated: (c) => {
-        c.resumeActive();
-        c.log(ev.statusChange("revived", "BP spend saved Navy survival"));
-      },
-    });
-    if (mit.newMargin < 0) {
-      applyOnce(ch, "survivalEndChargen", () => {
-        ch.endChargenRetired("invalided out of Navy service");
-      });
-      return;
-    }
-  }
-  const combatAssignments = data.combatAssignments ?? [];
-  if (sv.margin === 0 && typeof res.survival === "number" &&
-      combatAssignments.includes(assignment)) {
-    applyOnce(ch, "purpleHeartAwarded", () => {
-      ch.requireAcgState().decorations.push("Purple Heart");
-      ch.log(ev.decoration("Purple Heart", `Wounded in ${assignment}`));
-      ch.requireAcgState().injuredThisYear = true;
-    });
-  }
-
-  if (res.decoration !== "none") {
-    const dec = rollPhaseDice(ch, "decoration", res.decoration, decDm);
-    // R10: brownie-point mitigation for decoration / court-martial avoidance.
-    let effMargin = dec.margin;
-    if (dec.margin < 0) {
-      const target = typeof res.decoration === "number" ? res.decoration : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "decoration",
-        rollValue: dec.roll, dm: decDm, target, margin: dec.margin,
-        consequence: dec.margin <= -6 ? "Avoid court-martial" : "Earn MCUF",
-      });
-      effMargin = mit.newMargin;
-    }
-    const tierAward = resolveDecorationTier(ch, effMargin);
-    applyOnce(ch, "decorationApplied", () => {
-      if (tierAward) awardDecoration(ch, tierAward);
-      else if (effMargin <= -6) runCourtMartial(ch, assignment);
-    });
-  }
-
-  if (res.promotion !== "none" &&
-      !(ch.requireAcgState().isOfficer && res.promotionOfficersBarred) &&
-      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
-    const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
-    const effectiveDm = promoDm + penalty;
-    applyOnce(ch, "promotionPenaltyConsumed", () => {
-      if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0;
-    });
-    const pr = rollPhaseDice(ch, "promotion", res.promotion, effectiveDm);
-    let promoMargin = pr.margin;
-    if (!pr.success) {
-      const target = typeof res.promotion === "number" ? res.promotion : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "promotion",
-        rollValue: pr.roll, dm: effectiveDm, target, margin: pr.margin,
-        consequence: "Earn promotion",
-      });
-      promoMargin = mit.newMargin;
-    }
-    if (promoMargin >= 0) {
-      applyOnce(ch, "promotionApplied", () => promoteNavy(ch));
-    }
-  }
-
-  if (res.skills !== "none") {
-    const sk = rollPhaseDice(ch, "skills", res.skills, skillDm);
-    let skMargin = sk.margin;
-    if (!sk.success) {
-      const target = typeof res.skills === "number" ? res.skills : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "skills",
-        rollValue: sk.roll, dm: skillDm, target, margin: sk.margin,
-        consequence: "Earn a skill this assignment",
-      });
-      skMargin = mit.newMargin;
-    }
-    if (skMargin >= 0) {
-      applyOnce(ch, "skillsApplied", () => navyBranchSkillRoll(ch));
-    }
-  }
-
-  applyOnce(ch, "combatRibbonsAwarded", () => {
-    if (combatAssignments.includes(assignment)) {
-      ch.requireAcgState().combatRibbons += 1;
-      ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
-      if (ch.requireAcgState().inCommand && ch.requireAcgState().isOfficer) {
-        ch.requireAcgState().commandClusters += 1;
-        ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
-      }
-    }
-  });
-
-  applyOnce(ch, "assignmentHistoryRecorded", () => {
-    ch.requireAcgState().assignmentHistory.push(assignment);
-  });
-  markComplete(ch);
+  const dms = {
+    survival: applyDmRules(resTable.dms, ch, "survival") + (decStrategy < 0 ? decStrategy : 0),
+    decoration: applyDmRules(resTable.dms, ch, "decoration") - (decStrategy < 0 ? decStrategy : 0),
+    promotion: applyDmRules(resTable.dms, ch, "promotion"),
+    skills: applyDmRules(resTable.dms, ch, "skills"),
+  };
+  runPhases(NAVY_SPEC, { ch, assignment, resTable, res, dms });
 }
 
 function promptDecorationDmTradeoff(ch: Character): void {

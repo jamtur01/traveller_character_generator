@@ -23,12 +23,10 @@ import {
   applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
 } from "../tables";
-import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import { applyScoutSchool } from "../schools";
-import {
-  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
-} from "../subStepCache";
+import { resetIfComplete } from "../subStepCache";
+import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { recordTransfer } from "../types";
 import { event as ev } from "../../../history";
 
@@ -285,91 +283,88 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     );
   }
   const res = lookupResolution(resTable, assignment);
-  const survDm = applyDmRules(resTable.dms, ch, "survival");
-  const promoDm = applyDmRules(resTable.dms, ch, "promotion");
-  const skillDm = applyDmRules(resTable.dms, ch, "skills");
-
-  const sv = rollPhaseDice(ch, "survival", res.survival, survDm);
-  applyOnce(ch, "survivalLogged", () => {
-    ch.log(ev.roll(
-      "Survival", sv.roll, survDm,
-      typeof res.survival === "number" ? res.survival : 0,
-      sv.success, assignment,
-    ));
-  });
-  if (!sv.success) {
-    const mit = tryMitigate(ch, {
-      rollName: "survival",
-      rollValue: sv.roll,
-      dm: survDm,
-      target: typeof res.survival === "number" ? res.survival : 0,
-      margin: sv.margin,
-      consequence: "Invalided out of Scout service",
-      onMitigated: (c) => {
-        c.resumeActive();
-        c.log(ev.statusChange("revived", "BP spend saved Scout survival"));
-      },
-    });
-    if (mit.newMargin < 0) {
-      applyOnce(ch, "survivalEndChargen", () => {
-        ch.endChargenRetired("invalided out of Scout service");
-      });
-      return;
-    }
-  }
-
-  // Bureaucracy → administrator rank ladder is climbed via promotion
-  // throws. Field → no promotion possible. Per manual.
-  const division = ch.requireAcgState().division ?? "field";
-  if (division === "bureaucracy" && res.promotion !== "none" &&
-      !(ch.requireAcgState().isOfficer && ch.requireAcgState().promotedThisTerm)) {
-    const pr = rollPhaseDice(ch, "promotion", res.promotion, promoDm);
-    let promoMargin = pr.margin;
-    if (!pr.success) {
-      const target = typeof res.promotion === "number" ? res.promotion : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "promotion",
-        rollValue: pr.roll, dm: promoDm, target, margin: pr.margin,
-        consequence: "Earn promotion (administrator ladder)",
-      });
-      promoMargin = mit.newMargin;
-    }
-    if (promoMargin >= 0) {
-      applyOnce(ch, "promotionApplied", () => promoteScout(ch));
-    }
-  }
-
-  if (res.skills !== "none") {
-    const sk = rollPhaseDice(ch, "skills", res.skills, skillDm);
-    let skMargin = sk.margin;
-    if (!sk.success) {
-      const target = typeof res.skills === "number" ? res.skills : 0;
-      const mit = tryMitigate(ch, {
-        rollName: "skills",
-        rollValue: sk.roll, dm: skillDm, target, margin: sk.margin,
-        consequence: "Earn a skill this assignment",
-      });
-      skMargin = mit.newMargin;
-    }
-    if (skMargin >= 0) {
-      applyOnce(ch, "skillsApplied", () => scoutRollSkill(ch));
-    }
-  }
-
-  // Special/War mission → extra skill from the dedicated column (PM p. 57:
-  // "the extra training and preparation for the assignment results in an
-  // extra skill taken from the special or war mission column").
-  if (assignment === "Special Mission" || assignment === "Wartime Mission") {
-    applyOnce(ch, "extraSkillApplied", () => {
-      scoutRollSkillFromColumn(ch, "specialOrWarMission");
-    });
-  }
-
-  applyOnce(ch, "assignmentHistoryRecorded", () => {
-    ch.requireAcgState().assignmentHistory.push(assignment);
-  });
-  markComplete(ch);
+  const dms = {
+    survival: applyDmRules(resTable.dms, ch, "survival"),
+    decoration: 0,
+    promotion: applyDmRules(resTable.dms, ch, "promotion"),
+    skills: applyDmRules(resTable.dms, ch, "skills"),
+  };
+  runPhases(SCOUT_SPEC, { ch, assignment, resTable, res, dms });
 }
+
+// Scout: no decoration phase (manual omits one). Promotion phase only
+// fires in Bureaucracy (administrator ladder); Field has no promotion.
+const SCOUT_SPEC: PathwaySpec = {
+  phases: [
+    {
+      phase: "survival",
+      target: (ctx) => ctx.res.survival,
+      dm: (ctx) => ctx.dms.survival,
+      logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+        "Survival", r.roll, r.dm,
+        typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        r.success, ctx.assignment,
+      )),
+      mitigation: (ctx, r) => ({
+        rollName: "survival",
+        rollValue: r.roll,
+        dm: r.dm,
+        target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+        margin: r.margin,
+        consequence: "Invalided out of Scout service",
+        onMitigated: (c) => {
+          c.resumeActive();
+          c.log(ev.statusChange("revived", "BP spend saved Scout survival"));
+        },
+      }),
+      onFail: () => ({
+        endChargen: { kind: "retired", reason: "invalided out of Scout service" },
+      }),
+    },
+    {
+      phase: "promotion",
+      skip: (ctx) => {
+        const acg = ctx.ch.requireAcgState();
+        if (ctx.res.promotion === "none") return true;
+        if (acg.division !== "bureaucracy") return true;
+        return acg.isOfficer && acg.promotedThisTerm;
+      },
+      target: (ctx) => ctx.res.promotion,
+      dm: (ctx) => ctx.dms.promotion,
+      mitigation: (ctx, r) => ({
+        rollName: "promotion",
+        rollValue: r.roll, dm: r.dm,
+        target: typeof ctx.res.promotion === "number" ? ctx.res.promotion : 0,
+        margin: r.margin,
+        consequence: "Earn promotion (administrator ladder)",
+      }),
+      onPass: (ctx) => promoteScout(ctx.ch),
+    },
+    {
+      phase: "skills",
+      skip: (ctx) => ctx.res.skills === "none",
+      target: (ctx) => ctx.res.skills,
+      dm: (ctx) => ctx.dms.skills,
+      mitigation: (ctx, r) => ({
+        rollName: "skills",
+        rollValue: r.roll, dm: r.dm,
+        target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
+        margin: r.margin,
+        consequence: "Earn a skill this assignment",
+      }),
+      onPass: (ctx) => scoutRollSkill(ctx.ch),
+    },
+  ],
+  finalize: (ctx) => {
+    // Special/War mission → extra skill from the dedicated column (PM
+    // p. 57): "the extra training and preparation for the assignment
+    // results in an extra skill".
+    if (ctx.assignment === "Special Mission" || ctx.assignment === "Wartime Mission") {
+      scoutRollSkillFromColumn(ctx.ch, "specialOrWarMission");
+    }
+    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
+  },
+};
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const data = dataFor(ch);

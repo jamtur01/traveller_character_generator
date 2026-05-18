@@ -32,11 +32,12 @@ import {
   type StructuredDm,
 } from "../tables";
 import { awardBrownie } from "../awards";
-import { tryMitigate } from "../browniePoints";
 import { applyAcgSkillCell } from "./mercenary";
 import {
-  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
+  applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
+import { runPhases, type PathwaySpec } from "../phaseRunner";
+import type { AssignmentResolution, ResolutionTarget } from "../types";
 import { recordTransfer } from "../types";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
 import { event as ev } from "../../../history";
@@ -360,98 +361,103 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     ch.log(ev.raw(`${assignment}: ${freeTraderFlags.narrative}`, "verbose"));
   }
   const skipBonus = freeTraderFlags?.skipBonus === true;
-  // The merchant resolution rows are Survival / Skills / Bonus (not the
-  // standard Survival/Decoration/Promotion/Skills shape). Parse directly.
+
+  // Merchant rows are Survival / Skills / Bonus (not the standard
+  // Survival/Decoration/Promotion/Skills shape used by the other
+  // pathways). Synthesize an AssignmentResolution from the rows so the
+  // shared phase runner can drive it.
   const survRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "survival");
   const skillRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "skills");
   const bonusRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "bonus");
+  const res: AssignmentResolution = {
+    survival: survRow ? parseResolutionTarget(survRow[colKey]).target : "none",
+    skills: skillRow ? parseResolutionTarget(skillRow[colKey]).target : "none",
+    decoration: "none", // merchant has no decoration phase
+    promotion: "none",  // promotion happens via the exam at endOfTerm
+  };
+  const dms = {
+    survival: applyDmRules(resolutionTable.dms, ch, "survival"),
+    skills: applyDmRules(resolutionTable.dms, ch, "skills"),
+    decoration: 0,
+    promotion: 0,
+    bonus: applyDmRules(resolutionTable.dms, ch, "bonus"),
+  };
+  // The bonus phase is merchant-specific; carry its target on a custom
+  // context field that the bonus phase reads. Cleanest pattern given
+  // the synthetic res doesn't have a bonus slot in AssignmentResolution.
+  const bonusTarget = bonusRow && !skipBonus
+    ? parseResolutionTarget(bonusRow[colKey]).target
+    : "none";
+  runPhases(merchantSpec(bonusTarget), { ch, assignment, resTable: resolutionTable, res, dms });
+}
 
-  const survDm = applyDmRules(resolutionTable.dms, ch, "survival");
-  const skillDm = applyDmRules(resolutionTable.dms, ch, "skills");
-  const bonusDm = applyDmRules(resolutionTable.dms, ch, "bonus");
-
-  if (survRow) {
-    const target = parseResolutionTarget(survRow[colKey]).target;
-    const sv = rollPhaseDice(ch, "survival", target, survDm);
-    applyOnce(ch, "survivalLogged", () => {
-      ch.log(ev.roll(
-        "Survival", sv.roll, survDm,
-        typeof target === "number" ? target : 0,
-        sv.success, assignment,
-      ));
-    });
-    if (!sv.success) {
-      const mit = tryMitigate(ch, {
-        rollName: "survival",
-        rollValue: sv.roll,
-        dm: survDm,
-        target: typeof target === "number" ? target : 0,
-        margin: sv.margin,
-        consequence: "Mustered out of Merchant service",
-        onMitigated: (c) => {
-          c.resumeActive();
-          c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
-        },
-      });
-      if (mit.newMargin < 0) {
-        applyOnce(ch, "survivalEndChargen", () => {
-          ch.endChargenRetired("mustered out of Merchant service");
-        });
-        return;
-      }
-    }
-  }
-  if (skillRow) {
-    const target = parseResolutionTarget(skillRow[colKey]).target;
-    const sk = rollPhaseDice(ch, "skills", target, skillDm);
-    let skMargin = sk.margin;
-    if (!sk.success) {
-      const mit = tryMitigate(ch, {
-        rollName: "skills",
-        rollValue: sk.roll, dm: skillDm,
-        target: typeof target === "number" ? target : 0,
-        margin: sk.margin,
-        consequence: "Earn a skill this assignment",
-      });
-      skMargin = mit.newMargin;
-    }
-    if (skMargin >= 0) {
-      applyOnce(ch, "skillsApplied", () => merchantRollSkill(ch));
-    }
-  }
-  if (bonusRow && !skipBonus) {
-    const target = parseResolutionTarget(bonusRow[colKey]).target;
-    const bn = rollPhaseDice(ch, "bonus", target, bonusDm);
-    // Bonus rolls are like decorations in merchant service. rollName
-    // matches the cached phase ("bonus") so dice + mitigation use the
-    // same cache slot — a slot mismatch would cause double-spend on
-    // resume.
-    let bnMargin = bn.margin;
-    if (!bn.success) {
-      const mit = tryMitigate(ch, {
-        rollName: "bonus",
-        rollValue: bn.roll, dm: bonusDm,
-        target: typeof target === "number" ? target : 0,
-        margin: bn.margin,
-        consequence: "Earn Merchant bonus",
-      });
-      bnMargin = mit.newMargin;
-    }
-    if (bnMargin >= 0) {
-      applyOnce(ch, "bonusApplied", () => merchantAwardBonus(ch));
-    }
-  }
-
-  applyOnce(ch, "assignmentHistoryRecorded", () => {
-    const acg = ch.requireAcgState();
-    acg.assignmentHistory.push(assignment);
-    // PM p. 61: enlisted commission exam is available "if they are
-    // serving on a Route assignment" — interpreted as having had Route
-    // experience during the current term. Flag is consumed in
-    // merchantEndOfTerm and reset at startOfTerm.
-    if (assignment === "Route") acg.routeAssignmentThisTerm = true;
-  });
-  markComplete(ch);
+/** Build the merchant phase spec. Factory so the bonus phase's target
+ *  (derived from the per-row resolution table) can close over it. */
+function merchantSpec(bonusTarget: ResolutionTarget): PathwaySpec {
+  return {
+    phases: [
+      {
+        phase: "survival",
+        skip: (ctx) => ctx.res.survival === "none",
+        target: (ctx) => ctx.res.survival,
+        dm: (ctx) => ctx.dms.survival,
+        logRoll: (ctx, r) => ctx.ch.log(ev.roll(
+          "Survival", r.roll, r.dm,
+          typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+          r.success, ctx.assignment,
+        )),
+        mitigation: (ctx, r) => ({
+          rollName: "survival",
+          rollValue: r.roll, dm: r.dm,
+          target: typeof ctx.res.survival === "number" ? ctx.res.survival : 0,
+          margin: r.margin,
+          consequence: "Mustered out of Merchant service",
+          onMitigated: (c) => {
+            c.resumeActive();
+            c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
+          },
+        }),
+        onFail: () => ({
+          endChargen: { kind: "retired", reason: "mustered out of Merchant service" },
+        }),
+      },
+      {
+        phase: "skills",
+        skip: (ctx) => ctx.res.skills === "none",
+        target: (ctx) => ctx.res.skills,
+        dm: (ctx) => ctx.dms.skills,
+        mitigation: (ctx, r) => ({
+          rollName: "skills",
+          rollValue: r.roll, dm: r.dm,
+          target: typeof ctx.res.skills === "number" ? ctx.res.skills : 0,
+          margin: r.margin,
+          consequence: "Earn a skill this assignment",
+        }),
+        onPass: (ctx) => merchantRollSkill(ctx.ch),
+      },
+      {
+        phase: "bonus",
+        skip: () => bonusTarget === "none",
+        target: () => bonusTarget,
+        dm: (ctx) => ctx.dms.bonus ?? 0,
+        mitigation: (_ctx, r) => ({
+          rollName: "bonus",
+          rollValue: r.roll, dm: r.dm,
+          target: typeof bonusTarget === "number" ? bonusTarget : 0,
+          margin: r.margin,
+          consequence: "Earn Merchant bonus",
+        }),
+        onPass: (ctx) => merchantAwardBonus(ctx.ch),
+      },
+    ],
+    finalize: (ctx) => {
+      const acg = ctx.ch.requireAcgState();
+      acg.assignmentHistory.push(ctx.assignment);
+      // PM p. 61: enlisted commission exam is available "if they are
+      // serving on a Route assignment" during the current term.
+      if (ctx.assignment === "Route") acg.routeAssignmentThisTerm = true;
+    },
+  };
 }
 
 function merchantCheckAvailablePosition(ch: Character): void {
