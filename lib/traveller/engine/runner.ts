@@ -29,6 +29,12 @@ export function runTermSteps(character: Character): void {
   const sequence = lifecycle.terms;
   const service = character.serviceDef();
   for (const step of sequence) {
+    // Halt the term early if chargen has formally ended for this character
+    // — deceased (CT death rule, aging crisis, court-martial execution) or
+    // retired (e.g. anagathics retry survival fail). Short-term-from-
+    // survival doesn't set `retired`, so special-duty + skill steps still
+    // fire per PM p. 16.
+    if (character.deceased || character.retired) return;
     const fn = STEP_REGISTRY[step.id];
     if (!fn) {
       throw new Error(

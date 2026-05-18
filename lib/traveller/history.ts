@@ -296,7 +296,7 @@ export const event = {
     kind: "mortgagePayoff", level: "simple", ship, years,
   }),
   noEffect: (reason: string): HistoryEvent => ({
-    kind: "noEffect", level: "debug", reason,
+    kind: "noEffect", level: "simple", reason,
   }),
   musterCash: (
     amount: number, tableRoll: number, dm: number, source?: string,
@@ -543,7 +543,7 @@ export function formatEvent(e: HistoryEvent): string {
     case "mortgagePayoff":
       return `Mortgage payoff: ${e.years} years on ${e.ship}.`;
     case "noEffect":
-      return `No effect (${e.reason}).`;
+      return `No effect — ${e.reason}.`;
     case "musterCash": {
       const src = e.source ? ` — ${e.source}` : "";
       return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)})${src}.`;

@@ -228,7 +228,10 @@ export function applyCell(
       return;
     }
     if (label === "Travellers'") {
-      if (ch.benefits.indexOf("Travellers' Aid Society") > -1) return;
+      if (ch.benefits.indexOf("Travellers' Aid Society") > -1) {
+        ch.log(ev.noEffect(`repeat ${label} (non-stackable)`));
+        return;
+      }
       ch.addBenefit("Travellers' Aid Society");
       ch.TAS = true;
       return;
