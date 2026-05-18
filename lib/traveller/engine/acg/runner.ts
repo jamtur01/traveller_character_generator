@@ -187,6 +187,7 @@ export function runAcgYear(ch: Character): void {
   // Clear year-scoped idempotency markers used by pathway code to skip
   // already-applied side effects on pause/resume re-entry.
   delete acg.transferAppliedThisYear;
+  delete acg.scoutTransferNextAssign;
   delete acg.wasRetainedThisYear;
   delete acg.thisYearOutcomes;
 }

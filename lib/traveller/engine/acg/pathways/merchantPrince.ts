@@ -412,12 +412,14 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   if (bonusRow && !skipBonus) {
     const target = parseResolutionTarget(bonusRow[colKey]).target;
     const bn = rollPhaseDice(ch, "bonus", target, bonusDm);
-    // Bonus rolls are like decorations in merchant service. Use the
-    // decoration policy (1 BP cap) to mitigate borderline misses.
+    // Bonus rolls are like decorations in merchant service. rollName
+    // matches the cached phase ("bonus") so dice + mitigation use the
+    // same cache slot — a slot mismatch would cause double-spend on
+    // resume.
     let bnMargin = bn.margin;
     if (!bn.success) {
       const mit = tryMitigate(ch, {
-        rollName: "decoration",
+        rollName: "bonus",
         rollValue: bn.roll, dm: bonusDm,
         target: typeof target === "number" ? target : 0,
         margin: bn.margin,

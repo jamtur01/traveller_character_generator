@@ -453,8 +453,13 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     acg.rankCode = `IS-${Math.min(9, termsServed)}`;
     ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
   }
-  // Resolve a fresh assignment in the new division.
-  const nextAssign = scoutRollAssignment(ch);
+  // Resolve a fresh assignment in the new division. Cache the rolled
+  // assignment so a pause inside the recursive resolve doesn't re-roll
+  // (non-deterministically) on resume.
+  if (acg.scoutTransferNextAssign === undefined) {
+    acg.scoutTransferNextAssign = scoutRollAssignment(ch);
+  }
+  const nextAssign = acg.scoutTransferNextAssign;
   if (nextAssign !== "Transfer") {
     scoutResolveAssignment(ch, nextAssign);
   }
