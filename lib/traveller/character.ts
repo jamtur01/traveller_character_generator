@@ -665,7 +665,7 @@ export class Character {
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    this.log(ev.raw(benefit, "verbose"));
+    this.log(ev.raw(benefit, "simple"));
   }
 
   // ---------- single logging API ----------
@@ -1210,7 +1210,7 @@ export class Character {
   ageAttribute(attrib: AttributeKey, req: number, reduction: number) {
     const r = roll(2);
     const passed = r >= req;
-    this.log(ev.roll(`Aging ${attrib}`, r, 0, req, passed));
+    this.log(ev.roll(`Aging ${attrShort(attrib)}`, r, 0, req, passed));
     if (!passed) this.improveAttribute(attrib, reduction);
   }
 
@@ -1299,7 +1299,7 @@ export class Character {
       if (this.deceased) break;
       if (this.attributes[a] <= crisisThreshold) {
         const cr = roll(2);
-        this.log(ev.roll(`Aging crisis (${a})`, cr, 0, crisisSave, cr >= crisisSave));
+        this.log(ev.roll(`Aging crisis (${attrShort(a)})`, cr, 0, crisisSave, cr >= crisisSave));
         if (cr < crisisSave) {
           this.log(ev.endGeneration("deceased", "aging crisis"));
           this.deceased = true;
