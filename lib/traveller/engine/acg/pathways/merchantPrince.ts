@@ -352,7 +352,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         dm: survDm,
         target: typeof target === "number" ? target : 0,
         margin: sv.margin,
-        consequence: "Mustered out of merchant service",
+        consequence: "Mustered out of Merchant service",
         onMitigated: (c) => {
           c.activeDuty = true;
           c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
@@ -393,7 +393,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         rollValue: bn.roll, dm: bonusDm,
         target: typeof target === "number" ? target : 0,
         margin: bn.margin,
-        consequence: "Earn merchant bonus",
+        consequence: "Earn Merchant bonus",
       });
       bnMargin = mit.newMargin;
     }
@@ -666,7 +666,7 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.department = chosen;
-        c.log(ev.crossTrained(chosen, "department"));
+        c.log(ev.transferred(chosen, "department", current, "reenlist"));
       }
     },
   });

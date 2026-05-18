@@ -719,7 +719,9 @@ function offerNavyBranchChange(ch: Character): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.branch = chosen;
-        c.log(ev.crossTrained(chosen, "branch"));
+        c.log(ev.transferred(
+          chosen, "branch", current, "reenlist (via cross-training)",
+        ));
       }
     },
   });
