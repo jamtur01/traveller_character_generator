@@ -12,9 +12,7 @@ import type { StepFn } from "./types";
 export const specialDutyStep: StepFn = ({ character, edition, config }) => {
   if (character.deceased) return;
   const data = edition.data.services[character.service];
-  const target = data?.checks
-    ? (data.checks as { specialDuty?: { target: number } }).specialDuty?.target
-    : undefined;
+  const target = data?.checks.specialDuty?.target;
   if (target === undefined) return;
 
   const r = roll(2);

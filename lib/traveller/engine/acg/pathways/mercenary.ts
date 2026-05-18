@@ -39,6 +39,14 @@ import type { AcgState, ResolutionTarget } from "../types";
 const PATHWAY = "mercenary";
 
 interface MercenaryData {
+  ocsAdvancement?: { ageLimit?: number; [k: string]: unknown };
+  skillColumnPolicy?: {
+    officerInCommand: string;
+    officerStaff: string;
+    enlistedNcoMinRank: string;
+    enlistedNcoColumn: string;
+    enlistedLowRankColumns: Record<string, string>;
+  };
   combatArms: string[];
   combatArmEligibility?: {
     army?: string[];
@@ -499,13 +507,7 @@ function rollMercenarySkill(ch: Character): void {
 function mercenaryDefaultSkillColumn(ch: Character): string {
   // Per JSON skillColumnPolicy (PM p. 51 line 3194-3196).
   const data = dataFor(ch);
-  const pol = (data as { skillColumnPolicy?: {
-    officerInCommand: string;
-    officerStaff: string;
-    enlistedNcoMinRank: string;
-    enlistedNcoColumn: string;
-    enlistedLowRankColumns: Record<string, string>;
-  } }).skillColumnPolicy;
+  const pol = data.skillColumnPolicy;
   if (!pol) return "ncoSkills";
   if (ch.acgState!.isOfficer) {
     return ch.acgState!.inCommand ? pol.officerInCommand : pol.officerStaff;
@@ -604,8 +606,7 @@ export function mercenarySpecialAssignment(ch: Character): void {
   if (!sa) return;
   // OCS age limit (PM p. 51 line 3188): age cap and waiver-on-reroll
   // come from mercenary.ocsAdvancement.ageLimit in JSON.
-  const ocsAgeLimit = (data as { ocsAdvancement?: { ageLimit?: number } })
-    .ocsAdvancement?.ageLimit;
+  const ocsAgeLimit = data.ocsAdvancement?.ageLimit;
   if (sa === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {

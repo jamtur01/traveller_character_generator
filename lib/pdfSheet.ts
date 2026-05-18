@@ -21,12 +21,10 @@ function bladesFor(editionId: string): Set<string> {
  *  `passages` block's displayName fields. */
 function shipNamesFor(editionId: string): Set<string> {
   const out = new Set<string>();
-  const details = (getEdition(editionId).data as {
-    benefitDetails?: Record<string, unknown>;
-  }).benefitDetails;
+  const details = getEdition(editionId).data.benefitDetails;
   if (!details) return out;
   for (const [k, v] of Object.entries(details)) {
-    if ((v as { shipType?: unknown } | null)?.shipType !== undefined) out.add(k);
+    if (v?.shipType !== undefined) out.add(k);
   }
   return out;
 }

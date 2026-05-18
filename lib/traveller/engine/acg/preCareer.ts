@@ -41,7 +41,7 @@ export type PreCareerOption =
  *  bug — surface it loudly rather than hiding behind a hardcoded
  *  fallback that drifts out of sync with the JSON. */
 export function preCareerLabel(opt: PreCareerOption, editionId: string): string {
-  const spec = specFor(editionId, opt) as { displayName?: string } | null;
+  const spec = specFor(editionId, opt);
   if (!spec?.displayName) {
     throw new Error(
       `Edition "${editionId}" preCareerOptions.${opt} is missing displayName. ` +
@@ -56,9 +56,7 @@ export function preCareerLabel(opt: PreCareerOption, editionId: string): string 
 export function preCareerEligibility(
   editionId: string, opt: PreCareerOption,
 ): { attribute: keyof Character["attributes"]; min: number } | null {
-  const spec = specFor(editionId, opt) as {
-    eligibility?: { attribute: string; min: number };
-  } | null;
+  const spec = specFor(editionId, opt);
   if (!spec?.eligibility) return null;
   const a = mapAttr(spec.eligibility.attribute);
   if (!a) return null;
@@ -78,8 +76,7 @@ export function isPreCareerEligible(
 export function preCareerUiSummary(
   editionId: string, opt: PreCareerOption,
 ): string {
-  const spec = specFor(editionId, opt) as { uiSummary?: string } | null;
-  return spec?.uiSummary ?? "";
+  return specFor(editionId, opt)?.uiSummary ?? "";
 }
 
 interface ThrowSpec {
@@ -92,12 +89,16 @@ interface EducationSpec {
 }
 interface HonorsSpec extends ThrowSpec { benefit?: string }
 interface PreCareerSpec {
+  displayName?: string;
+  uiSummary?: string;
+  eligibility?: { attribute: string; min: number };
   admission?: ThrowSpec;
   success?: ThrowSpec;
   otc?: ThrowSpec;
   notc?: ThrowSpec;
   education?: EducationSpec;
   honors?: HonorsSpec;
+  [k: string]: unknown;
 }
 
 interface PreCareerResult {
@@ -154,11 +155,8 @@ function honorsPrereqMet(ch: Character, opt: PreCareerOption): boolean {
 }
 
 function specFor(editionId: string, opt: PreCareerOption): PreCareerSpec | null {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) return null;
-  const common = acg.common as { preCareerOptions?: Record<string, unknown> };
-  const pco = common.preCareerOptions?.[opt];
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
+  const pco = acg?.common?.preCareerOptions?.[opt];
   return (pco as PreCareerSpec | undefined) ?? null;
 }
 

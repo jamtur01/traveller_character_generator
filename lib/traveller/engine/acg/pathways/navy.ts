@@ -117,8 +117,8 @@ export function navyEnlist(
   if (fleet === "systemSquadron") {
     const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
       | { homeworld?: { techCodeOrder?: string[] } } | undefined;
-    const order = (getEdition(ch.editionId).data as { homeworld?: { techCodeOrder?: string[] } })
-      .homeworld?.techCodeOrder ?? acg?.homeworld?.techCodeOrder;
+    const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder
+      ?? acg?.homeworld?.techCodeOrder;
     const hwTech = ch.homeworld?.tech;
     if (order && hwTech) {
       const idx = order.indexOf(hwTech);
@@ -418,11 +418,11 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     // Special-assignment rule: read mechanical overrides from
     // navy.specialAssignmentRules in JSON (e.g. Frozen Watch: cold sleep
     // — no skill roll, physical age frozen; PM p. 53).
-    const specials = (data as { specialAssignmentRules?: Record<string, {
+    const specials = (data.specialAssignmentRules ?? {}) as Record<string, {
       noSkillRoll?: boolean;
       physicalAgeDelta?: number;
       historyLine?: string;
-    }> }).specialAssignmentRules ?? {};
+    }>;
     const rule = specials[assignment];
     if (rule) {
       if (assignment === "Frozen Watch") {
@@ -605,8 +605,8 @@ export function navyRetention(ch: Character, assignment: string): void {
   // Assignments flagged noRetention in navy.specialAssignmentRules are
   // excluded (Frozen Watch / Special Duty).
   const data = dataFor(ch);
-  const specials = (data as { specialAssignmentRules?: Record<string, { noRetention?: boolean }> })
-    .specialAssignmentRules ?? {};
+  const specials = (data.specialAssignmentRules ?? {}) as
+    Record<string, { noRetention?: boolean }>;
   const r = roll(1);
   if (r === 6 && !specials[assignment]?.noRetention) {
     ch.acgState!.retainedAssignment = assignment;
@@ -633,8 +633,7 @@ export function navySpecialAssignment(ch: Character): void {
   let assignment = rollOnce();
   if (!assignment) return;
   // OCS age limit per JSON (navy.ocsAdvancement.ageLimit, PM p. 51/54).
-  const ocsAgeLimit = (data as { ocsAdvancement?: { ageLimit?: number } })
-    .ocsAdvancement?.ageLimit;
+  const ocsAgeLimit = data.ocsAdvancement?.ageLimit;
   if (assignment === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {

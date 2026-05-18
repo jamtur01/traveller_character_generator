@@ -17,17 +17,16 @@ function getSkillLevel(ch: Character, skill: string): number {
   return 0;
 }
 
-function commonAcg(ch: Character): Record<string, unknown> | null {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  return (acg?.common as Record<string, unknown> | undefined) ?? null;
+function commonAcg(ch: Character) {
+  return getEdition(ch.editionId).data.advancedCharacterGeneration?.common
+    ?? null;
 }
 
 /** Look up the brownie-point award for a given event string in
  *  common.browniePoints.awards. Returns null if not configured. */
 function bpAwardFor(ch: Character, event: string): number | null {
   const common = commonAcg(ch);
-  const awards = (common?.browniePoints as { awards?: BrownieAward[] } | undefined)?.awards;
+  const awards = common?.browniePoints?.awards as BrownieAward[] | undefined;
   if (!Array.isArray(awards)) return null;
   const match = awards.find((a) =>
     a.event.toLowerCase().includes(event.toLowerCase()),
@@ -63,17 +62,18 @@ function matchesDecorationFlag(
   award: string,
   flag: "sehPromotion",
 ): boolean {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
   // Decoration tiers may live on the pathway or in `common` (the shared
   // PM block). Check pathway first, then fall back to common.
-  const sources: Array<unknown> = [
-    ch.acgState?.pathway ? acg?.[ch.acgState.pathway] : undefined,
+  const pathway = ch.acgState?.pathway;
+  const sources = [
+    pathway
+      ? (acg?.[pathway] as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined)
+      : undefined,
     acg?.common,
   ];
   for (const src of sources) {
-    const tiers = (src as { decorationTiers?: { tiers?: Array<Record<string, unknown>> } } | undefined)
-      ?.decorationTiers?.tiers;
+    const tiers = src?.decorationTiers?.tiers;
     if (!tiers) continue;
     const match = tiers.find((t) => t.award === award);
     if (match) return match[flag] === true;
@@ -235,8 +235,7 @@ function resultDmWhenMatches(
   }
   if (when.currentAssignmentIs === "combat") {
     if (!assignment) return false;
-    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-      Record<string, unknown> | undefined;
+    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
     const pathway = ch.acgState?.pathway;
     if (!acg || !pathway) return false;
     const pw = acg[pathway] as { combatAssignments?: string[] } | undefined;
@@ -264,8 +263,7 @@ function resultDmApplies(
   }
   if (lc.includes("combat assignment")) {
     if (!assignment) return false;
-    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-      Record<string, unknown> | undefined;
+    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
     const pathway = ch.acgState?.pathway;
     if (!acg || !pathway) return false;
     const pw = acg[pathway] as { combatAssignments?: string[] } | undefined;

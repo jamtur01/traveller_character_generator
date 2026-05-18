@@ -83,10 +83,8 @@ interface MerchantData {
 }
 
 function assignmentColumnMap(ch: Character): Record<string, string> {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const mp = acg?.merchantPrince as { assignmentColumnMap?: Record<string, string> } | undefined;
-  return mp?.assignmentColumnMap ?? {};
+  return getEdition(ch.editionId).data.advancedCharacterGeneration
+    ?.merchantPrince?.assignmentColumnMap ?? {};
 }
 
 interface FreeTraderFlags {
@@ -94,10 +92,9 @@ interface FreeTraderFlags {
   narrative?: string;
 }
 function freeTraderAssignmentFlags(ch: Character): Record<string, FreeTraderFlags> {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const mp = acg?.merchantPrince as { freeTraderAssignmentFlags?: Record<string, FreeTraderFlags> } | undefined;
-  return mp?.freeTraderAssignmentFlags ?? {};
+  const flags = getEdition(ch.editionId).data.advancedCharacterGeneration
+    ?.merchantPrince?.freeTraderAssignmentFlags;
+  return (flags as Record<string, FreeTraderFlags> | undefined) ?? {};
 }
 
 function lineSizeFor(data: MerchantData, lineType: string): "Large" | "Small" | "FreeTrader" {
