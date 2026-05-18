@@ -201,20 +201,25 @@ export function scoutRollAssignment(ch: Character): string {
   // Default to taking the DM; interactive mode exposes the choice.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
-    // Resolve synchronously by short-circuit: pickOrDefer auto-mode applies
-    // immediately; interactive mode queues and we proceed without the DM
-    // for this year (the player's decision applies next year).
-    let decided = false;
-    ch.pickOrDefer({
-      kind: "scoutAdminDm",
-      label: "Take administrator DM +2 on the duty roll? (Natural 2 still forces war mission.)",
-      options: ["Take DM +2", "Roll without DM"],
-      onResolve: (_c, choice) => {
-        useAdminDm = choice === "Take DM +2";
-        decided = true;
-      },
-    });
-    if (!decided) useAdminDm = false;
+    const acg = ch.requireAcgState();
+    if (acg.scoutAdminDmDecision !== undefined) {
+      // Resume case — decision was made in the previous pause/resume
+      // cycle. Consume it.
+      useAdminDm = acg.scoutAdminDmDecision;
+      delete acg.scoutAdminDmDecision;
+    } else {
+      // First visit: queue the choice. pickOrDefer throws in interactive
+      // mode, so the line after this call is unreachable; the decision
+      // is captured on acgState so the resumed call reads it above.
+      ch.pickOrDefer({
+        kind: "scoutAdminDm",
+        label: "Take administrator DM +2 on the duty roll? (Natural 2 still forces war mission.)",
+        options: ["Take DM +2", "Roll without DM"],
+        onResolve: (c, choice) => {
+          c.requireAcgState().scoutAdminDmDecision = choice === "Take DM +2";
+        },
+      });
+    }
   }
   const dm = useAdminDm ? 2 : 0;
   const baseRoll = roll(2);
@@ -379,40 +384,55 @@ function routeScoutToSchool(ch: Character): void {
 function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
   if (onReroll) return true; // mandatory on reroll
   if (ch.choiceMode !== "interactive") return true; // auto accepts
-  let accept = true;
-  let decided = false;
+  const acg = ch.requireAcgState();
+  if (acg.scoutTransferDecision !== undefined) {
+    // Resume case — decision made in prior pause/resume cycle.
+    const accept = acg.scoutTransferDecision;
+    delete acg.scoutTransferDecision;
+    return accept;
+  }
+  // First visit: queue the choice. pickOrDefer throws in interactive
+  // mode; the return below is dead code there. The decision is
+  // captured on acgState so the resumed call reads it above.
   ch.pickOrDefer({
     kind: "scoutTransferDecline",
     label: "Accept transfer from Field to Bureaucracy? (Mandatory on reroll if declined.)",
     options: ["Accept transfer", "Decline (reroll once)"],
-    onResolve: (_c, choice) => {
-      accept = choice === "Accept transfer";
-      decided = true;
+    onResolve: (c, choice) => {
+      c.requireAcgState().scoutTransferDecision = choice === "Accept transfer";
     },
   });
-  if (!decided) accept = true;
-  return accept;
+  return true; // unreachable in interactive mode (pickOrDefer threw)
 }
 
 function applyScoutTransferToBureaucracy(ch: Character): void {
   const data = dataFor(ch);
-  const fromDivision = ch.requireAcgState().division ?? "field";
-  recordTransfer(ch.requireAcgState(), "division", fromDivision, "bureaucracy",
-    ch.requireAcgState().yearsServed ?? 0);
-  const fromOffice = ch.requireAcgState().office ?? "";
-  ch.requireAcgState().division = "bureaucracy";
-  // Reroll office assignment under the Bureaucracy division.
-  const r = Math.max(2, Math.min(12, roll(2)));
-  const row = data.officeAssignment.rows.find((row) => row.die === r);
-  const off = row?.bureaucracy;
-  const newOffice = typeof off === "string" ? off : "Technical";
-  recordTransfer(ch.requireAcgState(), "office", fromOffice, newOffice,
-    ch.requireAcgState().yearsServed ?? 0);
-  ch.requireAcgState().office = newOffice;
-  // Bureaucracy has rank; ordinary rank becomes terms served.
-  const termsServed = Math.max(1, ch.terms);
-  ch.requireAcgState().rankCode = `IS-${Math.min(9, termsServed)}`;
-  ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
+  const acg = ch.requireAcgState();
+  // Idempotency guard: if the recursive scoutResolveAssignment below
+  // pauses on an interactive choice, the runner re-invokes the outer
+  // resolveAssignment with assignment="Transfer" on resume. Without this
+  // marker the transfer side effects (rank change, division change,
+  // recordTransfer, office reroll) would re-apply on every resume.
+  if (!acg.transferAppliedThisYear) {
+    acg.transferAppliedThisYear = true;
+    const fromDivision = acg.division ?? "field";
+    recordTransfer(acg, "division", fromDivision, "bureaucracy",
+      acg.yearsServed ?? 0);
+    const fromOffice = acg.office ?? "";
+    acg.division = "bureaucracy";
+    // Reroll office assignment under the Bureaucracy division.
+    const r = Math.max(2, Math.min(12, roll(2)));
+    const row = data.officeAssignment.rows.find((row) => row.die === r);
+    const off = row?.bureaucracy;
+    const newOffice = typeof off === "string" ? off : "Technical";
+    recordTransfer(acg, "office", fromOffice, newOffice,
+      acg.yearsServed ?? 0);
+    acg.office = newOffice;
+    // Bureaucracy has rank; ordinary rank becomes terms served.
+    const termsServed = Math.max(1, ch.terms);
+    acg.rankCode = `IS-${Math.min(9, termsServed)}`;
+    ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
+  }
   // Resolve a fresh assignment in the new division.
   const nextAssign = scoutRollAssignment(ch);
   if (nextAssign !== "Transfer") {

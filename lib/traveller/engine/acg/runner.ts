@@ -116,7 +116,12 @@ export function runAcgYear(ch: Character): void {
     // Capture retention before the pathway clears the flag inside its
     // rollAssignment. Every pathway with retention semantics (mercenary,
     // navy, scout, merchant) consumes acg.justRetained internally.
-    const wasRetained = acg.justRetained === true;
+    // Stash on acgState so a pause/resume inside rollAssignment doesn't
+    // lose the value (justRetained is cleared by the pathway before any
+    // throw point, so the resumed call would otherwise read false).
+    if (acg.wasRetainedThisYear === undefined) {
+      acg.wasRetainedThisYear = acg.justRetained === true;
+    }
     let rolled: string | null = null;
     const ok = runStep(ch, "rollAssignment", () => {
       rolled = p.rollAssignment(ch);
@@ -127,7 +132,7 @@ export function runAcgYear(ch: Character): void {
     if (assignment) {
       ch.log(ev.assignmentRolled(
         assignment, ch.terms + 1, acg.year,
-        wasRetained ? true : undefined,
+        acg.wasRetainedThisYear ? true : undefined,
       ));
     }
   }
@@ -178,6 +183,10 @@ export function runAcgYear(ch: Character): void {
   acg.year += 1;
   acg.currentAssignment = null;
   acg.pausedAtStep = null;
+  // Clear year-scoped idempotency markers used by pathway code to skip
+  // already-applied side effects on pause/resume re-entry.
+  delete acg.transferAppliedThisYear;
+  delete acg.wasRetainedThisYear;
 }
 
 /** Run a full four-year term. Time is accounted per year inside runAcgYear,

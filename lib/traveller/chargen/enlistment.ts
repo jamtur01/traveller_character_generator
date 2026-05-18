@@ -169,10 +169,13 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     );
   }
   // Gate the enlistable list by homeworld tech / social rules (MT only;
-  // CT returns the full list unchanged).
-  const gated = ch.homeworld
+  // CT returns the full list unchanged). If the homeworld's restrictions
+  // somehow filter every service out, fall back to the ungated list so
+  // arnd doesn't crash on an empty pool.
+  let gated = ch.homeworld
     ? availableServicesForHomeworld(ch, ch.homeworld, enlistable)
     : enlistable;
+  if (gated.length === 0) gated = enlistable;
   let preferredService: ServiceKey;
   if (method && method !== "random") {
     preferredService = method as ServiceKey;
@@ -217,7 +220,11 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     return preferredService;
   }
   ch.drafted = true;
-  const draftService = arnd(draftPool);
+  // Defensive: if no draft pool is registered for the edition, fall
+  // back to the gated enlistable list so the draft doesn't crash on
+  // arnd of an empty array.
+  const effDraftPool = draftPool.length > 0 ? draftPool : gated;
+  const draftService = arnd(effDraftPool);
   ch.log(ev.drafted(draftService));
   applyServiceStartAge(ch, draftService);
   ch.service = draftService;

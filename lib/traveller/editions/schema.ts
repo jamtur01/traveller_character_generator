@@ -106,7 +106,6 @@ export const RulesSchema = z.object({
     cashTableDm: z.array(z.unknown()).optional(),
     benefitTableDm: z.array(z.unknown()).optional(),
     maxCashTableRolls: z.number().optional(),
-    cashRollLimit: z.number().optional(),
   }).passthrough().optional(),
   // Marine Tradition (F5 — forced Large Blade for Marines).
   marineTradition: z.object({

@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { s } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // The muster-out log shows what each roll produced. Cover the four outcome
 // shapes: new benefit, attribute boost, weapon (skill+benefit combo), and

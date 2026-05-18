@@ -98,7 +98,6 @@ describe("Bug #2: ship-benefit repeat clamps mortgage payoff to remaining", () =
     c.mortgage = 5;
     applyCell(c, "Free Trader", "muster", mtBenefitDetails());
     expect(c.mortgage).toBe(0);
-    expect(c.mortgage).toBeGreaterThanOrEqual(0);
   });
 
   it("repeat ship benefit when mortgage exactly equals repeatReducesMortgageYears lands at 0", () => {
@@ -395,6 +394,5 @@ describe("Minor: pre-career attributeChanges clamp lower bound at 0", () => {
       medicalDirectCommission: false,
     });
     expect(c.attributes.strength).toBe(0);
-    expect(c.attributes.strength).toBeGreaterThanOrEqual(0);
   });
 });

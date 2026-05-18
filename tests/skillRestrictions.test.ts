@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import type { Homeworld } from "../lib/traveller/engine/homeworld";
 import {
@@ -7,6 +7,10 @@ import {
   acquireSkillWithRestrictionCheck,
 } from "../lib/traveller/engine/skillRestrictions";
 import * as random from "../lib/traveller/random";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function makeMtChar(overrides: Partial<Character> = {}): Character {
   const c = new Character();
