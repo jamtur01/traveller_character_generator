@@ -473,15 +473,13 @@ function merchantAwardBonus(ch: Character): void {
   // musterCash[] which is already the source-of-truth cash table.
   const merchants = ch.editionService("merchants" as never);
   if (!merchants) return;
-  const idx = Math.min(7, Math.max(1, roll(1)));
-  const fullAmount = merchants.musterCash[idx] ?? 0;
+  const rawRoll = Math.min(7, Math.max(1, roll(1)));
+  const fullAmount = merchants.musterCash[rawRoll] ?? 0;
   const cash = Math.floor(fullAmount / 2);
   if (cash <= 0) return;
   ch.credits += cash;
   ch.musterLog.push(`Cr${cash} bonus (in-service)`);
-  // The halved value is the actual award (musterLog records it); the full
-  // amount before halving is not separately observable.
-  void fullAmount;
+  ch.log(ev.musterCash(cash, rawRoll, 0, "Merchant in-service bonus (half)"));
 }
 
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
@@ -641,7 +639,7 @@ export function applyReducedPassageBenefit(ch: Character): void {
   if (!rp?.appliesAfterMuster) return;
   const label = `Reduced Passage (${rp.passage ?? "Mid Psg"} at ${rp.pricePercent ?? 50}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
   if (ch.benefits.includes(label)) return;
-  ch.benefits.push(label);
+  ch.addBenefit(label);
 }
 
 function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
@@ -826,7 +824,7 @@ export function merchantFinalizeMuster(ch: Character): void {
   if (n < 5) return;
   if (ch.acgState.freeTraderShipEarned) return;
   ch.acgState.freeTraderShipEarned = true;
-  ch.benefits.push("Free Trader");
+  ch.addBenefit("Free Trader");
   ch.musterLog.push("Free Trader ship (Owner/Captain)");
 }
 
