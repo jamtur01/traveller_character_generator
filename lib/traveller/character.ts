@@ -918,12 +918,6 @@ export class Character {
     this.anagathicsActiveThisTerm = false;
     this.anagathicsWithdrawalThisTerm = false;
     this.wantsAnagathicsThisTerm = false;
-    // Basic-chargen path runs the hook here. ACG runs its own copy at the
-    // start of runAcgTerm so the year-1 survival sees the correct DM;
-    // calling it here too would log "Found a supply of anagathics …" twice.
-    if (!(this.useAcg && this.acgState)) {
-      this.preSurvivalAnagathicsHook();
-    }
     this.log(ev.section("--------------------------------------------"));
     if (this.useAcg && this.acgState) {
       // ACG runs its own per-year cycle inside runAcgTerm (4 one-year
@@ -944,6 +938,10 @@ export class Character {
     this.terms += 1;
     this.age += 4;
     this.log(ev.termBegin(this.terms, this.age));
+    // Anagathics supply check happens before survival (per PM p. 15)
+    // — supply outcome modifies the survival DM. Log order: termBegin
+    // → anagathics → survival so the story reads naturally.
+    this.preSurvivalAnagathicsHook();
     // Basic chargen: delegate the step sequence to the engine runner.
     runTermSteps(this);
   }
@@ -972,7 +970,9 @@ export class Character {
         const reason = this.acgState.reenlistDenialReason;
         delete this.acgState.reenlistDenialReason;
         this.log(ev.reenlistment("denied", undefined, undefined, reason));
-      } else if (!this.mandatoryReenlistment) {
+      } else if (this.mandatoryReenlistment) {
+        this.log(ev.reenlistment("mandatory"));
+      } else {
         this.log(ev.reenlistment("voluntary"));
       }
       return;
@@ -1178,6 +1178,11 @@ export class Character {
         this.shortTermThisTerm = true;
         this.shortTermsCount += 1;
         this.activeDuty = false;
+        // Set retired so the runner's term-step loop stops here — without
+        // it the engine would run a second survival roll plus emit
+        // misleading "Promotion skipped" / "Commission skipped" events
+        // after ev.endGeneration.
+        this.retired = true;
         this.log(ev.endGeneration("retired", "failed anagathics retry survival"));
       }
       return passed;
