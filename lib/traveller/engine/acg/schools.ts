@@ -211,16 +211,13 @@ function runSkillBatch(
   target: number,
   skills: string[],
 ): void {
-  const awarded: string[] = [];
   for (const skill of skills) {
     if (roll(1) >= target) {
       ch.addSkill(skill, 1, schoolName);
-      awarded.push(skill);
     }
   }
-  if (awarded.length === 0) {
-    ch.logRaw(`${schoolName}: no skills rolled (all 1D < ${target}+)`, "verbose");
-  }
+  // Each granted skill emits ev.skillLearned with source=schoolName;
+  // a fully-failed batch is implicit from the absence of those events.
 }
 
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
@@ -410,7 +407,9 @@ export function applyScoutSchool(ch: Character, school: string): void {
   const meta = scoutSchoolMeta(ch, school);
   // Eligibility check (replaces hardcoded "Administrator School" gate).
   if (meta?.onceOnly && !scoutCanAttendSchool(ch, school)) {
-    ch.logRaw(`Scout ${school} denied (eligibility check failed)`, "verbose");
+    ch.log(ev.statusChange(
+      "schoolDenied", `Scout ${school} — eligibility check failed`,
+    ));
     return;
   }
   // School that grants rank/officer status (Admin School): record

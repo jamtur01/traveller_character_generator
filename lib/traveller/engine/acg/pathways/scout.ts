@@ -135,7 +135,7 @@ function scoutAssignOffice(ch: Character): void {
   if (!row) { ch.acgState!.office = "Survey"; return; }
   const off = row[division];
   ch.acgState!.office = typeof off === "string" ? off : "Survey";
-  ch.logRaw(`Scout office: ${ch.acgState!.office} (${division})`, "verbose");
+  // acgState.office + acgState.division are read by subsequent assignment rolls.
 }
 
 /** Scout initial training (PM p. 56): "The initial year of service in the

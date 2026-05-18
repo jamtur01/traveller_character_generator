@@ -117,11 +117,21 @@ export type HistoryEvent =
       outcome: "voluntary" | "mandatory" | "denied" | "retired" | "released" | "heldOver";
       roll?: number; target?: number; reason?: string;
     }
-  // Mustering-out benefit roll.
+  // Mustering-out benefit roll. `benefit` is omitted when the roll lands
+  // outside the 1-7 cell range or hits a null cell — outcome captures why.
   | {
       kind: "musterBenefit";
       level: HistoryLevel;
-      benefit: string; tableRoll: number; dm: number;
+      benefit?: string; tableRoll: number; dm: number;
+      outcome?: "outOfRange" | "noBenefit";
+    }
+  // Mortgage paydown from a repeat ship benefit (PM p. 17 — Free Trader,
+  // Seeker, Yacht, Lab Ship, Safari Ship: each repeat receipt cancels a
+  // fixed number of mortgage years).
+  | {
+      kind: "mortgagePayoff";
+      level: HistoryLevel;
+      ship: string; years: number;
     }
   // Mustering-out cash roll.
   | {
@@ -222,7 +232,7 @@ export type HistoryEvent =
         | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
         | "purpleHeart" | "demoted" | "ocsDenied" | "ocsWaiver"
         | "shortTerm" | "revived" | "promotionSkipped" | "commissionSkipped"
-        | "voluntaryMuster";
+        | "voluntaryMuster" | "schoolDenied";
       note?: string;
     }
   // Branch / arm / department change at reenlist (cross-training).
@@ -270,8 +280,16 @@ export const event = {
   cascadePick: (cascade: string, chosen: string): HistoryEvent => ({
     kind: "cascadePick", level: "verbose", cascade, chosen,
   }),
-  musterBenefit: (benefit: string, tableRoll: number, dm: number): HistoryEvent => ({
-    kind: "musterBenefit", level: "verbose", benefit, tableRoll, dm,
+  musterBenefit: (
+    benefit: string | undefined, tableRoll: number, dm: number,
+    outcome?: "outOfRange" | "noBenefit",
+  ): HistoryEvent => ({
+    kind: "musterBenefit", level: "verbose", tableRoll, dm,
+    ...(benefit !== undefined ? { benefit } : {}),
+    ...(outcome !== undefined ? { outcome } : {}),
+  }),
+  mortgagePayoff: (ship: string, years: number): HistoryEvent => ({
+    kind: "mortgagePayoff", level: "verbose", ship, years,
   }),
   musterCash: (amount: number, tableRoll: number, dm: number): HistoryEvent => ({
     kind: "musterCash", level: "verbose", amount, tableRoll, dm,
@@ -399,7 +417,7 @@ export const event = {
       | "dishonorablyDischarged" | "jailed" | "pensionForfeit"
       | "purpleHeart" | "demoted" | "ocsDenied" | "ocsWaiver"
       | "shortTerm" | "revived" | "promotionSkipped" | "commissionSkipped"
-      | "voluntaryMuster",
+      | "voluntaryMuster" | "schoolDenied",
     note?: string,
   ): HistoryEvent => ({
     kind: "statusChange", level: "simple", kind_,
@@ -500,8 +518,18 @@ export function formatEvent(e: HistoryEvent): string {
         case "heldOver": return `Held over for next term${tail}.`;
       }
     }
-    case "musterBenefit":
-      return `Muster benefit: ${e.benefit} (roll ${e.tableRoll}${dmStr(e.dm)}).`;
+    case "musterBenefit": {
+      const rollTxt = `roll ${e.tableRoll}${dmStr(e.dm)}`;
+      if (e.outcome === "outOfRange") {
+        return `Muster benefit: ${rollTxt} → out of range (no benefit).`;
+      }
+      if (e.outcome === "noBenefit") {
+        return `Muster benefit: ${rollTxt} → no benefit in cell.`;
+      }
+      return `Muster benefit: ${e.benefit} (${rollTxt}).`;
+    }
+    case "mortgagePayoff":
+      return `Mortgage payoff: ${e.years} years on ${e.ship}.`;
     case "musterCash":
       return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)}).`;
     case "browniePoint": {
@@ -603,6 +631,8 @@ export function formatEvent(e: HistoryEvent): string {
           return `Commission skipped${note}.`;
         case "voluntaryMuster":
           return `Voluntarily mustered out${note}.`;
+        case "schoolDenied":
+          return `School denied${note}.`;
       }
     }
     case "crossTrained": {

@@ -241,7 +241,7 @@ function merchantAssignDepartment(ch: Character): void {
   const row = data.departmentAssignment.rows.find((row) => row.die === r);
   if (!row) { ch.acgState!.department = "Purser"; return; }
   ch.acgState!.department = String(row[lineCol] ?? "Purser");
-  ch.logRaw(`Merchant department: ${ch.acgState!.department}`, "verbose");
+  // acgState.department is read by subsequent assignment / skill rolls.
 }
 
 export function merchantRollAssignment(ch: Character): string {
@@ -324,7 +324,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // F14: Free Trader pursuit narrative + mechanical overrides.
   const freeTraderFlags = freeTraderAssignmentFlags(ch)[assignment];
   if (freeTraderFlags?.narrative) {
-    ch.logRaw(`${assignment}: ${freeTraderFlags.narrative}`, "verbose");
+    ch.log(ev.raw(`${assignment}: ${freeTraderFlags.narrative}`, "verbose"));
   }
   const skipBonus = freeTraderFlags?.skipBonus === true;
   // The merchant resolution rows are Survival / Skills / Bonus (not the
@@ -497,7 +497,8 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const upper = dir === "down" ? Math.min(order.length - 1, idx + 1) : idx;
   const newIdx = dir === "up" ? lower : upper;
   if (newIdx === idx) {
-    ch.logRaw(`Transfer ${dir} from ${order[idx]} not possible.`, "verbose");
+    // Clamp: nothing changed (e.g., transfer-up from megacorp is blocked).
+    // Absence of an ev.transferred event records the no-op.
     return;
   }
   const from = order[idx]!;

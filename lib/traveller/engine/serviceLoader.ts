@@ -129,18 +129,12 @@ export function buildServiceDef(
     const rawRoll = roll(1);
     const r = rawRoll + dm;
     if (r < 1 || r > 7) {
-      ch.logRaw(
-        `Muster benefits roll ${rawRoll}${dm ? ` + ${dm}` : ""} → ${r}: out of range`,
-        "verbose",
-      );
+      ch.log(ev.musterBenefit(undefined, rawRoll, dm, "outOfRange"));
       return;
     }
     const cell = serviceData.musterOut.benefits[r];
     if (cell == null) {
-      ch.logRaw(
-        `Muster benefits roll ${rawRoll}${dm ? ` + ${dm}` : ""} → ${r}: no benefit`,
-        "verbose",
-      );
+      ch.log(ev.musterBenefit(undefined, rawRoll, dm, "noBenefit"));
       return;
     }
     ch.log(ev.musterBenefit(cell, rawRoll, dm));
