@@ -325,9 +325,10 @@ export default function Home() {
     // and CT enforce their own lists (MT: Barbarians, Pirates, Rogues,
     // Scouts excluded; CT: Scouts + Other).
     if (c.isRetirementEligible()) c.retired = true;
-    c.logRaw(
-      `Voluntarily mustered out after ${intToOrdinal(c.terms)} term of service.`,
-    );
+    c.log(ev.statusChange(
+      "voluntaryMuster",
+      `after ${intToOrdinal(c.terms)} term of service`,
+    ));
     c.musteredOut = true;
     c.musterRolls = c.musterOutRolls();
     if (c.musterRolls === 0) {

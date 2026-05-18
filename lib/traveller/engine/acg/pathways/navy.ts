@@ -468,7 +468,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
       consequence: "Invalided out of Navy service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.logRaw("Brownie-point spend revived character (Navy survival saved).");
+        c.log(ev.statusChange("revived", "BP spend saved Navy survival"));
       },
     });
     if (mit.newMargin < 0) {
@@ -636,9 +636,10 @@ export function navySpecialAssignment(ch: Character): void {
   if (assignment === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
+      ch.log(ev.statusChange(
+        "ocsWaiver", `over age ${ocsAgeLimit}, waiver granted on reroll`,
+      ));
     } else if (reroll) {
-      ch.logRaw(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`, "verbose");
       assignment = reroll;
     } else {
       return;

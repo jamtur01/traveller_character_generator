@@ -33,9 +33,9 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
     character.shortTermThisTerm = true;
     character.shortTermsCount += 1;
     character.activeDuty = false;
-    character.logRaw(
-      "Injured in service; served only 2 years of this term (short term).",
-    );
+    character.log(ev.statusChange(
+      "shortTerm", "injured in service — only 2 years of this term served",
+    ));
     return;
   }
   character.log(ev.endGeneration("deceased", "killed in service"));

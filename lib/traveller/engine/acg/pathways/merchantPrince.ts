@@ -350,7 +350,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         consequence: "Mustered out of merchant service",
         onMitigated: (c) => {
           c.activeDuty = true;
-          c.logRaw("Brownie-point spend revived character (Merchant survival saved).");
+          c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
         },
       });
       if (mit.newMargin < 0) {
@@ -418,13 +418,9 @@ function merchantCheckAvailablePosition(ch: Character): void {
       const cur = parseInt(m[1]!, 10);
       const lower = Math.max(0, cur - 1);
       ch.acgState!.effectiveRankCode = lower === 0 ? "O0" : `O${lower}`;
-      ch.logRaw(
-        `No ${ch.acgState!.department} position (roll ${r} + ${dm} vs ${target}+); ` +
-        `serving as ${ch.acgState!.effectiveRankCode} this year.`,
-      "verbose");
-    } else {
-      ch.logRaw(`No ${ch.acgState!.department} position; rank unchanged.`, "verbose");
     }
+    // effectiveRankCode is observable; the failed position throw is reflected
+    // implicitly by the absence of a Promotion event this year.
   }
 }
 
@@ -478,7 +474,9 @@ function merchantAwardBonus(ch: Character): void {
   if (cash <= 0) return;
   ch.credits += cash;
   ch.musterLog.push(`Cr${cash} bonus (in-service)`);
-  ch.logRaw(`Merchant bonus: Cr${cash} (half of Cr${fullAmount})`, "verbose");
+  // The halved value is the actual award (musterLog records it); the full
+  // amount before halving is not separately observable.
+  void fullAmount;
 }
 
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {

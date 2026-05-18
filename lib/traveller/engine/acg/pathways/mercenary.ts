@@ -269,7 +269,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   if (!resTable.columns.includes(assignmentCol)) {
     // Garrison Duty: per manual, characters survive with no decoration or
     // skills. Treat unrecognised assignments as garrison.
-    ch.logRaw(`Garrison-style assignment "${assignment}": automatic survival, no rewards`, "verbose");
+    ch.log(ev.assignmentRolled(
+      assignment, ch.terms + 1, ch.acgState!.year, undefined,
+      "garrison-style: automatic survival, no rewards",
+    ));
     ch.acgState!.assignmentHistory.push(assignment);
     return;
   }
@@ -314,7 +317,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
       consequence: "Invalided out of mercenary service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.logRaw("Brownie-point spend revived character (survival saved).");
+        c.log(ev.statusChange("revived", "BP spend saved mercenary survival"));
       },
     });
     if (mit.newMargin < 0) {
@@ -602,9 +605,10 @@ export function mercenarySpecialAssignment(ch: Character): void {
   if (sa === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
     const reroll = rollOnce();
     if (reroll === "OCS") {
-      ch.logRaw(`OCS over age ${ocsAgeLimit}: waiver granted on reroll.`);
+      ch.log(ev.statusChange(
+        "ocsWaiver", `over age ${ocsAgeLimit}, waiver granted on reroll`,
+      ));
     } else if (reroll) {
-      ch.logRaw(`OCS over age ${ocsAgeLimit}: rerolled to ${reroll}.`, "verbose");
       sa = reroll;
     } else {
       return;

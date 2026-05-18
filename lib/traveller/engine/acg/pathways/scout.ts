@@ -285,7 +285,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       consequence: "Invalided out of Scout service",
       onMitigated: (c) => {
         c.activeDuty = true;
-        c.logRaw("Brownie-point spend revived character (Scout survival saved).");
+        c.log(ev.statusChange("revived", "BP spend saved Scout survival"));
       },
     });
     if (mit.newMargin < 0) {
