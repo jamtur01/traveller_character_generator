@@ -30,8 +30,13 @@ const YEAR_STEPS = [
 ] as const;
 type YearStep = typeof YEAR_STEPS[number];
 
+/** Step name set including special pre-cycle steps (initialTraining) that
+ *  aren't part of YEAR_STEPS' resume indexing. The post-pause finalization
+ *  branch handles initialTraining independently. */
+type PausableStep = YearStep | "initialTraining";
+
 function runStep(
-  ch: Character, stepName: YearStep, fn: () => void,
+  ch: Character, stepName: PausableStep, fn: () => void,
 ): boolean {
   try {
     fn();
@@ -44,6 +49,17 @@ function runStep(
     }
     throw e;
   }
+}
+
+/** Clear all year-scoped state markers. Called when a year advances
+ *  (successful completion, defensive no-op, initial-training paths) so
+ *  pathway code that gates on these flags starts fresh next year. */
+function clearYearScopedState(acg: import("../../character").Character["acgState"]): void {
+  if (!acg) return;
+  delete acg.transferAppliedThisYear;
+  delete acg.scoutTransferNextAssign;
+  delete acg.wasRetainedThisYear;
+  delete acg.thisYearOutcomes;
 }
 
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
@@ -86,12 +102,16 @@ export function runAcgYear(ch: Character): void {
   if (ch.terms === 0 && acg.year === 1 && p.initialTraining &&
       !acg.initialTrainingDone) {
     acg.initialTrainingDone = true;
-    const ok = runStep(ch, "commandDuty", () => p.initialTraining!(ch));
+    // pausedAtStep is functionally inert here — the post-pause branch
+    // above short-circuits on initialTrainingDone before startIdx is
+    // consulted — but a dedicated label keeps telemetry / logs honest.
+    const ok = runStep(ch, "initialTraining", () => p.initialTraining!(ch));
     if (!ok) return;
     ch.age += 1;
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
     acg.pausedAtStep = null;
+    clearYearScopedState(acg);
     return;
   }
   // Post-pause finalization: initial training started but paused on a
@@ -102,6 +122,7 @@ export function runAcgYear(ch: Character): void {
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
     acg.pausedAtStep = null;
+    clearYearScopedState(acg);
     return;
   }
 
@@ -151,7 +172,7 @@ export function runAcgYear(ch: Character): void {
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
     acg.pausedAtStep = null;
-    delete acg.thisYearOutcomes;
+    clearYearScopedState(acg);
     return;
   }
 
@@ -184,12 +205,7 @@ export function runAcgYear(ch: Character): void {
   acg.year += 1;
   acg.currentAssignment = null;
   acg.pausedAtStep = null;
-  // Clear year-scoped idempotency markers used by pathway code to skip
-  // already-applied side effects on pause/resume re-entry.
-  delete acg.transferAppliedThisYear;
-  delete acg.scoutTransferNextAssign;
-  delete acg.wasRetainedThisYear;
-  delete acg.thisYearOutcomes;
+  clearYearScopedState(acg);
 }
 
 /** Run a full four-year term. Time is accounted per year inside runAcgYear,

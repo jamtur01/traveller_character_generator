@@ -94,7 +94,7 @@ describe("buildCharacterSheetPdf", () => {
     expect(text).toContain("AlexanderJamison");
   });
 
-  it("includes the deceased dagger in the PDF when applicable", () => {
+  it("prefixes the deceased character's name with a dagger", () => {
     const c = new Character();
     c.name = "DoomedSpacer";
     c.service = "scouts";
@@ -102,15 +102,70 @@ describe("buildCharacterSheetPdf", () => {
     c.chargenStatus = { kind: "deceased", reason: "test fixture" };
     const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
     const text = Buffer.from(bytes).toString("latin1");
-    // The † U+2020 is mojibake-encoded by jsPDF latin1 as "†" → "â€ "
-    // in the raw bytes — but the easier signal is that the buffer is
-    // substantially larger than a blank page and the page count is 1
-    // (no page-2 supplement for a death without earnings).
-    const doc = buildCharacterSheetPdf(c);
-    expect(doc.getNumberOfPages()).toBe(1);
-    expect(bytes.byteLength).toBeGreaterThan(2000);
-    // sanity: the character's name still made it into the bytes
-    expect(text).toContain("DoomedSpacer");
+    // jsPDF's helvetica WinAnsiEncoding maps U+2020 (†) to 0x86.
+    // The string passed to fieldValue is "† DoomedSpacer", so the byte
+    // stream contains 0x86 followed by a space then the name.
+    expect(text).toMatch(/\x86 DoomedSpacer/);
+    // No supplement page for a death without earnings.
+    expect(buildCharacterSheetPdf(c).getNumberOfPages()).toBe(1);
+  });
+
+  it("renders a live character's name without a dagger prefix", () => {
+    const c = new Character();
+    c.name = "AliveScout";
+    c.service = "scouts";
+    c.terms = 1;
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("AliveScout");
+    // No 0x86 dagger byte preceding the name.
+    expect(text).not.toMatch(/\x86 AliveScout/);
+  });
+
+  // MT-edition rendering coverage. The CT-only test bus above misses
+  // ACG-specific paths (acgState rank/decorations/schools on TAS Form 2)
+  // and Includes-skill expansion in pistolsFor/bladesFor.
+  it("MT ACG character renders rank from acgState on TAS Form 2", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.name = "MTOfficer";
+    c.service = "army";
+    c.terms = 3;
+    c.useAcg = true;
+    c.acgPathway = "mercenary";
+    c.browniePoints = 0; // lazy-init acgState
+    const acg = c.requireAcgState();
+    acg.rankCode = "O3";
+    acg.isOfficer = true;
+    acg.decorations = ["MCUF", "MCG"];
+    acg.schoolsAttended = ["college", "ocs"];
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    expect(text).toContain("O3"); // rank from acgState
+    expect(text).toContain("MCUF"); // decoration
+    expect(text).toContain("Commissioned officer"); // special assignment
+  });
+
+  it("MT character with Includes-expanded weapons surfaces them in pistolsFor/bladesFor", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.name = "MTMarine";
+    c.service = "marines";
+    c.terms = 1;
+    // Constituents from the Handgun / Large Blade Includes-skill
+    // expansion (PM-canonical names).
+    c.skills = [
+      ["Pistol", 1], ["Snub Pistol", 1],
+      ["Cutlass", 2], ["Broadsword", 1],
+    ];
+    // pistolsFor/bladesFor are exported helpers used internally by the
+    // PDF renderer; assert via the rendered output that the expanded
+    // skills make it onto the form.
+    const bytes = buildCharacterSheetPdf(c).output("arraybuffer");
+    const text = Buffer.from(bytes).toString("latin1");
+    // Highest pistol = Pistol-1 (alphabetically first of the tied 1s);
+    // highest blade = Cutlass-2.
+    expect(text).toMatch(/Cutlass-2/);
   });
 
   it("encodes the character's UPP and rank into the PDF bytes", () => {

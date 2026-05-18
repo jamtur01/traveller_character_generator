@@ -17,8 +17,14 @@ import {
   cacheMitigation, getCachedMitigation, type SubStepKey,
 } from "./subStepCache";
 
-const CACHEABLE_PHASES: ReadonlySet<SubStepKey> =
+const CACHEABLE_PHASES: ReadonlySet<string> =
   new Set<SubStepKey>(["survival", "promotion", "decoration", "skills", "bonus"]);
+
+/** Type-narrow a rollName to SubStepKey when it's actually cacheable.
+ *  Avoids `as SubStepKey` casts that lie about "courtMartial". */
+function asCacheableKey(rollName: string): SubStepKey | null {
+  return CACHEABLE_PHASES.has(rollName) ? (rollName as SubStepKey) : null;
+}
 
 export interface MitigationRequest {
   rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial" | "bonus";
@@ -58,16 +64,17 @@ export function tryMitigate(
   // mitigated (and possibly queued a BP review that paused the engine),
   // return the cached spend/margin so re-runs don't double-charge BPs.
   // The cache lives on AcgState.thisYearOutcomes and is cleared at year
-  // boundary by runAcgYear.
-  const phase = req.rollName as SubStepKey;
-  if (CACHEABLE_PHASES.has(phase)) {
+  // boundary by runAcgYear. "courtMartial" is not cacheable (no per-year
+  // sub-step slot for it) — asCacheableKey returns null there.
+  const phase = asCacheableKey(req.rollName);
+  if (phase) {
     const cached = getCachedMitigation(ch, phase);
     if (cached) return cached;
   }
 
   if (ch.choiceMode === "auto") {
     const result = autoMitigate(ch, req);
-    if (CACHEABLE_PHASES.has(phase)) cacheMitigation(ch, phase, result.spent, result.newMargin);
+    if (phase) cacheMitigation(ch, phase, result.spent, result.newMargin);
     return result;
   }
   return interactiveMitigate(ch, req);
@@ -126,8 +133,8 @@ function interactiveMitigate(ch: Character, req: MitigationRequest): MitigationR
   // Cache the auto-spend BEFORE queueBpReview can throw, so the resumed
   // pathway sees the same spent/newMargin instead of re-rolling and
   // re-spending.
-  const phase = req.rollName as SubStepKey;
-  if (CACHEABLE_PHASES.has(phase)) cacheMitigation(ch, phase, result.spent, result.newMargin);
+  const phase = asCacheableKey(req.rollName);
+  if (phase) cacheMitigation(ch, phase, result.spent, result.newMargin);
   queueBpReview(ch, req, result);
   return result;
 }
@@ -170,7 +177,7 @@ function queueBpReview(
     onResolve: (c, chosen) => {
       const m = chosen.match(/Spend (\d+) more/);
       const extra = m ? parseInt(m[1]!, 10) : 0;
-      const phase = req.rollName as SubStepKey;
+      const phase = asCacheableKey(req.rollName);
       if (extra <= 0) {
         // Player declined to spend more. The cache still holds the
         // auto-mitigation result (result.spent, result.newMargin) which
@@ -196,9 +203,7 @@ function queueBpReview(
       // their way out.
       const totalSpent = result.spent + actual;
       const finalMargin = req.margin + totalSpent;
-      if (CACHEABLE_PHASES.has(phase)) {
-        cacheMitigation(c, phase, totalSpent, finalMargin);
-      }
+      if (phase) cacheMitigation(c, phase, totalSpent, finalMargin);
       // F16: if the total spend pushed the margin to ≥ 0 and the
       // request carries an onMitigated callback, run it now to apply
       // the success outcome retroactively (revival / retroactive

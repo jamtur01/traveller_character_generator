@@ -183,7 +183,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   const nameH = 36;
   doc.rect(X0, y, 280, nameH);
   fieldLabel(doc, X0 + 4, y + 10, "2. Name");
-  fieldValue(doc, X0 + 6, y + 28, c.name, 272);
+  // Prefix dagger for deceased characters — matches the plaintext sheet
+  // convention. jsPDF's default helvetica encodes U+2020 as 0x86 in
+  // WinAnsiEncoding-derived output.
+  const nameText = c.deceased ? `† ${c.name}` : c.name;
+  fieldValue(doc, X0 + 6, y + 28, nameText, 272);
 
   doc.rect(X0 + 280, y, 260, nameH);
   fieldLabel(doc, X0 + 284, y + 10, "3. UPP");
@@ -231,7 +235,13 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   const r4H = 32;
   doc.rect(X0, y, 360, r4H);
   fieldLabel(doc, X0 + 4, y + 10, "7. Age Modifiers", "(+ for drugs; - for sleep)");
-  fieldValue(doc, X0 + 6, y + 26, `Age ${c.age}`, 352);
+  // Anagathics divergence: c.apparentAge is what the Aging table uses
+  // (frozen while supply is maintained) while c.age advances normally.
+  // Show both when they differ; the difference IS the field's purpose.
+  const ageDisplay = c.apparentAge > 0 && c.apparentAge !== c.age
+    ? `Age ${c.age} (apparent ${c.apparentAge})`
+    : `Age ${c.age}`;
+  fieldValue(doc, X0 + 6, y + 26, ageDisplay, 352);
 
   doc.rect(X0 + 360, y, 180, r4H);
   fieldLabel(doc, X0 + 364, y + 10, "8. Birthworld");
@@ -508,33 +518,37 @@ function drawSupplement(doc: jsPDF, c: Character) {
   if (other.length > 0) fieldValue(doc, X0 + 6, y + 26, other.join(", "), W - 12, 11);
   y += 40;
 
-  // Service History
-  y += 4;
-  sectionBar(doc, X0, y, W, 28, "SERVICE HISTORY DETAIL");
-  y += 28;
+  // Service History — skip the entire section if the filtered history
+  // is empty (e.g., showHistory === "none"). Drawing an empty boxed
+  // section under a "SERVICE HISTORY DETAIL" header is just wasted page.
+  if (c.history.length > 0) {
+    y += 4;
+    sectionBar(doc, X0, y, W, 28, "SERVICE HISTORY DETAIL");
+    y += 28;
 
-  doc.rect(X0, y, W, PAGE_H - MARGIN - y);
-  doc.setFont("courier", "normal");
-  doc.setFontSize(10);
-  const inner = W - 12;
-  const yLimit = PAGE_H - MARGIN - 8;
-  let cur = y + 14;
-  for (const line of c.history) {
-    const wrapped = doc.splitTextToSize(line, inner);
-    for (const w of wrapped) {
-      if (cur > yLimit) {
-        doc.addPage();
-        cur = MARGIN + 14;
-        doc.setLineWidth(LINE);
-        doc.rect(X0, MARGIN, W, PAGE_H - 2 * MARGIN);
-        doc.setFont("courier", "normal");
-        doc.setFontSize(10);
+    doc.rect(X0, y, W, PAGE_H - MARGIN - y);
+    doc.setFont("courier", "normal");
+    doc.setFontSize(10);
+    const inner = W - 12;
+    const yLimit = PAGE_H - MARGIN - 8;
+    let cur = y + 14;
+    for (const line of c.history) {
+      const wrapped = doc.splitTextToSize(line, inner);
+      for (const w of wrapped) {
+        if (cur > yLimit) {
+          doc.addPage();
+          cur = MARGIN + 14;
+          doc.setLineWidth(LINE);
+          doc.rect(X0, MARGIN, W, PAGE_H - 2 * MARGIN);
+          doc.setFont("courier", "normal");
+          doc.setFontSize(10);
+        }
+        doc.text(w, X0 + 6, cur);
+        cur += 12;
       }
-      doc.text(w, X0 + 6, cur);
-      cur += 12;
     }
+    doc.setFont(BOLD, "normal");
   }
-  doc.setFont(BOLD, "normal");
 }
 
 /** Renderer for the MT Advanced Character Generation supplement page.
@@ -634,11 +648,15 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   doc.setFont("courier", "normal");
   doc.setFontSize(10);
   const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
-  const decLines = doc.splitTextToSize(decorationsText, W - 12);
+  const decLines = doc.splitTextToSize(decorationsText, W - 12) as string[];
   let dy = y + 26;
-  for (const line of decLines.slice(0, 2)) {
-    doc.text(line, X0 + 6, dy);
+  const decShown = Math.min(2, decLines.length);
+  for (let i = 0; i < decShown; i++) {
+    doc.text(decLines[i]!, X0 + 6, dy);
     dy += 12;
+  }
+  if (decLines.length > 2) {
+    doc.text(`+${decLines.length - 2} more`, X0 + 6, dy);
   }
   doc.setFont(BOLD, "normal");
   y += r4H;
@@ -658,13 +676,19 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
     const half = W / 2 - 12;
     let col = 0;
     let rowY = sy;
+    let shown = 0;
     for (const school of c.schoolsAttended) {
       if (rowY > schoolLimit) break;
       const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
       doc.text(`• ${school}`, x, rowY);
       col = (col + 1) % 2;
       if (col === 0) rowY += 12;
+      shown += 1;
       void half;
+    }
+    if (shown < c.schoolsAttended.length) {
+      const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
+      doc.text(`+${c.schoolsAttended.length - shown} more`, x, rowY);
     }
   }
   doc.setFont(BOLD, "normal");
@@ -682,11 +706,15 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   } else {
     // Pack assignments comma-separated, wrapping.
     const txt = ah.join(", ");
-    const wrapped = doc.splitTextToSize(txt, W - 12);
+    const wrapped = doc.splitTextToSize(txt, W - 12) as string[];
     let ahY = y + 26;
-    for (const line of wrapped.slice(0, 5)) {
-      doc.text(line, X0 + 6, ahY);
+    const shown = Math.min(5, wrapped.length);
+    for (let i = 0; i < shown; i++) {
+      doc.text(wrapped[i]!, X0 + 6, ahY);
       ahY += 11;
+    }
+    if (wrapped.length > 5) {
+      doc.text(`+${wrapped.length - 5} more lines`, X0 + 6, ahY);
     }
   }
   doc.setFont(BOLD, "normal");
