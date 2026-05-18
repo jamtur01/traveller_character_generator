@@ -149,7 +149,10 @@ export function scoutInitialTraining(ch: Character): void {
   if (typeof skill === "string") {
     ch.addSkill(skill, 1, `Initial Training (${office})`);
   } else {
-    ch.logRaw(`Initial Training (${office}): no skill specified in data`);
+    throw new Error(
+      `Scout Initial Training: no skill specified in data for office ` +
+      `"${office}" (edition: ${ch.editionId}).`,
+    );
   }
 }
 
@@ -165,7 +168,7 @@ function scoutRollSkill(ch: Character): void {
     if (col === "die") continue;
     const v = row[col];
     if (typeof v === "string") {
-      applyAcgSkillCell(ch, v);
+      applyAcgSkillCell(ch, v, `Scout ${division} ${col}`);
       return;
     }
   }
@@ -255,14 +258,18 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   const officeKey = labelToColumnKey(ch.acgState!.office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
-    ch.logRaw(`Scout: no resolution sub-table for office ${ch.acgState!.office}`, "verbose");
-    return;
+    throw new Error(
+      `Scout: no resolution sub-table for office "${ch.acgState!.office}" ` +
+      `(key "${officeKey}", edition: ${ch.editionId}).`,
+    );
   }
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    ch.logRaw(`Scout: assignment "${assignment}" not in resolution columns`, "verbose");
-    ch.acgState!.assignmentHistory.push(assignment);
-    return;
+    throw new Error(
+      `Scout: assignment "${assignment}" (col "${assignmentCol}") not in ` +
+      `resolution columns for office "${ch.acgState!.office}" ` +
+      `(available: ${resTable.columns.join(", ")}).`,
+    );
   }
   const res = lookupResolution(resTable, assignment);
   const survDm = applyDmRules(resTable.dms, ch, "survival");
@@ -353,7 +360,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   const v = row[column];
-  if (typeof v === "string") applyAcgSkillCell(ch, v);
+  if (typeof v === "string") applyAcgSkillCell(ch, v, `Scout ${column}`);
 }
 
 function routeScoutToSchool(ch: Character): void {

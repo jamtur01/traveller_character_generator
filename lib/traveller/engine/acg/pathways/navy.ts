@@ -324,7 +324,7 @@ function navyServiceSkillRoll(ch: Character, column: string): void {
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const skill = row[column];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+  if (typeof skill === "string") applyAcgSkillCell(ch, skill, `Navy ${column}`);
 }
 
 function navyBranchSkillRoll(ch: Character): void {
@@ -342,7 +342,7 @@ function navyBranchSkillRoll(ch: Character): void {
     const v = row[c];
     if (typeof v === "string") { skill = v; break; }
   }
-  if (skill) applyAcgSkillCell(ch, skill);
+  if (skill) applyAcgSkillCell(ch, skill, `Navy ${ch.acgState!.branch ?? "Line"} branch skills`);
 }
 
 /** Command Duty roll (officers only). */
@@ -409,8 +409,10 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const resKey = data.branchResolution?.[branch] ?? "lineCrew";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) {
-    ch.logRaw(`No resolution table for branch ${branch} (sub-key ${resKey})`, "verbose");
-    return;
+    throw new Error(
+      `Navy: no resolution table for branch "${branch}" ` +
+      `(sub-key "${resKey}", edition: ${ch.editionId}).`,
+    );
   }
 
   const assignmentCol = labelToColumnKey(assignment);
@@ -432,11 +434,14 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
         ch.acgState!.physicalAgeOffset = (ch.acgState!.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
       }
       ch.acgState!.assignmentHistory.push(assignment);
-      if (rule.historyLine) ch.logRaw(rule.historyLine);
+      if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
       return;
     }
-    ch.logRaw(`Unknown navy assignment "${assignment}" for branch ${branch}`, "verbose");
-    return;
+    throw new Error(
+      `Navy: unknown assignment "${assignment}" (col "${assignmentCol}") for ` +
+      `branch "${branch}" (resKey "${resKey}", available: ` +
+      `${resTable.columns.join(", ")}).`,
+    );
   }
 
   const res = lookupResolution(resTable, assignment);
@@ -679,7 +684,7 @@ export function navyReenlist(ch: Character): boolean {
     else if (d.condition === "officer" && isOfficer) dm += d.dm;
   }
   const r = roll(2);
-  ch.log(ev.roll(`Navy reenlist (${fleet})`, r, dm, spec.target, r + dm >= spec.target));
+  ch.log(ev.roll("Reenlistment", r, dm, spec.target, r + dm >= spec.target, `navy ${fleet}`));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerNavyBranchChange(ch);
