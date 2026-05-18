@@ -21,9 +21,7 @@ import type { StepFn } from "./types";
 
 export const survivalStep: StepFn = ({ character, service, edition }) => {
   if (service.checkSurvival(character)) return;
-  const onFailure = (edition.data.rules as
-    | { survival?: { onFailure?: "death" | "musterOut" | "shortTerm" } }
-    | undefined)?.survival?.onFailure ?? "death";
+  const onFailure = edition.rules.survival?.onFailure ?? "death";
   if (onFailure === "shortTerm" || onFailure === "musterOut") {
     // doServiceTermStep already added 4 years for the full term; rewind 2
     // because only 2 years of the 4-year term were served.

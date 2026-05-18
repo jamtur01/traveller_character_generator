@@ -49,14 +49,9 @@ export function doReenlistmentStep(ch: Character): void {
   }
   // CT mandates retirement at end of term 7. MT does not (voluntary
   // any-term per PM p. 17). Read the cap from edition rules.
-  const rules = getEdition(ch.editionId).data.rules as {
-    reenlistment?: {
-      mandatoryRetireAfterTerm?: number;
-      voluntaryAnyTerms?: boolean;
-    };
-  } | undefined;
-  const cap = rules?.reenlistment?.mandatoryRetireAfterTerm ?? 7;
-  const voluntaryAnyTerms = rules?.reenlistment?.voluntaryAnyTerms === true;
+  const reenlistRules = getEdition(ch.editionId).rules.reenlistment;
+  const cap = reenlistRules?.mandatoryRetireAfterTerm ?? 7;
+  const voluntaryAnyTerms = reenlistRules?.voluntaryAnyTerms === true;
   if (ch.terms >= cap && !voluntaryAnyTerms) {
     ch.endedAsRetired = true;
     ch.chargenStatus = { kind: "retired", reason: "mandatory retirement" };

@@ -16,18 +16,24 @@ import mtMegatravellerData from "../../../data/editions/mt-megatraveller.json" w
 import { ctClassicHooks } from "./ct-classic/hooks";
 import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
+import { parseRules } from "./schema";
+
+function buildEdition(
+  raw: unknown, hooks: Edition["hooks"], id: string,
+): Edition {
+  const data = raw as CanonData;
+  // Validate the heavily-cast `rules` sub-object at edition load —
+  // catches structural drift / typos that previously survived into
+  // runtime via `as { ... }` casts at each call site.
+  const rules = parseRules((data as { rules?: unknown }).rules, id);
+  return { meta: data.edition, data, hooks, rules };
+}
 
 const REGISTRY: Record<string, Edition> = {
-  "ct-classic": {
-    meta: (ctClassicData as unknown as CanonData).edition,
-    data: ctClassicData as unknown as CanonData,
-    hooks: ctClassicHooks,
-  },
-  "mt-megatraveller": {
-    meta: (mtMegatravellerData as unknown as CanonData).edition,
-    data: mtMegatravellerData as unknown as CanonData,
-    hooks: mtMegatravellerHooks,
-  },
+  "ct-classic": buildEdition(ctClassicData, ctClassicHooks, "ct-classic"),
+  "mt-megatraveller": buildEdition(
+    mtMegatravellerData, mtMegatravellerHooks, "mt-megatraveller",
+  ),
 };
 
 export const DEFAULT_EDITION_ID = "ct-classic";

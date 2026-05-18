@@ -702,8 +702,7 @@ export class Character {
    */
   enforceSkillCap(): void {
     const ed = getEdition(this.editionId);
-    const hasCap = !!(ed.data as { rules?: { skillCap?: unknown } }).rules?.skillCap;
-    if (!hasCap) return;
+    if (!ed.rules.skillCap) return;
     const cap = this.skillCap();
     const total = this.totalSkillLevels();
     if (total <= cap) return;
@@ -750,9 +749,7 @@ export class Character {
     this.attributes[attrib] += delta;
     // PM/TTB p. 17 caps + per-edition socialMin override — sourced from
     // rules.attributeCaps in the edition JSON.
-    const caps = (getEdition(this.editionId).data.rules as {
-      attributeCaps?: { max?: number; min?: number; socialMin?: number };
-    } | undefined)?.attributeCaps;
+    const caps = getEdition(this.editionId).rules.attributeCaps;
     const max = caps?.max ?? 15;
     if (this.attributes[attrib] > max) {
       // Post-state in the ev.attributeChange below shows the capped value.
@@ -958,14 +955,9 @@ export class Character {
    *  edition's eligibleAfterCompletedTerm and not in the excludedServices
    *  list (MT excludes Barbarians, Pirates, Rogues, Scouts per PM p. 17). */
   isRetirementEligible(): boolean {
-    const rules = getEdition(this.editionId).data.rules as {
-      retirement?: {
-        eligibleAfterCompletedTerm?: number;
-        excludedServices?: string[];
-      };
-    } | undefined;
-    const minTerms = rules?.retirement?.eligibleAfterCompletedTerm ?? 5;
-    const excluded = rules?.retirement?.excludedServices ?? ["scouts", "other"];
+    const retirement = getEdition(this.editionId).rules.retirement;
+    const minTerms = retirement?.eligibleAfterCompletedTerm ?? 5;
+    const excluded = retirement?.excludedServices ?? ["scouts", "other"];
     if (this.terms < minTerms) return false;
     if (excluded.includes(String(this.service))) return false;
     return true;
@@ -981,15 +973,7 @@ export class Character {
    *      rules.disability.sumPhysicalAttributesAtMost
    *  Editions without a `rules.disability` block (CT) return false. */
   isDisabled(): { disabled: boolean; reasons: string[] } {
-    const rules = getEdition(this.editionId).data.rules as {
-      disability?: {
-        physicalAttributes?: string[];
-        atAgeLine?: number;
-        physicalAttributeAtMost?: number;
-        sumPhysicalAttributesAtMost?: number;
-      };
-    } | undefined;
-    const d = rules?.disability;
+    const d = getEdition(this.editionId).rules.disability;
     if (!d) return { disabled: false, reasons: [] };
     const physical = (d.physicalAttributes ?? []) as AttributeKey[];
     const reasons: string[] = [];
@@ -1051,9 +1035,7 @@ export class Character {
       };
     };
   } | null {
-    const rules = (getEdition(this.editionId).data.rules as {
-      anagathics?: unknown;
-    } | undefined)?.anagathics;
+    const rules = getEdition(this.editionId).rules.anagathics;
     return (rules as ReturnType<Character["anagathicsRules"]>) ?? null;
   }
 
@@ -1305,11 +1287,9 @@ export class Character {
   // ---------- titles ----------
 
   getNobleTitle(): string {
-    const titles = (getEdition(this.editionId).data.rules as {
-      nobleTitles?: Record<string, { male?: string; female?: string }>;
-    } | undefined)?.nobleTitles;
+    const titles = getEdition(this.editionId).rules.nobleTitles;
     const entry = titles?.[String(this.attributes.social)];
-    if (!entry) return "";
+    if (!entry || typeof entry === "string") return "";
     return (this.gender === "female" ? entry.female : entry.male) ?? "";
   }
 
