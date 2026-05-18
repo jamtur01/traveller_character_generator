@@ -149,10 +149,12 @@ function queueBpReview(
 ): void {
   const available = ch.acgState?.browniePoints ?? 0;
   if (available <= 0) return;
-  // Build "spend N more" options. Cap at the lesser of `available` and a
-  // soft 9 to keep the picker tractable.
-  const need = Math.max(0, Math.abs(req.margin) - result.spent);
-  const max = Math.min(available, Math.max(need, 3));
+  // Build "spend N more" options. PM p. 46 allows any number of BPs on
+  // a single roll, so the cap is whatever the character can afford.
+  // Bounded at 12 to keep the picker tractable for huge BP pools (the
+  // player can still aggregate via repeated prompts in pathological
+  // cases — a court-martial avoid needs ≤ 6, survival ≤ ~10).
+  const max = Math.min(available, 12);
   const options: string[] = [];
   options.push("Spend 0 more (accept current outcome)");
   for (let n = 1; n <= max; n++) {

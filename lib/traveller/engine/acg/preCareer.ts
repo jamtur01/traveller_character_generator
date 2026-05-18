@@ -512,7 +512,7 @@ function applyOptionSpecifics(
   if (sk && !Array.isArray(sk) && Array.isArray(sk.skills) && sk.throw) {
     const target = parseSkillThrowTarget(sk.throw);
     for (const skill of sk.skills) {
-      if (parseDieExpression(skill) !== null) {
+      if (hasDieExpression(skill)) {
         // Dynamic skill spec (e.g. "1D-3 levels of Pilot, minimum 1").
         out.skills.push(parseDynamicSkill(skill));
       } else if (roll(1) >= target) {
@@ -525,7 +525,7 @@ function applyOptionSpecifics(
   // and a dynamic "1D-3 levels of Pilot, minimum 1").
   if (sk && !Array.isArray(sk) && Array.isArray(sk.skills) && !sk.throw) {
     for (const skill of sk.skills) {
-      if (parseDieExpression(skill) !== null) {
+      if (hasDieExpression(skill)) {
         out.skills.push(parseDynamicSkill(skill));
       } else {
         out.skills.push([skill, 1]);
@@ -534,7 +534,7 @@ function applyOptionSpecifics(
   }
   if (Array.isArray(sk)) {
     for (const skill of sk) {
-      if (parseDieExpression(skill) !== null) {
+      if (hasDieExpression(skill)) {
         out.skills.push(parseDynamicSkill(skill));
       } else {
         out.skills.push([skill, 1]);
@@ -582,7 +582,19 @@ function parseSkillThrowTarget(throwStr: string): number {
   return m ? parseInt(m[1]!, 10) : 4;
 }
 
-/** Recognise embedded die expressions in skill strings (e.g. "1D-3"). */
+/** Detect (without side effect) whether a skill string contains an
+ *  embedded die expression like "1D-3". Use this for branching; only
+ *  parseDieExpression (which rolls dice) should run when the value is
+ *  actually consumed — calling the rolling version twice would waste
+ *  RNG and break deterministic test mocks. */
+function hasDieExpression(s: string): boolean {
+  return /\d+D([-+]\d+)?/.test(s);
+}
+
+/** Resolve embedded die expressions in skill strings (e.g. "1D-3"),
+ *  rolling the die and returning the resulting numeric value. Side
+ *  effect: consumes one roll(1). Returns null when no die expression is
+ *  present. */
 function parseDieExpression(s: string): number | null {
   const m = s.match(/(\d+)D([-+]\d+)?/);
   if (!m) return null;

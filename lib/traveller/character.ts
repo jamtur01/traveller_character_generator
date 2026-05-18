@@ -251,7 +251,19 @@ export class Character {
   anagathicsEverTaken = false;
   /** Apparent age — the Aging-table line the character is on. Defaults to
    *  chronological age; diverges when anagathics is active. */
-  apparentAge = 0;
+  /** Private backing for apparentAge. Defaults to 0; the getter
+   *  reports `age` until doAging or anagathics explicitly assigns. */
+  private _apparentAge = 0;
+  /** Apparent age — the Aging-table line the character is on. Equals
+   *  chronological age until anagathics freezes it or doAging snapshots
+   *  the value. Getter ensures UI / PDF reads before the first aging
+   *  term don't see 0. */
+  get apparentAge(): number {
+    return this._apparentAge === 0 ? this.age : this._apparentAge;
+  }
+  set apparentAge(v: number) {
+    this._apparentAge = v;
+  }
   /** Count of terms in which anagathics was active — those terms forfeit
    *  the muster-out benefit roll (PM p. 15). */
   anagathicsBenefitForfeitedTerms = 0;
@@ -680,13 +692,12 @@ export class Character {
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    // The benefit name is already announced by the preceding event
-    // (ev.musterBenefit for muster cells, ev.cascadePick for weapon
-    // benefits, ev.decoration for award-conferred benefits). Standalone
-    // benefits — retirement pay, scout detached duty stipend, free
-    // trader ship from ACG — emit their own simple-level event at the
-    // call site.
-    this.log(ev.raw(benefit, "verbose"));
+    // Silent: callers are responsible for the history entry. Muster
+    // cells emit ev.musterBenefit before applyCell calls us, cascade
+    // weapon benefits emit ev.cascadePick, decorations emit
+    // ev.decoration, and standalone benefits (retirement pay, scout
+    // detached duty, free trader ship) log explicitly at their call
+    // site. Logging here too produced a duplicate line in verbose mode.
   }
 
   // ---------- single logging API ----------
@@ -1068,8 +1079,10 @@ export class Character {
     // Apparent age tracks the Aging-table line. On anagathics it stays
     // frozen at the line the character was on when they started taking
     // them. Otherwise it follows chronological terms served (effective
-    // terms used to pick the row).
-    if (this.apparentAge === 0) this.apparentAge = this.age;
+    // terms used to pick the row). The getter already reports `age`
+    // when _apparentAge is 0, but persist the snapshot here so a later
+    // anagathics opt-in freezes from this point.
+    if (this._apparentAge === 0) this._apparentAge = this.age;
     // Short terms only count for half-aging. PM p. 16: a short term is 2
     // years and the term should not trigger full-term aging breakpoints.
     // Compute aging from completed full terms only (terms minus short).
@@ -1208,7 +1221,11 @@ export function cloneCharacter(c: Character): Character {
   next.attributes = { ...c.attributes };
   next.skills = c.skills.map(([n, l]) => [n, l] as Skill);
   next.benefits = [...c.benefits];
-  next.events = [...c.events];
+  // Shallow-clone the array AND each event payload. Today event objects
+  // are immutable in practice but agingSave carries a `dice` tuple and
+  // future event kinds may grow nested arrays/objects — copying defends
+  // against a mutation in the clone leaking back into the original.
+  next.events = c.events.map((e) => ({ ...e }));
   next.musterLog = [...c.musterLog];
   // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate
   // the clone (via pickOrDefer → pendingChoices.push) before committing.

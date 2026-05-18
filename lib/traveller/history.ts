@@ -1,3 +1,5 @@
+import { numCommaSep } from "./formatting";
+
 // Structured event log for character generation.
 //
 // Every meaningful chargen event (homeworld roll, skill grant, enlistment
@@ -260,7 +262,11 @@ export type HistoryEvent =
 export const event = {
   raw: (text: string, level: HistoryLevel = "simple"): HistoryEvent =>
     ({ kind: "raw", level, text }),
-  section: (label: string, level: HistoryLevel = "verbose"): HistoryEvent =>
+  // Term-boundary dividers are structural — they orient the player in
+  // "simple" mode as much as "verbose". Default to simple so the
+  // narrative isn't a single undifferentiated stream of grants in the
+  // common view.
+  section: (label: string, level: HistoryLevel = "simple"): HistoryEvent =>
     ({ kind: "section", level, label }),
   homeworld: (
     starport: string, size: string, atmosphere: string,
@@ -546,7 +552,9 @@ export function formatEvent(e: HistoryEvent): string {
       return `No effect — ${e.reason}.`;
     case "musterCash": {
       const src = e.source ? ` — ${e.source}` : "";
-      return `Muster cash: Cr${e.amount.toLocaleString()} (roll ${e.tableRoll}${dmStr(e.dm)})${src}.`;
+      // numCommaSep matches the formatting used by sheet.ts / pdfSheet.ts;
+      // toLocaleString varies by host locale and would drift.
+      return `Muster cash: Cr${numCommaSep(e.amount)} (roll ${e.tableRoll}${dmStr(e.dm)})${src}.`;
     }
     case "browniePoint": {
       const sign = e.delta >= 0 ? "+" : "";
@@ -586,7 +594,9 @@ export function formatEvent(e: HistoryEvent): string {
         case "washedOut": return `${e.option}: washed out${note}.`;
         case "graduated": return `${e.option}: graduated${note}.`;
         case "honors": return `${e.option}: honors graduate${note}.`;
-        case "info": return `${e.option}: ${e.note ?? ""}`.trim();
+        case "info":
+          // If note is missing, render just the option name (no stray ":").
+          return e.note ? `${e.option}: ${e.note}` : e.option;
       }
     }
     case "endGeneration": {

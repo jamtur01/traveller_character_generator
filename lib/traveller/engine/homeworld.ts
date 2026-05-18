@@ -118,8 +118,23 @@ export function rollHomeworld(ch: Character): Homeworld | null {
     }
     r = Math.max(2, Math.min(12, r));
     const row = data.rollTable.rows.find((row) => row.die === r);
-    if (!row) continue;
-    let value = String(row[col] ?? "");
+    if (!row) {
+      // Missing row in the JSON rolltable is a data bug — fail loudly
+      // rather than silently leaving the homeworld column empty (which
+      // downstream code would interpret as undefined behavior).
+      throw new Error(
+        `Homeworld rollTable for "${col}" is missing row die=${r} ` +
+        `(edition: ${ch.editionId}).`,
+      );
+    }
+    const cellRaw = row[col];
+    if (cellRaw === undefined || cellRaw === null || cellRaw === "") {
+      throw new Error(
+        `Homeworld rollTable row die=${r} has no "${col}" value ` +
+        `(edition: ${ch.editionId}).`,
+      );
+    }
+    let value = String(cellRaw);
     // Starport 12 (D-X) requires a follow-up 1D.
     if (col === "starport" && value === "D-X") {
       const dr = roll(1);
