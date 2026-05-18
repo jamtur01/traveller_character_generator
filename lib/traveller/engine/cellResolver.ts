@@ -54,12 +54,8 @@ function passageDisplayName(editionId: string, label: string): string | null {
 
 /** Is the cell label a ship-benefit name in the edition's benefitDetails? */
 function isShipLabel(editionId: string, label: string): boolean {
-  const benefits = (getEdition(editionId).data as {
-    benefitDetails?: Record<string, unknown>;
-  }).benefitDetails;
-  if (!benefits) return false;
-  const entry = benefits[label] as { shipType?: unknown } | undefined;
-  return entry?.shipType !== undefined;
+  const benefits = getEdition(editionId).data.benefitDetails;
+  return benefits?.[label]?.shipType !== undefined;
 }
 
 /** Canonicalize cells whose printed label differs from the engine's skill

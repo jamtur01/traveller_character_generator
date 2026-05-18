@@ -71,6 +71,10 @@ export interface ServiceData {
     position: CheckData | null;
     promotion: CheckData | null;
     reenlistment: CheckData;
+    /** MT Special Duty check (PM p. 17 — fifth per-term throw that
+     *  grants a skill point on success, double on overshoot). CT
+     *  services omit it. */
+    specialDuty?: { target: number };
   };
   ranks: (string | null)[];
   automaticSkills: AutoSkillEntry[];
@@ -152,20 +156,50 @@ export interface CanonData {
 export interface AcgData {
   source?: string;
   coverage?: Record<string, number[]>;
-  common: Record<string, unknown>;
+  common: AcgCommonData;
   /** Pathways are named entries — MT has mercenary, navy, scout,
-   *  merchantPrince. Each is a self-contained chargen branch. */
+   *  merchantPrince. Each is a self-contained chargen branch. The
+   *  pathway-specific shape lives in engine/acg/pathways/*. */
+  mercenary?: AcgPathwayData;
+  navy?: AcgPathwayData;
+  scout?: AcgPathwayData;
+  merchantPrince?: AcgPathwayData;
+  homeworld?: { techCodeOrder?: string[] };
   [pathway: string]: unknown;
 }
 
-export interface AcgPathway {
+/** Common ACG block (shared rules across pathways). */
+export interface AcgCommonData {
+  preCareerOptions?: Record<string, unknown>;
+  browniePoints?: { awards?: unknown[] };
+  decorationTiers?: { tiers?: Array<Record<string, unknown>> };
+  [k: string]: unknown;
+}
+
+/** Per-pathway ACG data. The union of mercenary/navy/scout/merchant
+ *  sub-fields — pathway-specific fields are optional so each pathway's
+ *  consumers can read what they need without a separate cast. */
+export interface AcgPathwayData {
   sourcePrintedPages?: number[];
   checklist?: unknown;
   enlistment?: unknown;
   ranks?: { enlisted?: unknown[]; officer?: unknown[] };
   reenlistment?: unknown;
+  ocsAdvancement?: { ageLimit?: number; [k: string]: unknown };
+  schoolMeta?: Record<string, unknown>;
+  specialRules?: Record<string, unknown>;
+  specialAssignmentRules?: Record<string, unknown>;
+  combatAssignments?: string[];
+  assignmentColumnMap?: Record<string, string>;
+  freeTraderAssignmentFlags?: Record<string, unknown>;
+  skillTables?: Record<string, unknown>;
+  skillColumnPolicy?: unknown;
+  decorationTiers?: { tiers?: Array<Record<string, unknown>> };
   [k: string]: unknown;
 }
+
+/** Legacy alias for AcgPathwayData. */
+export type AcgPathway = AcgPathwayData;
 
 /**
  * ACG pathway implementation supplied by the edition's hooks. The runner

@@ -80,7 +80,7 @@ function computeDraft(editionId: string): ServiceKey[] {
   const out: ServiceKey[] = [];
   for (let i = 1; i <= 6; i++) {
     for (const [k, svc] of Object.entries(ed.data.services)) {
-      if ((svc as { draft?: number }).draft === i) {
+      if (svc.draft === i) {
         out.push(k as ServiceKey);
         break;
       }
