@@ -270,30 +270,30 @@ export const event = {
     starport, size, atmosphere, hydrosphere, population, law, tech,
   }),
   skillLearned: (skill: string, skillLevel: number, source?: string): HistoryEvent => ({
-    kind: "skillLearned", level: "verbose", skill, skillLevel,
+    kind: "skillLearned", level: "simple", skill, skillLevel,
     ...(source !== undefined ? { source } : {}),
   }),
   skillImproved: (skill: string, skillLevel: number, source?: string): HistoryEvent => ({
-    kind: "skillImproved", level: "verbose", skill, skillLevel,
+    kind: "skillImproved", level: "simple", skill, skillLevel,
     ...(source !== undefined ? { source } : {}),
   }),
   attributeChange: (attribute: string, delta: number, reason?: string): HistoryEvent => ({
-    kind: "attributeChange", level: "verbose", attribute, delta,
+    kind: "attributeChange", level: "simple", attribute, delta,
     ...(reason !== undefined ? { reason } : {}),
   }),
   cascadePick: (cascade: string, chosen: string): HistoryEvent => ({
-    kind: "cascadePick", level: "verbose", cascade, chosen,
+    kind: "cascadePick", level: "simple", cascade, chosen,
   }),
   musterBenefit: (
     benefit: string | undefined, tableRoll: number, dm: number,
     outcome?: "outOfRange" | "noBenefit",
   ): HistoryEvent => ({
-    kind: "musterBenefit", level: "verbose", tableRoll, dm,
+    kind: "musterBenefit", level: "simple", tableRoll, dm,
     ...(benefit !== undefined ? { benefit } : {}),
     ...(outcome !== undefined ? { outcome } : {}),
   }),
   mortgagePayoff: (ship: string, years: number): HistoryEvent => ({
-    kind: "mortgagePayoff", level: "verbose", ship, years,
+    kind: "mortgagePayoff", level: "simple", ship, years,
   }),
   noEffect: (reason: string): HistoryEvent => ({
     kind: "noEffect", level: "debug", reason,
@@ -301,14 +301,14 @@ export const event = {
   musterCash: (
     amount: number, tableRoll: number, dm: number, source?: string,
   ): HistoryEvent => ({
-    kind: "musterCash", level: "verbose", amount, tableRoll, dm,
+    kind: "musterCash", level: "simple", amount, tableRoll, dm,
     ...(source !== undefined ? { source } : {}),
   }),
   skillReduced: (skill: string, lvl: number, reason: string): HistoryEvent => ({
-    kind: "skillReduced", level: "verbose", skill, skillLevel: lvl, reason,
+    kind: "skillReduced", level: "simple", skill, skillLevel: lvl, reason,
   }),
   skillForfeited: (skill: string, reason: string): HistoryEvent => ({
-    kind: "skillForfeited", level: "verbose", skill, reason,
+    kind: "skillForfeited", level: "simple", skill, reason,
   }),
   enlistmentAttempt: (
     service: string, roll: number, dm: number, target: number, succeeded: boolean,
@@ -325,7 +325,7 @@ export const event = {
     termNumber: number, age: number,
     extras?: { shortTerm?: boolean; shortTermReason?: string },
   ): HistoryEvent => ({
-    kind: "termBegin", level: "verbose", termNumber, age,
+    kind: "termBegin", level: "simple", termNumber, age,
     ...(extras?.shortTerm !== undefined ? { shortTerm: extras.shortTerm } : {}),
     ...(extras?.shortTermReason !== undefined
       ? { shortTermReason: extras.shortTermReason } : {}),
@@ -405,7 +405,7 @@ export const event = {
     assignment: string, term?: number, year?: number,
     retained?: boolean, note?: string,
   ): HistoryEvent => ({
-    kind: "assignmentRolled", level: "verbose", assignment,
+    kind: "assignmentRolled", level: "simple", assignment,
     ...(term !== undefined ? { term } : {}),
     ...(year !== undefined ? { year } : {}),
     ...(retained !== undefined ? { retained } : {}),
@@ -469,30 +469,31 @@ export function formatEvent(e: HistoryEvent): string {
     case "attributeChange": {
       const sign = e.delta > 0 ? "+" : "";
       const reason = e.reason ? ` (${e.reason})` : "";
-      return `${sign}${e.delta} ${e.attribute}${reason}`;
+      const name = formatAttributeName(e.attribute);
+      return `${sign}${e.delta} ${name}${reason}.`;
     }
     case "skillLearned": {
       const src = e.source ? ` (${e.source})` : "";
-      return `Learned ${e.skill}-${e.skillLevel}${src}`;
+      return `Learned ${e.skill}-${e.skillLevel}${src}.`;
     }
     case "skillImproved": {
       const src = e.source ? ` (${e.source})` : "";
-      return `Improved ${e.skill} to ${e.skillLevel}${src}`;
+      return `Improved ${e.skill} to ${e.skillLevel}${src}.`;
     }
     case "skillReduced":
-      return `Reduced ${e.skill} to level ${e.skillLevel} (${e.reason})`;
+      return `Reduced ${e.skill} to level ${e.skillLevel} (${e.reason}).`;
     case "skillForfeited":
-      return `Forfeited ${e.skill} (${e.reason})`;
+      return `Forfeited ${e.skill} (${e.reason}).`;
     case "cascadePick":
-      return `${e.cascade} → ${e.chosen}`;
+      return `${e.cascade} → ${e.chosen}.`;
     case "enlistmentAttempt": {
       const verb = e.succeeded ? "accepted" : "denied";
       const note = e.note ? ` — ${e.note}` : "";
       // Auto / gate cases have target=0 (no roll); render without dice.
       if (e.target === 0 && e.roll === 0) {
-        return `Enlistment in ${e.service}: ${verb}${note}`;
+        return `Enlistment in ${e.service}: ${verb}${note}.`;
       }
-      return `Enlistment in ${e.service}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}${note}`;
+      return `Enlistment in ${e.service}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}${note}.`;
     }
     case "drafted":
       return `Drafted into ${e.service}.`;
@@ -500,12 +501,12 @@ export function formatEvent(e: HistoryEvent): string {
       const shortNote = e.shortTerm
         ? ` — short term${e.shortTermReason ? ` (${e.shortTermReason})` : ""}`
         : "";
-      return `Term ${e.termNumber} (age ${e.age})${shortNote}`;
+      return `Term ${e.termNumber} (age ${e.age})${shortNote}.`;
     }
     case "roll": {
       const ctx = e.context ? ` (${e.context})` : "";
       const verb = e.succeeded ? "passed" : "failed";
-      return `${e.rollName}${ctx}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}`;
+      return `${e.rollName}${ctx}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}.`;
     }
     case "decoration": {
       const reason = e.reason ? ` (${e.reason})` : "";
@@ -562,18 +563,19 @@ export function formatEvent(e: HistoryEvent): string {
       }
     }
     case "agingSave": {
+      const attrName = formatAttributeName(e.attribute);
       switch (e.outcome) {
         case "auto":
-          return `Aging save (${e.attribute}): auto-saved (anagathics).`;
+          return `Aging save (${attrName}): auto-saved (anagathics).`;
         case "passed": {
           const detail = e.dice && e.save !== undefined
             ? ` (${e.dice[0]}/${e.dice[1]} vs ${e.save}+)` : "";
-          return `Aging save (${e.attribute}): passed${detail}.`;
+          return `Aging save (${attrName}): passed${detail}.`;
         }
         case "failed": {
           const detail = e.dice && e.save !== undefined
             ? ` (${e.dice[0]}/${e.dice[1]} vs ${e.save}+)` : "";
-          return `Aging save (${e.attribute}): failed${detail}.`;
+          return `Aging save (${attrName}): failed${detail}.`;
         }
       }
     }
@@ -599,7 +601,7 @@ export function formatEvent(e: HistoryEvent): string {
       if (e.outcome === "forced") {
         return `Marine Tradition: Blade Combat → ${e.forcedSkill ?? "Large Blade"}.`;
       }
-      return `Marine Tradition save passed — normal Blade Combat cascade.`;
+      return "Marine Tradition save passed — normal Blade Combat cascade.";
     case "assignmentRolled": {
       const where = e.term !== undefined && e.year !== undefined
         ? ` (term ${e.term} year ${e.year})` : "";
@@ -611,7 +613,7 @@ export function formatEvent(e: HistoryEvent): string {
       return `${e.source} overshoot +${e.overshoot}: +1 bonus skill point.`;
     case "commandDuty":
       return `Command duty roll ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ` +
-        (e.inCommand ? "in command" : "staff position");
+        (e.inCommand ? "in command" : "staff position") + ".";
     case "schoolAssigned":
       return `School assignment: ${e.school}` +
         (e.pathway ? ` (${e.pathway})` : "") + ".";
@@ -666,6 +668,16 @@ export function formatEvent(e: HistoryEvent): string {
 function dmStr(dm: number): string {
   if (dm === 0) return "";
   return dm > 0 ? ` + ${dm}` : ` − ${Math.abs(dm)}`;
+}
+
+const ATTR_SHORT_LOOKUP: Record<string, string> = {
+  strength: "Str", dexterity: "Dex", endurance: "End",
+  intelligence: "Int", education: "Edu", social: "Soc",
+};
+
+function formatAttributeName(attribute: string): string {
+  return ATTR_SHORT_LOOKUP[attribute]
+    ?? (attribute.charAt(0).toUpperCase() + attribute.slice(1));
 }
 
 /** Filter events for a given visibility mode. */

@@ -367,7 +367,7 @@ describe("Minor: improveAttribute logs every change including social clamp", () 
     c.attributes.social = 1;
     c.improveAttribute("social", -5); // would go to -4, clamped to socialMin=1
     expect(c.attributes.social).toBe(1);
-    expect(c.history.some((h) => /social/.test(h))).toBe(true);
+    expect(c.history.some((h) => /Soc\b|social/i.test(h))).toBe(true);
   });
 });
 
