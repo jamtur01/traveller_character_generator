@@ -141,6 +141,14 @@ export interface CanonData {
   /** Cascade-skill pools (Blade Combat → [Cutlass, ...], etc.). MT
    *  declares many; CT has none and omits the field. */
   cascadeSkills?: Record<string, readonly string[]>;
+  /** Abbreviated → full attribute key map ("Intel" → "intelligence"). */
+  attributeAbbreviations?: Record<string, string>;
+  /** Printed cell-label → engine skill name aliases (typo / abbreviation
+   *  normalization). */
+  skillLabelRenames?: Record<string, string>;
+  /** PM Includes-skills declarations (granting multiple constituent
+   *  skills from a single cell). */
+  includesSkills?: Record<string, unknown>;
   /** Homeworld generation tables — UWP traits, default skills, career
    *  availability. MT only; CT omits. Exact shape declared in
    *  engine/homeworld.ts (HomeworldData) and re-exported via a

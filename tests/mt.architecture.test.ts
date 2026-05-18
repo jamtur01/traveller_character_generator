@@ -2,10 +2,14 @@
 // rules out of TypeScript into the edition JSON, and that switched the ACG
 // pathway runtime to a hooks-based registry.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { getEdition, listEditions } from "../lib/traveller/editions";
 import { applyStructuredDms } from "../lib/traveller/engine/acg/tables";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("Structured DM arrays evaluate correctly", () => {
   function makeCh(withAcgState = false): Character {

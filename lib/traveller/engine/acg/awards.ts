@@ -23,14 +23,15 @@ function commonAcg(ch: Character) {
 }
 
 /** Look up the brownie-point award for a given event string in
- *  common.browniePoints.awards. Returns null if not configured. */
-function bpAwardFor(ch: Character, event: string): number | null {
+ *  common.browniePoints.awards. Exact case-insensitive match — substring
+ *  matching would collide as the awards table grows ("Special assignment"
+ *  matching "assignment"). Returns null if not configured. */
+export function bpAwardFor(ch: Character, event: string): number | null {
   const common = commonAcg(ch);
   const awards = common?.browniePoints?.awards as BrownieAward[] | undefined;
   if (!Array.isArray(awards)) return null;
-  const match = awards.find((a) =>
-    a.event.toLowerCase().includes(event.toLowerCase()),
-  );
+  const needle = event.toLowerCase();
+  const match = awards.find((a) => a.event.toLowerCase() === needle);
   return match ? match.points : null;
 }
 

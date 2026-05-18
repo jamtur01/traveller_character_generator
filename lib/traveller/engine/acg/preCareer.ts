@@ -27,7 +27,7 @@ import type { Character } from "../../character";
 import { getEdition } from "../../editions";
 import { extendedHex } from "../../formatting";
 import { arnd, roll } from "../../random";
-import { awardBrownie } from "./awards";
+import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "../../history";
 import type { AcgPathwayId } from "./types";
 
@@ -40,6 +40,20 @@ export type PreCareerOption =
  *  an edition declares the option without a displayName that's a data
  *  bug — surface it loudly rather than hiding behind a hardcoded
  *  fallback that drifts out of sync with the JSON. */
+/** Map a preCareer option to its event key in common.browniePoints.awards.
+ *  Service academies share a single "Service Academy" row in JSON. */
+function bpEventKeyFor(opt: PreCareerOption): string {
+  switch (opt) {
+    case "college": return "Graduation from College";
+    case "navalAcademy":
+    case "militaryAcademy":
+    case "merchantAcademy": return "Service Academy";
+    case "medicalSchool": return "Medical School";
+    case "flightSchool": return "Flight School";
+    default: return "";
+  }
+}
+
 export function preCareerLabel(opt: PreCareerOption, editionId: string): string {
   const spec = specFor(editionId, opt);
   if (!spec?.displayName) {
@@ -678,15 +692,20 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   if (r.honors) {
     ch.log(ev.preCareer(preCareerLabel(opt, ch.editionId), "honors"));
   }
-  // Brownie point awards per the manual: 1 BP for graduation from
-  // college / service academy / medical / flight school; +1 for honors.
-  if (r.graduated && (opt === "college" || opt === "navalAcademy" ||
-      opt === "militaryAcademy" || opt === "merchantAcademy" ||
-      opt === "medicalSchool" || opt === "flightSchool")) {
-    awardBrownie(ch, 1, `Graduated from ${preCareerLabel(opt, ch.editionId)}`);
+  // Brownie point awards per the manual. Magnitudes read from JSON
+  // (common.browniePoints.awards) via bpAwardFor; the event key here
+  // maps each preCareer option to its award row.
+  if (r.graduated) {
+    const bp = bpAwardFor(ch, bpEventKeyFor(opt));
+    if (bp !== null) {
+      awardBrownie(ch, bp, `Graduated from ${preCareerLabel(opt, ch.editionId)}`);
+    }
   }
   if (r.honors) {
-    awardBrownie(ch, 1, `Honors graduate of ${preCareerLabel(opt, ch.editionId)}`);
+    const bp = bpAwardFor(ch, "Honors");
+    if (bp !== null) {
+      awardBrownie(ch, bp, `Honors graduate of ${preCareerLabel(opt, ch.editionId)}`);
+    }
   }
   // Pre-career commission carries into ACG enlistment: subsequent beginAcg
   // honors this rank by skipping the default E1 reset.

@@ -31,10 +31,7 @@ import { event as ev } from "../history";
 /** Map an abbreviated attribute label ("Intel", "Soc") to the engine
  *  attribute key, using the edition's `attributeAbbreviations` JSON. */
 function attrKeyFromAbbreviation(editionId: string, abbr: string): AttributeKey | null {
-  const map = (getEdition(editionId).data as {
-    attributeAbbreviations?: Record<string, string>;
-  }).attributeAbbreviations;
-  const v = map?.[abbr];
+  const v = getEdition(editionId).data.attributeAbbreviations?.[abbr];
   return (v as AttributeKey | undefined) ?? null;
 }
 
@@ -46,10 +43,11 @@ function attrKeyFromAbbreviation(editionId: string, abbr: string): AttributeKey 
  *  benefitDetails.passages and return the display benefit name ("High
  *  Passage") if found. */
 function passageDisplayName(editionId: string, label: string): string | null {
-  const passages = (getEdition(editionId).data as {
-    benefitDetails?: { passages?: Record<string, { displayName?: string }> };
-  }).benefitDetails?.passages;
-  return passages?.[label]?.displayName ?? null;
+  const benefits = getEdition(editionId).data.benefitDetails as
+    Record<string, { displayName?: string }> & {
+      passages?: Record<string, { displayName?: string }>;
+    } | undefined;
+  return benefits?.passages?.[label]?.displayName ?? null;
 }
 
 /** Is the cell label a ship-benefit name in the edition's benefitDetails? */
@@ -62,10 +60,7 @@ function isShipLabel(editionId: string, label: string): boolean {
  *  name (typo / abbreviation aliases). Sourced from edition JSON via
  *  `skillLabelRenames`. */
 function applySkillLabelRename(editionId: string, label: string): string {
-  const renames = (getEdition(editionId).data as {
-    skillLabelRenames?: Record<string, string>;
-  }).skillLabelRenames;
-  return renames?.[label] ?? label;
+  return getEdition(editionId).data.skillLabelRenames?.[label] ?? label;
 }
 
 /** PM Includes-skills are declared in the edition JSON under
@@ -80,17 +75,7 @@ function applySkillLabelRename(editionId: string, label: string): string {
 function tryMarineTradition(
   ch: Character, label: string, source?: string,
 ): boolean {
-  const rule = (getEdition(ch.editionId).data as {
-    rules?: {
-      marineTradition?: {
-        appliesToServices?: string[];
-        appliesToCascade?: string;
-        forcedSkill?: string;
-        savingThrow?: { target: number; die?: string };
-        dmIfAlreadySkillAtLeast?: Array<{ skill: string; level: number; dm: number }>;
-      };
-    };
-  }).rules?.marineTradition;
+  const rule = getEdition(ch.editionId).rules.marineTradition;
   if (!rule || !rule.forcedSkill) return false;
   if (!rule.appliesToServices?.includes(String(ch.service))) return false;
   if (cascadeKeyForLabel(label, ch.editionId) !== rule.appliesToCascade) return false;
@@ -128,9 +113,7 @@ function tryMarineTradition(
 function includesExpansion(
   editionId: string, name: string,
 ): Array<{ skill: string; level: number }> | null {
-  const data = (getEdition(editionId).data as {
-    includesSkills?: Record<string, unknown>;
-  }).includesSkills;
+  const data = getEdition(editionId).data.includesSkills;
   if (!data) return null;
   const entry = data[name];
   if (!Array.isArray(entry) || entry.length === 0) return null;

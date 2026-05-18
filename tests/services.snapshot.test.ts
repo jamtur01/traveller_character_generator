@@ -3,9 +3,13 @@
 // skill-table cell will fail the snapshot and require an explicit update —
 // reviewers will see the diff alongside the code change.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { s, SERVICES, type AttributeKey, type ServiceKey } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const ALL: ServiceKey[] = [...SERVICES, "nobles"];
 const BASE = 7;

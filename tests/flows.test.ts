@@ -1,9 +1,13 @@
 // Integration-style tests that exercise multi-step flows. Dice are mocked so
 // the outcomes are deterministic.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { s } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 /** Force Math.random() to a value that makes d6 = `v`. Caller must restore. */
 function pinD6(v: number) {

@@ -1098,7 +1098,9 @@ export class Character {
     const autoSaves = new Set<AttributeKey>();
     if (this.onAnagathics && !withdrawal && effects.length > 0) {
       const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
-      const n = Math.min(2, ranked.length);
+      const autoSavesPerTerm =
+        getEdition(this.editionId).rules.anagathics?.agingAutoSavesPerTerm ?? 2;
+      const n = Math.min(autoSavesPerTerm, ranked.length);
       for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
       for (const attr of autoSaves) this.log(ev.agingSave(attr, "auto"));
     }

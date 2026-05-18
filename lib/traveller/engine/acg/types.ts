@@ -238,6 +238,32 @@ export interface AcgState {
    *  up-or-out). Threaded into the next ev.reenlistment("denied") event;
    *  consumed by character.ts after emission. */
   reenlistDenialReason?: string;
+
+  // Scout pathway: resumption fields for interactive choices.
+  // Closure-local variables used to hold decisions across a pickOrDefer
+  // throw + resolve cycle, but closures die with the throw. These store
+  // the resolved decision on acgState so a re-entry of scoutResolveAssignment
+  // reads it rather than re-prompting.
+  /** Scout: whether to accept the Field→Bureaucracy transfer offer. */
+  scoutTransferDecision?: boolean;
+  /** Scout: whether to take the administrator DM on the duty roll. */
+  scoutAdminDmDecision?: boolean;
+  /** Scout: marks that applyScoutTransferToBureaucracy already ran this
+   *  year. Re-entry from pause/resume skips the transfer side effects. */
+  transferAppliedThisYear?: boolean;
+
+  // Merchant Prince: per-term flags consumed at end-of-term.
+  /** Merchant Prince: true if any year of the current term was a Route
+   *  assignment (PM p. 61: enlisted commission exam available if "they
+   *  are serving on a Route assignment"). Reset at startOfTerm. */
+  routeAssignmentThisTerm?: boolean;
+
+  /** Per-year capture of acg.justRetained snapshotted before the
+   *  pathway's rollAssignment clears it. Used to annotate the
+   *  assignmentRolled event with retention status, surviving a
+   *  pause/resume cycle (the resumed run reads this instead of the
+   *  already-cleared justRetained flag). Cleared at year boundary. */
+  wasRetainedThisYear?: boolean;
 }
 
 export function freshAcgState(pathway: AcgPathwayId): AcgState {

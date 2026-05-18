@@ -415,7 +415,13 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     if (bnMargin >= 0) merchantAwardBonus(ch);
   }
 
-  ch.requireAcgState().assignmentHistory.push(assignment);
+  const acg = ch.requireAcgState();
+  acg.assignmentHistory.push(assignment);
+  // PM p. 61: enlisted commission exam is available "if they are
+  // serving on a Route assignment" — interpreted as having had Route
+  // experience during the current term. Flag is consumed in
+  // merchantEndOfTerm and reset at startOfTerm.
+  if (assignment === "Route") acg.routeAssignmentThisTerm = true;
 }
 
 function merchantCheckAvailablePosition(ch: Character): void {
@@ -678,6 +684,8 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 }
 
 export function merchantStartOfTerm(ch: Character): void {
+  // Reset per-term flags before any per-year resolution fires.
+  delete ch.requireAcgState().routeAssignmentThisTerm;
   // Enlisted ranks advance every 4 years (per manual p. 60).
   if (!ch.requireAcgState().isOfficer && ch.terms > 0) {
     const code = ch.requireAcgState().rankCode;
@@ -737,16 +745,17 @@ export function merchantEndOfTerm(ch: Character): void {
   if (!ch.acgState) return;
   if (ch.acgState.isOfficer) {
     attemptMerchantPromotionExam(ch);
-  } else if (lastAssignmentIsRoute(ch)) {
+  } else if (servedOnRouteThisTerm(ch)) {
     attemptMerchantEnlistedCommissionExam(ch);
   }
   ch.acgState.examDm = 0;
 }
 
-function lastAssignmentIsRoute(ch: Character): boolean {
-  const history = ch.acgState?.assignmentHistory ?? [];
-  if (history.length === 0) return false;
-  return history[history.length - 1] === "Route";
+function servedOnRouteThisTerm(ch: Character): boolean {
+  // PM p. 61: "they may be able to take if they are serving on a
+  // Route assignment". Set whenever a Route assignment was rolled
+  // during the current term; cleared at startOfTerm.
+  return ch.acgState?.routeAssignmentThisTerm === true;
 }
 
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {

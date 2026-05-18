@@ -1,8 +1,12 @@
 // F5: Marine Tradition. PM p. 49 (lines 3061-3065).
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { applyCell } from "../lib/traveller/engine/cellResolver";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function makeMarine(): Character {
   const c = new Character();

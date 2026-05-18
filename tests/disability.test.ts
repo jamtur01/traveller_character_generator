@@ -102,10 +102,12 @@ describe("F4/F17: drafted no OCS first term", () => {
     c.drafted = true;
     c.terms = 0;
     c.browniePoints = 0; // force lazy-init acgState
-    if (c.acgState) {
-      c.acgState.rankCode = "E5";
-      c.acgState.isOfficer = false;
-    }
+    // Lazy-init MUST have populated acgState — assert directly rather
+    // than guarding with `if (c.acgState)` which silently skips the
+    // setup on regression.
+    const acg = c.requireAcgState();
+    acg.rankCode = "E5";
+    acg.isOfficer = false;
     applyMercenarySchool(c, "OCS");
     expect(c.acgState?.isOfficer).toBe(false);
     expect(c.acgState?.rankCode).toBe("E5");
@@ -120,10 +122,9 @@ describe("F4/F17: drafted no OCS first term", () => {
     c.drafted = true;
     c.terms = 1; // completed first term
     c.browniePoints = 0;
-    if (c.acgState) {
-      c.acgState.rankCode = "E5";
-      c.acgState.isOfficer = false;
-    }
+    const acg = c.requireAcgState();
+    acg.rankCode = "E5";
+    acg.isOfficer = false;
     applyMercenarySchool(c, "OCS");
     expect(c.acgState?.isOfficer).toBe(true);
   });
