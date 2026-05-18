@@ -70,7 +70,11 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.terms = 3;
       c.anagathicsStandingOrder = true;
-      vi.spyOn(random, "roll").mockReturnValueOnce(2); // availability fail
+      // Pin every roll low so: (1) availability fails, (2) retry survival
+      // fails, (3) no second availability roll fires. Without pinning all
+      // three calls, real random fills in and the retry path can flip
+      // anagathicsActiveThisTerm to true (CI flake).
+      vi.spyOn(random, "roll").mockReturnValue(2);
       c.preSurvivalAnagathicsHook();
       expect(c.wantsAnagathicsThisTerm).toBe(true);
       expect(c.anagathicsActiveThisTerm).toBe(false);
