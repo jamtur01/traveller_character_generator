@@ -97,6 +97,10 @@ export function runAcgYear(ch: Character): void {
   // Step 0: roll the year's assignment (PM checklist 6.A.1).
   let assignment = acg.currentAssignment ?? null;
   if (startIdx <= 0) {
+    // Capture retention before the pathway clears the flag inside its
+    // rollAssignment. Every pathway with retention semantics (mercenary,
+    // navy, scout, merchant) consumes acg.justRetained internally.
+    const wasRetained = acg.justRetained === true;
     let rolled: string | null = null;
     const ok = runStep(ch, "rollAssignment", () => {
       rolled = p.rollAssignment(ch);
@@ -105,7 +109,10 @@ export function runAcgYear(ch: Character): void {
     assignment = rolled;
     acg.currentAssignment = assignment;
     if (assignment) {
-      ch.log(ev.assignmentRolled(assignment, ch.terms + 1, acg.year));
+      ch.log(ev.assignmentRolled(
+        assignment, ch.terms + 1, acg.year,
+        wasRetained ? true : undefined,
+      ));
     }
   }
 

@@ -232,7 +232,8 @@ export function mercenaryRollAssignment(ch: Character): string {
     const retained = ch.acgState!.retainedAssignment;
     ch.acgState!.justRetained = false;
     ch.acgState!.retainedAssignment = null;
-    ch.log(ev.assignmentRolled(retained, ch.terms + 1, ch.acgState!.year, true));
+    // Runner emits ev.assignmentRolled with retained=true (captured before
+    // this pathway clears the flag).
     return retained;
   }
   const armKey = labelToColumnKey(ch.acgState!.combatArm!);
@@ -268,10 +269,12 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
     // Garrison Duty: per manual, characters survive with no decoration or
-    // skills. Treat unrecognised assignments as garrison.
-    ch.log(ev.assignmentRolled(
-      assignment, ch.terms + 1, ch.acgState!.year, undefined,
-      "garrison-style: automatic survival, no rewards",
+    // skills. Treat unrecognised assignments as garrison. The original
+    // ev.assignmentRolled fired in the runner; this just annotates the
+    // resolution outcome.
+    ch.log(ev.raw(
+      `${assignment}: garrison-style — automatic survival, no rewards`,
+      "verbose",
     ));
     ch.acgState!.assignmentHistory.push(assignment);
     return;
@@ -679,7 +682,9 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.combatArm = chosen;
-        c.log(ev.crossTrained(chosen, "combatArm"));
+        c.log(ev.transferred(
+          chosen, "combatArm", current, "reenlist (via cross-training)",
+        ));
       }
     },
   });

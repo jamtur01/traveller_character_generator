@@ -32,13 +32,6 @@ export type HistoryEvent =
   // Section breaks the user sees in the history panel (term boundaries,
   // muster-out start, end of generation).
   | { kind: "section"; level: HistoryLevel; label: string }
-  // Character generation start: attributes rolled.
-  | {
-      kind: "attributesRolled";
-      level: HistoryLevel;
-      strength: number; dexterity: number; endurance: number;
-      intelligence: number; education: number; social: number;
-    }
   // Homeworld determined.
   | {
       kind: "homeworld";
@@ -243,11 +236,12 @@ export type HistoryEvent =
         | "voluntaryMuster" | "schoolDenied";
       note?: string;
     }
-  // Branch / arm / department change at reenlist (cross-training).
+  // Cross-training: school grants ELIGIBILITY for branch/arm change. The
+  // actual reenlist-time switch fires an ev.transferred, not crossTrained.
   | {
       kind: "crossTrained";
       level: HistoryLevel;
-      destination: string; kind_: "combatArm" | "branch" | "department";
+      destination: string; kind_: "combatArm" | "branch";
     }
   // Mid-career transfer (Merchant Prince line transfer, Scout division
   // transfer, etc.).
@@ -255,7 +249,7 @@ export type HistoryEvent =
       kind: "transferred";
       level: HistoryLevel;
       from?: string; to: string;
-      kind_: "department" | "division" | "line" | "fleet";
+      kind_: "department" | "division" | "line" | "fleet" | "branch" | "combatArm";
       reason?: string;
     };
 
@@ -440,13 +434,13 @@ export const event = {
     ...(note !== undefined ? { note } : {}),
   }),
   crossTrained: (
-    destination: string, kind_: "combatArm" | "branch" | "department",
+    destination: string, kind_: "combatArm" | "branch",
   ): HistoryEvent => ({
     kind: "crossTrained", level: "simple", destination, kind_,
   }),
   transferred: (
     to: string,
-    kind_: "department" | "division" | "line" | "fleet",
+    kind_: "department" | "division" | "line" | "fleet" | "branch" | "combatArm",
     from?: string,
     reason?: string,
   ): HistoryEvent => ({
@@ -464,10 +458,6 @@ export function formatEvent(e: HistoryEvent): string {
       return e.text;
     case "section":
       return e.label;
-    case "attributesRolled":
-      return `Attributes rolled: Str ${e.strength}, Dex ${e.dexterity}, ` +
-        `End ${e.endurance}, Int ${e.intelligence}, Edu ${e.education}, ` +
-        `Soc ${e.social}.`;
     case "homeworld":
       return `Homeworld: Starport ${e.starport}, ${e.size}, ${e.atmosphere}, ` +
         `${e.hydrosphere}, ${e.population}, ${e.law}, ${e.tech}.`;
@@ -654,15 +644,14 @@ export function formatEvent(e: HistoryEvent): string {
       }
     }
     case "crossTrained": {
-      const label = e.kind_ === "combatArm" ? "combat arm"
-        : e.kind_ === "branch" ? "branch"
-        : "department";
+      const label = e.kind_ === "combatArm" ? "combat arm" : "branch";
       return `Cross-trained into ${e.destination} ${label}.`;
     }
     case "transferred": {
       const fromTxt = e.from ? ` from ${e.from}` : "";
       const reasonTxt = e.reason ? ` (${e.reason})` : "";
-      return `Transferred${fromTxt} to ${e.to} ${e.kind_}${reasonTxt}.`;
+      const label = e.kind_ === "combatArm" ? "combat arm" : e.kind_;
+      return `Transferred${fromTxt} to ${e.to} ${label}${reasonTxt}.`;
     }
   }
 }
