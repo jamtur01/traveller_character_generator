@@ -291,13 +291,12 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       margin: sv.margin,
       consequence: "Invalided out of Scout service",
       onMitigated: (c) => {
-        c.activeDuty = true;
+        c.resumeActive();
         c.log(ev.statusChange("revived", "BP spend saved Scout survival"));
       },
     });
     if (mit.newMargin < 0) {
-      ch.log(ev.endGeneration("retired", "invalided out of Scout service"));
-      ch.activeDuty = false;
+      ch.endChargenRetired("invalided out of Scout service");
       return;
     }
   }
@@ -495,7 +494,7 @@ export function scoutReenlist(ch: Character): boolean {
   const succeeded = r === 12 || r >= target;
   ch.log(ev.roll("Reenlistment", r, 0, target, succeeded, "scout"));
   if (r === 12) {
-    ch.mandatoryReenlistment = true;
+    ch.enterMandatoryReenlist();
     return true;
   }
   return r >= target;

@@ -150,7 +150,7 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.terms = 3;
       c.service = "army";
-      c.activeDuty = true;
+      c.resumeActive();
       const r = vi.spyOn(random, "roll");
       r.mockReturnValueOnce(2)  // availability roll 1: fail
        .mockReturnValueOnce(2); // retry survival roll: fail → force muster-out
@@ -220,7 +220,7 @@ describe("anagathics integration (B5)", () => {
       // Standing order off — hook is a no-op; just verify the reset.
       c.service = "army";
       c.terms = 0;
-      c.activeDuty = true;
+      c.resumeActive();
       vi.spyOn(random, "roll").mockReturnValue(8);
       c.doServiceTermStep();
       expect(c.anagathicsActiveThisTerm).toBe(false);

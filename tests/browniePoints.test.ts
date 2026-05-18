@@ -153,7 +153,7 @@ describe("End-to-end: BP saves a character's life", () => {
     c.acgState!.browniePoints = 10;
     c.acgState!.combatArm = "Infantry";
     c.acgState!.branch = "Army";
-    c.activeDuty = true;
+    c.resumeActive();
     mercenaryResolveAssignment(c, "Raid");
     // BP spent: margin was -4, auto-mitigate brings it to 0.
     expect(c.acgState!.browniePoints).toBe(6); // 10 - 4 spent
@@ -173,7 +173,7 @@ describe("End-to-end: BP saves a character's life", () => {
     const c = freshAcgChar(2);
     c.acgState!.combatArm = "Infantry";
     c.acgState!.branch = "Army";
-    c.activeDuty = true;
+    c.resumeActive();
     mercenaryResolveAssignment(c, "Raid");
     expect(c.acgState!.browniePoints).toBe(2); // BPs untouched
     expect(c.activeDuty).toBe(false);          // invalided

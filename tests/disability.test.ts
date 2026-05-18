@@ -12,7 +12,7 @@ function makeMt(): Character {
     intelligence: 7, education: 7, social: 7,
   };
   c.service = "army";
-  c.activeDuty = true;
+  c.resumeActive();
   c.terms = 5;
   c.showHistory = "none";
   return c;
@@ -70,7 +70,7 @@ describe("MT disability rule (F2/F3)", () => {
   it("doReenlistmentStep forces muster on disability", () => {
     const c = makeMt();
     c.age = 66;
-    c.activeDuty = true;
+    c.resumeActive();
     c.doReenlistmentStep();
     expect(c.activeDuty).toBe(false);
     expect(c.history.some((h) => /disability/.test(h))).toBe(true);

@@ -354,13 +354,12 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
         margin: sv.margin,
         consequence: "Mustered out of Merchant service",
         onMitigated: (c) => {
-          c.activeDuty = true;
+          c.resumeActive();
           c.log(ev.statusChange("revived", "BP spend saved Merchant survival"));
         },
       });
       if (mit.newMargin < 0) {
-        ch.log(ev.endGeneration("retired", "mustered out of Merchant service"));
-        ch.activeDuty = false;
+        ch.endChargenRetired("mustered out of Merchant service");
         return;
       }
     }
@@ -608,7 +607,7 @@ export function merchantReenlist(ch: Character): boolean {
   const dept = ch.acgState!.department ?? "";
   ch.log(ev.roll("Reenlistment", r, dm, target, keep, `merchant ${dept}`));
   if (r === 12) {
-    ch.mandatoryReenlistment = true;
+    ch.enterMandatoryReenlist();
     offerMerchantDepartmentChange(ch, data);
     return true;
   }

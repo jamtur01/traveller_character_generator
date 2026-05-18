@@ -301,11 +301,11 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   // Dishonorable discharge — character loses 3 mustering-out rolls and gets
   // no pension (manual p. 47). Captured here as flags consulted at muster.
   if (lc.includes("dishonorable") || /\bdd\b/i.test(result)) {
-    ch.activeDuty = false;
     ch.acgState.dishonorablyDischarged = true;
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 3;
     ch.acgState.pensionForfeit = true;
+    ch.endChargenDischarged();
     ch.log(ev.statusChange(
       "dishonorablyDischarged",
       "-3 mustering-out rolls, no pension",
@@ -332,21 +332,20 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       return;
     }
     // "Jail 1D years; ..." or "Jail 2D years; ..."
+    ch.acgState.dishonorablyDischarged = true;
+    ch.acgState.musterRollPenalty =
+      (ch.acgState.musterRollPenalty ?? 0) - 3;
+    ch.acgState.pensionForfeit = true;
     const yearsMatch = result.match(/jail\s+(\d+)D\s+years/i);
     if (yearsMatch) {
       const dice = parseInt(yearsMatch[1]!, 10);
       let years = 0;
       for (let i = 0; i < dice; i++) years += roll(1);
       ch.age += years;
-      ch.log(ev.endGeneration("retired", `imprisoned ${years} years (${dice}D rolled)`));
+      ch.endChargenRetired(`imprisoned ${years} years (${dice}D rolled)`, false);
     } else {
-      ch.log(ev.endGeneration("retired", "imprisoned"));
+      ch.endChargenRetired("imprisoned", false);
     }
-    ch.activeDuty = false;
-    ch.acgState.dishonorablyDischarged = true;
-    ch.acgState.musterRollPenalty =
-      (ch.acgState.musterRollPenalty ?? 0) - 3;
-    ch.acgState.pensionForfeit = true;
     return;
   }
 
@@ -361,7 +360,6 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 99; // zero out benefits
     ch.acgState.pensionForfeit = true;
-    ch.activeDuty = false;
     const bountyMatch = result.match(/KCr(\d+)/i);
     if (bountyMatch) {
       ch.acgState.bountyOnHeadKCr = parseInt(bountyMatch[1]!, 10);
@@ -380,10 +378,9 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       const killedTxt = ch.acgState.guardsKilledInEscape
         ? ` Killed ${ch.acgState.guardsKilledInEscape} guards in escape.`
         : "";
-      ch.log(ev.endGeneration("retired", `death sentence; escaped.${bountyTxt}${killedTxt}`));
+      ch.endChargenRetired(`death sentence; escaped.${bountyTxt}${killedTxt}`, false);
     } else {
-      ch.log(ev.endGeneration("deceased", "executed (death sentence; no benefits or pension)"));
-      ch.deceased = true;
+      ch.endChargenDeceased("executed (death sentence; no benefits or pension)");
     }
     return;
   }

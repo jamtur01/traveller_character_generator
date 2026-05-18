@@ -228,24 +228,25 @@ export function runAcgTerm(ch: Character): void {
   // Out. Aging fires after the cap so a player's reduced Edu doesn't shrink
   // the cap window after they've already committed to skills this term.
   ch.enforceSkillCap();
-  if (ch.deceased || !ch.activeDuty) return;
+  if (ch.isChargenEnded) return;
   ch.doAging();
-  if (ch.deceased || !ch.activeDuty) return;
+  if (ch.isChargenEnded) return;
 
   // F2/F3: PM p. 16 disability check happens after aging (which may have
   // dropped a physical attribute to 1 or pushed the age past the cap).
   const dis = ch.isDisabled();
   if (dis.disabled) {
-    ch.activeDuty = false;
-    if (ch.isRetirementEligible()) ch.retired = true;
-    ch.log(ev.endGeneration("retired", `disability: ${dis.reasons.join("; ")}`));
+    ch.endChargenRetired(`disability: ${dis.reasons.join("; ")}`);
     return;
   }
 
-  // End-of-term reenlistment check.
+  // End-of-term reenlistment check. Pre-existing: doReenlistmentStep
+  // also calls runAcgReenlist (which calls this same p.reenlist), so
+  // we just flip status without firing endChargen* here — the caller's
+  // doReenlistmentStep handles the endGeneration logging path.
   const keep = p.reenlist(ch);
   if (!keep) {
-    ch.activeDuty = false;
+    ch.chargenStatus = { kind: "retired", reason: "denied reenlistment" };
   }
 }
 
