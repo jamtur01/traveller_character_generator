@@ -55,8 +55,10 @@ export function applySpecialAssignment(
   const data = pathwayData(ch, pathway);
   const spec = data?.specialAssignmentDetails?.[assignment];
   if (!spec) {
-    ch.logRaw(`Special Assignment "${assignment}" (no JSON detail)`);
-    return;
+    throw new Error(
+      `${pathway} Special Assignment "${assignment}" has no JSON spec ` +
+      `under specialAssignmentDetails (edition: ${ch.editionId}).`,
+    );
   }
   // Age limits (e.g., OCS over 38) are evaluated by the caller before
   // dispatching here — by the time we run, the caller has either rerolled
@@ -120,13 +122,13 @@ function runEffect(
     case "rollOnMosTable": {
       if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
-      for (let i = 0; i < rolls; i++) rollOnMos(ch, data);
+      for (let i = 0; i < rolls; i++) rollOnMos(ch, data, schoolName);
       return;
     }
     case "rollOnBranchSkillsTable": {
       if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
-      for (let i = 0; i < rolls; i++) rollOnBranchSkills(ch, data);
+      for (let i = 0; i < rolls; i++) rollOnBranchSkills(ch, data, schoolName);
       return;
     }
     case "rollOnSpecialistSchoolTable":
@@ -136,7 +138,7 @@ function runEffect(
     case "rollOnServiceSkillsTable": {
       if (!effectWhenMatches(ch, effect)) return;
       const rolls = (effect.rolls as number) ?? 1;
-      for (let i = 0; i < rolls; i++) rollOnServiceSkills(ch, data);
+      for (let i = 0; i < rolls; i++) rollOnServiceSkills(ch, data, schoolName);
       return;
     }
     case "rollSkillBatch": {
@@ -158,9 +160,10 @@ function runEffect(
       attacheOrAide(ch, pathway, data);
       return;
     default:
-      // Unknown effect type — record and move on rather than crashing.
-      ch.logRaw(`${schoolName}: unhandled effect ${effect.type}`);
-      return;
+      throw new Error(
+        `${schoolName}: unhandled effect type "${effect.type}" ` +
+        `(edition: ${ch.editionId}, pathway: ${pathway}).`,
+      );
   }
 }
 
@@ -220,16 +223,16 @@ function runSkillBatch(
   }
 }
 
-function rollOnMos(ch: Character, data: PathwayData): void {
+function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
   const r = roll(1);
   const row = data.mos.rows.find((row) => row.die === r);
   const skill = row?.[armKey];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+  if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (MOS)`);
 }
 
-function rollOnBranchSkills(ch: Character, data: PathwayData): void {
+function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
   const branchKey = (ch.acgState.branch ?? "Line").toLowerCase();
   const r = roll(1);
@@ -239,7 +242,10 @@ function rollOnBranchSkills(ch: Character, data: PathwayData): void {
     branchKey === "crew" ? "lineCrew" : branchKey];
   for (const c of candidates) {
     const v = row[c];
-    if (typeof v === "string") { applyAcgSkillCell(ch, v); return; }
+    if (typeof v === "string") {
+      applyAcgSkillCell(ch, v, `${schoolName} (branch skills)`);
+      return;
+    }
   }
 }
 
@@ -255,14 +261,11 @@ function rollOnSpecialistSchool(
   const col = useSchooling ? "schooling" : "training";
   const skill = row[col];
   if (typeof skill === "string") {
-    // applyAcgSkillCell ultimately calls addSkill which logs ev.skillLearned
-    // with source. We pass the school name through context as the source.
-    ch.logRaw(`${schoolName} (${col}) skill roll`, "verbose");
-    applyAcgSkillCell(ch, skill);
+    applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
   }
 }
 
-function rollOnServiceSkills(ch: Character, data: PathwayData): void {
+function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.serviceSkills) return;
   const r = roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
@@ -277,7 +280,7 @@ function rollOnServiceSkills(ch: Character, data: PathwayData): void {
     col = ch.acgState.branch === "Marines" ? "marineLife" : "armyLife";
   }
   const skill = row[col];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+  if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
 }
 
 function ocsCommission(ch: Character): void {
@@ -444,6 +447,6 @@ export function applyScoutSchool(ch: Character, school: string): void {
     const row = schools.rows.find((row) => row.die === r);
     if (!row) continue;
     const skill = row[col];
-    if (typeof skill === "string") applyAcgSkillCell(ch, skill);
+    if (typeof skill === "string") applyAcgSkillCell(ch, skill, `Scout ${school}`);
   }
 }

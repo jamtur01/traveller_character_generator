@@ -540,12 +540,14 @@ function rollMercenarySkillFromColumn(ch: Character, col: string): void {
   if (!row) return;
   const skill = row[col] as string | undefined;
   if (!skill) return;
-  applyAcgSkillCell(ch, skill);
+  applyAcgSkillCell(ch, skill, `mercenary ${col}`);
 }
 
 /** Apply an ACG skill table cell to the character. Cells may be plain
- *  skill names ("Gun Combat", "Heavy Weapons") or "+1 Attribute" forms. */
-export function applyAcgSkillCell(ch: Character, cell: string): void {
+ *  skill names ("Gun Combat", "Heavy Weapons") or "+1 Attribute" forms.
+ *  `source` is recorded on the resulting ev.skillLearned so the history
+ *  panel attributes the grant to its originating table/school. */
+export function applyAcgSkillCell(ch: Character, cell: string, source?: string): void {
   const attrMatch = cell.match(/^\+(\d+)\s+(\w+)$/);
   if (attrMatch) {
     const delta = parseInt(attrMatch[1]!, 10);
@@ -560,7 +562,7 @@ export function applyAcgSkillCell(ch: Character, cell: string): void {
     if (attr) ch.improveAttribute(attr, delta);
     return;
   }
-  ch.addSkill(cell, 1);
+  ch.addSkill(cell, 1, source);
 }
 
 /** Advance the rank by one step per the pathway's rank ladder. */
@@ -636,7 +638,7 @@ export function mercenaryReenlist(ch: Character): boolean {
   const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);
   const keep = r + dm >= spec.target;
-  ch.log(ev.roll(`Mercenary reenlist (${svc})`, r, dm, spec.target, keep));
+  ch.log(ev.roll("Reenlistment", r, dm, spec.target, keep, `mercenary ${svc}`));
   if (r === 12) {
     ch.mandatoryReenlistment = true;
     offerArmChange(ch, data);

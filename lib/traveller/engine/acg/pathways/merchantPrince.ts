@@ -300,21 +300,26 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
 
   const data = dataFor(ch);
   const deptKey = labelToColumnKey(ch.acgState!.department ?? "Deck");
-  const resTable = data.assignmentResolution[deptKey];
-  if (!resTable) {
-    ch.logRaw(`Merchant: no resolution sub-table for department ${ch.acgState!.department}`, "verbose");
-    return;
-  }
   // Free Trader characters resolve against the freeTraderTrade table regardless
   // of department (Free Traders are a single-department service).
   const useFreeTraderTable = ch.acgState!.lineType === "Free Trader";
-  const resolutionTable = useFreeTraderTable
-    ? (data.assignmentResolution.freeTraderTrade ?? resTable)
-    : resTable;
+  const resTable = useFreeTraderTable
+    ? data.assignmentResolution.freeTraderTrade
+    : data.assignmentResolution[deptKey];
+  if (!resTable) {
+    throw new Error(
+      `Merchant: no resolution sub-table for department ` +
+      `"${ch.acgState!.department}" (key "${deptKey}", lineType: ` +
+      `"${ch.acgState!.lineType}", edition: ${ch.editionId}).`,
+    );
+  }
+  const resolutionTable = resTable;
   const colKey = assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment);
   if (!resolutionTable.columns.includes(colKey)) {
-    ch.logRaw(`Merchant: assignment "${assignment}" → column "${colKey}" not in ${deptKey}`, "verbose");
-    return;
+    throw new Error(
+      `Merchant: assignment "${assignment}" → column "${colKey}" not in ` +
+      `department "${deptKey}" (available: ${resolutionTable.columns.join(", ")}).`,
+    );
   }
   // F14: Free Trader pursuit narrative + mechanical overrides.
   const freeTraderFlags = freeTraderAssignmentFlags(ch)[assignment];
@@ -456,7 +461,7 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
     if (col === "die") continue;
     const v = row[col];
     if (typeof v === "string") {
-      applyAcgSkillCell(ch, v);
+      applyAcgSkillCell(ch, v, `Merchant ${tableKey} ${col}`);
       return;
     }
   }
