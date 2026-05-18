@@ -124,12 +124,11 @@ export function mercenaryEnlist(
   ch.acgState!.combatArm = combatArm;
   ch.acgState!.branch = service === "army" ? "Army" : "Marines";
 
+  const svcLabel = `${service === "army" ? "Army" : "Marines"} (${combatArm})`;
   // Academy/OTC graduates skip the enlistment roll — they are automatically
   // enlisted at the rank set by pre-career (O1 for Military Academy or OTC).
   if (ch.acgState!.preCareerCommission) {
-    ch.logRaw(
-      `Auto-enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}) as ${ch.acgState!.rankCode} (academy/OTC).`,
-    );
+    ch.log(ev.enlistmentAttempt(`${svcLabel} (academy/OTC)`, 0, 0, 0, true));
     return;
   }
 
@@ -140,12 +139,9 @@ export function mercenaryEnlist(
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
   const r = roll(2);
-  ch.logRaw(
-    `Mercenary enlist (${service}, ${combatArm}): roll ${r} + ${dm} vs ${enlistSpec.target}`,
-  "verbose");
-
-  if (r + dm >= enlistSpec.target) {
-    ch.logRaw(`Enlisted in the ${service === "army" ? "Army" : "Marines"} (${combatArm}).`);
+  const succeeded = r + dm >= enlistSpec.target;
+  ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
+  if (succeeded) {
     ch.acgState!.rankCode = enlistSpec.startingRank;
     ch.acgState!.isOfficer = enlistSpec.startingRank.startsWith("O");
     return;
@@ -418,8 +414,10 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 
   if (combatAssignments.includes(assignment)) {
     ch.acgState!.combatRibbons += 1;
+    ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
     if (ch.acgState!.inCommand && ch.acgState!.isOfficer) {
       ch.acgState!.commandClusters += 1;
+      ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
     }
   }
 
@@ -664,7 +662,7 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.combatArm = chosen;
-        c.logRaw(`Reenlisted into ${chosen} combat arm.`);
+        c.log(ev.crossTrained(chosen, "combatArm"));
       }
     },
   });

@@ -171,13 +171,15 @@ export function navyEnlist(
     // Medical School graduate joins the Medical Branch automatically.
     if (forcedBranch) {
       ch.acgState!.branch = forcedBranch;
-      ch.logRaw(
-        `Auto-enlisted in the ${ch.acgState!.fleet} ${forcedBranch} Branch as ${ch.acgState!.rankCode} (academy/school direct commission).`,
-      );
+      ch.log(ev.enlistmentAttempt(
+        `${ch.acgState!.fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.acgState!.rankCode})`,
+        0, 0, 0, true,
+      ));
     } else {
-      ch.logRaw(
-        `Auto-enlisted in the ${ch.acgState!.fleet} Navy as ${ch.acgState!.rankCode} (academy/NOTC).`,
-      );
+      ch.log(ev.enlistmentAttempt(
+        `${ch.acgState!.fleet} Navy (academy/NOTC, ${ch.acgState!.rankCode})`,
+        0, 0, 0, true,
+      ));
       navyAssignBranch(ch);
     }
     return;
@@ -190,9 +192,8 @@ export function navyEnlist(
   }
   const r = roll(2);
   const succeeded = r + dm >= spec.target;
-  ch.log(ev.roll(`Navy enlist (${fleet})`, r, dm, spec.target, succeeded));
+  ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
   if (succeeded) {
-    ch.logRaw(`Enlisted in the ${fleet} Navy.`);
     ch.acgState!.rankCode = data.enlistment.startingRank;
     ch.acgState!.isOfficer = data.enlistment.startingRank.startsWith("O");
   } else {
@@ -538,8 +539,10 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 
   if (combatAssignments.includes(assignment)) {
     ch.acgState!.combatRibbons += 1;
+    ch.log(ev.decoration("Combat Ribbon", `for ${assignment}`));
     if (ch.acgState!.inCommand && ch.acgState!.isOfficer) {
       ch.acgState!.commandClusters += 1;
+      ch.log(ev.decoration("Command Cluster", `command of ${assignment}`));
     }
   }
 
@@ -711,7 +714,7 @@ function offerNavyBranchChange(ch: Character): void {
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.branch = chosen;
-        c.logRaw(`Reenlisted into ${chosen} branch (cross-trained).`);
+        c.log(ev.crossTrained(chosen, "branch"));
       }
     },
   });

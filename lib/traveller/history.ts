@@ -184,6 +184,28 @@ export type HistoryEvent =
       kind: "promoted";
       level: HistoryLevel;
       rank: string; source?: string;
+    }
+  // Career-altering status change that does NOT end chargen. Examples:
+  // Dishonorable Discharge (continues to muster-out with -3 rolls),
+  // jail time within a term that consumes one year of service.
+  | {
+      kind: "statusChange";
+      level: HistoryLevel;
+      kind_: "dishonorablyDischarged" | "jailed" | "pensionForfeit" | "purpleHeart" | "demoted";
+      note?: string;
+    }
+  // Branch / arm / department change at reenlist (cross-training).
+  | {
+      kind: "crossTrained";
+      level: HistoryLevel;
+      destination: string; kind_: "combatArm" | "branch" | "department";
+    }
+  // Mid-career transfer (Merchant Prince line transfer, Scout division
+  // transfer, etc.).
+  | {
+      kind: "transferred";
+      level: HistoryLevel;
+      from?: string; to: string; kind_: "department" | "division" | "line";
     };
 
 /** Constructors for the most common events. UI / engine emit via these
@@ -315,6 +337,24 @@ export const event = {
     kind: "promoted", level: "simple", rank,
     ...(source !== undefined ? { source } : {}),
   }),
+  statusChange: (
+    kind_: "dishonorablyDischarged" | "jailed" | "pensionForfeit" | "purpleHeart" | "demoted",
+    note?: string,
+  ): HistoryEvent => ({
+    kind: "statusChange", level: "simple", kind_,
+    ...(note !== undefined ? { note } : {}),
+  }),
+  crossTrained: (
+    destination: string, kind_: "combatArm" | "branch" | "department",
+  ): HistoryEvent => ({
+    kind: "crossTrained", level: "simple", destination, kind_,
+  }),
+  transferred: (
+    to: string, kind_: "department" | "division" | "line", from?: string,
+  ): HistoryEvent => ({
+    kind: "transferred", level: "simple", to, kind_,
+    ...(from !== undefined ? { from } : {}),
+  }),
 };
 
 /** Render a HistoryEvent to a display string. Used by the HistoryPanel
@@ -437,6 +477,31 @@ export function formatEvent(e: HistoryEvent): string {
     case "promoted": {
       const source = e.source ? ` (${e.source})` : "";
       return `Promoted to ${e.rank}${source}.`;
+    }
+    case "statusChange": {
+      const note = e.note ? `: ${e.note}` : "";
+      switch (e.kind_) {
+        case "dishonorablyDischarged":
+          return `Dishonorably discharged${note}.`;
+        case "jailed":
+          return `Jailed${note}.`;
+        case "pensionForfeit":
+          return `Pension forfeit${note}.`;
+        case "purpleHeart":
+          return `Awarded Purple Heart${note}.`;
+        case "demoted":
+          return `Demoted${note}.`;
+      }
+    }
+    case "crossTrained": {
+      const label = e.kind_ === "combatArm" ? "combat arm"
+        : e.kind_ === "branch" ? "branch"
+        : "department";
+      return `Cross-trained into ${e.destination} ${label}.`;
+    }
+    case "transferred": {
+      const fromTxt = e.from ? ` from ${e.from}` : "";
+      return `Transferred${fromTxt} to ${e.to} ${e.kind_}.`;
     }
   }
 }

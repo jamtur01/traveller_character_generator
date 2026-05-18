@@ -82,9 +82,10 @@ export function scoutEnlist(ch: Character): void {
       ch.acgState.schoolsAttended.includes("medicalSchool")) {
     ch.acgState.isOfficer = true;
     ch.acgState.division = "bureaucracy";
-    ch.logRaw(
-      `Auto-enlisted in the Imperial Scout Service Medical Branch at ${ch.acgState.rankCode} (medical school direct commission).`,
-    );
+    ch.log(ev.enlistmentAttempt(
+      `Imperial Scout Service Medical Branch (medical school direct commission, ${ch.acgState.rankCode})`,
+      0, 0, 0, true,
+    ));
     scoutAssignOffice(ch);
     return;
   }
@@ -93,7 +94,7 @@ export function scoutEnlist(ch: Character): void {
   // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
   // into the Field. Read pre-career state to honor these rules.
   if (hasCollege) {
-    ch.logRaw("Auto-enlisted in the Imperial Scout Service (college graduate).");
+    ch.log(ev.enlistmentAttempt("Imperial Scout Service (college graduate)", 0, 0, 0, true));
     ch.acgState!.rankCode = hasCollegeHonors
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
@@ -107,9 +108,8 @@ export function scoutEnlist(ch: Character): void {
     }
     const r = roll(2);
     const succeeded = r + dm >= data.enlistment.target;
-    ch.log(ev.roll("Scout enlist", r, dm, data.enlistment.target, succeeded));
+    ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
     if (succeeded) {
-      ch.logRaw("Enlisted in the Imperial Scout Service.");
       ch.acgState!.rankCode = data.enlistment.startingRank;
       ch.acgState!.isOfficer = false;
     } else {

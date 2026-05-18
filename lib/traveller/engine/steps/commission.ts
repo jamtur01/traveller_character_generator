@@ -46,7 +46,8 @@ export const commissionStep: StepFn = ({ character, service, config, edition }) 
   }
 
   service.doPromotion(character);
-  character.logRaw(
-    `Commissioned during ${intToOrdinal(character.terms)} term of service as ${service.ranks[character.rank]}.`,
-  );
+  character.log(ev.promoted(
+    service.ranks[character.rank] ?? `rank ${character.rank}`,
+    `commissioned in ${intToOrdinal(character.terms)} term`,
+  ));
 };

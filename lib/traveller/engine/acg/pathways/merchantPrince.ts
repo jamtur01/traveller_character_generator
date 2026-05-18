@@ -159,12 +159,12 @@ export function merchantEnlist(
   }
   const parsed = parseResolutionTarget(row.target);
   if (parsed.target === "auto") {
-    ch.logRaw(`Automatic enlistment with ${lineType}.`);
+    ch.log(ev.enlistmentAttempt(`Merchant ${lineType} (automatic)`, 0, 0, 0, true));
   } else if (typeof parsed.target === "number") {
     const dm = applyStructuredDms(data.enlistment.dms, ch);
     const r = roll(2);
     const succeeded = r + dm >= parsed.target;
-    ch.log(ev.roll(`Merchant enlist (${lineType})`, r, dm, parsed.target, succeeded));
+    ch.log(ev.enlistmentAttempt(`Merchant ${lineType}`, r, dm, parsed.target, succeeded));
     if (!succeeded) {
       throw new Error(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
     }
@@ -177,9 +177,10 @@ export function merchantEnlist(
     ch.acgState!.isOfficer = false;
   } else if (ch.acgState!.schoolsAttended.includes("medicalSchool")) {
     ch.acgState!.department = "Purser";
-    ch.logRaw(
-      `Auto-enlisted in Merchants as Purser Department Medic at ${ch.acgState!.rankCode} (medical school direct commission).`,
-    );
+    ch.log(ev.enlistmentAttempt(
+      `Merchants Purser Department Medic (medical school direct commission, ${ch.acgState!.rankCode})`,
+      0, 0, 0, true,
+    ));
   }
 
   // PM p. 47: Merchant Academy "may" be applied for after enlistment in
@@ -503,7 +504,7 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
     ch.acgState!.yearsServed ?? 0,
   );
   ch.acgState!.lineType = to;
-  ch.logRaw(`Transferred ${dir} to ${to}.`);
+  ch.log(ev.transferred(to, "line", from));
 }
 
 export function merchantSpecialAssignment(ch: Character): void {
@@ -548,7 +549,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
         ch.acgState!.commissionO0DeadlineYear =
           (ch.acgState!.yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
-      ch.logRaw(`Commissioned to rank ${ch.acgState!.rankCode}.`);
+      ch.log(ev.promoted(ch.acgState!.rankCode, "Merchant commission"));
     }
     return;
   }
@@ -579,7 +580,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       recordTransfer(ch.acgState!, "department", from, to,
         ch.acgState!.yearsServed ?? 0);
       ch.acgState!.department = to;
-      ch.logRaw(`Transferred to ${to} department.`);
+      ch.log(ev.transferred(to, "department", from));
     }
     if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
       ch.acgState!.examDm = (ch.acgState!.examDm ?? 0) + 1;
@@ -657,7 +658,7 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     onResolve: (c, chosen) => {
       if (chosen !== current && c.acgState) {
         c.acgState.department = chosen;
-        c.logRaw(`Reenlisted into ${chosen} department.`);
+        c.log(ev.crossTrained(chosen, "department"));
       }
     },
   });
@@ -690,7 +691,7 @@ export function merchantStartOfTerm(ch: Character): void {
     ch.acgState!.rankCode = revertRank;
     ch.commissioned = false;
     delete ch.acgState!.commissionO0DeadlineYear;
-    ch.logRaw(`Failed to pass exam for O1 in time — reverted to enlisted (${revertRank}).`);
+    ch.log(ev.statusChange("demoted", `failed O1 exam in time — reverted to ${revertRank}`));
     return;
   }
   // F12 PM p. 61: officers auto-transfer to the Deck department after one
@@ -762,7 +763,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
     ch.acgState!.isOfficer = true;
     ch.acgState!.rankCode = "O1";
     ch.commissioned = true;
-    ch.logRaw("Earned a commission via Route-assignment promotion exam.");
+    ch.log(ev.promoted("O1", "Route-assignment promotion exam"));
   }
 }
 
