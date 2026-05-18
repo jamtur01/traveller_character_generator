@@ -662,6 +662,14 @@ export function formatEvent(e: HistoryEvent): string {
       const label = e.kind_ === "combatArm" ? "combat arm" : e.kind_;
       return `Transferred${fromTxt} to ${e.to} ${label}${reasonTxt}.`;
     }
+    default: {
+      // Exhaustiveness check — if a new HistoryEvent kind is added
+      // without a switch case, TypeScript fails here at compile time
+      // and the runtime throws instead of silently returning undefined.
+      const _: never = e;
+      void _;
+      throw new Error(`Unhandled history event kind: ${String((e as { kind?: unknown }).kind)}`);
+    }
   }
 }
 

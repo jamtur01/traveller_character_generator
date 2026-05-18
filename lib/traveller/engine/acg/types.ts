@@ -255,6 +255,10 @@ export interface AcgState {
    *  doesn't re-roll non-deterministically on pause/resume. Cleared at
    *  year boundary alongside transferAppliedThisYear. */
   scoutTransferNextAssign?: string;
+  /** Merchant: cached post-transfer assignment for the same reason as
+   *  scoutTransferNextAssign. The recursive merchantResolveAssignment
+   *  after transferMerchantLine would otherwise re-roll on resume. */
+  merchantTransferNextAssign?: string;
 
   // Merchant Prince: per-term flags consumed at end-of-term.
   /** Merchant Prince: true if any year of the current term was a Route

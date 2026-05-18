@@ -61,9 +61,11 @@ export class Character {
   events: HistoryEvent[] = [];
 
   /** Render the typed event log to formatted strings, filtered to the
-   *  given level (defaults to this.showHistory). `none` matches the
-   *  legacy filter semantics — events accumulate but the display gate
-   *  (toString / sheet rendering) hides them. */
+   *  given level (defaults to this.showHistory). `none` accumulates the
+   *  same events as `simple` (no extra filter); the display gate
+   *  (toString / sheet / PDF rendering) is responsible for hiding them.
+   *  Callers that want to suppress the rendered view should also check
+   *  `c.showHistory !== "none"` before reading. */
   renderHistory(level: ShowHistory = this.showHistory): string[] {
     const out: string[] = [];
     for (const e of this.events) {
@@ -208,10 +210,28 @@ export class Character {
   enterMustered(): void {
     this.chargenStatus = { kind: "mustered" };
   }
+
+  /** Emit the canonical end-of-chargen marker for the muster-completion
+   *  path. Idempotent: skipped if an endGeneration event was already
+   *  logged (e.g. via endChargenRetired / endChargenDeceased /
+   *  endChargenDischarged). This consolidates the four UI sites that
+   *  finalize a muster-out so a single character can't accrue two
+   *  endGeneration events in its history. */
+  markMustered(): void {
+    if (this.events.some((e) => e.kind === "endGeneration")) return;
+    this.log(ev.endGeneration("mustered"));
+  }
   forceTable = false;
   forceTableIndex = 1;
   musterCashUsed = 0;
   musterRolls = 0;
+  /** Transient UI flag: the current muster roll (cash or benefit) paused
+   *  on a cascade or nested choice and hasn't completed yet. Set by
+   *  the muster-out UI handler when a ChoicePendingError is caught;
+   *  cleared by the resolvePending handler after the entire choice
+   *  chain drains. While true, musterRolls must NOT be decremented —
+   *  the roll's player-visible work isn't finished. */
+  pendingMusterRoll = false;
   /** Human-readable log of each muster-out roll's outcome. */
   musterLog: string[] = [];
   /**
@@ -1053,8 +1073,14 @@ export class Character {
     // Short terms only count for half-aging. PM p. 16: a short term is 2
     // years and the term should not trigger full-term aging breakpoints.
     // Compute aging from completed full terms only (terms minus short).
+    // The anagathics branch derives "terms equivalent" from apparent age,
+    // anchored at the service's startAge (not a hardcoded 18) — a
+    // pre-career graduate who entered service at age 22 shouldn't get
+    // the term-3 aging line on apparent age 22.
+    const serviceStartAge =
+      getEdition(this.editionId).data.services[this.service]?.startAge ?? 18;
     const effectiveTermsForAging = this.onAnagathics
-      ? Math.floor((this.apparentAge - 18) / 4)
+      ? Math.max(0, Math.floor((this.apparentAge - serviceStartAge) / 4))
       : Math.max(0, this.terms - this.shortTermsCount);
 
     // Pick the highest row whose endOfTerm <= effectiveTermsForAging.

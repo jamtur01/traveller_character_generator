@@ -296,8 +296,14 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   resetIfComplete(ch);
   if (assignment === "Transfer Up") {
     applyOnce(ch, "merchantTransferUpApplied", () => transferMerchantLine(ch, "up"));
-    // Reroll specific assignment in the new line. Recurse once.
-    const next = merchantRollAssignment(ch);
+    // Reroll specific assignment in the new line. Cache the rolled
+    // value so a pause inside the recursive resolve doesn't re-roll
+    // (non-deterministically) on resume. Cleared at year boundary.
+    const acg = ch.requireAcgState();
+    if (acg.merchantTransferNextAssign === undefined) {
+      acg.merchantTransferNextAssign = merchantRollAssignment(ch);
+    }
+    const next = acg.merchantTransferNextAssign;
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }
@@ -306,7 +312,11 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   }
   if (assignment === "Transfer Down") {
     applyOnce(ch, "merchantTransferDownApplied", () => transferMerchantLine(ch, "down"));
-    const next = merchantRollAssignment(ch);
+    const acg = ch.requireAcgState();
+    if (acg.merchantTransferNextAssign === undefined) {
+      acg.merchantTransferNextAssign = merchantRollAssignment(ch);
+    }
+    const next = acg.merchantTransferNextAssign;
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }

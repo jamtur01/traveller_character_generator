@@ -58,6 +58,7 @@ function clearYearScopedState(acg: import("../../character").Character["acgState
   if (!acg) return;
   delete acg.transferAppliedThisYear;
   delete acg.scoutTransferNextAssign;
+  delete acg.merchantTransferNextAssign;
   delete acg.wasRetainedThisYear;
   delete acg.thisYearOutcomes;
 }
