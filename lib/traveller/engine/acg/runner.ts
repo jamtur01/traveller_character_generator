@@ -53,9 +53,13 @@ function runStep(
 
 /** Clear all year-scoped state markers. Called when a year advances
  *  (successful completion, defensive no-op, initial-training paths) so
- *  pathway code that gates on these flags starts fresh next year. */
+ *  pathway code that gates on these flags starts fresh next year.
+ *  pausedAtStep is also nulled — it's logically year-scoped (records
+ *  where the year paused) so a future year should never inherit a
+ *  stale value. */
 function clearYearScopedState(acg: import("../../character").Character["acgState"]): void {
   if (!acg) return;
+  acg.pausedAtStep = null;
   delete acg.transferAppliedThisYear;
   delete acg.scoutTransferNextAssign;
   delete acg.merchantTransferNextAssign;
@@ -111,7 +115,6 @@ export function runAcgYear(ch: Character): void {
     ch.age += 1;
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
-    acg.pausedAtStep = null;
     clearYearScopedState(acg);
     return;
   }
@@ -122,7 +125,6 @@ export function runAcgYear(ch: Character): void {
     ch.age += 1;
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
-    acg.pausedAtStep = null;
     clearYearScopedState(acg);
     return;
   }
@@ -172,7 +174,6 @@ export function runAcgYear(ch: Character): void {
     ch.age += 1;
     acg.yearsServed = (acg.yearsServed ?? 0) + 1;
     acg.year += 1;
-    acg.pausedAtStep = null;
     clearYearScopedState(acg);
     return;
   }
@@ -205,7 +206,6 @@ export function runAcgYear(ch: Character): void {
 
   acg.year += 1;
   acg.currentAssignment = null;
-  acg.pausedAtStep = null;
   clearYearScopedState(acg);
 }
 

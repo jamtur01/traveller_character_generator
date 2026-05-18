@@ -50,6 +50,27 @@ function expandIncludes(editionId: string, name: string): string[] {
 /** Ship/passage display names sourced from the edition's benefitDetails:
  *  every key with a `shipType` is a ship; passage names come from the
  *  `passages` block's displayName fields. */
+/** Look up the printed rank title for an ACG character. ACG pathway
+ *  ranks are declared in JSON per pathway (mercenary/navy ranks array;
+ *  merchant ranksAndPromotions per line size; scout has ordinary +
+ *  administrator ladders). Returns null if no title can be derived;
+ *  callers fall back to the raw rank code. */
+function acgRankTitle(c: Character): string | null {
+  const code = c.acgState?.rankCode;
+  if (!code) return null;
+  // Numeric officer ranks O1-O6 align with the basic service ladder
+  // (service.ranks[1..6]). This covers most non-flag-officer cases for
+  // mercenary/navy/merchant without needing per-pathway lookup. Flag
+  // officers (O7+) and scout IS-* fall through to the raw code.
+  const officerMatch = code.match(/^O(\d+)$/);
+  if (officerMatch) {
+    const n = parseInt(officerMatch[1]!, 10);
+    const title = c.serviceDef().ranks[n];
+    if (title) return title;
+  }
+  return null;
+}
+
 function shipNamesFor(editionId: string): Set<string> {
   const out = new Set<string>();
   const details = getEdition(editionId).data.benefitDetails;
@@ -221,9 +242,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   fieldLabel(doc, X0 + 164, y + 10, "5. Military Rank");
   // ACG characters store rank only in acgState.rankCode (e.g. "O3").
   // c.rank is 0 for ACG-only flows, so the basic ladder would render
-  // blank. Fall back to the ACG rank code when present.
+  // blank. Try the ACG pathway's rank ladder for a printed title; fall
+  // back to the basic service ranks (covers O1-O6 universally) and
+  // finally to the raw rank code if no title is registered.
   const rankText = c.useAcg && c.acgState?.rankCode
-    ? c.acgState.rankCode
+    ? acgRankTitle(c) ?? c.acgState.rankCode
     : (c.serviceDef().ranks[c.rank] || "");
   fieldValue(doc, X0 + 166, y + 26, rankText, 152);
 
@@ -674,23 +697,26 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   if (c.schoolsAttended.length === 0) {
     doc.text("—", X0 + 6, sy);
   } else {
-    // Two-column layout for schools.
-    const half = W / 2 - 12;
+    // Two-column layout for schools. Compute how many slots fit at the
+    // schoolLimit y, then reserve the last visible slot for "+N more"
+    // when there's overflow — this keeps the indicator in-bounds (the
+    // previous approach drew at the out-of-bounds rowY after the break).
+    const maxRows = Math.floor((schoolLimit - sy) / 12) + 1;
+    const maxSlots = maxRows * 2;
+    const total = c.schoolsAttended.length;
+    const overflow = total > maxSlots;
+    const visible = overflow ? maxSlots - 1 : total;
     let col = 0;
     let rowY = sy;
-    let shown = 0;
-    for (const school of c.schoolsAttended) {
-      if (rowY > schoolLimit) break;
+    for (let i = 0; i < visible; i++) {
       const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
-      doc.text(`• ${school}`, x, rowY);
+      doc.text(`• ${c.schoolsAttended[i]!}`, x, rowY);
       col = (col + 1) % 2;
       if (col === 0) rowY += 12;
-      shown += 1;
-      void half;
     }
-    if (shown < c.schoolsAttended.length) {
+    if (overflow) {
       const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
-      doc.text(`+${c.schoolsAttended.length - shown} more`, x, rowY);
+      doc.text(`+${total - visible} more`, x, rowY);
     }
   }
   doc.setFont(BOLD, "normal");

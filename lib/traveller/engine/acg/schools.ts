@@ -88,14 +88,22 @@ function runEffect(
       return;
     case "crossTrainCombatArm": {
       const excl = Array.isArray(effect.exclude) ? (effect.exclude as string[]) : [];
-      const arms = (data.combatArms ?? []).filter((a) => !excl.includes(a));
+      const alreadyTrained = ch.acgState.crossTrainedArms ?? [];
+      const currentArm = ch.acgState.combatArm;
+      // Exclude both the JSON exclude list AND the character's current
+      // arm + any previously-cross-trained arms. Otherwise arnd could
+      // pick a same-arm "transfer" (no-op skill grant, log spam, stale
+      // recordTransfer with from===to filtered out by recordTransfer).
+      const arms = (data.combatArms ?? []).filter((a) =>
+        !excl.includes(a) && a !== currentArm && !alreadyTrained.includes(a),
+      );
       if (arms.length === 0) return;
       const newArm = arnd(arms);
-      const fromArm = ch.acgState.combatArm ?? "";
+      const fromArm = currentArm ?? "";
       recordTransfer(ch.acgState, "combatArm", fromArm, newArm,
         ch.acgState.yearsServed ?? 0);
       ch.acgState.combatArm = newArm;
-      ch.acgState.crossTrainedArms = ch.acgState.crossTrainedArms ?? [];
+      ch.acgState.crossTrainedArms = alreadyTrained;
       if (!ch.acgState.crossTrainedArms.includes(newArm)) {
         ch.acgState.crossTrainedArms.push(newArm);
       }

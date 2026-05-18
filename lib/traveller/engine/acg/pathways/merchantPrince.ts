@@ -294,27 +294,24 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // completion (the runner clears at year boundary, but direct test
   // invocation can call us multiple times in the same notional year).
   resetIfComplete(ch);
-  if (assignment === "Transfer Up") {
-    applyOnce(ch, "merchantTransferUpApplied", () => transferMerchantLine(ch, "up"));
+  if (assignment === "Transfer Up" || assignment === "Transfer Down") {
+    const dir = assignment === "Transfer Up" ? "up" : "down";
+    const flag = dir === "up" ? "merchantTransferUpApplied" : "merchantTransferDownApplied";
+    applyOnce(ch, flag, () => transferMerchantLine(ch, dir));
     // Reroll specific assignment in the new line. Cache the rolled
     // value so a pause inside the recursive resolve doesn't re-roll
     // (non-deterministically) on resume. Cleared at year boundary.
     const acg = ch.requireAcgState();
     if (acg.merchantTransferNextAssign === undefined) {
-      acg.merchantTransferNextAssign = merchantRollAssignment(ch);
-    }
-    const next = acg.merchantTransferNextAssign;
-    if (next !== "Transfer Up" && next !== "Transfer Down") {
-      merchantResolveAssignment(ch, next);
-    }
-    markComplete(ch);
-    return;
-  }
-  if (assignment === "Transfer Down") {
-    applyOnce(ch, "merchantTransferDownApplied", () => transferMerchantLine(ch, "down"));
-    const acg = ch.requireAcgState();
-    if (acg.merchantTransferNextAssign === undefined) {
-      acg.merchantTransferNextAssign = merchantRollAssignment(ch);
+      // PM allows only one transfer per year. If the reroll lands on
+      // another transfer, reroll until we get a real assignment rather
+      // than silently dropping the year's resolution. Bound the loop
+      // defensively so a misconfigured table can't infinite-loop.
+      let next = merchantRollAssignment(ch);
+      for (let i = 0; i < 8 && (next === "Transfer Up" || next === "Transfer Down"); i++) {
+        next = merchantRollAssignment(ch);
+      }
+      acg.merchantTransferNextAssign = next;
     }
     const next = acg.merchantTransferNextAssign;
     if (next !== "Transfer Up" && next !== "Transfer Down") {

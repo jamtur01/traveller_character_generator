@@ -118,6 +118,16 @@ export function buildServiceDef(
   const doPromotionHook = doPromotionHookName
     ? edition.hooks.doPromotion?.[doPromotionHookName]
     : undefined;
+  if (doPromotionHookName && !doPromotionHook) {
+    // Declared in JSON but not registered in the edition's hooks module:
+    // typo or missing implementation. Surface loudly rather than silently
+    // skipping the promotion side-effect.
+    throw new Error(
+      `Service "${serviceData.displayName}" declares doPromotion hook ` +
+      `"${doPromotionHookName}" but edition "${edition.meta.id}" hooks ` +
+      `don't export it. Register it in editions/${edition.meta.id}/hooks.ts.`,
+    );
+  }
 
   const doPromotion = (ch: Character): void => {
     for (const e of serviceData.automaticSkills) {
