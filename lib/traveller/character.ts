@@ -665,7 +665,13 @@ export class Character {
 
   addBenefit(benefit: string) {
     this.benefits.push(benefit);
-    this.log(ev.raw(benefit, "simple"));
+    // The benefit name is already announced by the preceding event
+    // (ev.musterBenefit for muster cells, ev.cascadePick for weapon
+    // benefits, ev.decoration for award-conferred benefits). Standalone
+    // benefits — retirement pay, scout detached duty stipend, free
+    // trader ship from ACG — emit their own simple-level event at the
+    // call site.
+    this.log(ev.raw(benefit, "verbose"));
   }
 
   // ---------- single logging API ----------
@@ -945,6 +951,11 @@ export class Character {
   // ---------- reenlistment ----------
 
   doReenlistmentStep() {
+    // PM p. 16: short-term forces the character to leave after 2 years
+    // — no reenlistment roll. Without this guard the engine would still
+    // roll and log a misleading "Eligible to reenlist" line even though
+    // activeDuty was already set false by survival failure.
+    if (this.shortTermThisTerm) return;
     // F2/F3: PM p. 16 disability conditions force muster regardless of
     // the reenlistment roll. Block reenlist for both basic and ACG flows.
     const dis = this.isDisabled();
@@ -1460,9 +1471,9 @@ export class Character {
     if (!pensionForfeit && qualifyingTerms >= eligibleAfter &&
         !excluded.has(this.service as string)) {
       this.retirementPay = basePension + (qualifyingTerms - eligibleAfter) * perTerm;
-      this.addBenefit(
-        `${numCommaSep(this.retirementPay)}/yr Retirement Pay`,
-      );
+      const label = `${numCommaSep(this.retirementPay)}/yr Retirement Pay`;
+      this.log(ev.raw(label, "simple"));
+      this.addBenefit(label);
     } else if (pensionForfeit && this.terms >= eligibleAfter) {
       this.log(ev.statusChange("pensionForfeit", "dishonorable discharge or death sentence"));
     }
