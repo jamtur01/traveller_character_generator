@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 import { buildCharacterSheetPdf } from "../lib/pdfSheet";
 
 // ---------------------------------------------------------------------------

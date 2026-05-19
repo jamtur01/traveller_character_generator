@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { getEdition, listEditions } from "../lib/traveller/editions";
 import { applyStructuredDms } from "../lib/traveller/engine/acg/tables";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 
 afterEach(() => {
   vi.restoreAllMocks();

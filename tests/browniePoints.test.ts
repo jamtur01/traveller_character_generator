@@ -6,7 +6,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
 import {
   spendBrowniePoints, tryMitigate,
-} from "../lib/traveller/engine/acg/browniePoints";
+} from "../lib/traveller/engine/acg/awards";
 afterEach(() => { vi.restoreAllMocks(); });
 
 function freshAcgChar(bp = 5): Character {

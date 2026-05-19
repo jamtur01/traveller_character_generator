@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { Character } from "../lib/traveller/character";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 
 function makeMt(): Character {
   const c = new Character();

@@ -3,7 +3,7 @@ import {
   buildCharacterSheetPdf, highestSkillIn, safeFilename, splitSkills,
 } from "../lib/pdfSheet";
 import { Character } from "../lib/traveller/character";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 
 describe("safeFilename", () => {
   it("strips diacritics via NFKD", () => {

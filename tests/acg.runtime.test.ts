@@ -10,7 +10,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { getAcgPathway } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
 import { runAcgYear, runAcgTerm } from "../lib/traveller/engine/runners/acg";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 
 afterEach(() => {
   vi.restoreAllMocks();

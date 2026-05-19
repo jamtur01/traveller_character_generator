@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import {
   isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg,
-} from "../lib/traveller/engine/acg/types";
+} from "../lib/traveller/engine/acg/state";
 
 function mtChar(): Character {
   const c = new Character();

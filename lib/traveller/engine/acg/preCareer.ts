@@ -29,7 +29,7 @@ import { extendedHex } from "../../formatting";
 import { arnd, roll } from "../../random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "../../history";
-import type { AcgPathwayId } from "./types";
+import type { AcgPathwayId } from "./state";
 
 export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"

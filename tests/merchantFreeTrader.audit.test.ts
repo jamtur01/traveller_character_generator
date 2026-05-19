@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import * as session from "../lib/traveller/chargen/session";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 import { formatEvent } from "../lib/traveller/history";
 
 afterEach(() => { vi.restoreAllMocks(); });
