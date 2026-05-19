@@ -44,7 +44,7 @@ describe("Mercenary PM audit — initial activities", () => {
   it("PM p. 50: Army starts at E1; Marines starts at E1", async () => {
     const { Character } = await import("../lib/traveller/character");
     const session = await import("../lib/traveller/chargen/session");
-    const { freshAcgState } = await import("../lib/traveller/engine/acg/types");
+    const { freshAcgState } = await import("../lib/traveller/engine/acg/state");
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = new Character({
       attributes: {

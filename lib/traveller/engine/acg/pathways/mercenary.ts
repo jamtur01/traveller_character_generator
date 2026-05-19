@@ -39,7 +39,7 @@ import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import { createPathwaySpecRegistry, resetCombatTermFlags } from "./shared";
 import { event as ev } from "../../../history";
-import type { AcgState, ResolutionTarget } from "../types";
+import type { AcgState, ResolutionTarget } from "../state";
 
 const PATHWAY = "mercenary";
 

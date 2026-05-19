@@ -366,3 +366,43 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
     decorationDmStrategy: 0,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Resolution types (one assignment row's targets + decoration outcome).
+// Lived in a separate types.ts barrel that just re-exported state; merged
+// here so consumers have a single canonical import path.
+// ---------------------------------------------------------------------------
+
+/** Resolution targets for one assignment row. Targets are either a
+ *  numeric throw, "auto" (always succeeds), or "none" (no roll). */
+export type ResolutionTarget = number | "auto" | "none";
+
+export interface AssignmentResolution {
+  survival: ResolutionTarget;
+  decoration: ResolutionTarget;
+  promotion: ResolutionTarget;
+  skills: ResolutionTarget;
+  /** "8+" style — when listed in parentheses on the table, officers may
+   *  not roll for promotion under this assignment. */
+  promotionOfficersBarred?: boolean;
+}
+
+/** A single row of an `assignment` table — keyed by die result. */
+export interface AssignmentRow {
+  die: number;
+  [columnKey: string]: number | string;
+}
+
+export interface AssignmentTable {
+  columns: string[];
+  rows: AssignmentRow[];
+  dms?: string[];
+  notes?: string[];
+}
+
+export interface DecorationOutcome {
+  /** Award earned, or null on no award. */
+  award: "MCUF" | "MCG" | "SEH" | null;
+  /** True when the decoration roll failed by 6+ (court martial). */
+  courtMartial: boolean;
+}

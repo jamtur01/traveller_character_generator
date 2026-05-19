@@ -19,7 +19,7 @@ import type { Character } from "../../character";
 import { roll } from "../../random";
 import type {
   ResolutionTarget, SubStepOutcome, ThisYearOutcomes,
-} from "./types";
+} from "./state";
 
 export type SubStepKey =
   "survival" | "promotion" | "decoration" | "skills" | "bonus";

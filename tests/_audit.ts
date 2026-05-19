@@ -6,8 +6,8 @@
 import { vi } from "vitest";
 import { Character, type CharacterOptions } from "../lib/traveller/character";
 import * as session from "../lib/traveller/chargen/session";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
-import type { AcgPathwayId } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
+import type { AcgPathwayId } from "../lib/traveller/engine/acg/state";
 import { formatEvent } from "../lib/traveller/history";
 
 export function auditAcg(opts: {

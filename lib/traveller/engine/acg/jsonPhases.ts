@@ -19,7 +19,7 @@ import {
   type ResolveContext,
 } from "./phaseRunner";
 import { alreadyApplied, markApplied } from "./subStepCache";
-import type { MitigationRequest } from "./browniePoints";
+import type { MitigationRequest } from "./awards";
 
 // --- JSON config shape -----------------------------------------------
 
@@ -318,8 +318,8 @@ function buildBonus(p: PhaseBonus, callbacks: PathwayCallbacks): PhaseDef {
 /** Read the bonus target carried on the synthesized AssignmentResolution.
  *  Merchant resolution doesn't have a built-in bonus field; the pathway
  *  glue stashes it on `res` via a typed extension. */
-function bonusTargetOf(ctx: ResolveContext): import("./types").ResolutionTarget {
-  const res = ctx.res as typeof ctx.res & { bonus?: import("./types").ResolutionTarget };
+function bonusTargetOf(ctx: ResolveContext): import("./state").ResolutionTarget {
+  const res = ctx.res as typeof ctx.res & { bonus?: import("./state").ResolutionTarget };
   if (res.bonus === undefined) warnBonusMissing(ctx.assignment);
   return res.bonus ?? "none";
 }
@@ -349,7 +349,7 @@ function warnBonusMissing(assignment: string): void {
 function rollEv(
   name: string,
   r: { roll: number; margin: number; success: boolean; dm: number },
-  resolutionTarget: import("./types").ResolutionTarget,
+  resolutionTarget: import("./state").ResolutionTarget,
   context: string,
   marginIsSuccess = false,
 ): ReturnType<typeof eventModule.event.roll> {
@@ -369,7 +369,7 @@ function reviveStatusChange(note: string) {
   return eventModule.event.statusChange("revived", note);
 }
 
-function targetOrZero(t: import("./types").ResolutionTarget): number {
+function targetOrZero(t: import("./state").ResolutionTarget): number {
   return typeof t === "number" ? t : 0;
 }
 

@@ -40,8 +40,8 @@ import {
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import { createPathwaySpecRegistry } from "./shared";
-import type { AssignmentResolution, ResolutionTarget } from "../types";
-import { recordTransfer } from "../types";
+import type { AssignmentResolution, ResolutionTarget } from "../state";
+import { recordTransfer } from "../state";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
 import { event as ev } from "../../../history";
 

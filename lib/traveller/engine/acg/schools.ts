@@ -12,7 +12,7 @@ import { getEdition, getAcgPathway } from "../../editions";
 import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
 import { applyAcgSkillCell } from "./skills";
-import { recordTransfer } from "./types";
+import { recordTransfer } from "./state";
 import { event as ev } from "../../history";
 
 type Effect = Record<string, unknown> & { type: string };

@@ -150,7 +150,7 @@ describe("Pre-career interactive walkthroughs", () => {
   it("college admit + OTC commission + branch pick (interactive)", async () => {
     const { Character } = await import("../lib/traveller/character");
     const session = await import("../lib/traveller/chargen/session");
-    const { freshAcgState } = await import("../lib/traveller/engine/acg/types");
+    const { freshAcgState } = await import("../lib/traveller/engine/acg/state");
     vi.spyOn(Math, "random").mockReturnValue(0.999); // max rolls — admit + honors + OTC
     const c = new Character({
       attributes: {
@@ -186,7 +186,7 @@ describe("Pre-career interactive walkthroughs", () => {
   it("running pre-career again after a failed school doesn't re-offer the same school", async () => {
     const { Character } = await import("../lib/traveller/character");
     const session = await import("../lib/traveller/chargen/session");
-    const { freshAcgState } = await import("../lib/traveller/engine/acg/types");
+    const { freshAcgState } = await import("../lib/traveller/engine/acg/state");
     vi.spyOn(Math, "random").mockReturnValue(0.001); // low rolls — admission fails
     const c = new Character({
       attributes: {
@@ -214,7 +214,7 @@ describe("MT ACG: each Run-term click after a paused choice must be a no-op", ()
     viMod.spyOn(Math, "random").mockReturnValue(0.5);
     const { Character } = await import("../lib/traveller/character");
     const session = await import("../lib/traveller/chargen/session");
-    const { freshAcgState } = await import("../lib/traveller/engine/acg/types");
+    const { freshAcgState } = await import("../lib/traveller/engine/acg/state");
     const c = new Character({
       attributes: {
         strength: 10, dexterity: 10, endurance: 10,

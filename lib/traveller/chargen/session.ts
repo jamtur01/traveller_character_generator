@@ -19,7 +19,7 @@ import { ChoicePendingError } from "../engine/choices";
 import { runAcgYear } from "../engine/runners/acg";
 import { getEditionServices } from "../services";
 import { editionHasAcg } from "../engine/acg";
-import { freshAcgState } from "../engine/acg/types";
+import { freshAcgState } from "../engine/acg/state";
 import { event as ev } from "../history";
 import { cashDmFor, benefitDmFor, maxCashRolls } from "../engine/musterDm";
 import { intToOrdinal } from "../formatting";

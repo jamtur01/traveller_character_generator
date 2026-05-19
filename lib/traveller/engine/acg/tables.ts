@@ -7,7 +7,7 @@ import type { Character } from "../../character";
 import { getEdition, getAcgPathway } from "../../editions";
 import type {
   AssignmentResolution, AssignmentTable, ResolutionTarget,
-} from "./types";
+} from "./state";
 
 /** Parse a JSON cell value into a resolution target. The canonical forms
  *  in the MT data are:

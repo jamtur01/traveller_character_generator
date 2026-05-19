@@ -28,7 +28,7 @@ import { applyScoutSchool } from "../schools";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import { createPathwaySpecRegistry } from "./shared";
-import { recordTransfer } from "../types";
+import { recordTransfer } from "../state";
 import { event as ev } from "../../../history";
 
 const PATHWAY = "scout";

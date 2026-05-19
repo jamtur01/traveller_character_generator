@@ -10,10 +10,10 @@ import { event as ev, formatEvent } from "./history";
 import type {
   AcgState, MercenaryAcgState, NavyAcgState,
   ScoutAcgState, MerchantAcgState,
-} from "./engine/acg/types";
+} from "./engine/acg/state";
 import {
   isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg, freshAcgState,
-} from "./engine/acg/types";
+} from "./engine/acg/state";
 import {
   editionHasHomeworld,
   generateAndApplyHomeworld, type Homeworld,

@@ -40,7 +40,7 @@ export {
 } from "./engine/runners/acg";
 export type {
   AcgPathwayId, AcgState, AssignmentResolution, ResolutionTarget,
-} from "./engine/acg/types";
+} from "./engine/acg/state";
 export {
   benefitDmFor, cashDmFor, maxCashRolls,
 } from "./engine/musterDm";

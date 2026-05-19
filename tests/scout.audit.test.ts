@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import * as session from "../lib/traveller/chargen/session";
-import { freshAcgState } from "../lib/traveller/engine/acg/types";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 import { getEdition } from "../lib/traveller/editions";
 
 afterEach(() => { vi.restoreAllMocks(); });

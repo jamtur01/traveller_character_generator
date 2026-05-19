@@ -6,12 +6,12 @@
 // resolveAssignment was duplicating.
 
 import type { Character } from "../../character";
-import { tryMitigate, type MitigationRequest } from "./browniePoints";
+import { tryMitigate, type MitigationRequest } from "./awards";
 import {
   applyOnce, markComplete, resetIfComplete, rollPhaseDice,
   type SubStepKey,
 } from "./subStepCache";
-import type { AssignmentResolution, ResolutionTarget } from "./types";
+import type { AssignmentResolution, ResolutionTarget } from "./state";
 
 /** Structural type for the per-pathway assignment-resolution table.
  *  Each pathway declares its own concrete shape (with sub-table-specific
