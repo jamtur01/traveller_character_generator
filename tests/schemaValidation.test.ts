@@ -4,7 +4,7 @@
 // These tests confirm the schema actually rejects malformed input.
 
 import { describe, expect, it } from "vitest";
-import { parseRules } from "../lib/traveller/editions/schema";
+import { parseRules, parseCanonData } from "../lib/traveller/editions/schema";
 import { getEdition, getAcgPathway } from "../lib/traveller/editions";
 
 describe("parseRules (#4)", () => {
@@ -91,5 +91,73 @@ describe("getAcgPathway helper (#4)", () => {
   it("returns undefined when the edition has no ACG block", () => {
     // CT-classic has no advancedCharacterGeneration block.
     expect(getAcgPathway("ct-classic", "mercenary")).toBeUndefined();
+  });
+});
+
+describe("parseCanonData (#2)", () => {
+  const validServices = {
+    army: {
+      displayName: "Army", startAge: 18, draft: 2,
+      checks: {
+        enlistment: { target: 5 },
+        survival: { target: 5 },
+        position: null,
+        promotion: null,
+        reenlistment: { target: 7 },
+      },
+      ranks: [], automaticSkills: [],
+      skillTables: {
+        personalDevelopment: [], serviceSkills: [],
+        advancedEducation: [], advancedEducation8Plus: [],
+      },
+      musterOut: { benefits: [], cash: [] },
+    },
+  };
+
+  it("accepts the minimal services-only block", () => {
+    expect(() => parseCanonData({ services: validServices }, "test")).not.toThrow();
+  });
+
+  it("rejects service with bad target type", () => {
+    const bad = {
+      services: {
+        army: {
+          ...validServices.army,
+          checks: { ...validServices.army.checks, enlistment: { target: "five" } },
+        },
+      },
+    };
+    expect(() => parseCanonData(bad, "test")).toThrow(
+      /services\.army\.checks\.enlistment\.target/,
+    );
+  });
+
+  it("rejects automaticSkills entry with bad trigger", () => {
+    const bad = {
+      services: {
+        army: {
+          ...validServices.army,
+          automaticSkills: [{ trigger: "unknown", skill: "Pilot" }],
+        },
+      },
+    };
+    expect(() => parseCanonData(bad, "test")).toThrow(/trigger/);
+  });
+
+  it("accepts cascadeSkills with $comment citation entries", () => {
+    expect(() => parseCanonData({
+      services: validServices,
+      cascadeSkills: {
+        $comment: "extracted from PM",
+        bladeCombat: ["Dagger", "Sword"],
+      },
+    }, "test")).not.toThrow();
+  });
+
+  it("rejects an aging row missing endOfTerm", () => {
+    expect(() => parseCanonData({
+      services: validServices,
+      aging: { rows: [{ age: 34, effects: {} }] },
+    }, "test")).toThrow(/aging\.rows\.0\.endOfTerm/);
   });
 });

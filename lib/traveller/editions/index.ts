@@ -16,7 +16,7 @@ import mtMegatravellerData from "../../../data/editions/mt-megatraveller.json" w
 import { ctClassicHooks } from "./ct-classic/hooks";
 import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
-import { parseRules } from "./schema";
+import { parseRules, parseCanonData } from "./schema";
 import { validateEditionAcgConfigs } from "../engine/acg";
 
 function buildEdition(
@@ -27,6 +27,9 @@ function buildEdition(
   // catches structural drift / typos that previously survived into
   // runtime via `as { ... }` casts at each call site.
   const rules = parseRules((data as { rules?: unknown }).rules, id);
+  // Validate services / cascade / aging / includes etc. shapes too —
+  // same motivation, broader coverage.
+  parseCanonData(data, id);
   return { meta: data.edition, data, hooks, rules };
 }
 
