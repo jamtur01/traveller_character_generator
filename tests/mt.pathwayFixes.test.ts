@@ -221,8 +221,9 @@ describe("Mercenary: combat-arm entry restrictions (PM p. 50)", () => {
   it("Marines can start in Infantry or Support", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
-    expect(() =>
-      c.beginAcg("mercenary", { service: "marines", combatArm: "Infantry" }),
-    ).not.toThrow();
+    c.beginAcg("mercenary", { service: "marines", combatArm: "Infantry" });
+    expect(c.acgPathway).toBe("mercenary");
+    expect(c.service).toBe("marines");
+    expect(c.requireMercenaryAcg().combatArm).toBe("Infantry");
   });
 });

@@ -84,7 +84,7 @@ describe("Mercenary checklist (PM p. 64)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     // 1. Generate character + homeworld (caller-side); already done in mtChar.
-    expect(c.homeworld).toBeDefined();
+    expect(c.homeworld?.tech).toBe("High Stellar");
     // 2. Pre-Enlistment Options (skipped — proceed straight to enlistment).
     // 3-5. Enlistment + Select Arm + Initial Training (via beginAcg).
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
@@ -123,11 +123,11 @@ describe("Navy checklist (PM p. 64)", () => {
     expect(c.requireNavyAcg().subsectorTechCode).toBe("High Stellar");
   });
 
-  it("step 4 Determine Branch Assignment runs at enlist", () => {
+  it("step 4 Determine Branch Assignment runs at enlist (max rolls + Soc 9 → Gunnery)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    expect(c.requireNavyAcg().branch).toBeDefined();
+    expect(c.requireNavyAcg().branch).toBe("Gunnery");
   });
 });
 
@@ -136,11 +136,11 @@ describe("Navy checklist (PM p. 64)", () => {
 // ──────────────────────────────────────────────────────────────────
 
 describe("Scout checklist (PM p. 65)", () => {
-  it("step 4 Select Office runs at enlist", () => {
+  it("step 4 Select Office runs at enlist (max rolls + Field → Exploration)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("scout", { division: "field" });
-    expect(c.requireScoutAcg().office).toBeDefined();
+    expect(c.requireScoutAcg().office).toBe("Exploration");
   });
 
   it("step 6 resolve term runs the survival → promotion → skills cycle", () => {
@@ -157,11 +157,11 @@ describe("Scout checklist (PM p. 65)", () => {
 // ──────────────────────────────────────────────────────────────────
 
 describe("Merchant Prince checklist (PM p. 65)", () => {
-  it("step 5 Department Assignment runs at enlist", () => {
+  it("step 5 Department Assignment runs at enlist (Free Trader → Free Trader dept)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
-    expect(c.requireMerchantAcg().department).toBeDefined();
+    expect(c.requireMerchantAcg().department).toBe("Free Trader");
   });
 
   it("step 6.B Take Exam for Promotion fires at end-of-term", () => {

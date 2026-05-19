@@ -40,11 +40,11 @@ describe("listAcgPathways", () => {
 // ---------------------------------------------------------------------------
 
 describe("getAcgPathway API", () => {
-  it("returns a non-empty object for a valid pathway", () => {
+  it("returns a non-empty pathway block with army/marines enlistment for mercenary", () => {
     const m = getAcgPathway("mt-megatraveller", "mercenary");
-    expect(m).toBeDefined();
-    expect(typeof m).toBe("object");
-    expect(m.enlistment).toBeDefined();
+    const en = m.enlistment as { army?: object; marines?: object };
+    expect(Object.keys(en.army ?? {}).length).toBeGreaterThan(0);
+    expect(Object.keys(en.marines ?? {}).length).toBeGreaterThan(0);
   });
 
   it("throws if the pathway doesn't exist in this edition", () => {
@@ -280,8 +280,12 @@ describe("ACG PDF renderer", () => {
     ct.service = "navy";
     expect(editionHasAcg(ct.editionId)).toBe(false);
     // The renderer still produces output (it doesn't crash); upstream
-    // should never set useAcg=true on a non-ACG edition.
-    expect(() => buildCharacterSheetPdf(ct)).not.toThrow();
+    // should never set useAcg=true on a non-ACG edition. The CT PDF
+    // identifies itself in the footer so callers can tell the two apart.
+    const pdf = buildCharacterSheetPdf(ct);
+    expect(pdf.getNumberOfPages()).toBeGreaterThan(0);
+    const text = Buffer.from(pdf.output("arraybuffer")).toString("latin1");
+    expect(text).not.toContain("MegaTraveller");
   });
 
   it("edition footer identifies MT on an ACG character's PDF", () => {
