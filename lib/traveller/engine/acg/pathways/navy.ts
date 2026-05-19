@@ -31,7 +31,7 @@ import { event as ev } from "../../../history";
 
 const PATHWAY = "navy";
 
-interface NavyData {
+export interface NavyData {
   enlistment: {
     imperialNavy: { target: number; dms: Array<{ attribute: string; min: number; dm: number }> };
     reserveFleet: { target: number; dms: Array<{ attribute: string; min: number; dm: number }> };
@@ -106,10 +106,9 @@ interface NavyData {
 }
 
 function dataFor(ch: Character): NavyData {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) throw new Error("Navy pathway requires ACG data");
-  return acg.navy as NavyData;
+  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.navy;
+  if (!data) throw new Error("Navy pathway requires ACG data");
+  return data;
 }
 
 /** Enlistment + fleet selection + branch assignment. */
@@ -119,8 +118,7 @@ export function navyEnlist(
 ): void {
   // System Squadron requires homeworld tech Early Stellar+ (PM p. 52).
   if (fleet === "systemSquadron") {
-    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-      | { homeworld?: { techCodeOrder?: string[] } } | undefined;
+    const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
     const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder
       ?? acg?.homeworld?.techCodeOrder;
     const hwTech = ch.homeworld?.tech;

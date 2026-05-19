@@ -43,7 +43,7 @@ import type { AcgState, ResolutionTarget } from "../types";
 
 const PATHWAY = "mercenary";
 
-interface MercenaryData {
+export interface MercenaryData {
   ocsAdvancement?: { ageLimit?: number; [k: string]: unknown };
   skillColumnPolicy?: {
     officerInCommand: string;
@@ -90,10 +90,9 @@ interface MercenaryData {
 }
 
 function dataFor(ch: Character): MercenaryData {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) throw new Error("Mercenary pathway requires ACG data");
-  return acg.mercenary as MercenaryData;
+  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.mercenary;
+  if (!data) throw new Error("Mercenary pathway requires ACG data");
+  return data;
 }
 
 /** Enlistment: pick army or marines, roll vs target with attribute DMs.

@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { parseRules, parseCanonData } from "../lib/traveller/editions/schema";
 import { getEdition, getAcgPathway } from "../lib/traveller/editions";
+import { validateLifecycleSteps } from "../lib/traveller/engine/runners/basic";
 
 describe("parseRules (#4)", () => {
   it("accepts an empty rules block", () => {
@@ -159,5 +160,12 @@ describe("parseCanonData (#2)", () => {
       services: validServices,
       aging: { rows: [{ age: 34, effects: {} }] },
     }, "test")).toThrow(/aging\.rows\.0\.endOfTerm/);
+  });
+});
+
+describe("validateLifecycleSteps (#3)", () => {
+  it("accepts the registered editions' lifecycle.terms", () => {
+    expect(() => validateLifecycleSteps("ct-classic")).not.toThrow();
+    expect(() => validateLifecycleSteps("mt-megatraveller")).not.toThrow();
   });
 });

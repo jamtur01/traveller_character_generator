@@ -46,7 +46,7 @@ import { event as ev } from "../../../history";
 
 const PATHWAY = "merchantPrince";
 
-interface MerchantData {
+export interface MerchantData {
   /** PM p. 63 special-duty rules: Commission grants O0 (or rank-by-
    *  line-type), with a deadline to make O1 before reverting. Deck
    *  rank-O4 holders auto-transfer departments per PM p. 61. */
@@ -135,10 +135,9 @@ function assignmentColumnFor(lineSize: "Large" | "Small" | "FreeTrader"): string
 }
 
 function dataFor(ch: Character): MerchantData {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) throw new Error("Merchant Prince pathway requires ACG data");
-  return acg.merchantPrince as MerchantData;
+  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.merchantPrince;
+  if (!data) throw new Error("Merchant Prince pathway requires ACG data");
+  return data;
 }
 
 /** Starport ordering: edition JSON `homeworld.starportOrder` lists letters
@@ -634,7 +633,7 @@ export function merchantReenlist(ch: Character): boolean {
  *  the character's benefits list at muster-out. Rule lives in JSON
  *  (advancedCharacterGeneration.merchantPrince.specialRules.reducedPassage). */
 export function applyReducedPassageBenefit(ch: Character): void {
-  const mp = getAcgPathway(ch.editionId, "merchantPrince") as MerchantData | undefined;
+  const mp = getAcgPathway(ch.editionId, "merchantPrince");
   const rp = mp?.specialRules?.reducedPassage as {
     appliesAfterMuster?: boolean;
     passage?: string;

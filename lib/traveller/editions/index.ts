@@ -18,6 +18,7 @@ import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
 import { parseRules, parseCanonData } from "./schema";
 import { validateEditionAcgConfigs } from "../engine/acg";
+import { validateLifecycleSteps } from "../engine/runners/basic";
 
 function buildEdition(
   raw: unknown, hooks: Edition["hooks"], id: string,
@@ -42,19 +43,20 @@ const REGISTRY: Record<string, Edition> = {
 
 export const DEFAULT_EDITION_ID = "ct-classic";
 
-const ACG_VALIDATED = new Set<string>();
+const RUNTIME_VALIDATED = new Set<string>();
 
 export function getEdition(id: string = DEFAULT_EDITION_ID): Edition {
   const ed = REGISTRY[id];
   if (!ed) throw new Error(`Unknown edition: ${id}`);
-  if (!ACG_VALIDATED.has(id)) {
-    // Lazy first-call ACG config validation. Pathway validators call
-    // getEdition; the `has(id)` short-circuit makes that re-entry a
-    // no-op. The validators run only at runtime (first getEdition call
-    // post module init), so the editions ↔ engine/acg import cycle
+  if (!RUNTIME_VALIDATED.has(id)) {
+    // Lazy first-call validation. Pathway validators + lifecycle
+    // validator call getEdition; the `has(id)` short-circuit makes
+    // that re-entry a no-op. Runs only at runtime (first getEdition
+    // call post module init), so the editions ↔ engine import cycle
     // resolves cleanly under ES module semantics.
-    ACG_VALIDATED.add(id);
+    RUNTIME_VALIDATED.add(id);
     validateEditionAcgConfigs(id);
+    validateLifecycleSteps(id);
   }
   return ed;
 }
@@ -63,11 +65,29 @@ export function listEditions(): EditionMeta[] {
   return Object.values(REGISTRY).map((e) => e.meta);
 }
 
-/** Typed dynamic-key access to a pathway's ACG data. Centralizes the
- *  one needed cast (AcgData's index signature is `unknown` because
- *  `common` is structurally different from pathways) so consumers can
- *  read `getAcgPathway(ch, "mercenary")?.combatAssignments` without
- *  declaring an inline shape every time. */
+/** Typed dynamic-key access to a pathway's ACG data. The four
+ *  string-literal overloads narrow the return type to the pathway's
+ *  typed data shape; the generic overload preserves back-compat for
+ *  callers that pass a runtime string. */
+export function getAcgPathway(
+  editionId: string, key: "mercenary",
+): import("../engine/acg/pathways/mercenary").MercenaryData &
+  import("./types").AcgPathwayData | undefined;
+export function getAcgPathway(
+  editionId: string, key: "navy",
+): import("../engine/acg/pathways/navy").NavyData &
+  import("./types").AcgPathwayData | undefined;
+export function getAcgPathway(
+  editionId: string, key: "scout",
+): import("../engine/acg/pathways/scout").ScoutData &
+  import("./types").AcgPathwayData | undefined;
+export function getAcgPathway(
+  editionId: string, key: "merchantPrince",
+): import("../engine/acg/pathways/merchantPrince").MerchantData &
+  import("./types").AcgPathwayData | undefined;
+export function getAcgPathway(
+  editionId: string, key: string | undefined | null,
+): import("./types").AcgPathwayData | undefined;
 export function getAcgPathway(
   editionId: string, key: string | undefined | null,
 ): import("./types").AcgPathwayData | undefined {

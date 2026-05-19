@@ -379,8 +379,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
 function reduceRank(ch: Character, mag: number): void {
   if (!ch.acgState) return;
   // Find pathway rank list and step backwards.
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
   if (!acg) return;
   const pathway = acg[ch.acgState.pathway] as {
     ranks?: { enlisted?: unknown[][]; officer?: unknown[][] };

@@ -10,6 +10,26 @@ import type { Character } from "../../character";
 import { getEdition } from "../../editions";
 import { STEP_REGISTRY } from "../steps";
 
+/** Validate that every lifecycle.terms[i].id in this edition resolves
+ *  against STEP_REGISTRY. Throws on any unknown id so JSON↔code drift
+ *  surfaces at edition load, not at first runTermSteps call. No-op if
+ *  the edition omits a lifecycle block (e.g., ACG-only editions). */
+export function validateLifecycleSteps(editionId: string): void {
+  const lifecycle = getEdition(editionId).data.lifecycle;
+  if (!lifecycle?.terms) return;
+  const unknown: string[] = [];
+  for (const step of lifecycle.terms) {
+    if (!STEP_REGISTRY[step.id]) unknown.push(step.id);
+  }
+  if (unknown.length > 0) {
+    throw new Error(
+      `Edition "${editionId}" lifecycle.terms references unknown step id` +
+      `${unknown.length === 1 ? "" : "s"}: ${unknown.join(", ")}. ` +
+      `Available: ${Object.keys(STEP_REGISTRY).join(", ")}.`,
+    );
+  }
+}
+
 export function runTermSteps(character: Character): void {
   // The character's editionId is authoritative — we don't accept an override
   // here. If callers need a specific edition, they construct a Character

@@ -47,8 +47,10 @@ export function createPathwaySpecRegistry<TData>(
 
   function dataForEdition(editionId: string):
     (TData & { resolveAssignment?: ResolveAssignmentConfig }) | undefined {
-    const acg = getEdition(editionId).data.advancedCharacterGeneration as
-      Record<string, unknown> | undefined;
+    // The pathway key is generic over TData; AcgData's index signature
+    // yields `unknown`, so the cast to TData is the type-system bridge
+    // for the per-pathway registry's generic parameterization.
+    const acg = getEdition(editionId).data.advancedCharacterGeneration;
     return acg?.[opts.pathwayKey] as
       (TData & { resolveAssignment?: ResolveAssignmentConfig }) | undefined;
   }
