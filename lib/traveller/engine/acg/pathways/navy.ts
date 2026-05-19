@@ -23,6 +23,7 @@ import { applySpecialAssignment } from "../schools";
 import { applyAcgSkillCell } from "../skills";
 import {
   applyOnce, markComplete, resetIfComplete,
+  alreadyApplied, markApplied,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
@@ -355,6 +356,13 @@ export function navyCommandDuty(ch: Character): void {
   // Per manual: not consulting the table results in assignment to staff.
   // In interactive mode the player can decline the roll.
   if (ch.choiceMode === "interactive") {
+    // Mark applied BEFORE pickOrDefer (which throws in interactive mode).
+    // Without this gate, every "Run term" / runAcgYear re-entry — while
+    // the choice is still queued OR after it resolves — re-fires this
+    // function, queueing another identical prompt. The flag lives in
+    // thisYearOutcomes.applied and is cleared at year boundary.
+    if (alreadyApplied(ch, "navyCommandDutyOptIn-prompted")) return;
+    markApplied(ch, "navyCommandDutyOptIn-prompted");
     ch.pickOrDefer({
       kind: "commandDutyOptIn",
       label: "Attempt the command-duty roll this year?",
