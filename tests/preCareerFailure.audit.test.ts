@@ -1,23 +1,13 @@
 // Pre-career failure consequences audit (PM p. 47, Rrev2).
 //
-// When a pre-career success roll fails (admitted but washed out), the
-// engine must:
-//   - Age the character +1 year and set preCareerFirstTermShort = true
-//   - Naval Academy → drafted into navy
-//   - Military / Merchant Academy → drafted into army
-//   - Flight School → drafted into navy (reports for duty short-term)
-//   - College → first term short, no draft (free enlistment)
-// On the first term:
-//   - termLength is 3 (not 4), yearsServed advances by 3
-//   - partialTerms bumps by 1 (3-year terms don't count as full muster)
-//   - The flag is consumed so the second term runs at 4 years
-// Admission roll failure (school didn't accept you) is distinct:
-//   - No aging, no draft, no short term — the character may attempt
-//     another option or enlist normally.
-// Draft override on beginAcg consumes preCareerDraftedInto:
-//   - "navy" → pathway=navy, service=navy, drafted=true
-//   - "army" → pathway=mercenary, service=army, drafted=true
-//   - "marines" → pathway=mercenary, service=marines, drafted=true
+// Per-school washout aging + draft routing is covered in
+// tests/preCareer.test.ts ("R3: pre-career failure short-term outcomes").
+// This file picks up the downstream consequences not exercised there:
+//   - beginAcg consumes preCareerDraftedInto and overrides pathway/service
+//   - First term runs 3 years (not 4) and the flag is consumed
+//   - Second term runs the normal 4 years
+//   - Flight School washout drafts navy + sets the short-term flag
+//     (the only success-failure case not already exercised in preCareer.test.ts)
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
@@ -37,82 +27,6 @@ function freshAcgCandidate(attrs = 12): Character {
   c.useAcg = true;
   return c;
 }
-
-describe("Success-failure: aging +1 year (PM p. 47)", () => {
-  function washOut(c: Character, opt: Parameters<Character["doPreCareer"]>[0]): void {
-    let call = 0;
-    vi.spyOn(Math, "random").mockImplementation(() => {
-      call += 1;
-      // First 2 rolls = admission (pass); subsequent = success (fail).
-      return call <= 2 ? 0.999 : 0;
-    });
-    c.doPreCareer(opt);
-  }
-
-  it("Naval Academy washout: age +1", () => {
-    const c = freshAcgCandidate(10);
-    const startAge = c.age;
-    washOut(c, "navalAcademy");
-    expect(c.age).toBe(startAge + 1);
-  });
-
-  it("Military Academy washout: age +1", () => {
-    const c = freshAcgCandidate(10);
-    c.attributes.social = 6;
-    const startAge = c.age;
-    washOut(c, "militaryAcademy");
-    expect(c.age).toBe(startAge + 1);
-  });
-});
-
-describe("Success-failure draft routing (PM p. 47)", () => {
-  function washOut(c: Character, opt: Parameters<Character["doPreCareer"]>[0]): void {
-    let call = 0;
-    vi.spyOn(Math, "random").mockImplementation(() => {
-      call += 1;
-      return call <= 2 ? 0.999 : 0;
-    });
-    c.doPreCareer(opt);
-  }
-
-  it("Naval Academy → preCareerDraftedInto=navy", () => {
-    const c = freshAcgCandidate(10);
-    washOut(c, "navalAcademy");
-    expect(c.acgState?.preCareerDraftedInto).toBe("navy");
-    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
-  });
-
-  it("Military Academy → preCareerDraftedInto=army", () => {
-    const c = freshAcgCandidate(10);
-    c.attributes.social = 6;
-    washOut(c, "militaryAcademy");
-    expect(c.acgState?.preCareerDraftedInto).toBe("army");
-    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
-  });
-
-  it("College washout → short term only, no draft", () => {
-    const c = freshAcgCandidate(10);
-    c.attributes.education = 12;
-    c.attributes.intelligence = 2; // force success fail
-    washOut(c, "college");
-    expect(c.acgState?.preCareerFirstTermShort).toBe(true);
-    expect(c.acgState?.preCareerDraftedInto).toBeFalsy();
-  });
-});
-
-describe("Admission-denial: no draft, no aging (PM p. 47 Rrev11)", () => {
-  it("Naval Academy admission failure leaves no draft flag and no aging", () => {
-    const c = freshAcgCandidate(8); // meets Soc 8+ gate
-    c.attributes.education = 2;     // tank admission DM
-    const startAge = c.age;
-    vi.spyOn(Math, "random").mockReturnValue(0); // admission rolls min → fail
-    const r = c.doPreCareer("navalAcademy");
-    expect(r.admitted).toBe(false);
-    expect(c.age).toBe(startAge);
-    expect(c.acgState?.preCareerDraftedInto).toBeFalsy();
-    expect(c.acgState?.preCareerFirstTermShort).toBeFalsy();
-  });
-});
 
 describe("beginAcg consumes draft flag (PM p. 47 Rrev2)", () => {
   function drafted(into: "army" | "navy" | "marines"): Character {

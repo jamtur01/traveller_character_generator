@@ -9,7 +9,7 @@
 // Merchant Prince (PM p. 60): "There is no initial training in the Merchants."
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 const acg = () =>
   getEdition("mt-megatraveller").data.advancedCharacterGeneration!;

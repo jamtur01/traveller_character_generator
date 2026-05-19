@@ -6,7 +6,7 @@
 // Aging crisis at any characteristic reduced to 0 → save 8+.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 type AttrName = "strength" | "dexterity" | "endurance" | "intelligence";
 interface AgingRow {

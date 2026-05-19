@@ -4,7 +4,7 @@
 //   Merchant schools — PM p. 65 (Special Duty Resolution).
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 describe("Navy special-duty schools (PM p. 57)", () => {
   const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;

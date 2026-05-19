@@ -9,7 +9,7 @@
 // Other:    1 Vehicle      2 Gambling   3 Brawling   4 Bribery     5 Blade Cbt  6 Gun Cbt
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 function st(service: string): (string | null)[] {
   const svcs = getEdition("ct-classic").data.services as

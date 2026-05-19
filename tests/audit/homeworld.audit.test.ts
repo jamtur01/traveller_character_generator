@@ -4,7 +4,7 @@
 // availability rules, default skills, starport X follow-up.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface DefaultSkill {
   skill: string;
@@ -40,28 +40,10 @@ describe("MT homeworld career availability gates (PM p. 14)", () => {
     expect(Array.isArray(avail)).toBe(true);
     const covered = new Set<string>();
     for (const rule of avail) for (const s of rule.services ?? []) covered.add(s);
-    const SERVICES = [
-      "army", "barbarians", "belters", "bureaucrats", "diplomats",
-      "doctors", "flyers", "hunters", "lawenforcers", "marines",
-      "merchants", "navy", "nobles", "other", "pirates", "rogues",
-      "sailors", "scientists", "scouts",
-    ];
-    // PM allows "nobles" with no homeworld restriction and "other" /
-    // "barbarians" can come from any world — they may not appear in a
-    // tech-requires rule but should be covered (the engine treats
-    // missing entries as "no restriction"). Verify every service is
-    // either covered or has an explicit unrestricted entry.
-    for (const svc of SERVICES) {
-      // Be lenient: it's OK to be uncovered (= no restriction); the
-      // assertion is the inverse — covered services should be one of
-      // the canonical 18.
-      if (covered.has(svc)) {
-        // pass
-      }
-    }
-    // Sanity: at least the four highest-tech careers (army/marines/
-    // navy/scientists with Pre-Stellar+) and Early Stellar+ careers
-    // (scouts/merchants/belters/pirates) are covered.
+    // High-tech careers (army/marines/navy/scientists at Pre-Stellar+) and
+    // Early Stellar+ careers (scouts/merchants/belters/pirates) must each
+    // appear in at least one availability rule. Unrestricted services like
+    // nobles/other/barbarians are intentionally absent.
     for (const svc of ["army", "marines", "navy", "scientists",
                        "scouts", "merchants", "belters", "pirates"]) {
       expect(covered.has(svc), `${svc} should appear in some availability rule`).toBe(true);

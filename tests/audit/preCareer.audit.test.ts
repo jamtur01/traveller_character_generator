@@ -4,7 +4,7 @@
 // adds explicit checks for the full set.
 
 import { describe, expect, it } from "vitest";
-import { getAcgCommon } from "../lib/traveller";
+import { getAcgCommon } from "../../lib/traveller";
 
 describe("Pre-career audit — PM p. 49", () => {
   it("College: admit 9+ (DM+2 Edu 9+), success 7+ (DM+2 Int 8+), honors 10+ (DM+1 Int 10+)", () => {

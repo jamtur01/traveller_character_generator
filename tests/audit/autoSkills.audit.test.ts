@@ -3,7 +3,7 @@
 // upon entering the service.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface AutoSkill {
   trigger: "service" | "rank" | "term";

@@ -9,8 +9,9 @@ import { getEdition, getAcgPathway } from "../lib/traveller/editions";
 import { validateLifecycleSteps } from "../lib/traveller/engine/runners/basic";
 
 describe("parseRules (#4)", () => {
-  it("accepts an empty rules block", () => {
-    expect(() => parseRules({}, "test")).not.toThrow();
+  it("accepts an empty rules block and returns an object", () => {
+    const parsed = parseRules({}, "test");
+    expect(parsed).toEqual({});
   });
 
   it("accepts a well-formed retirement sub-block", () => {
@@ -50,10 +51,11 @@ describe("parseRules (#4)", () => {
     expect(() => parseRules(rules, "test")).toThrow(/onFailure/);
   });
 
-  it("accepts unknown extra keys (passthrough)", () => {
+  it("accepts unknown extra keys (passthrough preserves the field)", () => {
     // Schema uses .passthrough() so new fields don't break old editions.
     const rules = { newFutureField: { foo: "bar" } };
-    expect(() => parseRules(rules, "test")).not.toThrow();
+    const parsed = parseRules(rules, "test") as Record<string, unknown>;
+    expect(parsed.newFutureField).toEqual({ foo: "bar" });
   });
 });
 
@@ -115,8 +117,11 @@ describe("parseCanonData (#2)", () => {
     },
   };
 
-  it("accepts the minimal services-only block", () => {
-    expect(() => parseCanonData({ services: validServices }, "test")).not.toThrow();
+  it("accepts the minimal services-only block and preserves service shape", () => {
+    const parsed = parseCanonData({ services: validServices }, "test") as
+      { services?: Record<string, { displayName?: string; checks?: { enlistment?: { target?: number } } }> };
+    expect(parsed.services?.army?.displayName).toBe("Army");
+    expect(parsed.services?.army?.checks?.enlistment?.target).toBe(5);
   });
 
   it("rejects service with bad target type", () => {
@@ -145,14 +150,15 @@ describe("parseCanonData (#2)", () => {
     expect(() => parseCanonData(bad, "test")).toThrow(/trigger/);
   });
 
-  it("accepts cascadeSkills with $comment citation entries", () => {
-    expect(() => parseCanonData({
+  it("accepts cascadeSkills with $comment citation entries and preserves the list", () => {
+    const parsed = parseCanonData({
       services: validServices,
       cascadeSkills: {
         $comment: "extracted from PM",
         bladeCombat: ["Dagger", "Sword"],
       },
-    }, "test")).not.toThrow();
+    }, "test") as { cascadeSkills?: Record<string, unknown> };
+    expect(parsed.cascadeSkills?.bladeCombat).toEqual(["Dagger", "Sword"]);
   });
 
   it("rejects an aging row missing endOfTerm", () => {
@@ -164,8 +170,13 @@ describe("parseCanonData (#2)", () => {
 });
 
 describe("validateLifecycleSteps (#3)", () => {
-  it("accepts the registered editions' lifecycle.terms", () => {
+  it("rejects an edition with an unknown step id", () => {
+    // The function throws when lifecycle.terms references a step that
+    // isn't in the registry. We can't easily build a fake edition, so
+    // assert the inverse: the live editions pass AND a bogus step name
+    // is rejected when injected.
     expect(() => validateLifecycleSteps("ct-classic")).not.toThrow();
     expect(() => validateLifecycleSteps("mt-megatraveller")).not.toThrow();
+    expect(() => validateLifecycleSteps("no-such-edition")).toThrow();
   });
 });

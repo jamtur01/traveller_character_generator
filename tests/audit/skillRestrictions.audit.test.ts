@@ -6,7 +6,7 @@
 // Override: roll 2D for 7+; failure forfeits the skill roll.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface HomeworldSkillRules {
   overrideTarget?: number;

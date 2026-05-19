@@ -62,13 +62,12 @@ describe("musterOutBenefit — outcome descriptions", () => {
     c.service = "marines";
     // Marine benefit roll 4 → blade. doBladeBenefit picks one and adds the
     // weapon name to benefits + level 0 skill. The log must only mention the
-    // weapon once.
+    // weapon once, as the bare weapon name.
     vi.spyOn(Math, "random").mockReturnValue(3 / 6 + 0.001);
     c.musterOutBenefit(0);
-    const entry = c.musterLog[0];
-    // The chosen blade appears as a benefit name, never as "<name>-0".
+    const entry = c.musterLog[0]!;
     expect(entry).not.toMatch(/-0/);
-    expect(entry).toBeTruthy();
+    expect(entry).toBe(c.bladeBenefit);
     vi.restoreAllMocks();
   });
 });

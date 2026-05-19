@@ -3,7 +3,7 @@
 // services.<name>.musterOut.{cash,benefits}.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface MusterOut {
   cash: (number | null)[];

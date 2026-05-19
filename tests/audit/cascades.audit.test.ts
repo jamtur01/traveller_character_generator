@@ -9,7 +9,7 @@
 // printed cell into multiple constituent skills.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 describe("CT cascade skills (TTB p. 25)", () => {
   const cs = getEdition("ct-classic").data.cascadeSkills as

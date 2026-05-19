@@ -3,7 +3,7 @@
 // per-pathway summary.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 function checklist(pathway: string): string[] {
   const acg = getEdition("mt-megatraveller").data.advancedCharacterGeneration!;

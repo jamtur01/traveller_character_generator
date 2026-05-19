@@ -10,7 +10,7 @@
 //   2: MCG. 3: SEH. 0: Purple Heart.
 
 import { describe, expect, it } from "vitest";
-import { getAcgCommon } from "../lib/traveller";
+import { getAcgCommon } from "../../lib/traveller";
 
 interface DecorationTier { minMargin: number; award: string; sehPromotion?: boolean }
 interface BPAward { event: string; points: number }

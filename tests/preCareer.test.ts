@@ -22,6 +22,12 @@ function freshAcgCandidate(attrs = 12): Character {
   return c;
 }
 
+/** Exact level of a skill (not the array index that checkSkill returns).
+ *  Returns -1 if the skill is absent. */
+function skillLevel(c: Character, skill: string): number {
+  return c.skills.find(([n]) => n === skill)?.[1] ?? -1;
+}
+
 describe("doPreCareer: College", () => {
   it("max rolls → admitted + graduated + honors + commissioned (NOTC)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
@@ -75,15 +81,15 @@ describe("doPreCareer: Naval Academy", () => {
     expect(r.autoEnlistPathway).toBe("navy");
   });
 
-  it("Graduates receive some Naval Academy skills", () => {
+  it("Graduates with max rolls receive Vacc Suit-1, Navigation-1, Engineering-1", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
     c.doPreCareer("navalAcademy");
     // 4+ on 1D for each of Vacc Suit, Navigation, Engineering. With
-    // forced-high Math.random the 1D = 6 so all pass.
-    expect(c.checkSkill("Vacc Suit")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Navigation")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Engineering")).toBeGreaterThanOrEqual(0);
+    // forced-high Math.random the 1D = 6 so all pass at level 1.
+    expect(skillLevel(c, "Vacc Suit")).toBe(1);
+    expect(skillLevel(c, "Navigation")).toBe(1);
+    expect(skillLevel(c, "Engineering")).toBe(1);
   });
 
   it("Rrev11: admission failure does NOT age — character tries another path", () => {
@@ -107,12 +113,12 @@ describe("doPreCareer: Naval Academy", () => {
 });
 
 describe("doPreCareer: Military Academy", () => {
-  it("Graduates always receive Combat Rifleman", () => {
+  it("Graduates always receive Combat Rifleman (level 1 from automatic skills)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
     const r = c.doPreCareer("militaryAcademy");
     expect(r.graduated).toBe(true);
-    expect(c.checkSkill("Combat Rifleman")).toBeGreaterThanOrEqual(0);
+    expect(skillLevel(c, "Combat Rifleman")).toBe(1);
     expect(r.autoEnlistPathway).toBe("mercenary");
   });
 
@@ -138,8 +144,11 @@ describe("doPreCareer: Medical School", () => {
     const startEdu = c.attributes.education;
     const r = c.doPreCareer("medicalSchool");
     expect(r.graduated).toBe(true);
+    // Medical-3 is the automatic skill grant; honors adds another +1 for
+    // Medical-4. With max rolls the character also makes honors here, so
+    // assert "at least Medical-3" — the next test pins the honors case.
     expect(c.checkSkillLevel("Medical", 3)).toBe(true);
-    expect(c.checkSkill("Admin")).toBeGreaterThanOrEqual(0);
+    expect(skillLevel(c, "Admin")).toBe(1);
     expect(c.attributes.education).toBe(Math.min(15, startEdu + 1));
   });
 
@@ -149,8 +158,8 @@ describe("doPreCareer: Medical School", () => {
     c.doPreCareer("college");
     const r = c.doPreCareer("medicalSchool");
     expect(r.honors).toBe(true);
-    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkillLevel("Medical", 4)).toBe(true);
+    expect(skillLevel(c, "Computer")).toBe(1);
+    expect(skillLevel(c, "Medical")).toBe(4);
   });
 
   it("Honors-gate (R5): rejects medical school without honors prereq", () => {
@@ -173,17 +182,18 @@ describe("doPreCareer: Medical School", () => {
 });
 
 describe("doPreCareer: Flight School", () => {
-  it("Graduates receive Ship's Boat, Navigation, and Pilot (1+)", () => {
+  it("Naval Academy honors + Flight School (max rolls): Ship's Boat-1, Navigation-2, Pilot-3", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgCandidate(12);
     // Flight School admission requires Naval Academy honors or commission;
-    // run Naval Academy first to satisfy the prereq.
+    // run Naval Academy first to satisfy the prereq. Naval Academy grants
+    // Navigation-1, Flight School adds another point.
     c.doPreCareer("navalAcademy");
     const r = c.doPreCareer("flightSchool");
     expect(r.graduated).toBe(true);
-    expect(c.checkSkill("Ship's Boat")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Navigation")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkillLevel("Pilot", 1)).toBe(true);
+    expect(skillLevel(c, "Ship's Boat")).toBe(1);
+    expect(skillLevel(c, "Navigation")).toBe(2);
+    expect(skillLevel(c, "Pilot")).toBe(3); // 1D-3+max die roll → 3
   });
 });
 

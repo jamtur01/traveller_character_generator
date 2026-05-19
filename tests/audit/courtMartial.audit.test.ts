@@ -23,7 +23,7 @@
 //   10: death/escape killing 1D guards, KCr100
 
 import { describe, expect, it } from "vitest";
-import { getAcgCommon } from "../lib/traveller";
+import { getAcgCommon } from "../../lib/traveller";
 
 interface OutcomeRow { roll: number; result: string }
 interface DmRow { when: Record<string, unknown>; dm: number }
