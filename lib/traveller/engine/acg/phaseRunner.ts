@@ -124,9 +124,12 @@ export function runPhases(spec: PathwaySpec, ctx: ResolveContext): void {
     if (phase.skip?.(ctx)) continue;
     const target = phase.target(ctx);
     if (target === "none") continue;
-    const dm = phase.dm(ctx);
-    const r = rollPhaseDice(ctx.ch, phase.phase, target, dm);
-    const roll: PhaseRoll = { roll: r.roll, margin: r.margin, success: r.success, dm };
+    const r = rollPhaseDice(ctx.ch, phase.phase, target, phase.dm(ctx));
+    // Use the cached dm from rollPhaseDice — on resume, phase.dm(ctx)
+    // can return a different value if its inputs were mutated by a
+    // logRoll closure (e.g., promotion penalty consumption). The
+    // cached value matches what the cached roll was computed against.
+    const roll: PhaseRoll = { roll: r.roll, margin: r.margin, success: r.success, dm: r.dm };
     if (phase.logRoll) {
       applyOnce(ctx.ch, `${phase.phase}-logged`, () => phase.logRoll!(ctx, roll));
     }
@@ -150,22 +153,39 @@ export function runPhases(spec: PathwaySpec, ctx: ResolveContext): void {
       // applyOnce only runs the callback the first time; on resume
       // halt is undefined but endChargen state (if any) was already
       // applied. Use chargenStatus to detect the halt path.
-      if (ctx.ch.isChargenEnded) return;
+      if (ctx.ch.isChargenEnded) {
+        finalizeAndComplete(spec, ctx);
+        return;
+      }
       if (halt?.endChargen) {
         const failure = halt.endChargen;
         applyOnce(ctx.ch, `${phase.phase}-endChargen`, () => {
           if (failure.kind === "deceased") ctx.ch.endChargenDeceased(failure.reason);
           else ctx.ch.endChargenRetired(failure.reason, failure.withPension);
         });
+        finalizeAndComplete(spec, ctx);
         return;
       }
     }
-    if (roll.margin === 0 && phase.onExact) {
+    // onExact fires when the EFFECTIVE margin lands exactly on 0 —
+    // either the raw roll matched the target, or post-mitigation
+    // pushed a failed roll back to 0 (BP-saved). Both cases count as
+    // "wounded but survived" for the Purple Heart pattern.
+    if (effectiveMargin === 0 && phase.onExact) {
       applyOnce(ctx.ch, `${phase.phase}-exact`, () => phase.onExact!(ctx, roll));
     }
   }
+  finalizeAndComplete(spec, ctx);
+}
+
+/** Run the pathway's finalize hook (if any) and mark the year complete.
+ *  Called on both clean phase exhaust AND halt paths — a character
+ *  invalided out on a combat assignment still served on it; finalize
+ *  records the Combat Ribbon and pushes to assignmentHistory. */
+function finalizeAndComplete(spec: PathwaySpec, ctx: ResolveContext): void {
   if (spec.finalize) {
-    applyOnce(ctx.ch, "finalize", () => spec.finalize!(ctx));
+    // Namespaced key so a future phase named "finalize" can't collide.
+    applyOnce(ctx.ch, "pathway-finalize", () => spec.finalize!(ctx));
   }
   markComplete(ctx.ch);
 }

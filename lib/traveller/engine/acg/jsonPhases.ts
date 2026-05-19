@@ -246,6 +246,7 @@ function buildDecoration(p: PhaseDecoration): PhaseDef {
     logRoll: (ctx, r) => ctx.ch.log(rollEv(
       "Decoration", r, ctx.res.decoration,
       `${ctx.assignment} (margin ${r.margin})`,
+      /*marginIsSuccess*/ true,
     )),
     mitigation: (ctx, r): MitigationRequest => ({
       rollName: "decoration",
@@ -318,7 +319,22 @@ function buildBonus(p: PhaseBonus, callbacks: PathwayCallbacks): PhaseDef {
  *  glue stashes it on `res` via a typed extension. */
 function bonusTargetOf(ctx: ResolveContext): import("./types").ResolutionTarget {
   const res = ctx.res as typeof ctx.res & { bonus?: import("./types").ResolutionTarget };
+  if (res.bonus === undefined) warnBonusMissing(ctx.assignment);
   return res.bonus ?? "none";
+}
+
+const BONUS_MISSING_WARNED = new Set<string>();
+function warnBonusMissing(assignment: string): void {
+  if (BONUS_MISSING_WARNED.has(assignment)) return;
+  BONUS_MISSING_WARNED.add(assignment);
+  // Surface the misconfiguration once per assignment: the pathway's
+  // JSON config declares a bonus phase, but resolution.bonus is
+  // undefined. Either the JSON shouldn't list the phase, or the pathway
+  // glue should populate res.bonus.
+  console.warn(
+    `[acg] bonus phase configured but resolution.bonus undefined for ` +
+    `assignment "${assignment}" — phase will be skipped.`,
+  );
 }
 
 // --- Event helpers ---------------------------------------------------
@@ -326,16 +342,20 @@ function bonusTargetOf(ctx: ResolveContext): import("./types").ResolutionTarget 
 // Wrappers around the typed event constructors. Inline lazy-require so
 // the loader module doesn't bring in the entire history module at type-
 // check time on a hot import path.
+/** Construct a roll event. `marginIsSuccess`: decoration rolls log
+ *  "success" any time margin >= 0 (failure just yields no decoration);
+ *  other phases use the raw pass/fail flag. */
 function rollEv(
   name: string,
   r: { roll: number; margin: number; success: boolean; dm: number },
   resolutionTarget: import("./types").ResolutionTarget,
   context: string,
+  marginIsSuccess = false,
 ): ReturnType<typeof eventModule.event.roll> {
   return eventModule.event.roll(
     name, r.roll, r.dm,
     typeof resolutionTarget === "number" ? resolutionTarget : 0,
-    name === "Decoration" ? r.margin >= 0 : r.success,
+    marginIsSuccess ? r.margin >= 0 : r.success,
     context,
   );
 }

@@ -20,7 +20,7 @@ import {
   type StructuredDm,
 } from "../tables";
 import { applySpecialAssignment } from "../schools";
-import { applyAcgSkillCell } from "./mercenary";
+import { applyAcgSkillCell } from "../skills";
 import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
@@ -428,6 +428,22 @@ const NAVY_CALLBACKS: PathwayCallbacks = {
 };
 
 const NAVY_SPEC_CACHE = new Map<string, PathwaySpec>();
+export function clearNavySpecCache(): void {
+  NAVY_SPEC_CACHE.clear();
+}
+export function validateNavyConfig(editionId: string): void {
+  const acg = getEdition(editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  if (!acg) return;
+  const data = acg.navy as (NavyData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+    combatAssignments?: string[];
+  }) | undefined;
+  if (!data?.resolveAssignment) return;
+  buildPathwaySpecFromConfig(data.resolveAssignment, NAVY_CALLBACKS, {
+    combatAssignments: () => data.combatAssignments ?? [],
+  });
+}
 function getNavySpec(ch: Character): PathwaySpec {
   let spec = NAVY_SPEC_CACHE.get(ch.editionId);
   if (spec) return spec;
@@ -492,10 +508,17 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   }
 
   const res = lookupResolution(resTable, assignment);
+  // decorationDmStrategy: negative = take -|N| on survival in exchange
+  // for +|N| on decoration; positive reverses. Symmetric handling
+  // matches mercenary (previously navy ignored the positive half and
+  // silently dropped the player's "+1/-1" or "+2/-2" choice).
   const decStrategy = ch.requireAcgState().decorationDmStrategy;
+  const survivalDmFromStrategy =
+    -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
   const dms = {
-    survival: applyDmRules(resTable.dms, ch, "survival") + (decStrategy < 0 ? decStrategy : 0),
-    decoration: applyDmRules(resTable.dms, ch, "decoration") - (decStrategy < 0 ? decStrategy : 0),
+    survival: applyDmRules(resTable.dms, ch, "survival") + survivalDmFromStrategy,
+    decoration: applyDmRules(resTable.dms, ch, "decoration")
+      + Math.abs(decStrategy) * (decStrategy < 0 ? 1 : -1),
     promotion: applyDmRules(resTable.dms, ch, "promotion"),
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
@@ -657,6 +680,16 @@ function offerNavyBranchChange(ch: Character): void {
   });
 }
 
+/** Reset per-term navy state. The decoration-DM tradeoff is a per-
+ *  assignment player choice; without an explicit reset, a value set in
+ *  one term's preRun prompt persists into the next term and silently
+ *  biases later rolls. injuredThisYear is cleared as a safety net. */
+export function navyStartOfTerm(ch: Character): void {
+  if (!ch.acgState) return;
+  ch.acgState.injuredThisYear = false;
+  ch.acgState.decorationDmStrategy = 0;
+}
+
 export function getNavyPathway() {
   return {
     pathway: PATHWAY,
@@ -668,5 +701,6 @@ export function getNavyPathway() {
     specialAssignment: navySpecialAssignment,
     retention: navyRetention,
     reenlist: navyReenlist,
+    startOfTerm: navyStartOfTerm,
   };
 }

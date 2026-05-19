@@ -78,10 +78,13 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
   const c = new Character();
   c.editionId = opts.edition;
   c.showHistory = opts.verbose ? "verbose" : "simple";
-  c.generateHomeworld();
+  // Set choiceMode before generateHomeworld so that any homeworld
+  // generation step that consults choiceMode (e.g., future interactive
+  // homeworld picks) sees the configured mode rather than the default.
   c.choiceMode = (opts.interactiveMode && opts.supportsInteractive)
     ? "interactive"
     : "auto";
+  c.generateHomeworld();
   if (opts.useAcg && editionHasAcg(opts.edition) && opts.acgPathway) {
     c.useAcg = true;
     c.acgPathway = opts.acgPathway;
@@ -207,7 +210,11 @@ export function resolvePending(
   // queued from addSkill); decrement only when the entire chain drains.
   if (c.pendingMusterRoll) {
     c.pendingMusterRoll = false;
-    c.musterRolls -= 1;
+    // Defensive: never decrement below zero. The sentinel/decrement
+    // pairing is supposed to be exact, but a redundant drain (e.g., a
+    // nested choice chain finalized via another path first) must not
+    // corrupt the roll budget.
+    if (c.musterRolls > 0) c.musterRolls -= 1;
     if (c.musterRolls === 0) {
       c.musterOutPay();
       c.markMustered();
@@ -233,7 +240,10 @@ export function resolvePending(
  *  term's outcome (skill picks pending, deceased, mustered out, etc.). */
 export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
   const c = cloneCharacter(snap.character);
-  if (c.service === "nobles") {
+  // CT nobles rank-from-social: starting rank is social - 10, capped at 5.
+  // MT defines `nobles` differently (Position check at PM data line 2390);
+  // applying CT's rank derivation there would corrupt MT noble starting state.
+  if (c.editionId === "ct-classic" && c.service === "nobles") {
     if (c.attributes.social < 10) c.attributes.social = 10;
     const startingRank = c.attributes.social - 10;
     if (c.rank < startingRank && startingRank >= 1 && startingRank <= 5) {
@@ -241,7 +251,12 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
       c.commissioned = true;
     }
   }
-  c.doServiceTermStep();
+  try {
+    c.doServiceTermStep();
+  } catch (err) {
+    if (!(err instanceof ChoicePendingError)) throw err;
+    return { character: c, phase: "term" };
+  }
   if (c.deceased) return { character: c, phase: "end" };
   if (c.skillPoints > 0) {
     return { character: c, phase: pickSkillPhase(c) };
@@ -296,7 +311,12 @@ function finishTerm(c: Character): ChargenSnapshot {
   if (!c.deceased) c.doAging();
   if (c.deceased) return { character: c, phase: "end" };
   if (!c.shortTermThisTerm && c.activeDuty && !c.deceased) {
-    c.doReenlistmentStep();
+    try {
+      c.doReenlistmentStep();
+    } catch (err) {
+      if (!(err instanceof ChoicePendingError)) throw err;
+      return { character: c, phase: "term" };
+    }
   }
   if (c.deceased) return { character: c, phase: "end" };
   if (!c.activeDuty) return enterMuster(c);
@@ -309,13 +329,26 @@ export function attemptMusterOut(snap: ChargenSnapshot): ChargenSnapshot {
   const prev = snap.character;
   if (prev.mandatoryReenlistment) return snap;
   const c = cloneCharacter(prev);
-  c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
+  // Only stamp "voluntary muster" if chargen hasn't already ended with
+  // a more specific reason (deceased, court-martial discharge, etc.).
+  // Otherwise the original reason would be overwritten by the generic
+  // voluntary-muster string.
+  if (!c.isChargenEnded) {
+    c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
+  }
   return enterMuster(c);
 }
 
 /** Shared muster-out entry: enters the mustered status, computes roll
  *  count, and routes to end (no rolls) or muster (rolls pending). */
 function enterMuster(c: Character): ChargenSnapshot {
+  // Already entered muster — don't reset musterRolls (would discard
+  // already-spent rolls if the UI dispatches enterMuster twice).
+  if (c.musteredOut) {
+    if (c.musterRolls === 0) return { character: c, phase: "end" };
+    if (c.musterCashUsed >= maxCashRolls(c)) return { character: c, phase: "muster_no_cash" };
+    return { character: c, phase: "muster" };
+  }
   c.enterMustered();
   c.musterRolls = c.musterOutRolls();
   if (c.musterRolls === 0) {
@@ -336,10 +369,14 @@ export function musterChoice(
   const c = cloneCharacter(snap.character);
   const cashDM = cashDmFor(c);
   const benefitsDM = benefitDmFor(c);
+  // Increment musterCashUsed BEFORE musterOutCash since the call can
+  // throw ChoicePendingError mid-cascade. Without this ordering, a
+  // paused cash roll wouldn't count toward maxCashRolls on resume — the
+  // user could pick "cash" again past the cap.
+  if (kind === "cash") c.musterCashUsed += 1;
   try {
     if (kind === "cash") {
       c.musterOutCash(cashDM);
-      c.musterCashUsed += 1;
     } else {
       c.musterOutBenefit(benefitsDM);
     }

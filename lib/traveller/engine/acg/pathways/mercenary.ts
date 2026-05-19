@@ -31,6 +31,7 @@ import {
   type StructuredDm,
 } from "../tables";
 import { applyMercenarySchool } from "../schools";
+import { applyAcgSkillCell } from "../skills";
 import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
@@ -296,6 +297,28 @@ const MERCENARY_CALLBACKS: PathwayCallbacks = {
 /** Lazy-built PathwaySpec, cached per edition. The build pulls the
  *  JSON config + callback registry. */
 const SPEC_CACHE = new Map<string, PathwaySpec>();
+/** Drop cached PathwaySpecs. Required when edition JSON is reloaded
+ *  (tests, hot-reload) so the next resolveAssignment rebuilds from the
+ *  updated config and callback registry. */
+export function clearMercenarySpecCache(): void {
+  SPEC_CACHE.clear();
+}
+/** Build (and discard) the PathwaySpec for an edition. Surfaces missing
+ *  callback names or malformed phase configs at edition load instead of
+ *  at first ACG run. No-op if the edition doesn't declare a mercenary
+ *  block or resolveAssignment config. */
+export function validateMercenaryConfig(editionId: string): void {
+  const acg = getEdition(editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  if (!acg) return;
+  const data = acg.mercenary as (MercenaryData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+  }) | undefined;
+  if (!data?.resolveAssignment) return;
+  buildPathwaySpecFromConfig(data.resolveAssignment, MERCENARY_CALLBACKS, {
+    combatAssignments: () => data.combatAssignments ?? [],
+  });
+}
 function getSpec(ch: Character): PathwaySpec {
   let spec = SPEC_CACHE.get(ch.editionId);
   if (spec) return spec;
@@ -436,27 +459,6 @@ function rollMercenarySkillFromColumn(ch: Character, col: string): void {
   applyAcgSkillCell(ch, skill, `mercenary ${col}`);
 }
 
-/** Apply an ACG skill table cell to the character. Cells may be plain
- *  skill names ("Gun Combat", "Heavy Weapons") or "+1 Attribute" forms.
- *  `source` is recorded on the resulting ev.skillLearned so the history
- *  panel attributes the grant to its originating table/school. */
-export function applyAcgSkillCell(ch: Character, cell: string, source?: string): void {
-  const attrMatch = cell.match(/^\+(\d+)\s+(\w+)$/);
-  if (attrMatch) {
-    const delta = parseInt(attrMatch[1]!, 10);
-    const a = attrMatch[2]!.toLowerCase();
-    const attr =
-      a.startsWith("str") ? "strength" :
-      a.startsWith("dex") ? "dexterity" :
-      a.startsWith("end") ? "endurance" :
-      a.startsWith("int") ? "intelligence" :
-      a.startsWith("edu") ? "education" :
-      a.startsWith("soc") ? "social" : null;
-    if (attr) ch.improveAttribute(attr, delta);
-    return;
-  }
-  ch.addSkill(cell, 1, source);
-}
 
 /** Advance the rank by one step per the pathway's rank ladder. */
 function promoteMercenary(ch: Character): void {

@@ -11,7 +11,7 @@ import type { Character } from "../../character";
 import { getEdition, getAcgPathway } from "../../editions";
 import { roll, arnd } from "../../random";
 import { awardBrownie } from "./awards";
-import { applyAcgSkillCell } from "./pathways/mercenary";
+import { applyAcgSkillCell } from "./skills";
 import { recordTransfer } from "./types";
 import { event as ev } from "../../history";
 
