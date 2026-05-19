@@ -17,6 +17,7 @@ import { ctClassicHooks } from "./ct-classic/hooks";
 import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
 import { parseRules } from "./schema";
+import { validateEditionAcgConfigs } from "../engine/acg";
 
 function buildEdition(
   raw: unknown, hooks: Edition["hooks"], id: string,
@@ -38,9 +39,20 @@ const REGISTRY: Record<string, Edition> = {
 
 export const DEFAULT_EDITION_ID = "ct-classic";
 
+const ACG_VALIDATED = new Set<string>();
+
 export function getEdition(id: string = DEFAULT_EDITION_ID): Edition {
   const ed = REGISTRY[id];
   if (!ed) throw new Error(`Unknown edition: ${id}`);
+  if (!ACG_VALIDATED.has(id)) {
+    // Lazy first-call ACG config validation. Pathway validators call
+    // getEdition; the `has(id)` short-circuit makes that re-entry a
+    // no-op. The validators run only at runtime (first getEdition call
+    // post module init), so the editions ↔ engine/acg import cycle
+    // resolves cleanly under ES module semantics.
+    ACG_VALIDATED.add(id);
+    validateEditionAcgConfigs(id);
+  }
   return ed;
 }
 

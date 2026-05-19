@@ -94,15 +94,21 @@ export function rollPhaseDice(
   phase: SubStepKey,
   target: ResolutionTarget,
   dm: number,
-): { success: boolean; margin: number; roll: number } {
-  if (target === "auto") return { success: true, margin: 0, roll: 0 };
-  if (target === "none") return { success: false, margin: -99, roll: 0 };
+): { success: boolean; margin: number; roll: number; dm: number } {
+  if (target === "auto") return { success: true, margin: 0, roll: 0, dm };
+  if (target === "none") return { success: false, margin: -99, roll: 0, dm };
   const cache = getSubStep(ch, phase);
   if (cache.roll !== undefined && cache.margin !== undefined) {
+    // Return the dm cached at first-roll time, NOT the live dm param.
+    // The two can diverge if the live dm reads state that's been
+    // mutated between the original roll and the resumed pass (e.g.,
+    // promotion penalty consumed in logRoll). The cached value is the
+    // one the cached margin was computed against.
     return {
       roll: cache.roll,
       success: cache.success ?? cache.margin >= 0,
       margin: cache.margin,
+      dm: cache.dm ?? dm,
     };
   }
   const r = roll(2);
@@ -112,7 +118,7 @@ export function rollPhaseDice(
   cache.target = target;
   cache.margin = margin;
   cache.success = margin >= 0;
-  return { roll: r, margin, success: margin >= 0 };
+  return { roll: r, margin, success: margin >= 0, dm };
 }
 
 /** Cache the result of an auto-mitigation spend before a queueBpReview

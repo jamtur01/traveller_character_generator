@@ -20,17 +20,7 @@ import { extendedHex, numCommaSep } from "@/lib/traveller/formatting";
 import type { AttributeKey, ServiceKey } from "@/lib/traveller/types";
 import { downloadCharacterSheetPdf } from "@/lib/pdfSheet";
 
-type Phase =
-  | "start"
-  | "pre_career"
-  | "acg_enlist"
-  | "career"
-  | "term"
-  | "skill_basic"
-  | "skill_adv"
-  | "muster"
-  | "muster_no_cash"
-  | "end";
+type Phase = session.ChargenPhase;
 
 
 /** Mercenary combat arms available in the enlistment dropdown, sourced
@@ -84,9 +74,17 @@ export default function Home() {
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
+  // Parallel ref for phase. Without it, async handlers see the phase
+  // they captured at closure time, not the current phase — same staleness
+  // class as characterRef. Update on the same tick as commit().
+  const phaseRef = useRef<Phase>("start");
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const commit = (c: Character, p: Phase) => {
     characterRef.current = c;
+    phaseRef.current = p;
     setCharacter(c);
     setPhase(p);
   };
@@ -116,10 +114,17 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     const result = session.applyPreCareer(
-      { character: prev, phase: phase as session.ChargenPhase },
+      { character: prev, phase: phaseRef.current },
       opt,
     );
     applySnap(result.snapshot);
+    if (opt === "skip") {
+      // Drop hints stamped by a previous pre-career attempt so the
+      // enlistment form doesn't carry stale auto-populated values.
+      setAcgPathway("");
+      setAcgService("army");
+      setAcgFleet("imperialNavy");
+    }
     if (result.hints) {
       if (result.hints.acgPathway) setAcgPathway(result.hints.acgPathway);
       if (result.hints.acgService) setAcgService(result.hints.acgService);
@@ -131,7 +136,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.resolvePending(
-      { character: prev, phase: phase as session.ChargenPhase },
+      { character: prev, phase: phaseRef.current },
       choiceId, optionIdx,
     ));
   };
@@ -140,7 +145,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.enlist(
-      { character: prev, phase: phase as session.ChargenPhase },
+      { character: prev, phase: phaseRef.current },
       {
         verbose,
         preferredService,
@@ -159,7 +164,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.runTerm({
-      character: prev, phase: phase as session.ChargenPhase,
+      character: prev, phase: phaseRef.current,
     }));
   };
 
@@ -167,7 +172,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.attemptMusterOut({
-      character: prev, phase: phase as session.ChargenPhase,
+      character: prev, phase: phaseRef.current,
     }));
   };
 
@@ -175,7 +180,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.pickSkill(
-      { character: prev, phase: phase as session.ChargenPhase },
+      { character: prev, phase: phaseRef.current },
       table,
     ));
   };
@@ -184,7 +189,7 @@ export default function Home() {
     const prev = characterRef.current;
     if (!prev) return;
     applySnap(session.musterChoice(
-      { character: prev, phase: phase as session.ChargenPhase },
+      { character: prev, phase: phaseRef.current },
       kind,
     ));
   };

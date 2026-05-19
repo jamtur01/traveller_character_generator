@@ -23,9 +23,8 @@ import {
   applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
 } from "../tables";
-import { applyAcgSkillCell } from "./mercenary";
+import { applyAcgSkillCell } from "../skills";
 import { applyScoutSchool } from "../schools";
-import { resetIfComplete } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
@@ -237,10 +236,6 @@ export function scoutRollAssignment(ch: Character): string {
 }
 
 export function scoutResolveAssignment(ch: Character, assignment: string): void {
-  // Reset per-year sub-step cache if a prior resolveAssignment ran to
-  // completion (the runner clears at year boundary, but direct test
-  // invocation can call us multiple times in the same notional year).
-  resetIfComplete(ch);
   const data = dataFor(ch);
   // Transfer assignment (Field → Bureaucracy, per manual p. 56). The Scout
   // may decline; if declined, reroll once. If transfer is on the reroll, it
@@ -314,6 +309,21 @@ const SCOUT_CALLBACKS: PathwayCallbacks = {
 };
 
 const SCOUT_SPEC_CACHE = new Map<string, PathwaySpec>();
+export function clearScoutSpecCache(): void {
+  SCOUT_SPEC_CACHE.clear();
+}
+export function validateScoutConfig(editionId: string): void {
+  const acg = getEdition(editionId).data.advancedCharacterGeneration as
+    Record<string, unknown> | undefined;
+  if (!acg) return;
+  const data = acg.scout as (ScoutData & {
+    resolveAssignment?: ResolveAssignmentConfig;
+  }) | undefined;
+  if (!data?.resolveAssignment) return;
+  buildPathwaySpecFromConfig(data.resolveAssignment, SCOUT_CALLBACKS, {
+    combatAssignments: () => [],
+  });
+}
 function getScoutSpec(ch: Character): PathwaySpec {
   let spec = SCOUT_SPEC_CACHE.get(ch.editionId);
   if (spec) return spec;

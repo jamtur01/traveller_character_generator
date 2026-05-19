@@ -6,6 +6,42 @@
 
 import { getEdition } from "../editions";
 import type { AcgData, AcgPathway } from "../editions/types";
+import {
+  clearMercenarySpecCache, validateMercenaryConfig,
+} from "./acg/pathways/mercenary";
+import {
+  clearNavySpecCache, validateNavyConfig,
+} from "./acg/pathways/navy";
+import {
+  clearScoutSpecCache, validateScoutConfig,
+} from "./acg/pathways/scout";
+import {
+  clearMerchantSpecCache, validateMerchantConfig,
+} from "./acg/pathways/merchantPrince";
+
+/** Purge every pathway's PathwaySpec cache. Use when JSON config has
+ *  been reloaded (test fixtures, hot module reload) so subsequent
+ *  resolveAssignment calls rebuild the spec against the new config and
+ *  callback registry rather than serving the stale build. */
+export function clearAcgSpecCaches(): void {
+  clearMercenarySpecCache();
+  clearNavySpecCache();
+  clearScoutSpecCache();
+  clearMerchantSpecCache();
+}
+
+/** Build (and discard) the PathwaySpec for every pathway the edition
+ *  declares. Surfaces missing callback names, malformed phase configs,
+ *  and unknown preRun hooks at edition load instead of at first ACG
+ *  run. No-op if the edition has no ACG data. Idempotency lives in the
+ *  edition registry — getEdition gates this on its own first-call set. */
+export function validateEditionAcgConfigs(editionId: string): void {
+  if (!editionHasAcg(editionId)) return;
+  validateMercenaryConfig(editionId);
+  validateNavyConfig(editionId);
+  validateScoutConfig(editionId);
+  validateMerchantConfig(editionId);
+}
 
 /** Returns true if the edition declares an advancedCharacterGeneration block. */
 export function editionHasAcg(editionId: string): boolean {
