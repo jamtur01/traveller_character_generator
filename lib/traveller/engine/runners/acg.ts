@@ -216,32 +216,56 @@ export function runAcgYear(ch: Character): void {
 export function runAcgTerm(ch: Character): void {
   if (!ch.acgState) throw new Error("Cannot run ACG term on non-ACG character");
   if (ch.deceased || !ch.activeDuty) return;
-  // PM p. 15: anagathics intent is declared before the term's first survival
-  // roll. Reset per-term flags and consult the standing order so the year-1
-  // survival roll sees the correct DM.
-  ch.anagathicsActiveThisTerm = false;
-  ch.anagathicsWithdrawalThisTerm = false;
-  ch.wantsAnagathicsThisTerm = false;
-  ch.preSurvivalAnagathicsHook();
+  // Resume detection: a prior runAcgYear paused on an interactive choice
+  // (pausedAtStep set, or year > 1 because a prior year completed and
+  // the next one started but paused). Re-entering runAcgTerm from the
+  // session layer must NOT re-fire startOfTerm, reset year, or re-roll
+  // anagathics — that would clobber mid-term state and re-queue every
+  // preRun prompt.
   const p = getPathwayImpl(ch);
-  if (p.startOfTerm) p.startOfTerm(ch);
-  ch.acgState.year = 1;
-  ch.acgState.promotedThisTerm = false;
-  const yearsAtTermStart = ch.acgState.yearsServed ?? 0;
+  const isResuming = ch.acgState.pausedAtStep != null
+    || (ch.acgState.year ?? 1) > 1
+    || (ch.acgState.termStartYearsServed !== undefined);
+  if (!isResuming) {
+    // PM p. 15: anagathics intent is declared before the term's first
+    // survival roll. Reset per-term flags and consult the standing order
+    // so the year-1 survival roll sees the correct DM.
+    ch.anagathicsActiveThisTerm = false;
+    ch.anagathicsWithdrawalThisTerm = false;
+    ch.wantsAnagathicsThisTerm = false;
+    ch.preSurvivalAnagathicsHook();
+    if (p.startOfTerm) p.startOfTerm(ch);
+    ch.acgState.year = 1;
+    ch.acgState.promotedThisTerm = false;
+    ch.acgState.termStartYearsServed = ch.acgState.yearsServed ?? 0;
+  }
+  const yearsAtTermStart = ch.acgState.termStartYearsServed ?? 0;
   // Rrev2: pre-career failure may force the first term to a short
   // 3-year term (PM p. 47). The flag fires on the very first term only;
   // we consume it here so subsequent terms run normally.
   const isFirstTerm = ch.terms === 0;
   const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort) ? 3 : 4;
-  if (isFirstTerm && ch.acgState.preCareerFirstTermShort) {
+  if (!isResuming && isFirstTerm && ch.acgState.preCareerFirstTermShort) {
     // The shortTerm flag is recorded in ev.termBegin (emitted in
     // doServiceTermStep); consume the marker so subsequent terms run normally.
     delete ch.acgState.preCareerFirstTermShort;
   }
-  for (let y = 0; y < termLength; y++) {
+  // When resuming, start at the current year (1-based), not 0. The
+  // for-loop iterates from year-1 (so year=2 → start at iteration 1).
+  const startY = isResuming ? (ch.acgState.year ?? 1) - 1 : 0;
+  for (let y = startY; y < termLength; y++) {
     if (ch.deceased || !ch.activeDuty) break;
     runAcgYear(ch);
+    // If the year paused on an interactive choice, bail — the session
+    // layer will re-enter runAcgTerm after resolve. Without this guard
+    // we'd advance the for-loop past the paused year on the next call.
+    if (ch.acgState.pausedAtStep != null) return;
   }
+  // Term completed all its years — clear the term-start snapshot and
+  // reset year so the next runAcgTerm call re-initializes (instead of
+  // being detected as "resuming" via the lingering year>1 sentinel).
+  delete ch.acgState.termStartYearsServed;
+  ch.acgState.year = 1;
   const yearsThisTerm = (ch.acgState.yearsServed ?? 0) - yearsAtTermStart;
   // Always advance terms by 1 if the character started the term, even if
   // they didn't complete all four years — the term counter records terms

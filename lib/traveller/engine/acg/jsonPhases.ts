@@ -18,6 +18,7 @@ import {
   type PathwaySpec, type PhaseDef, type PhaseFailResult,
   type ResolveContext,
 } from "./phaseRunner";
+import { alreadyApplied, markApplied } from "./subStepCache";
 import type { MitigationRequest } from "./browniePoints";
 
 // --- JSON config shape -----------------------------------------------
@@ -384,11 +385,20 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
   if (ctx.ch.choiceMode !== "interactive") return;
   if (ctx.res.decoration === "none") return;
   if (typeof ctx.res.survival !== "number" || typeof ctx.res.decoration !== "number") return;
+  // Mark applied BEFORE pickOrDefer (which throws ChoicePendingError in
+  // interactive mode). Without this gate every re-entry of runPhases —
+  // each "Run term" click while the choice is queued — would enqueue a
+  // fresh copy of the same prompt. The flag lives in the per-year
+  // thisYearOutcomes cache and is cleared at year boundary by the runner.
+  if (alreadyApplied(ctx.ch, "decorationDmTradeoff-prompted")) return;
+  markApplied(ctx.ch, "decorationDmTradeoff-prompted");
   ctx.ch.pickOrDefer({
     kind: "decorationDmTradeoff",
     label:
-      "Take a -N DM on survival in exchange for +N on decoration? " +
-      "(Negative survival ↔ positive decoration; pick 0 to keep things straight.)",
+      "Survival ↔ decoration DM tradeoff. Trade DM points between the " +
+      "survival roll and the decoration roll: a negative survival DM " +
+      "buys an equal positive decoration DM (or vice versa). Pick the " +
+      "balance for this assignment.",
     options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
       "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
     onResolve: (c, choice) => {

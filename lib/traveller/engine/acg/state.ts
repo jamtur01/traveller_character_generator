@@ -196,6 +196,13 @@ export interface AcgState {
    *  a character invalided/jailed mid-term gets a partial term that doesn't
    *  contribute the full 4 years. */
   yearsServed?: number;
+  /** Snapshot of yearsServed at the start of the current term. Captured
+   *  once when runAcgTerm enters a fresh term and consulted at term end
+   *  to compute yearsThisTerm. Persisted on acgState so a pause/resume
+   *  cycle (which re-enters runAcgTerm) reads the original value rather
+   *  than the post-paused current count. Cleared when the term
+   *  completes. */
+  termStartYearsServed?: number;
   /** Count of terms that were started but not completed (4 years). Used
    *  by musterOutRolls to discount benefits from short terms. */
   partialTerms?: number;

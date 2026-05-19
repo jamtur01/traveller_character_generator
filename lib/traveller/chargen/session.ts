@@ -240,6 +240,13 @@ export function resolvePending(
  *  runs the per-term step + skill picks. Routes phase based on the
  *  term's outcome (skill picks pending, deceased, mustered out, etc.). */
 export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
+  // If a player choice is still queued from a prior pause, refuse to
+  // advance — running the term would re-enter the paused step with the
+  // choice still unresolved, advancing dice rolls with default values
+  // for the un-chosen parameter (e.g., the decoration-DM tradeoff).
+  // The UI's PendingChoicesPanel renders alongside the Run term button,
+  // so the player has the resolve action in front of them.
+  if (snap.character.pendingChoices.length > 0) return snap;
   const c = cloneCharacter(snap.character);
   // CT nobles rank-from-social: starting rank is social - 10, capped at 5.
   // MT defines `nobles` differently (Position check at PM data line 2390);

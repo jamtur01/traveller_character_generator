@@ -17,23 +17,36 @@ export function doServiceTermStep(ch: Character): void {
       || ch.chargenStatus.kind === "shortTerm") {
     ch.resumeActive();
   }
-  // Reset per-term anagathics flags; intent for this term is set below
-  // from anagathicsStandingOrder (or by an explicit pre-survival call).
-  ch.anagathicsActiveThisTerm = false;
-  ch.anagathicsWithdrawalThisTerm = false;
-  ch.wantsAnagathicsThisTerm = false;
-  ch.log(ev.section("--------------------------------------------"));
+  // Resume detection (ACG only): a prior runAcgYear paused on a player
+  // choice (decoration-DM tradeoff, brownie-point review, etc.). The
+  // session layer re-enters doServiceTermStep after the choice resolves;
+  // we must NOT re-emit termBegin/section or reset anagathics flags on
+  // the resumed pass, or each Run-term click duplicates the term header.
+  const acgResuming = ch.useAcg && !!ch.acgState && (
+    ch.acgState.pausedAtStep != null
+    || ch.acgState.termStartYearsServed !== undefined
+  );
+  if (!acgResuming) {
+    // Reset per-term anagathics flags; intent for this term is set below
+    // from anagathicsStandingOrder (or by an explicit pre-survival call).
+    ch.anagathicsActiveThisTerm = false;
+    ch.anagathicsWithdrawalThisTerm = false;
+    ch.wantsAnagathicsThisTerm = false;
+    ch.log(ev.section("--------------------------------------------"));
+  }
   if (ch.useAcg && ch.acgState) {
     // ACG runs its own per-year cycle inside runAcgTerm.
-    const isFirstTerm = ch.terms === 0;
-    const shortTerm = isFirstTerm
-      && ch.acgState.preCareerFirstTermShort === true;
-    ch.log(ev.termBegin(
-      ch.terms + 1, ch.age,
-      shortTerm
-        ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
-        : undefined,
-    ));
+    if (!acgResuming) {
+      const isFirstTerm = ch.terms === 0;
+      const shortTerm = isFirstTerm
+        && ch.acgState.preCareerFirstTermShort === true;
+      ch.log(ev.termBegin(
+        ch.terms + 1, ch.age,
+        shortTerm
+          ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
+          : undefined,
+      ));
+    }
     runAcgTerm(ch);
     return;
   }

@@ -529,6 +529,15 @@ export class Character {
         (this.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince") ?? "mercenary",
       );
     }
+    // Record the attempt eagerly. attemptPreCareer may throw
+    // ChoicePendingError mid-flight (OTC commission branch picker etc.)
+    // — without an eager record the UI's "tried(option)" gate stays
+    // false, the school button stays visible, and the player can
+    // re-trigger the same pre-career roll repeatedly.
+    this.acgState.schoolsAttempted = this.acgState.schoolsAttempted ?? [];
+    if (!this.acgState.schoolsAttempted.includes(option)) {
+      this.acgState.schoolsAttempted.push(option);
+    }
     const result = attemptPreCareer(this, option);
     applyPreCareerResult(this, option, result);
     return {
