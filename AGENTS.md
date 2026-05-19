@@ -159,7 +159,7 @@ If you're working on JSON content, run `test:audit` first — failures there mea
 
 1. **LSP stale-cache diagnostics.** The TypeScript server in your editor will sometimes report `Character is missing properties X, Y, Z` or `Module has no exported member` when `tsc --noEmit` says exit 0. Trust `tsc`. Restart the TS server (⌘⇧P → "TypeScript: Restart TS Server").
 
-2. **Mocking randomness for `Character` constructor.** Mock installed before `new Character()` consumes 12 random calls for attribute rolls. Either install after construction or override `c.attributes` afterward.
+2. **Mocking randomness for `Character` constructor.** `new Character()` consumes 12 `Math.random` calls for attribute rolls (plus 2-3 for gender/name). Preferred: pass `new Character({ attributes: {...} })` to skip the attribute rolls entirely. Otherwise install the mock after construction, or pad the sequence with 12 leading values.
 
 3. **MT vs. CT cell labels.** MT uses canonical `"Blade Combat"`, CT uses abbreviated `"Blade Cbt"`. Both edition JSONs declare aliases via `cascadeAliases`. When writing tests, use the label the edition's JSON declares — don't assume CT-style.
 

@@ -1,13 +1,27 @@
-// Runtime validation for the edition `rules` block. The engine reads
-// nested paths from `edition.data.rules` in many places (skill cap,
-// attribute caps, reenlistment, retirement, muster-out rolls, etc.).
-// Previously each call site cast via `as { ... }`, which silently
-// accepted typos and structural drift. This schema validates once at
-// edition load (in `getEdition`) and throws on shape errors.
+// Runtime validation for edition JSON. The engine reads heavily-typed
+// data out of `edition.data.*`, and call sites historically cast via
+// `as { ... }`, which silently accepted typos and shape drift. This
+// module validates the load-bearing blocks once at edition load (in
+// `buildEdition`) and throws on shape errors.
 //
-// We model only the `rules` sub-object here. The rest of the edition
-// JSON (services, skill tables, ACG data) is consumed via existing
-// CanonData types and per-feature schemas in their own modules.
+// Coverage:
+//   - rules (parseRules) — typed view returned for engine consumption
+//   - services / cascadeSkills / aging / includesSkills /
+//     attributeAbbreviations / skillLabelRenames — parseCanonData
+//
+// Out of scope:
+//   - advancedCharacterGeneration block — validated separately at
+//     first getEdition() call via validateEditionAcgConfigs.
+//   - pdfExtraction / extractionNotes / sources / title / weapons —
+//     provenance metadata not consumed by the engine.
+//   - homeworld — declared on its own typed interface in
+//     engine/homeworld.ts; we accept any object here.
+//
+// Note on z.looseObject: zod 4 deprecated `.passthrough()`. The
+// replacement is `z.looseObject({...})`, which keeps unknown keys on
+// the parsed value (vs. `z.object` which strips them). We use loose
+// objects wherever the JSON includes `$rule` / `$comment` citation
+// keys or vendor-extension fields the schema doesn't yet model.
 
 import { z } from "zod";
 
@@ -22,7 +36,7 @@ const RankExtraRollSchema = z.object({
   additionalRolls: z.number(),
 });
 
-export const RulesSchema = z.object({
+export const RulesSchema = z.looseObject({
   // Skill-cap (PM p. 39 Int+Edu cap). Presence indicates the edition
   // enforces a per-character skill-level total cap.
   skillCap: z.unknown().optional(),
@@ -73,7 +87,7 @@ export const RulesSchema = z.object({
         male: z.string().optional(),
         female: z.string().optional(),
       }),
-      z.string(), // $rule / $comment citation
+      z.string(),
     ]),
   ).optional(),
   // Aging crisis (MT p. 47).
@@ -102,11 +116,11 @@ export const RulesSchema = z.object({
     perTermExceptions: z.record(z.string(), z.number()).optional(),
   }).optional(),
   // Muster DMs (per-rank, retired bonus).
-  musterDm: z.object({
+  musterDm: z.looseObject({
     cashTableDm: z.array(z.unknown()).optional(),
     benefitTableDm: z.array(z.unknown()).optional(),
     maxCashTableRolls: z.number().optional(),
-  }).passthrough().optional(),
+  }).optional(),
   // Marine Tradition (F5 — forced Large Blade for Marines).
   marineTradition: z.object({
     appliesToServices: z.array(z.string()).optional(),
@@ -127,39 +141,161 @@ export const RulesSchema = z.object({
     noCommissionFirstTerm: z.boolean().optional(),
   }).optional(),
   // Anagathics availability + survival DM.
-  anagathics: z.object({
-    eligibility: z.object({
+  anagathics: z.looseObject({
+    eligibility: z.looseObject({
       minAge: z.number().optional(),
       minTerms: z.number().optional(),
-    }).passthrough().optional(),
-    availability: z.object({
+    }).optional(),
+    availability: z.looseObject({
       target: z.number().optional(),
       dms: z.object({
         byStarport: z.record(z.string(), z.number()).optional(),
         byTech: z.record(z.string(), z.number()).optional(),
       }).optional(),
-    }).passthrough().optional(),
+    }).optional(),
     survivalDm: z.number().optional(),
     nobleSurvivalDm: z.number().optional(),
     nobleService: z.string().optional(),
     agingAutoSavesPerTerm: z.number().optional(),
     cashRollCap: z.number().optional(),
     retry: z.unknown().optional(),
-  }).passthrough().optional(),
-}).passthrough();
+  }).optional(),
+});
 
 export type RulesData = z.infer<typeof RulesSchema>;
 
 /** Validate an edition's `rules` sub-object. Returns the typed object
- *  on success; throws z.ZodError on shape failure. */
+ *  on success; throws on shape failure. */
 export function parseRules(rulesRaw: unknown, editionId: string): RulesData {
-  const result = RulesSchema.safeParse(rulesRaw ?? {});
+  return runSchema(RulesSchema, rulesRaw ?? {}, editionId, "rules block");
+}
+
+// --- Canon data (non-rules) schemas ----------------------------------
+
+const DMRuleSchema = z.looseObject({
+  modifier: z.union([z.number(), z.literal("termNumber")]),
+  attribute: z.string().optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  description: z.string().optional(),
+});
+
+const CheckSchema = z.looseObject({
+  target: z.number().nullable(),
+  dm: z.array(DMRuleSchema).optional(),
+  label: z.string().optional(),
+  inverseToLeave: z.boolean().optional(),
+  special: z.string().optional(),
+});
+
+const AutoSkillEntrySchema = z.looseObject({
+  trigger: z.enum(["service", "rank", "term"]),
+  rank: z.number().optional(),
+  term: z.number().optional(),
+  skill: z.string().optional(),
+  level: z.number().optional(),
+  effect: z.string().optional(),
+});
+
+const SkillTableSchema = z.array(z.string().nullable());
+
+const ServiceDataSchema = z.looseObject({
+  // source / bookPage are documentation only — engine doesn't read them.
+  // Optional to accommodate editions that don't include them in JSON.
+  source: z.string().optional(),
+  bookPage: z.number().optional(),
+  displayName: z.string(),
+  startAge: z.number(),
+  draft: z.number().nullable(),
+  checks: z.looseObject({
+    enlistment: CheckSchema,
+    survival: CheckSchema,
+    position: CheckSchema.nullable(),
+    promotion: CheckSchema.nullable(),
+    reenlistment: CheckSchema,
+    specialDuty: z.looseObject({ target: z.number() }).optional(),
+  }),
+  ranks: z.array(z.string().nullable()),
+  automaticSkills: z.array(AutoSkillEntrySchema),
+  hooks: z.looseObject({
+    doPromotion: z.string().optional(),
+  }).optional(),
+  skillTables: z.looseObject({
+    personalDevelopment: SkillTableSchema,
+    serviceSkills: SkillTableSchema,
+    advancedEducation: SkillTableSchema,
+    advancedEducation8Plus: SkillTableSchema,
+  }),
+  musterOut: z.looseObject({
+    benefits: z.array(z.string().nullable()),
+    cash: z.array(z.number().nullable()),
+  }),
+  notes: z.array(z.string()).optional(),
+});
+
+// Records keyed by string with $comment / $rule citation entries mixed
+// in. Citation values are strings; real values are validated against
+// `valueSchema`. The union accepts both.
+function recordWithCitations<V extends z.ZodTypeAny>(valueSchema: V) {
+  return z.record(z.string(), z.union([valueSchema, z.string()]));
+}
+
+const CascadeSkillsSchema = recordWithCitations(z.array(z.string()));
+const AttributeAbbreviationsSchema = recordWithCitations(z.string());
+const SkillLabelRenamesSchema = recordWithCitations(z.string());
+const IncludesSkillsSchema = recordWithCitations(z.array(z.string()));
+
+const AgingEffectSchema = z.looseObject({
+  delta: z.number(),
+  save: z.number().optional(),
+});
+
+const AgingRowSchema = z.looseObject({
+  // PM uses "66+" for the open band; CT uses a number; both legal.
+  age: z.union([z.number(), z.string()]),
+  endOfTerm: z.number(),
+  effects: z.record(z.string(), AgingEffectSchema),
+});
+
+const AgingSchema = z.looseObject({
+  source: z.string().optional(),
+  startsAfterFourthTerm: z.boolean().optional(),
+  rows: z.array(AgingRowSchema),
+  unaffected: z.array(z.string()).optional(),
+  agingCrisis: z.looseObject({
+    whenAttributeReducedTo: z.number().optional(),
+    save: z.number().optional(),
+    dice: z.string().optional(),
+  }).optional(),
+});
+
+const CanonDataSchema = z.looseObject({
+  services: z.record(z.string(), ServiceDataSchema),
+  cascadeSkills: CascadeSkillsSchema.optional(),
+  attributeAbbreviations: AttributeAbbreviationsSchema.optional(),
+  skillLabelRenames: SkillLabelRenamesSchema.optional(),
+  includesSkills: IncludesSkillsSchema.optional(),
+  aging: AgingSchema.optional(),
+});
+
+export type CanonDataValidated = z.infer<typeof CanonDataSchema>;
+
+/** Validate the non-rules canon blocks. Run alongside parseRules at
+ *  edition load. Throws with a path-prefixed message on shape failure. */
+export function parseCanonData(raw: unknown, editionId: string): CanonDataValidated {
+  return runSchema(CanonDataSchema, raw, editionId, "canon data");
+}
+
+function runSchema<T extends z.ZodTypeAny>(
+  schema: T, raw: unknown, editionId: string, blockName: string,
+): z.infer<T> {
+  const result = schema.safeParse(raw);
   if (!result.success) {
     const issues = result.error.issues
-      .map((i) => `  ${i.path.join(".")}: ${i.message}`)
+      .map((i) => `  ${i.path.join(".") || "<root>"}: ${i.message}`)
       .join("\n");
     throw new Error(
-      `Edition ${editionId} rules block failed schema validation:\n${issues}`,
+      `Edition ${editionId} ${blockName} failed schema validation:\n${issues}`,
     );
   }
   return result.data;

@@ -5,7 +5,6 @@
 import { arnd, rndInt, roll } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId, ChoicePendingError } from "./engine/choices";
-import { cascadePoolByKey } from "./engine/cascadeMap";
 import type { HistoryEvent } from "./history";
 import { event as ev, formatEvent } from "./history";
 import type {
@@ -23,7 +22,7 @@ import {
   applyPreCareerResult, attemptPreCareer, type PreCareerOption,
 } from "./engine/acg/preCareer";
 import { generateGender, generateName } from "./names";
-import { attrShort, extendedHex } from "./formatting";
+import { extendedHex } from "./formatting";
 import {
   finalizeAcgRankForMuster as finalizeAcgRankForMusterImpl,
   musterOutBenefit as musterOutBenefitImpl,
@@ -39,6 +38,20 @@ import {
 } from "./chargen/enlistment";
 import { doServiceTermStep as doServiceTermStepImpl } from "./chargen/term";
 import { doReenlistmentStep as doReenlistmentStepImpl } from "./chargen/reenlist";
+import {
+  tryAnagathics as tryAnagathicsImpl,
+  preSurvivalAnagathicsHook as preSurvivalAnagathicsHookImpl,
+  discontinueAnagathics as discontinueAnagathicsImpl,
+} from "./chargen/anagathics";
+import {
+  doAging as doAgingImpl,
+  ageAttribute as ageAttributeImpl,
+} from "./chargen/aging";
+import {
+  doBladeBenefit as doBladeBenefitImpl,
+  doGunBenefit as doGunBenefitImpl,
+  doWeaponBenefit as doWeaponBenefitImpl,
+} from "./chargen/weaponBenefits";
 import type {
   AttributeKey,
   Attributes,
@@ -53,7 +66,38 @@ import { getEditionServices } from "./services";
 import { DEFAULT_EDITION_ID, getEdition } from "./editions";
 import { formatCharacterSheet } from "./sheet";
 
+/** Roll the six initial 2d6 attributes. Consumes 12 Math.random calls
+ *  — kept as a free helper so tests can inspect/replace it independent
+ *  of the Character constructor. */
+function rollInitialAttributes(): Attributes {
+  return {
+    strength: roll(2),
+    dexterity: roll(2),
+    endurance: roll(2),
+    intelligence: roll(2),
+    education: roll(2),
+    social: roll(2),
+  };
+}
+
+/** Options for the Character constructor. Tests that need deterministic
+ *  attributes pass them in here instead of rolling 12 dice via the
+ *  default field initializer and overriding afterward. */
+export interface CharacterOptions {
+  attributes?: Attributes;
+}
+
 export class Character {
+  /** Construct a fresh character. If `opts.attributes` is provided,
+   *  skips the 12-dice initial roll — tests should prefer this over
+   *  installing a Math.random mock pre-construction or overwriting
+   *  attributes post-construction. Other field initializers
+   *  (gender / name) still consume randomness — they're a 2-call
+   *  footprint vs. attributes' 12. */
+  constructor(opts: CharacterOptions = {}) {
+    this.attributes = opts.attributes ?? rollInitialAttributes();
+  }
+
   age = 18;
   gender: Gender = generateGender();
   name: string = generateName(this.gender);
@@ -95,14 +139,13 @@ export class Character {
   mortgages = 0;
   bladeBenefit = "";
   gunBenefit = "";
-  attributes: Attributes = {
-    strength: roll(2),
-    dexterity: roll(2),
-    endurance: roll(2),
-    intelligence: roll(2),
-    education: roll(2),
-    social: roll(2),
-  };
+  // Initial attributes — rolled by the constructor (or supplied via
+  // CharacterOptions to bypass the 12-dice randomness). Tests that need
+  // deterministic attributes should pass them in via `new Character({
+  // attributes: {...} })` rather than rolling-then-overwriting. Field
+  // declaration only — assigned in the constructor so a caller-supplied
+  // value skips the rollInitialAttributes call entirely.
+  attributes: Attributes;
   skillPoints = 0;
   skills: Skill[] = [];
   drafted = false;
@@ -269,6 +312,13 @@ export class Character {
   }
   set apparentAge(v: number) {
     this._apparentAge = v;
+  }
+  /** Initialize the backing field of apparentAge to the current age if
+   *  it's still the default-zero sentinel. Idempotent. Called by the
+   *  aging step so that a later anagathics opt-in can freeze the field
+   *  from the value at this point rather than from chronological age. */
+  snapshotApparentAge(): void {
+    if (this._apparentAge === 0) this._apparentAge = this.age;
   }
   /** Count of terms in which anagathics was active — those terms forfeit
    *  the muster-out benefit roll (PM p. 15). */
@@ -756,132 +806,10 @@ export class Character {
     this.events.push(e);
   }
 
-  /**
-   * Weapon-benefit cascades. First occurrence picks a specific blade/gun, adds
-   * it as a possession benefit, and records skill-0. Subsequent occurrences
-   * bump skill in the same weapon.
-   */
-  doBladeBenefit() {
-    if (this.bladeBenefit !== "") {
-      // PM p. 20 repeated benefit: same / different / +1 category skill.
-      this.doRepeatWeaponBenefit("blade");
-      return;
-    }
-    const pool = cascadePoolByKey("bladeCombat", this.editionId);
-    const known = this.knownFromPool(pool);
-    this.pickOrDefer({
-      kind: "cascade",
-      label: "Choose a blade for your weapon benefit",
-      options: pool,
-      preferred: known,
-      context: { source: "muster", benefit: "Blade" },
-      onResolve: (ch, blade) => {
-        ch.bladeBenefit = blade;
-        ch.addBenefit(blade);
-        ch.log(ev.cascadePick("Blade Combat", blade));
-        ch.addSkill(blade, 0, "Blade benefit");
-      },
-    });
-  }
-
-  doGunBenefit() {
-    if (this.gunBenefit !== "") {
-      this.doRepeatWeaponBenefit("gun");
-      return;
-    }
-    const pool = cascadePoolByKey("gunCombat", this.editionId);
-    const known = this.knownFromPool(pool);
-    this.pickOrDefer({
-      kind: "cascade",
-      label: "Choose a gun for your weapon benefit",
-      options: pool,
-      preferred: known,
-      context: { source: "muster", benefit: "Gun" },
-      onResolve: (ch, gun) => {
-        ch.gunBenefit = gun;
-        ch.addBenefit(gun);
-        ch.log(ev.cascadePick("Gun Combat", gun));
-        ch.addSkill(gun, 0, "Gun benefit");
-      },
-    });
-  }
-
-  /** PM p. 20: on a repeated weapon benefit the character may
-   *    (1) bump the existing weapon's skill,
-   *    (2) pick a different weapon from the cascade pool, or
-   *    (3) take +1 in the weapon category (Blade Combat / Gun Combat).
-   *  Interactive mode queues a choice; auto mode keeps the historical
-   *  "bump existing" default (option 1) since the player isn't watching. */
-  private doRepeatWeaponBenefit(kind: "blade" | "gun"): void {
-    const cascadeKey = kind === "blade" ? "bladeCombat" : "gunCombat";
-    const categorySkill = kind === "blade" ? "Blade Combat" : "Gun Combat";
-    const current = kind === "blade" ? this.bladeBenefit : this.gunBenefit;
-    if (this.choiceMode === "auto") {
-      this.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
-      return;
-    }
-    const pool = cascadePoolByKey(cascadeKey, this.editionId);
-    const optBump = `Bump ${current}`;
-    const optDifferent = `Pick a different ${kind}`;
-    const optCategory = `+1 in ${categorySkill}`;
-    this.pickOrDefer({
-      kind: "repeatWeaponBenefit",
-      label: `${current} (already received) — repeated weapon benefit choice (PM p. 20)`,
-      options: [optBump, optDifferent, optCategory],
-      context: { source: "muster", benefit: "RepeatWeapon", current, category: categorySkill },
-      onResolve: (ch, chosen) => {
-        if (chosen === optBump) {
-          ch.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
-          return;
-        }
-        if (chosen === optCategory) {
-          ch.addSkill(categorySkill, 1, `Repeat ${kind} benefit (+1 category)`);
-          return;
-        }
-        // "Pick a different weapon" — queue an inner cascade choice.
-        const known = ch.knownFromPool(pool);
-        ch.pickOrDefer({
-          kind: "cascade",
-          label: `Choose a different ${kind}`,
-          options: pool,
-          preferred: known,
-          context: { source: "muster", benefit: kind === "blade" ? "Blade" : "Gun" },
-          onResolve: (c, weapon) => {
-            c.addBenefit(weapon);
-            c.log(ev.cascadePick(categorySkill, weapon));
-            c.addSkill(weapon, 0, `Repeat ${kind} benefit (different)`);
-          },
-        });
-      },
-    });
-  }
-
-  /**
-   * CotI generic "Weapon" benefit: character may pick any personal weapon
-   * (blade or gun). Two-stage choice: first weapon type, then specific.
-   */
-  doWeaponBenefit() {
-    this.pickOrDefer({
-      kind: "weaponType",
-      label: "Choose weapon type",
-      options: ["Blade", "Gun"],
-      context: { source: "muster", benefit: "Weapon" },
-      onResolve: (ch, type) => {
-        if (type === "Blade") ch.doBladeBenefit();
-        else ch.doGunBenefit();
-      },
-    });
-  }
-
-  /** Names from `pool` that the character already has skills in (for cascade
-   *  preference: subsequent blade cascades stack onto an existing blade). */
-  private knownFromPool(pool: readonly string[]): string[] {
-    const out: string[] = [];
-    for (const [n] of this.skills) {
-      if (pool.includes(n)) out.push(n);
-    }
-    return out;
-  }
+  // Weapon-benefit cascades — implementations in chargen/weaponBenefits.ts.
+  doBladeBenefit(): void { doBladeBenefitImpl(this); }
+  doGunBenefit(): void { doGunBenefitImpl(this); }
+  doWeaponBenefit(): void { doWeaponBenefitImpl(this); }
 
   // ---------- enlistment ----------
 
@@ -954,250 +882,25 @@ export class Character {
     return { disabled: reasons.length > 0, reasons };
   }
 
-  // ---------- anagathics ----------
+  // ---------- anagathics (implementations in chargen/anagathics.ts) ----------
 
-  /** Try to obtain anagathics for the upcoming term (PM p. 15). Returns
-   *  whether a supply was secured. Requires age ≥ 30 at end of third
-   *  term. Caller is expected to call this before survival each term
-   *  they want to use anagathics. If the availability roll fails and
-   *  `allowRetry` is true (default), the character makes an extra
-   *  survival roll: on success a single retry is granted (PM "one retry
-   *  is allowed if the character rerolls another survival roll first");
-   *  on failure the character is short-term mustered out ("forced to
-   *  muster out"). */
   tryAnagathics(allowRetry = true): boolean {
-    const rules = this.anagathicsRules();
-    const minAge = rules?.eligibility?.minAge ?? 30;
-    const minTerms = rules?.eligibility?.minTerms ?? 3;
-    if (this.age < minAge || this.terms < minTerms) {
-      this.log(ev.anagathics("unavailable"));
-      return false;
-    }
-    const result = this.rollAnagathicsAvailability();
-    if (result) return true;
-    if (!allowRetry) return false;
-    // PM retry mechanic: extra survival roll gates one retry.
-    if (!this.rollAnagathicsRetrySurvival()) return false;
-    return this.rollAnagathicsAvailability();
+    return tryAnagathicsImpl(this, allowRetry);
   }
-
-  /** Anagathics rules block from the active edition. Returns null if the
-   *  edition doesn't declare one (CT — no anagathics in TTB). */
-  private anagathicsRules(): {
-    eligibility?: { minAge?: number; minTerms?: number };
-    availability?: {
-      target?: number;
-      dms?: {
-        byStarport?: Record<string, number>;
-        byTech?: Record<string, number>;
-      };
-    };
-  } | null {
-    const rules = getEdition(this.editionId).rules.anagathics;
-    return (rules as ReturnType<Character["anagathicsRules"]>) ?? null;
-  }
-
-  /** Roll 2D + DMs for anagathics availability and apply the success/failure
-   *  side-effects. Returns whether a supply was found. */
-  private rollAnagathicsAvailability(): boolean {
-    const rules = this.anagathicsRules();
-    const target = rules?.availability?.target ?? 12;
-    const starportDms = rules?.availability?.dms?.byStarport ?? {};
-    const techDms = rules?.availability?.dms?.byTech ?? {};
-    let dm = 0;
-    const sp = this.homeworld?.starport;
-    if (sp && starportDms[sp] !== undefined) dm += starportDms[sp]!;
-    const t = this.homeworld?.tech;
-    if (t && techDms[t] !== undefined) dm += techDms[t]!;
-    const r = roll(2) + dm;
-    const success = r >= target;
-    if (success) {
-      if (!this.onAnagathics) {
-        this.apparentAge = this.age;
-      }
-      this.onAnagathics = true;
-      this.anagathicsActiveThisTerm = true;
-      this.anagathicsEverTaken = true;
-      this.anagathicsBenefitForfeitedTerms += 1;
-      // Clear any withdrawal flag set by a prior failed attempt this term
-      // — the retry path can flip from "lost supply" to "found supply" and
-      // the character should not get withdrawal effects in the latter case.
-      this.anagathicsWithdrawalThisTerm = false;
-      this.log(ev.anagathics("found", r, target));
-    } else if (this.onAnagathics) {
-      this.log(ev.anagathics("lost", r, target));
-      this.anagathicsWithdrawalThisTerm = true;
-      this.onAnagathics = false;
-    } else {
-      // Not currently on anagathics and the roll missed — record the
-      // failed availability roll at verbose for full visibility.
-      this.log(ev.anagathics("unavailable", r, target));
-    }
-    return success;
-  }
-
-  /** Extra survival roll gating the anagathics retry (PM p. 15). On
-   *  failure the character is forced into a short-term muster-out. */
-  private rollAnagathicsRetrySurvival(): boolean {
-    // Pre-enlistment (no service yet) — retry not available. Gate before
-    // calling serviceDef() so a bare catch doesn't swallow real errors
-    // like ChoicePendingError thrown from checkSurvival.
-    if (!this.service) return false;
-    const svc = this.serviceDef();
-    // checkSurvival emits ev.roll("Survival", ...) which already records
-    // pass/fail in the history.
-    const passed = svc.checkSurvival(this);
-    if (!passed) {
-      // Increment shortTermsCount (muster-out accounting doesn't count
-      // this term) and transition to retired. The intermediate
-      // shortTerm status is skipped since chargen ends immediately.
-      this.shortTermsCount += 1;
-      this.endChargenRetired("failed anagathics retry survival");
-    }
-    return passed;
-  }
-
-  /** Pre-survival anagathics hook (PM p. 15). Reads anagathicsStandingOrder
-   *  and, if set + eligible, sets wantsAnagathicsThisTerm and attempts to
-   *  locate a supply via tryAnagathics. Called at the start of every term
-   *  before survival is rolled. Idempotent if eligibility fails or the
-   *  standing order is off. */
   preSurvivalAnagathicsHook(): void {
-    if (!this.anagathicsStandingOrder) return;
-    // Eligibility: age ≥ 30 at end of third term. tryAnagathics enforces
-    // this and is a no-op when the threshold isn't met; calling here is
-    // still safe but we gate to avoid the extra history line for the
-    // common pre-eligibility case.
-    const rules = this.anagathicsRules();
-    const minAge = rules?.eligibility?.minAge ?? 30;
-    const minTerms = rules?.eligibility?.minTerms ?? 3;
-    if (this.age < minAge || this.terms < minTerms) return;
-    this.wantsAnagathicsThisTerm = true;
-    this.tryAnagathics();
+    preSurvivalAnagathicsHookImpl(this);
   }
-
-  /** Voluntarily stop taking anagathics. The character reverts to normal
-   *  survival rolls; withdrawal applies at term end. */
   discontinueAnagathics(): void {
-    if (!this.onAnagathics) return;
-    this.onAnagathics = false;
-    this.anagathicsActiveThisTerm = false;
-    this.anagathicsWithdrawalThisTerm = true;
-    this.log(ev.anagathics("withdrawal"));
+    discontinueAnagathicsImpl(this);
   }
 
-  // ---------- aging ----------
+  // ---------- aging (implementations in chargen/aging.ts) ----------
 
-  ageAttribute(attrib: AttributeKey, req: number, reduction: number) {
-    const r = roll(2);
-    const passed = r >= req;
-    this.log(ev.roll(`Aging ${attrShort(attrib)}`, r, 0, req, passed));
-    if (!passed) this.improveAttribute(attrib, reduction);
+  ageAttribute(attrib: AttributeKey, req: number, reduction: number): void {
+    ageAttributeImpl(this, attrib, req, reduction);
   }
-
-  doAging() {
-    // Reads the active edition's aging.rows table. Each row applies if
-    // this.terms >= row.endOfTerm AND the row is the highest qualifying.
-    // CT and MT share the same aging breakpoints (term 4-7, 8-11, 12+).
-    interface AgingRow {
-      age: number | string;
-      endOfTerm: number;
-      effects: Partial<
-        Record<AttributeKey, { delta: number; save: number }>
-      >;
-    }
-    interface AgingCrisis {
-      whenAttributeReducedTo?: number;
-      save?: number;
-    }
-    const aging = getEdition(this.editionId).data.aging as {
-      rows?: AgingRow[];
-      agingCrisis?: AgingCrisis;
-    } | undefined;
-    if (!aging?.rows) return;
-
-    // Apparent age tracks the Aging-table line. On anagathics it stays
-    // frozen at the line the character was on when they started taking
-    // them. Otherwise it follows chronological terms served (effective
-    // terms used to pick the row). The getter already reports `age`
-    // when _apparentAge is 0, but persist the snapshot here so a later
-    // anagathics opt-in freezes from this point.
-    if (this._apparentAge === 0) this._apparentAge = this.age;
-    // Short terms only count for half-aging. PM p. 16: a short term is 2
-    // years and the term should not trigger full-term aging breakpoints.
-    // Compute aging from completed full terms only (terms minus short).
-    // The anagathics branch derives "terms equivalent" from apparent age,
-    // anchored at the service's startAge (not a hardcoded 18) — a
-    // pre-career graduate who entered service at age 22 shouldn't get
-    // the term-3 aging line on apparent age 22.
-    const serviceStartAge =
-      getEdition(this.editionId).data.services[this.service]?.startAge ?? 18;
-    const effectiveTermsForAging = this.onAnagathics
-      ? Math.max(0, Math.floor((this.apparentAge - serviceStartAge) / 4))
-      : Math.max(0, this.terms - this.shortTermsCount);
-
-    // Pick the highest row whose endOfTerm <= effectiveTermsForAging.
-    const applicable = aging.rows
-      .filter((r) => effectiveTermsForAging >= r.endOfTerm)
-      .sort((a, b) => b.endOfTerm - a.endOfTerm)[0];
-    if (!applicable) return;
-
-    // Anagathics withdrawal: double saving throws on each characteristic;
-    // both must pass to avoid the listed reduction (PM p. 15).
-    const withdrawal = this.anagathicsWithdrawalThisTerm;
-    // Anagathics benefit (PM p. 15): on a maintained supply the character
-    // automatically succeeds at the aging saving throws for two
-    // characteristics of his or her choice (per term). Default policy in
-    // auto mode is the two with the highest save targets (most likely to
-    // fail), so the benefit lands where it helps most.
-    const effects = Object.entries(applicable.effects) as
-      [AttributeKey, { delta: number; save: number }][];
-    const autoSaves = new Set<AttributeKey>();
-    if (this.onAnagathics && !withdrawal && effects.length > 0) {
-      const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
-      const autoSavesPerTerm =
-        getEdition(this.editionId).rules.anagathics?.agingAutoSavesPerTerm ?? 2;
-      const n = Math.min(autoSavesPerTerm, ranked.length);
-      for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
-      for (const attr of autoSaves) this.log(ev.agingSave(attr, "auto"));
-    }
-    for (const [attr, eff] of effects) {
-      if (autoSaves.has(attr)) continue;
-      if (withdrawal) {
-        const r1 = roll(2);
-        const r2 = roll(2);
-        const failed = r1 < eff.save || r2 < eff.save;
-        this.log(ev.agingSave(
-          attr, failed ? "failed" : "passed",
-          { dice: [r1, r2], save: eff.save },
-        ));
-        if (failed) this.improveAttribute(attr, eff.delta);
-      } else {
-        this.ageAttribute(attr, eff.save, eff.delta);
-      }
-    }
-    // Clear withdrawal flag after the term-end aging applies it once.
-    this.anagathicsWithdrawalThisTerm = false;
-    // If anagathics supply is maintained, apparent age does NOT advance.
-    // Otherwise update apparent age to chronological.
-    if (!this.onAnagathics) {
-      this.apparentAge = this.age;
-    }
-
-    const crisisThreshold = aging.agingCrisis?.whenAttributeReducedTo ?? 0;
-    const crisisSave = aging.agingCrisis?.save ?? 8;
-    for (const a of Object.keys(this.attributes) as AttributeKey[]) {
-      if (this.deceased) break;
-      if (this.attributes[a] <= crisisThreshold) {
-        const cr = roll(2);
-        this.log(ev.roll(`Aging crisis (${attrShort(a)})`, cr, 0, crisisSave, cr >= crisisSave));
-        if (cr < crisisSave) {
-          this.endChargenDeceased("aging crisis");
-        } else {
-          this.attributes[a] = 1;
-        }
-      }
-    }
+  doAging(): void {
+    doAgingImpl(this);
   }
 
   // ---------- muster out ----------
