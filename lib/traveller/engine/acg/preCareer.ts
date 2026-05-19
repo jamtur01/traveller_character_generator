@@ -347,10 +347,11 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
         out.autoEnlistPathway = "mercenary";
-        ch.log(ev.promoted("O1", "OTC"));
         // F15 — PM p. 47 line 2782-2783: "A character in OTC is
         // automatically enlisted in (and commissioned as an officer in)
-        // the Army or the Marines." Branch is a player choice.
+        // the Army or the Marines." Branch is a player choice. The
+        // promotion event is logged AFTER the branch is decided so the
+        // log line includes "(Army)" or "(Marines)" with no duplicate.
         if (ch.choiceMode === "interactive") {
           ch.pickOrDefer({
             kind: "cascade",
@@ -369,6 +370,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
           out.notes.push("OTC commission earned (branch pending choice).");
         } else {
           out.branch = "army";
+          ch.log(ev.promoted("O1", "OTC (Army)"));
           out.notes.push("OTC commission earned (Army by default; player may select Army or Marines).");
         }
       }
@@ -662,17 +664,11 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
   apply(arnd(departments));
 }
 
-/** Apply a pre-career result to the character. Mutates state. */
+/** Apply a pre-career result to the character. Mutates state.
+ *  schoolsAttempted is recorded eagerly by Character.doPreCareer before
+ *  attemptPreCareer fires, so a ChoicePendingError mid-flight doesn't
+ *  leave the picker UI offering the same school again. */
 export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: PreCareerResult): void {
-  // Record the attempt regardless of outcome so the picker UI can remove
-  // this option — RAW doesn't allow re-applying to the same school after
-  // admission failure / washout.
-  if (ch.acgState) {
-    ch.acgState.schoolsAttempted = ch.acgState.schoolsAttempted ?? [];
-    if (!ch.acgState.schoolsAttempted.includes(opt)) {
-      ch.acgState.schoolsAttempted.push(opt);
-    }
-  }
   ch.age += r.ageGainedYears;
   for (const [attr, delta] of Object.entries(r.attributeChanges)) {
     const a = attr as keyof Character["attributes"];
