@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { s } from "../lib/traveller";
+import { getEditionServices } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+
+const ctServices = getEditionServices("ct-classic");
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -101,7 +103,7 @@ describe("musterCash bounds", () => {
     // Force roll 6 + DM 5 → 11; should clamp to row 7.
     vi.spyOn(Math, "random").mockReturnValue(5 / 6 + 0.001);
     c.musterOutCash(5);
-    expect(c.credits).toBe(s.navy.musterCash[7]);
+    expect(c.credits).toBe(ctServices.navy!.musterCash[7]);
     vi.restoreAllMocks();
   });
 
@@ -110,7 +112,7 @@ describe("musterCash bounds", () => {
     c.service = "navy";
     vi.spyOn(Math, "random").mockReturnValue(0); // d6 → 1
     c.musterOutCash(-5);
-    expect(c.credits).toBe(s.navy.musterCash[1]);
+    expect(c.credits).toBe(ctServices.navy!.musterCash[1]);
     vi.restoreAllMocks();
   });
 });

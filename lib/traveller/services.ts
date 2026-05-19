@@ -1,13 +1,10 @@
 // Service registry — per-edition. Each registered edition has its own
-// services map built at import time from its JSON. Code that operates on a
-// specific Character uses ch.editionId to look up the right map; legacy
-// callers that don't carry edition context fall back to the default edition
-// via `s`.
+// services map built at import time from its JSON. Code that operates
+// on a specific Character uses ch.editionId to look up the right map
+// via getEditionServices.
 
 import type { ServiceDef, ServiceKey } from "./types";
-import {
-  DEFAULT_EDITION_ID, getEdition, listEditions,
-} from "./editions";
+import { getEdition, listEditions } from "./editions";
 import { buildServiceDef } from "./engine/serviceLoader";
 
 export type ServiceMap = Partial<Record<ServiceKey, ServiceDef>>;
@@ -25,9 +22,9 @@ function buildEdition(editionId: string): ServiceMap {
   return out;
 }
 
-// Build the service map for every registered edition exactly once at module
-// import. Adding an edition to the registry automatically makes it available
-// through getEditionServices without further setup.
+// Build the service map for every registered edition exactly once at
+// module import. Adding an edition to the registry automatically makes
+// it available through getEditionServices without further setup.
 for (const meta of listEditions()) {
   REGISTRY[meta.id] = buildEdition(meta.id);
 }
@@ -38,21 +35,6 @@ export function getEditionServices(editionId: string): ServiceMap {
   if (!map) throw new Error(`Unknown edition: ${editionId}`);
   return map;
 }
-
-/** Default-edition service map. Existing callers that don't carry edition
- *  context (most tests, legacy character.ts paths) continue to use this.
- *
- *  Typed as a full Record for back-compat with the original ServiceKey-keyed
- *  layout. Keys not present in the default edition (e.g., `lawenforcers`
- *  when CT is default) return undefined at runtime — accessing methods on
- *  them throws TypeError, which is the desired "edition leak" behavior.
- *  Edition-aware code should call getEditionServices(ch.editionId) instead.
- */
-export const s = REGISTRY[DEFAULT_EDITION_ID]! as Record<ServiceKey, ServiceDef>;
-
-/** All services available for random enlistment selection in the default
- *  edition. Use `getEnlistableServices(editionId)` for other editions. */
-export const SERVICES: ServiceKey[] = computeEnlistable(DEFAULT_EDITION_ID);
 
 function computeEnlistable(editionId: string): ServiceKey[] {
   const map = REGISTRY[editionId];
@@ -67,13 +49,12 @@ function computeEnlistable(editionId: string): ServiceKey[] {
   return CLASSIC_ORDER.filter((k) => map[k] !== undefined);
 }
 
+/** Services available for random enlistment selection in the given
+ *  edition, in the CT-classic visual order (with non-CT services
+ *  appended in declaration order). */
 export function getEnlistableServices(editionId: string): ServiceKey[] {
   return computeEnlistable(editionId);
 }
-
-/** Draft pool keyed by 1d6 result. Derived from each service's `draft`
- *  field in JSON (CT: navy/marines/army/scouts/merchants/other; MT same six). */
-export const DRAFT_SERVICES: ServiceKey[] = computeDraft(DEFAULT_EDITION_ID);
 
 function computeDraft(editionId: string): ServiceKey[] {
   const ed = getEdition(editionId);
@@ -89,30 +70,13 @@ function computeDraft(editionId: string): ServiceKey[] {
   return out;
 }
 
+/** Draft pool for the edition, keyed by 1d6 result. Derived from each
+ *  service's `draft` field in JSON. */
 export function getDraftServices(editionId: string): ServiceKey[] {
   return computeDraft(editionId);
 }
 
-/** UI-facing enlistment list — union of every registered edition's
- *  enlistable services. Pickers that show the full cross-edition catalog
- *  should use this list and resolve labels per the chosen edition via
- *  serviceLabel(key, editionId). Single-edition pickers should call
- *  getEnlistableServices(editionId) directly. */
-export const ENLISTABLE_SERVICES: ServiceKey[] = (() => {
-  const seen = new Set<ServiceKey>();
-  const out: ServiceKey[] = [];
-  for (const meta of listEditions()) {
-    for (const k of computeEnlistable(meta.id)) {
-      if (!seen.has(k)) {
-        seen.add(k);
-        out.push(k);
-      }
-    }
-  }
-  return out;
-})();
-
-export function serviceLabel(key: ServiceKey, editionId?: string): string {
-  const map = editionId ? getEditionServices(editionId) : s;
+export function serviceLabel(key: ServiceKey, editionId: string): string {
+  const map = getEditionServices(editionId);
   return map[key]?.serviceName ?? key;
 }

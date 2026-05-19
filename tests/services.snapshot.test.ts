@@ -4,14 +4,22 @@
 // reviewers will see the diff alongside the code change.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { s, SERVICES, type AttributeKey, type ServiceKey } from "../lib/traveller";
+import {
+  getEditionServices, getEnlistableServices,
+  type AttributeKey, type ServiceDef, type ServiceKey,
+} from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const ALL: ServiceKey[] = [...SERVICES, "nobles"];
+// CT-only test — cast the Partial<Record> to a full Record so the
+// per-key lookups don't need `!` everywhere. Edition isolation is
+// asserted by getEnlistableServices below; an unexpectedly-missing CT
+// service throws TypeError at first access.
+const s = getEditionServices("ct-classic") as Record<ServiceKey, ServiceDef>;
+const ALL: ServiceKey[] = [...getEnlistableServices("ct-classic"), "nobles"];
 const BASE = 7;
 
 /** Force every Math.random() call to produce d6 = `v`. */
