@@ -33,35 +33,37 @@ function freshAcgChar(): Character {
 // ---------------------------------------------------------------------------
 
 describe("MT ACG data shape", () => {
-  it("mercenary has enlistment.army/marines and assignment table", () => {
+  it("mercenary enlistment exposes army/marines and assignment tables are non-empty", () => {
     const m = getAcgPathway("mt-megatraveller", "mercenary");
-    expect((m.enlistment as { army?: unknown }).army).toBeDefined();
-    expect((m.enlistment as { marines?: unknown }).marines).toBeDefined();
-    expect(m.assignment).toBeDefined();
-    expect(m.assignmentResolution).toBeDefined();
+    const en = m.enlistment as { army?: object; marines?: object };
+    expect(Object.keys(en.army ?? {}).length).toBeGreaterThan(0);
+    expect(Object.keys(en.marines ?? {}).length).toBeGreaterThan(0);
+    expect(Array.isArray(m.assignment) || typeof m.assignment === "object").toBe(true);
+    expect(Object.keys(m.assignmentResolution ?? {}).length).toBeGreaterThan(0);
   });
 
-  it("navy has three fleets in enlistment and branchAssignment", () => {
+  it("navy enlistment has all three fleets with content + branchAssignment block", () => {
     const n = getAcgPathway("mt-megatraveller", "navy");
-    const en = n.enlistment as Record<string, unknown>;
-    expect(en.imperialNavy).toBeDefined();
-    expect(en.reserveFleet).toBeDefined();
-    expect(en.systemSquadron).toBeDefined();
-    expect(n.branchAssignment).toBeDefined();
+    const en = n.enlistment as unknown as Record<string, object>;
+    for (const fleet of ["imperialNavy", "reserveFleet", "systemSquadron"]) {
+      expect(Object.keys(en[fleet] ?? {}).length, `${fleet} should be non-empty`)
+        .toBeGreaterThan(0);
+    }
+    expect(Object.keys(n.branchAssignment ?? {}).length).toBeGreaterThan(0);
   });
 
-  it("scout has Field and Bureaucracy skill tables", () => {
+  it("scout exposes both Field and Bureaucracy skill tables with row data", () => {
     const s = getAcgPathway("mt-megatraveller", "scout");
-    const tables = s.skillTables as Record<string, unknown>;
-    expect(tables.field).toBeDefined();
-    expect(tables.bureaucracy).toBeDefined();
+    const tables = s.skillTables as Record<string, { rows?: unknown[] }>;
+    expect(tables.field?.rows?.length).toBeGreaterThan(0);
+    expect(tables.bureaucracy?.rows?.length).toBeGreaterThan(0);
   });
 
-  it("merchantPrince has department + line type tables", () => {
+  it("merchantPrince exposes departmentAssignment / availablePositions / specificAssignment", () => {
     const m = getAcgPathway("mt-megatraveller", "merchantPrince");
-    expect(m.departmentAssignment).toBeDefined();
-    expect(m.availablePositions).toBeDefined();
-    expect(m.specificAssignment).toBeDefined();
+    expect(Object.keys(m.departmentAssignment ?? {}).length).toBeGreaterThan(0);
+    expect(Object.keys(m.availablePositions ?? {}).length).toBeGreaterThan(0);
+    expect(Object.keys(m.specificAssignment ?? {}).length).toBeGreaterThan(0);
   });
 });
 
@@ -92,21 +94,22 @@ describe("Mercenary ACG runtime", () => {
     expect(c.acgState!.combatArm).toBe("Support");
   });
 
-  it("Initial training awards Gun Combat-1 and a MOS skill", () => {
+  it("Initial training (max rolls): Gun Combat-1 + MOS=Environ", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
-    // beginAcg doesn't run initial training (that's year 1 of term 1).
-    // Run the first year.
     runAcgYear(c);
-    expect(c.acgState!.mos).toBeDefined();
-    expect(c.checkSkillLevel("Gun Combat", 1)).toBe(true);
-    expect(c.skills.length).toBeGreaterThanOrEqual(2); // Gun Combat + MOS
+    expect(c.acgState!.mos).toBe("Environ");
+    const lvl = (skill: string) =>
+      c.skills.find(([n]) => n === skill)?.[1] ?? -1;
+    expect(lvl("Gun Combat")).toBe(1);
+    expect(lvl("Environ")).toBe(1);
   });
 
-  it("Full 4-year term with max rolls: term completes, age 22, 1+ brownie point", () => {
+  it("Full 4-year term with max rolls: term completes at age 22 with 4 BP", () => {
     // Math.random=0.999 → every roll is the max. Survival, promotion,
-    // skill rolls all pass; the term completes normally.
+    // skill, decoration rolls all pass; the term completes with the
+    // term-completion BP plus per-assignment decoration BPs.
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
@@ -115,7 +118,7 @@ describe("Mercenary ACG runtime", () => {
     expect(c.deceased).toBe(false);
     expect(c.terms).toBe(1);
     expect(c.age).toBe(22);
-    expect(c.browniePoints).toBeGreaterThanOrEqual(1); // term completion BP
+    expect(c.browniePoints).toBe(4);
   });
 
   it("Low rolls fail survival and invalid out of service", () => {
@@ -135,14 +138,14 @@ describe("Mercenary ACG runtime", () => {
 // ---------------------------------------------------------------------------
 
 describe("Navy ACG runtime", () => {
-  it("Imperial Navy enlistment stamps fleet and a branch", () => {
+  it("Imperial Navy enlistment (max rolls + Int/Edu 10): fleet=imperialNavy, branch=Medical", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.attributes.intelligence = 10;
     c.attributes.education = 10;
     c.beginAcg("navy", { fleet: "imperialNavy" });
     expect(c.acgState!.fleet).toBe("imperialNavy");
-    expect(c.acgState!.branch).toBeDefined();
+    expect(c.acgState!.branch).toBe("Medical");
   });
 
   it("Reserve Fleet enlistment", () => {
@@ -164,14 +167,14 @@ describe("Navy ACG runtime", () => {
 // ---------------------------------------------------------------------------
 
 describe("Scout ACG runtime", () => {
-  it("Field enlistment stamps division and an office", () => {
+  it("Field enlistment (max rolls + Int 8/Str 10): division=field, office=Exploration", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.attributes.intelligence = 8;
     c.attributes.strength = 10;
     c.beginAcg("scout", { division: "field" });
     expect(c.acgState!.division).toBe("field");
-    expect(c.acgState!.office).toBeDefined();
+    expect(c.acgState!.office).toBe("Exploration");
   });
 
   it("Scout ranks start at IS-1", () => {
@@ -265,8 +268,7 @@ describe("Merchant Prince ACG runtime", () => {
     };
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     expect(c.acgState!.lineType).toBe("Megacorp");
-    expect(c.acgState!.department).toBeDefined();
-    expect(c.acgState!.department).not.toBe("Free Trader");
+    expect(c.acgState!.department).toBe("Engineering");
   });
 
   it("R6: Megacorp enlistment runs Merchant Academy attempt when opted in (Rrev5)", () => {
@@ -327,7 +329,8 @@ describe("Merchant Prince ACG runtime", () => {
     c.acgState = freshAcgState("merchantPrince");
     c.acgState.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
-    expect(c.acgState!.department).toBeDefined();
+    expect(typeof c.acgState!.department).toBe("string");
+    expect(c.acgState!.department!.length).toBeGreaterThan(0);
   });
 
   it("Enlisted ranks advance on each new term via startOfTerm hook", () => {

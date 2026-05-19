@@ -12,7 +12,7 @@
 //   doubleBonusOvershoot=4.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface LifecycleStep {
   id: string;

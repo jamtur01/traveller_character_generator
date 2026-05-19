@@ -6,7 +6,7 @@
 // Merchant Prince: six department-specific ladders.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface RankEntry {
   0: string;          // code

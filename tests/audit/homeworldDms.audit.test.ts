@@ -8,7 +8,7 @@
 //                    Pop Low Pop +1, High Pop +2.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 interface DmRule {
   when: { column: string; equals: string };

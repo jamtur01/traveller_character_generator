@@ -5,7 +5,7 @@
 // every school referenced by PM exists in the JSON.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 const PM_MERCENARY_SCHOOLS = [
   "Specialist School",  // PM p. 50 mercenary special assignments table

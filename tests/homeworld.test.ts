@@ -13,6 +13,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** Exact level of a skill (not the array index returned by checkSkill).
+ *  Returns -1 if the skill is absent. */
+function skillLevel(c: Character, skill: string): number {
+  return c.skills.find(([n]) => n === skill)?.[1] ?? -1;
+}
+
 // ---------------------------------------------------------------------------
 // API surface
 // ---------------------------------------------------------------------------
@@ -35,20 +41,21 @@ describe("editionHasHomeworld", () => {
 // ---------------------------------------------------------------------------
 
 describe("rollHomeworld", () => {
-  it("produces a complete homeworld profile for MT", () => {
+  it("Math.random=0.5 produces a deterministic mid-roll profile", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
-    const hw = rollHomeworld(c);
-    expect(hw).not.toBeNull();
-    expect(hw!.starport).toBeDefined();
-    expect(hw!.size).toBeDefined();
-    expect(hw!.atmosphere).toBeDefined();
-    expect(hw!.hydrosphere).toBeDefined();
-    expect(hw!.population).toBeDefined();
-    expect(hw!.law).toBeDefined();
-    expect(hw!.tech).toBeDefined();
+    const hw = rollHomeworld(c)!;
+    expect(hw).toEqual({
+      starport: "B",
+      size: "Medium",
+      atmosphere: "Standard",
+      hydrosphere: "Wet World",
+      population: "High Pop",
+      law: "Mod Law",
+      tech: "High Stellar",
+    });
   });
 
   it("returns null for CT (no homeworld step)", () => {
@@ -141,8 +148,8 @@ describe("applyHomeworldSkills", () => {
       law: "Mod Law" as const, tech: "Early Stellar" as const,
     };
     applyHomeworldSkills(c, hw);
-    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Wheeled Vehicle")).toBeGreaterThanOrEqual(0); // Industrial/Pre-Stellar/Early Stellar
+    expect(skillLevel(c, "Computer")).toBe(0);
+    expect(skillLevel(c, "Wheeled Vehicle")).toBe(0); // Industrial/Pre-Stellar/Early Stellar
     expect(c.checkSkill("Grav Vehicle")).toBe(-1); // requires Avg Stellar+
   });
 
@@ -157,8 +164,8 @@ describe("applyHomeworldSkills", () => {
       law: "High Law" as const, tech: "Avg Stellar" as const,
     };
     applyHomeworldSkills(c, hw);
-    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Grav Vehicle")).toBeGreaterThanOrEqual(0);
+    expect(skillLevel(c, "Computer")).toBe(0);
+    expect(skillLevel(c, "Grav Vehicle")).toBe(0);
   });
 
   it("Pre-Industrial grants no tech-gated skills", () => {
@@ -192,8 +199,8 @@ describe("applyHomeworldSkills", () => {
       law: "Mod Law" as const, tech: "Early Stellar" as const,
     };
     applyHomeworldSkills(c, hw);
-    expect(c.checkSkill("Vacc Suit")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Gun Combat")).toBeGreaterThanOrEqual(0);
+    expect(skillLevel(c, "Vacc Suit")).toBe(0);
+    expect(skillLevel(c, "Gun Combat")).toBe(0);
   });
 
   it("Barbarian gets neither Vacc Suit nor Gun Combat", () => {
@@ -229,10 +236,17 @@ describe("Character.generateHomeworld", () => {
     c.showHistory = "none";
     c.skills = [];
     c.generateHomeworld();
-    expect(c.homeworld).not.toBeNull();
-    expect(c.homeworld!.tech).toBe("High Stellar");
-    expect(c.checkSkill("Computer")).toBeGreaterThanOrEqual(0);
-    expect(c.checkSkill("Grav Vehicle")).toBeGreaterThanOrEqual(0);
+    expect(c.homeworld).toEqual({
+      starport: "X",
+      size: "Large",
+      atmosphere: "Exotic",
+      hydrosphere: "Water World",
+      population: "High Pop",
+      law: "Ext Law",
+      tech: "High Stellar",
+    });
+    expect(skillLevel(c, "Computer")).toBe(0);
+    expect(skillLevel(c, "Grav Vehicle")).toBe(0);
   });
 
   it("CT character: no-op (no homeworld step in CT)", () => {

@@ -1,7 +1,7 @@
 // Muster-out + anagathics audits against MT PM pp. 15-18.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 describe("Anagathics audit — PM p. 18", () => {
   it("Eligibility: age 30+ at end of 3rd term", () => {

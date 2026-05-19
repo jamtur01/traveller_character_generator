@@ -4,7 +4,7 @@
 // tests/audit/ct.services.skills.audit.test.ts.
 
 import { describe, expect, it } from "vitest";
-import { getEdition } from "../lib/traveller/editions";
+import { getEdition } from "../../lib/traveller/editions";
 
 function svc(name: string) {
   const svcs = getEdition("ct-classic").data.services as
