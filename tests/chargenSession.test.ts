@@ -68,8 +68,12 @@ describe("session.startCareer", () => {
 
 describe("session.enlist + runTerm + muster (basic chargen)", () => {
   it("enlist into navy → term → eventually retire/muster", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    // freshSnap restores all mocks before returning, so the Math.random
+    // mock must be installed AFTER it. Without this ordering, enlist()
+    // runs with unmocked randomness and the test flakes: a low draft
+    // roll routes the character into scouts/army/other instead of navy.
     let snap = freshSnap();
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
     snap.character.attributes = {
       strength: 12, dexterity: 12, endurance: 12,
       intelligence: 12, education: 12, social: 12,
