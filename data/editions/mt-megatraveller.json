@@ -3622,7 +3622,14 @@
           }
         }
       }
-    ]
+    ],
+    "unaffected": ["education", "social"],
+    "agingCrisis": {
+      "$rule": "PM p. 47 / TTB p. 24: 'If, as a result of aging, a characteristic is reduced to zero, the character has an aging crisis and becomes quite ill. A basic saving throw of 8+ applies to avoid death.'",
+      "whenAttributeReducedTo": 0,
+      "save": 8,
+      "dice": "2d6"
+    }
   },
   "advancedCharacterGeneration": {
     "source": "MegaTraveller Players Manual, printed pages 44-65",

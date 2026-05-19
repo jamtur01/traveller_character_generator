@@ -63,11 +63,32 @@ export const RulesSchema = z.looseObject({
     excludedServices: z.array(z.string()).optional(),
     anagathicTermsExcluded: z.boolean().optional(),
   }).optional(),
-  // Muster-out roll counts.
-  musterOutRolls: z.object({
+  // Muster-out roll counts AND DM tables. Engine reads from this block
+  // (musterDm.ts). The DM tables (cashTableDm/benefitTableDm) and the
+  // hard cap (maxCashTableRolls) live here too — they were previously
+  // stripped by the schema, which made the engine read empty objects
+  // and silently apply DM=0 for Gambling/rank 5+.
+  musterOutRolls: z.looseObject({
     perTerm: z.number().optional(),
     rankBands: z.array(RankBandSchema).optional(),
     rankExtraRolls: z.array(RankExtraRollSchema).optional(),
+    cashTableDm: z.array(z.looseObject({
+      condition: z.string().optional(),
+      when: z.looseObject({
+        retired: z.boolean().optional(),
+        skillAtLeast: z.looseObject({
+          skill: z.string(),
+          level: z.number(),
+        }).optional(),
+      }).optional(),
+      dm: z.number(),
+      services: z.array(z.string()).optional(),
+    })).optional(),
+    benefitTableDm: z.looseObject({
+      rankAtLeast: z.number().optional(),
+      dm: z.number(),
+    }).optional(),
+    maxCashTableRolls: z.number().optional(),
   }).optional(),
   // Disability (MT F2/F3 rule).
   disability: z.object({
@@ -114,12 +135,6 @@ export const RulesSchema = z.looseObject({
     onSpecialDuty: z.number().optional(),
     doubleSkillMargin: z.number().optional(),
     perTermExceptions: z.record(z.string(), z.number()).optional(),
-  }).optional(),
-  // Muster DMs (per-rank, retired bonus).
-  musterDm: z.looseObject({
-    cashTableDm: z.array(z.unknown()).optional(),
-    benefitTableDm: z.array(z.unknown()).optional(),
-    maxCashTableRolls: z.number().optional(),
   }).optional(),
   // Marine Tradition (F5 — forced Large Blade for Marines).
   marineTradition: z.object({
@@ -269,6 +284,88 @@ const AgingSchema = z.looseObject({
   }).optional(),
 });
 
+// --- ACG (Advanced Character Generation) schemas ---------------------
+
+const PhaseConfigSchema = z.looseObject({
+  kind: z.enum(["survival", "promotion", "decoration", "skills", "bonus"]),
+  consequence: z.string().optional(),
+  onMitigatedRevive: z.string().optional(),
+  endChargenOnFail: z.looseObject({
+    kind: z.enum(["retired", "deceased"]),
+    reason: z.string(),
+    withPension: z.boolean().optional(),
+  }).optional(),
+  purpleHeartOnExactCombat: z.boolean().optional(),
+  onPass: z.string().optional(),
+  skipIfNotBureaucracy: z.boolean().optional(),
+  consumeNextPromotionPenalty: z.boolean().optional(),
+  logPenaltyInNote: z.boolean().optional(),
+  consequenceMild: z.string().optional(),
+  consequenceSevere: z.string().optional(),
+  courtMartialMarginThreshold: z.number().optional(),
+});
+
+const ResolveAssignmentConfigSchema = z.looseObject({
+  preRun: z.union([z.literal("decorationDmTradeoff"), z.null()]).optional(),
+  phases: z.array(PhaseConfigSchema),
+  finalize: z.string().optional(),
+});
+
+// Sub-table for resolveAssignment rows. Garrison-style sub-tables omit
+// columns/rows entirely (the engine handles them as "automatic survival,
+// no skills"), so both fields are optional.
+const AssignmentResolutionSubSchema = z.looseObject({
+  columns: z.array(z.string()).optional(),
+  rows: z.array(z.looseObject({})).optional(),
+});
+
+const PathwayDataSchema = z.looseObject({
+  enlistment: z.union([z.looseObject({}), z.array(z.looseObject({}))]).optional(),
+  ranks: z.looseObject({
+    enlisted: z.array(z.unknown()).optional(),
+    officer: z.array(z.unknown()).optional(),
+  }).optional(),
+  reenlistment: z.looseObject({}).optional(),
+  combatAssignments: z.array(z.string()).optional(),
+  resolveAssignment: ResolveAssignmentConfigSchema.optional(),
+  assignmentResolution: z.record(
+    z.string(),
+    z.union([AssignmentResolutionSubSchema, z.string()]),
+  ).optional(),
+});
+
+const AcgCommonSchema = z.looseObject({
+  // Record values allow $rule / $comment citation strings alongside the
+  // structured objects (the same dual-shape pattern used by RulesSchema
+  // for nobleTitles).
+  preCareerOptions: z.record(
+    z.string(),
+    z.union([z.looseObject({}), z.string()]),
+  ).optional(),
+  courtMartial: z.looseObject({}).optional(),
+  browniePoints: z.looseObject({
+    awards: z.array(z.looseObject({
+      event: z.string(),
+      points: z.number(),
+    })).optional(),
+  }).optional(),
+  decorationTiers: z.looseObject({
+    tiers: z.array(z.looseObject({
+      minMargin: z.number(),
+      award: z.string(),
+    })).optional(),
+  }).optional(),
+  decorationAndSurvival: z.looseObject({}).optional(),
+});
+
+const AcgDataSchema = z.looseObject({
+  common: AcgCommonSchema,
+  mercenary: PathwayDataSchema.optional(),
+  navy: PathwayDataSchema.optional(),
+  scout: PathwayDataSchema.optional(),
+  merchantPrince: PathwayDataSchema.optional(),
+});
+
 const CanonDataSchema = z.looseObject({
   services: z.record(z.string(), ServiceDataSchema),
   cascadeSkills: CascadeSkillsSchema.optional(),
@@ -276,6 +373,7 @@ const CanonDataSchema = z.looseObject({
   skillLabelRenames: SkillLabelRenamesSchema.optional(),
   includesSkills: IncludesSkillsSchema.optional(),
   aging: AgingSchema.optional(),
+  advancedCharacterGeneration: AcgDataSchema.optional(),
 });
 
 export type CanonDataValidated = z.infer<typeof CanonDataSchema>;
