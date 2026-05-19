@@ -33,13 +33,18 @@ export interface ResolveContext {
   resTable: AssignmentLikeTable;
   res: AssignmentResolution;
   /** Per-phase DM contributions, summed and ready to apply. Pathways
-   *  compute these once before running phases — applies all
-   *  service-specific DM rules. */
+   *  compute these once before running phases — applies all service-
+   *  specific DM rules. All except `survival` and `skills` are
+   *  optional: scout has no decoration phase (PM p. 59 tables omit it),
+   *  merchant has no promotion phase (exam is end-of-term). The
+   *  matching phase entries are simply absent from the JSON
+   *  `resolveAssignment.phases` list; the runner reads only the dms
+   *  the configured phases need. */
   dms: {
     survival: number;
-    promotion: number;
-    decoration: number;
     skills: number;
+    promotion?: number;
+    decoration?: number;
     bonus?: number;
   };
 }
