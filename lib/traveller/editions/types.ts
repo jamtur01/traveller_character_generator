@@ -166,12 +166,16 @@ export interface AcgData {
   coverage?: Record<string, number[]>;
   common: AcgCommonData;
   /** Pathways are named entries — MT has mercenary, navy, scout,
-   *  merchantPrince. Each is a self-contained chargen branch. The
-   *  pathway-specific shape lives in engine/acg/pathways/*. */
-  mercenary?: AcgPathwayData;
-  navy?: AcgPathwayData;
-  scout?: AcgPathwayData;
-  merchantPrince?: AcgPathwayData;
+   *  merchantPrince. Each is a self-contained chargen branch with its
+   *  own typed shape (declared in engine/acg/pathways/*.ts) — the
+   *  fields below resolve to the pathway-specific interfaces so
+   *  ch.editionId data access is strongly typed end-to-end. */
+  mercenary?: import("../engine/acg/pathways/mercenary").MercenaryData &
+    AcgPathwayData;
+  navy?: import("../engine/acg/pathways/navy").NavyData & AcgPathwayData;
+  scout?: import("../engine/acg/pathways/scout").ScoutData & AcgPathwayData;
+  merchantPrince?: import("../engine/acg/pathways/merchantPrince").MerchantData &
+    AcgPathwayData;
   homeworld?: { techCodeOrder?: string[] };
   [pathway: string]: unknown;
 }

@@ -5,7 +5,11 @@
 // instead of poking into JSON.
 
 import { getEdition } from "../editions";
-import type { AcgData, AcgPathway } from "../editions/types";
+import type { AcgPathway } from "../editions/types";
+import type { MercenaryData } from "./acg/pathways/mercenary";
+import type { NavyData } from "./acg/pathways/navy";
+import type { ScoutData } from "./acg/pathways/scout";
+import type { MerchantData } from "./acg/pathways/merchantPrince";
 import {
   clearMercenarySpecCache, validateMercenaryConfig,
 } from "./acg/pathways/mercenary";
@@ -52,17 +56,23 @@ export function editionHasAcg(editionId: string): boolean {
  *  / "source" / "coverage" meta keys). MT returns
  *  ["mercenary", "navy", "scout", "merchantPrince"]; CT returns []. */
 export function listAcgPathways(editionId: string): string[] {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    AcgData | undefined;
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
   if (!acg) return [];
   return Object.keys(acg).filter((k) => k !== "common" && k !== "source" && k !== "coverage");
 }
 
 /** Look up one ACG pathway. Throws if the edition has no ACG or the pathway
- *  name isn't declared — same fail-fast pattern as serviceDef(). */
+ *  name isn't declared — same fail-fast pattern as serviceDef(). The four
+ *  string-literal overloads narrow the return type to the pathway's typed
+ *  data shape; the generic overload preserves back-compat for callers that
+ *  pass a runtime string. */
+export function getAcgPathway(editionId: string, pathway: "mercenary"): MercenaryData & AcgPathway;
+export function getAcgPathway(editionId: string, pathway: "navy"): NavyData & AcgPathway;
+export function getAcgPathway(editionId: string, pathway: "scout"): ScoutData & AcgPathway;
+export function getAcgPathway(editionId: string, pathway: "merchantPrince"): MerchantData & AcgPathway;
+export function getAcgPathway(editionId: string, pathway: string): AcgPathway;
 export function getAcgPathway(editionId: string, pathway: string): AcgPathway {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    AcgData | undefined;
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
   if (!acg) {
     throw new Error(`Edition "${editionId}" has no Advanced Character Generation data`);
   }
@@ -79,8 +89,7 @@ export function getAcgPathway(editionId: string, pathway: string): AcgPathway {
  *  courtMartial, browniePoints, decorationAndSurvival). Throws if the
  *  edition has no ACG. */
 export function getAcgCommon(editionId: string): Record<string, unknown> {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    AcgData | undefined;
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
   if (!acg) {
     throw new Error(`Edition "${editionId}" has no Advanced Character Generation data`);
   }

@@ -35,8 +35,7 @@ interface PathwayData {
 }
 
 function pathwayData(ch: Character, pathway: string): PathwayData | null {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
+  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
   if (!acg) return null;
   return (acg[pathway] as PathwayData | undefined) ?? null;
 }
@@ -434,13 +433,9 @@ export function applyScoutSchool(ch: Character, school: string): void {
   ch.log(ev.schoolAssigned(school, "scout"));
   awardBrownie(ch, 1, `Scout school: ${school}`);
 
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown>;
-  const scout = acg.scout as Record<string, unknown>;
-  const schools = scout.schools as {
-    columns: string[];
-    rows: Array<Record<string, unknown>>;
-  };
+  const scout = getEdition(ch.editionId).data.advancedCharacterGeneration?.scout;
+  const schools = scout?.schools;
+  if (!schools) return;
   const col = meta?.columnKey;
   if (!col) return;
   const rolls = meta?.rollsPerAttendance ?? 1;

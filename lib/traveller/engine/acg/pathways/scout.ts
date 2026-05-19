@@ -33,7 +33,7 @@ import { event as ev } from "../../../history";
 
 const PATHWAY = "scout";
 
-interface ScoutData {
+export interface ScoutData {
   enlistment: {
     target: number;
     dms: Array<{ attribute: string; min: number; dm: number }>;
@@ -65,10 +65,9 @@ interface ScoutData {
 }
 
 function dataFor(ch: Character): ScoutData {
-  const acg = getEdition(ch.editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) throw new Error("Scout pathway requires ACG data");
-  return acg.scout as ScoutData;
+  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.scout;
+  if (!data) throw new Error("Scout pathway requires ACG data");
+  return data;
 }
 
 export function scoutEnlist(ch: Character): void {
