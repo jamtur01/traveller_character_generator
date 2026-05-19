@@ -212,7 +212,7 @@ function buildPromotion(p: PhasePromotion, callbacks: PathwayCallbacks): PhaseDe
       const penalty = p.consumeNextPromotionPenalty
         ? (ctx.ch.requireAcgState().nextPromotionPenalty ?? 0)
         : 0;
-      return ctx.dms.promotion + penalty;
+      return (ctx.dms.promotion ?? 0) + penalty;
     },
     logRoll: (ctx, r) => {
       const penalty = p.consumeNextPromotionPenalty
@@ -242,7 +242,7 @@ function buildDecoration(p: PhaseDecoration): PhaseDef {
     phase: "decoration",
     skip: (ctx) => ctx.res.decoration === "none",
     target: (ctx) => ctx.res.decoration,
-    dm: (ctx) => ctx.dms.decoration,
+    dm: (ctx) => ctx.dms.decoration ?? 0,
     logRoll: (ctx, r) => ctx.ch.log(rollEv(
       "Decoration", r, ctx.res.decoration,
       `${ctx.assignment} (margin ${r.margin})`,

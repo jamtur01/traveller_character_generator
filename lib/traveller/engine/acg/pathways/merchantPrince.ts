@@ -380,11 +380,12 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     decoration: "none", // merchant has no decoration phase
     promotion: "none",  // promotion happens via the exam at endOfTerm
   };
+  // Merchant has no decoration or per-assignment promotion phase (PM
+  // p. 65 — promotion is the end-of-term exam, no decoration mechanic).
+  // Only the phases that actually run need a dm here.
   const dms = {
     survival: applyDmRules(resolutionTable.dms, ch, "survival"),
     skills: applyDmRules(resolutionTable.dms, ch, "skills"),
-    decoration: 0,
-    promotion: 0,
     bonus: applyDmRules(resolutionTable.dms, ch, "bonus"),
   };
   // The bonus phase is merchant-specific; carry its target on a custom

@@ -287,9 +287,12 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     );
   }
   const res = lookupResolution(resTable, assignment);
+  // Scout has no decoration phase per PM p. 59 — the resolution tables
+  // omit a Decoration row. (The p. 65 checklist's "c) Decoration" entry
+  // is template-copied from other pathways; the actual data tables are
+  // authoritative.) No `dms.decoration` is needed here.
   const dms = {
     survival: applyDmRules(resTable.dms, ch, "survival"),
-    decoration: 0,
     promotion: applyDmRules(resTable.dms, ch, "promotion"),
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
