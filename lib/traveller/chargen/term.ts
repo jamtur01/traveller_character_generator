@@ -4,8 +4,8 @@
 
 import type { Character } from "../character";
 import { event as ev } from "../history";
-import { runAcgTerm } from "../engine/acg/runner";
-import { runTermSteps } from "../engine/runner";
+import { runAcgTerm } from "../engine/runners/acg";
+import { runTermSteps } from "../engine/runners/basic";
 
 /** Run one service term. Increments terms/age (basic chargen only —
  *  ACG does its own per-year accounting). */

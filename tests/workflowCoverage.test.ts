@@ -18,7 +18,7 @@ import { Character } from "../lib/traveller/character";
 import { getEdition } from "../lib/traveller/editions";
 import {
   runAcgYear, runAcgTerm,
-} from "../lib/traveller/engine/acg/runner";
+} from "../lib/traveller/engine/runners/acg";
 
 afterEach(() => { vi.restoreAllMocks(); });
 

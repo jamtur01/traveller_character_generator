@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+import { freshAcgState } from "../lib/traveller/engine/acg/types";
 import { buildCharacterSheetPdf } from "../lib/pdfSheet";
 
 // ---------------------------------------------------------------------------
@@ -102,11 +103,12 @@ describe("ACG PDF renderer", () => {
     c.commissioned = true;
     c.useAcg = true;
     c.acgPathway = "mercenary";
-    c.acgBranch = "Marines";
-    c.acgMos = "Heavy Weapons";
-    c.decorations = ["MCUF", "MCG"];
-    c.browniePoints = 3;
-    c.schoolsAttended = ["Combat Engineer School", "Intelligence School"];
+    c.acgState = freshAcgState("mercenary");
+    c.acgState.branch = "Marines";
+    c.acgState.mos = "Heavy Weapons";
+    c.acgState.decorations = ["MCUF", "MCG"];
+    c.acgState.browniePoints = 3;
+    c.acgState.schoolsAttended = ["Combat Engineer School", "Intelligence School"];
     return c;
   }
 

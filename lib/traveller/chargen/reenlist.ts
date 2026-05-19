@@ -6,7 +6,7 @@ import type { Character } from "../character";
 import { getEdition } from "../editions";
 import { roll } from "../random";
 import { event as ev } from "../history";
-import { runAcgReenlist } from "../engine/acg/runner";
+import { runAcgReenlist } from "../engine/runners/acg";
 
 /** Run the end-of-term reenlistment check. Mutates ch.chargenStatus
  *  via the endChargen* helpers when the character is forced out. */

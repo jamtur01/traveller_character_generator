@@ -123,7 +123,7 @@ export interface LifecycleStep {
 export interface LifecycleSpec {
   /** Ordered sequence of steps run once per term in basic chargen. ACG
    *  chargen does NOT use this sequence — it runs the dedicated per-year
-   *  assignment cycle via runAcgYear in engine/acg/runner.ts. */
+   *  assignment cycle via runAcgYear in engine/runners/acg.ts. */
   terms: LifecycleStep[];
 }
 

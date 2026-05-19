@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { getEdition, listEditions } from "../lib/traveller/editions";
 import { applyStructuredDms } from "../lib/traveller/engine/acg/tables";
+import { freshAcgState } from "../lib/traveller/engine/acg/types";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -21,8 +22,7 @@ describe("Structured DM arrays evaluate correctly", () => {
     };
     if (withAcgState) {
       c.useAcg = true;
-      // Trigger the lazy getter on acgState which initializes it.
-      c.browniePoints = 0;
+      c.acgState = freshAcgState("mercenary");
     }
     return c;
   }
@@ -115,8 +115,7 @@ describe("Dynamic pathway factory registry via EditionHooks", () => {
     const c = new Character();
     c.editionId = "ct-classic";
     c.useAcg = true;
-    c.browniePoints = 0; // initializes acgState
-    c.acgState!.pathway = "mercenary" as never;
+    c.acgState = freshAcgState("mercenary");
     expect(() => c.doServiceTermStep()).toThrow(
       /No ACG pathway implementation for "mercenary"/,
     );

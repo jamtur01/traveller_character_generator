@@ -8,7 +8,7 @@
 
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
-import { runAcgTerm } from "../lib/traveller/engine/acg/runner";
+import { runAcgTerm } from "../lib/traveller/engine/runners/acg";
 import {
   merchantRollAssignment,
 } from "../lib/traveller/engine/acg/pathways/merchantPrince";

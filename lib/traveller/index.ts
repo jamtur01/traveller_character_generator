@@ -37,7 +37,7 @@ export {
 } from "./engine/acg";
 export {
   runAcgTerm, runAcgYear, runAcgReenlist,
-} from "./engine/acg/runner";
+} from "./engine/runners/acg";
 export type {
   AcgPathwayId, AcgState, AssignmentResolution, ResolutionTarget,
 } from "./engine/acg/types";
