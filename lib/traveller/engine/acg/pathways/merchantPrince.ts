@@ -337,11 +337,21 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
   const deptKey = labelToColumnKey(acg.department ?? "Deck");
-  // Free Trader characters resolve against the freeTraderTrade table regardless
-  // of department (Free Traders are a single-department service).
-  const useFreeTraderTable = acg.lineType === "Free Trader";
-  const resTable = useFreeTraderTable
-    ? data.assignmentResolution.freeTraderTrade
+  // Free Trader characters resolve against one of two tables (both are
+  // distinct from the standard department tables):
+  //   - freeTraderTrade for Route / Charter / Exploratory / Speculative
+  //     assignments (PM p. 64 Free Trader Trade row).
+  //   - freeTraderOther for Smuggling / Piracy / No Business (PM p. 64
+  //     Free Trader Other row — different survival/skills/bonus targets).
+  // Before this fix the engine routed Smuggling through freeTraderTrade
+  // with column "speculative" (assignmentColumnMap remap), which yielded
+  // the wrong survival/bonus targets vs. the PM.
+  const isFreeTrader = acg.lineType === "Free Trader";
+  const FREE_TRADER_OTHER = new Set(["Smuggling", "Piracy", "No Business"]);
+  const resTable = isFreeTrader
+    ? (FREE_TRADER_OTHER.has(assignment)
+        ? data.assignmentResolution.freeTraderOther
+        : data.assignmentResolution.freeTraderTrade)
     : data.assignmentResolution[deptKey];
   if (!resTable) {
     throw new Error(
@@ -351,7 +361,13 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     );
   }
   const resolutionTable = resTable;
-  const colKey = assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment);
+  // For free trader Other assignments, the column key is the lower-
+  // camel form of the assignment ("smuggling", "piracy", "noBusiness").
+  // The general assignmentColumnMap is used for Free Trader Trade
+  // assignments (which need the Route/Charter etc. remap).
+  const colKey = isFreeTrader && FREE_TRADER_OTHER.has(assignment)
+    ? labelToColumnKey(assignment)
+    : (assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment));
   if (!resolutionTable.columns.includes(colKey)) {
     throw new Error(
       `Merchant: assignment "${assignment}" → column "${colKey}" not in ` +
