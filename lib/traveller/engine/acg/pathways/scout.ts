@@ -26,10 +26,8 @@ import {
 import { applyAcgSkillCell } from "../skills";
 import { applyScoutSchool } from "../schools";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
-import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
-  type ResolveAssignmentConfig,
-} from "../jsonPhases";
+import { type PathwayCallbacks } from "../jsonPhases";
+import { createPathwaySpecRegistry } from "./shared";
 import { recordTransfer } from "../types";
 import { event as ev } from "../../../history";
 
@@ -308,40 +306,14 @@ const SCOUT_CALLBACKS: PathwayCallbacks = {
   },
 };
 
-const SCOUT_SPEC_CACHE = new Map<string, PathwaySpec>();
-export function clearScoutSpecCache(): void {
-  SCOUT_SPEC_CACHE.clear();
-}
-export function validateScoutConfig(editionId: string): void {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) return;
-  const data = acg.scout as (ScoutData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }) | undefined;
-  if (!data?.resolveAssignment) return;
-  buildPathwaySpecFromConfig(data.resolveAssignment, SCOUT_CALLBACKS, {
-    combatAssignments: () => [],
-  });
-}
-function getScoutSpec(ch: Character): PathwaySpec {
-  let spec = SCOUT_SPEC_CACHE.get(ch.editionId);
-  if (spec) return spec;
-  const data = dataFor(ch);
-  const config = (data as ScoutData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }).resolveAssignment;
-  if (!config) {
-    throw new Error(
-      `Edition "${ch.editionId}" scout block is missing resolveAssignment config.`,
-    );
-  }
-  spec = buildPathwaySpecFromConfig(config, SCOUT_CALLBACKS, {
-    combatAssignments: () => [],
-  });
-  SCOUT_SPEC_CACHE.set(ch.editionId, spec);
-  return spec;
-}
+const REGISTRY = createPathwaySpecRegistry<ScoutData>({
+  pathwayKey: "scout",
+  callbacks: SCOUT_CALLBACKS,
+  combatAssignments: () => [],
+});
+export const clearScoutSpecCache = REGISTRY.clear;
+export const validateScoutConfig = REGISTRY.validate;
+function getScoutSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const data = dataFor(ch);

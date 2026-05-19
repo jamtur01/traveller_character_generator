@@ -36,10 +36,8 @@ import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
-import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
-  type ResolveAssignmentConfig,
-} from "../jsonPhases";
+import { type PathwayCallbacks } from "../jsonPhases";
+import { createPathwaySpecRegistry, resetCombatTermFlags } from "./shared";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../types";
 
@@ -294,50 +292,14 @@ const MERCENARY_CALLBACKS: PathwayCallbacks = {
   },
 };
 
-/** Lazy-built PathwaySpec, cached per edition. The build pulls the
- *  JSON config + callback registry. */
-const SPEC_CACHE = new Map<string, PathwaySpec>();
-/** Drop cached PathwaySpecs. Required when edition JSON is reloaded
- *  (tests, hot-reload) so the next resolveAssignment rebuilds from the
- *  updated config and callback registry. */
-export function clearMercenarySpecCache(): void {
-  SPEC_CACHE.clear();
-}
-/** Build (and discard) the PathwaySpec for an edition. Surfaces missing
- *  callback names or malformed phase configs at edition load instead of
- *  at first ACG run. No-op if the edition doesn't declare a mercenary
- *  block or resolveAssignment config. */
-export function validateMercenaryConfig(editionId: string): void {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) return;
-  const data = acg.mercenary as (MercenaryData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }) | undefined;
-  if (!data?.resolveAssignment) return;
-  buildPathwaySpecFromConfig(data.resolveAssignment, MERCENARY_CALLBACKS, {
-    combatAssignments: () => data.combatAssignments ?? [],
-  });
-}
-function getSpec(ch: Character): PathwaySpec {
-  let spec = SPEC_CACHE.get(ch.editionId);
-  if (spec) return spec;
-  const data = dataFor(ch);
-  const config = (data as MercenaryData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }).resolveAssignment;
-  if (!config) {
-    throw new Error(
-      `Edition "${ch.editionId}" mercenary block is missing resolveAssignment ` +
-      `config — add it to data/editions/${ch.editionId}.json`,
-    );
-  }
-  spec = buildPathwaySpecFromConfig(config, MERCENARY_CALLBACKS, {
-    combatAssignments: (c) => dataFor(c).combatAssignments ?? [],
-  });
-  SPEC_CACHE.set(ch.editionId, spec);
-  return spec;
-}
+const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
+  pathwayKey: "mercenary",
+  callbacks: MERCENARY_CALLBACKS,
+  combatAssignments: (data) => data.combatAssignments ?? [],
+});
+export const clearMercenarySpecCache = REGISTRY.clear;
+export const validateMercenaryConfig = REGISTRY.validate;
+function getSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 /** Resolve one assignment via the JSON-driven phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
@@ -581,19 +543,8 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
   });
 }
 
-/** Hook called by the runner before per-term processing.
- *  Resets per-term Mercenary-specific flags:
- *    - injuredThisYear (per-year, but cleared here as a safety net)
- *    - decorationDmStrategy (player's tradeoff applies for one assignment;
- *      reset between terms so a stale value doesn't leak forward).
- *    - examDm and effectiveRankCode are merchant-only but harmless to clear.
- *  The shared runner clears year/promotedThisTerm before each term; this
- *  hook adds the Mercenary-specific bookkeeping. */
-export function mercenaryStartOfTerm(ch: Character): void {
-  if (!ch.acgState) return;
-  ch.acgState.injuredThisYear = false;
-  ch.acgState.decorationDmStrategy = 0;
-}
+/** Per-term reset shared with navy — see resetCombatTermFlags. */
+export const mercenaryStartOfTerm = resetCombatTermFlags;
 
 export function getMercenaryPathway() {
   return {
