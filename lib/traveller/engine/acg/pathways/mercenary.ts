@@ -56,7 +56,13 @@ export interface MercenaryData {
   combatArmEligibility?: {
     army?: string[];
     marines?: string[];
-    commandoEntryRequires?: string;
+    /** Per-arm gates. PM p. 50: Commando requires Military Academy
+     *  honors graduate. Key = arm name; value = predicate.
+     *  honorsGraduateOf names the required pre-career school option. */
+    armGates?: Record<string, {
+      honorsGraduateOf?: string;
+      errorMessage?: string;
+    }>;
   };
   combatArmResolution?: Record<string, string>;
   initialTraining: string[];
