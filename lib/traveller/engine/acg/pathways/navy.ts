@@ -25,10 +25,8 @@ import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
-import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
-  type ResolveAssignmentConfig,
-} from "../jsonPhases";
+import { type PathwayCallbacks } from "../jsonPhases";
+import { createPathwaySpecRegistry, resetCombatTermFlags } from "./shared";
 import { event as ev } from "../../../history";
 
 const PATHWAY = "navy";
@@ -427,41 +425,14 @@ const NAVY_CALLBACKS: PathwayCallbacks = {
   },
 };
 
-const NAVY_SPEC_CACHE = new Map<string, PathwaySpec>();
-export function clearNavySpecCache(): void {
-  NAVY_SPEC_CACHE.clear();
-}
-export function validateNavyConfig(editionId: string): void {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) return;
-  const data = acg.navy as (NavyData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-    combatAssignments?: string[];
-  }) | undefined;
-  if (!data?.resolveAssignment) return;
-  buildPathwaySpecFromConfig(data.resolveAssignment, NAVY_CALLBACKS, {
-    combatAssignments: () => data.combatAssignments ?? [],
-  });
-}
-function getNavySpec(ch: Character): PathwaySpec {
-  let spec = NAVY_SPEC_CACHE.get(ch.editionId);
-  if (spec) return spec;
-  const data = dataFor(ch);
-  const config = (data as NavyData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }).resolveAssignment;
-  if (!config) {
-    throw new Error(
-      `Edition "${ch.editionId}" navy block is missing resolveAssignment config.`,
-    );
-  }
-  spec = buildPathwaySpecFromConfig(config, NAVY_CALLBACKS, {
-    combatAssignments: (c) => dataFor(c).combatAssignments ?? [],
-  });
-  NAVY_SPEC_CACHE.set(ch.editionId, spec);
-  return spec;
-}
+const REGISTRY = createPathwaySpecRegistry<NavyData & { combatAssignments?: readonly string[] }>({
+  pathwayKey: "navy",
+  callbacks: NAVY_CALLBACKS,
+  combatAssignments: (data) => data.combatAssignments ?? [],
+});
+export const clearNavySpecCache = REGISTRY.clear;
+export const validateNavyConfig = REGISTRY.validate;
+function getNavySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 /** Resolve assignment. Branch picks which resolution sub-table to use. */
 export function navyResolveAssignment(ch: Character, assignment: string): void {
@@ -680,15 +651,8 @@ function offerNavyBranchChange(ch: Character): void {
   });
 }
 
-/** Reset per-term navy state. The decoration-DM tradeoff is a per-
- *  assignment player choice; without an explicit reset, a value set in
- *  one term's preRun prompt persists into the next term and silently
- *  biases later rolls. injuredThisYear is cleared as a safety net. */
-export function navyStartOfTerm(ch: Character): void {
-  if (!ch.acgState) return;
-  ch.acgState.injuredThisYear = false;
-  ch.acgState.decorationDmStrategy = 0;
-}
+/** Per-term reset shared with mercenary — see resetCombatTermFlags. */
+export const navyStartOfTerm = resetCombatTermFlags;
 
 export function getNavyPathway() {
   return {

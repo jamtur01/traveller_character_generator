@@ -37,10 +37,8 @@ import {
   applyOnce, markComplete, resetIfComplete,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
-import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
-  type ResolveAssignmentConfig,
-} from "../jsonPhases";
+import { type PathwayCallbacks } from "../jsonPhases";
+import { createPathwaySpecRegistry } from "./shared";
 import type { AssignmentResolution, ResolutionTarget } from "../types";
 import { recordTransfer } from "../types";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
@@ -410,40 +408,14 @@ const MERCHANT_CALLBACKS: PathwayCallbacks = {
   },
 };
 
-const MERCHANT_SPEC_CACHE = new Map<string, PathwaySpec>();
-export function clearMerchantSpecCache(): void {
-  MERCHANT_SPEC_CACHE.clear();
-}
-export function validateMerchantConfig(editionId: string): void {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  if (!acg) return;
-  const data = acg.merchantPrince as (MerchantData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }) | undefined;
-  if (!data?.resolveAssignment) return;
-  buildPathwaySpecFromConfig(data.resolveAssignment, MERCHANT_CALLBACKS, {
-    combatAssignments: () => [],
-  });
-}
-function getMerchantSpec(ch: Character): PathwaySpec {
-  let spec = MERCHANT_SPEC_CACHE.get(ch.editionId);
-  if (spec) return spec;
-  const data = dataFor(ch);
-  const config = (data as MerchantData & {
-    resolveAssignment?: ResolveAssignmentConfig;
-  }).resolveAssignment;
-  if (!config) {
-    throw new Error(
-      `Edition "${ch.editionId}" merchantPrince block is missing resolveAssignment config.`,
-    );
-  }
-  spec = buildPathwaySpecFromConfig(config, MERCHANT_CALLBACKS, {
-    combatAssignments: () => [],
-  });
-  MERCHANT_SPEC_CACHE.set(ch.editionId, spec);
-  return spec;
-}
+const REGISTRY = createPathwaySpecRegistry<MerchantData>({
+  pathwayKey: "merchantPrince",
+  callbacks: MERCHANT_CALLBACKS,
+  combatAssignments: () => [],
+});
+export const clearMerchantSpecCache = REGISTRY.clear;
+export const validateMerchantConfig = REGISTRY.validate;
+function getMerchantSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 function merchantCheckAvailablePosition(ch: Character): void {
   const data = dataFor(ch);
