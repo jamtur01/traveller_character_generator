@@ -10,7 +10,7 @@
 import type { Character } from "../../character";
 import { getEdition } from "../../editions";
 import { ChoicePendingError } from "../choices";
-import { awardBrownie } from "./awards";
+import { awardBrownie } from "../acg/awards";
 import { event as ev } from "../../history";
 import type { AcgPathwayImpl } from "../../editions/types";
 

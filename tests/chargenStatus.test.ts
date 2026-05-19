@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { freshAcgState } from "../lib/traveller/engine/acg/types";
-import { runTermSteps } from "../lib/traveller/engine/runner";
+import { runTermSteps } from "../lib/traveller/engine/runners/basic";
 
 function freshChar(): Character {
   const c = new Character();

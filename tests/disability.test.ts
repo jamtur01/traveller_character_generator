@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { Character } from "../lib/traveller/character";
+import { freshAcgState } from "../lib/traveller/engine/acg/types";
 
 function makeMt(): Character {
   const c = new Character();
@@ -101,10 +102,7 @@ describe("F4/F17: drafted no OCS first term", () => {
     const c = makeMt();
     c.drafted = true;
     c.terms = 0;
-    c.browniePoints = 0; // force lazy-init acgState
-    // Lazy-init MUST have populated acgState — assert directly rather
-    // than guarding with `if (c.acgState)` which silently skips the
-    // setup on regression.
+    c.acgState = freshAcgState("mercenary");
     const acg = c.requireAcgState();
     acg.rankCode = "E5";
     acg.isOfficer = false;
@@ -121,7 +119,7 @@ describe("F4/F17: drafted no OCS first term", () => {
     const c = makeMt();
     c.drafted = true;
     c.terms = 1; // completed first term
-    c.browniePoints = 0;
+    c.acgState = freshAcgState("mercenary");
     const acg = c.requireAcgState();
     acg.rankCode = "E5";
     acg.isOfficer = false;

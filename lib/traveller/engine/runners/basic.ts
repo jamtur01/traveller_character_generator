@@ -6,9 +6,9 @@
 // steps no-op via their own guards rather than the runner short-circuiting,
 // which makes step composition predictable.
 
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { STEP_REGISTRY } from "./steps";
+import type { Character } from "../../character";
+import { getEdition } from "../../editions";
+import { STEP_REGISTRY } from "../steps";
 
 export function runTermSteps(character: Character): void {
   // The character's editionId is authoritative — we don't accept an override

@@ -16,9 +16,10 @@
 
 import { Character, cloneCharacter } from "../character";
 import { ChoicePendingError } from "../engine/choices";
-import { runAcgYear } from "../engine/acg/runner";
+import { runAcgYear } from "../engine/runners/acg";
 import { getEditionServices } from "../services";
 import { editionHasAcg } from "../engine/acg";
+import { freshAcgState } from "../engine/acg/types";
 import { event as ev } from "../history";
 import { cashDmFor, benefitDmFor, maxCashRolls } from "../engine/musterDm";
 import { intToOrdinal } from "../formatting";
@@ -150,10 +151,10 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
     if (c.acgPathway === "merchantPrince" &&
         (opts.acgLineType === "Megacorp" || opts.acgLineType === "Sector-wide") &&
         opts.acgMerchantAcademy) {
-      // Force lazy-init via browniePoints setter so attemptMerchantAcademy
-      // can be set before beginAcg consumes it.
-      c.browniePoints = c.browniePoints;
-      if (c.acgState) c.acgState.attemptMerchantAcademy = true;
+      // Stash attemptMerchantAcademy on acgState before beginAcg
+      // consumes it. Initialize acgState if it doesn't exist yet.
+      if (!c.acgState) c.acgState = freshAcgState("merchantPrince");
+      c.acgState.attemptMerchantAcademy = true;
     }
     try {
       c.beginAcg(c.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {

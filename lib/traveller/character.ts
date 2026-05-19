@@ -12,7 +12,7 @@ import type {
   ScoutAcgState, MerchantAcgState,
 } from "./engine/acg/types";
 import {
-  isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg,
+  isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg, freshAcgState,
 } from "./engine/acg/types";
 import {
   editionHasHomeworld,
@@ -52,6 +52,7 @@ import {
   doGunBenefit as doGunBenefitImpl,
   doWeaponBenefit as doWeaponBenefitImpl,
 } from "./chargen/weaponBenefits";
+import { enforceSkillCap as enforceSkillCapImpl } from "./chargen/skillCap";
 import type {
   AttributeKey,
   Attributes,
@@ -421,78 +422,28 @@ export class Character {
     return acg;
   }
 
-  // Accessor surfaces for the PDF renderer / UI — these read/write
-  // through acgState. The setters lazy-init acgState with a default
-  // mercenary pathway so existing callers that poke at acgBranch /
-  // acgMos / decorations / browniePoints / schoolsAttended don't crash.
-  // (The ACG runner overwrites acgState.pathway with the real pathway
-  // during enlistment, so the default is harmless.)
-  private ensureAcgState(): AcgState {
-    if (!this.acgState) {
-      // Inline default to avoid a circular import on freshAcgState.
-      this.acgState = {
-        pathway: (this.acgPathway as AcgState["pathway"]) ?? "mercenary",
-        rankCode: "E1",
-        isOfficer: false,
-        year: 1,
-        currentAssignment: null,
-        inCommand: false,
-        justRetained: false,
-        retainedAssignment: null,
-        promotedThisTerm: false,
-        injuredThisYear: false,
-        assignmentHistory: [],
-        combatRibbons: 0,
-        commandClusters: 0,
-        schoolsAttended: [],
-        decorations: [],
-        browniePoints: 0,
-        browniePointsSpent: 0,
-        decorationDmStrategy: 0,
-      };
-    }
-    return this.acgState;
-  }
-
+  // Read-only ACG accessors. Convenient default-empty fallbacks for the
+  // PDF renderer and UI components that may run before acgState is
+  // initialized. Writers must go through ch.acgState directly (using
+  // freshAcgState() if the field doesn't exist yet) — the old
+  // lazy-init-on-set behavior was a footgun that silently materialized
+  // an acgState whenever a test wrote `c.browniePoints = 0`.
   get acgBranch(): string | null {
     if (!this.acgState) return null;
     return this.acgState.branch ?? this.acgState.combatArm ?? this.acgState.office
       ?? this.acgState.department ?? null;
   }
-  set acgBranch(v: string | null) {
-    if (v === null) {
-      if (this.acgState) delete this.acgState.branch;
-      return;
-    }
-    this.ensureAcgState().branch = v;
-  }
   get acgMos(): string | null {
     return this.acgState?.mos ?? null;
-  }
-  set acgMos(v: string | null) {
-    if (v === null) {
-      if (this.acgState) delete this.acgState.mos;
-      return;
-    }
-    this.ensureAcgState().mos = v;
   }
   get decorations(): string[] {
     return this.acgState?.decorations ?? [];
   }
-  set decorations(v: string[]) {
-    this.ensureAcgState().decorations = v;
-  }
   get browniePoints(): number {
     return this.acgState?.browniePoints ?? 0;
   }
-  set browniePoints(v: number) {
-    this.ensureAcgState().browniePoints = v;
-  }
   get schoolsAttended(): string[] {
     return this.acgState?.schoolsAttended ?? [];
-  }
-  set schoolsAttended(v: string[]) {
-    this.ensureAcgState().schoolsAttended = v;
   }
 
   /**
@@ -571,17 +522,12 @@ export class Character {
     if (!this.useAcg) {
       throw new Error("doPreCareer is only valid in ACG mode");
     }
+    // Lazy-init acgState so pre-career can run before pathway is chosen.
+    // The pathway defaults to mercenary; beginAcg overwrites it later.
     if (!this.acgState) {
-      // Lazy-init acgState so pre-career can run before pathway is chosen.
-      this.acgState = {
-        pathway: "mercenary", rankCode: "E1", isOfficer: false,
-        year: 1, currentAssignment: null, inCommand: false,
-        justRetained: false, retainedAssignment: null,
-        promotedThisTerm: false, injuredThisYear: false,
-        assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
-        schoolsAttended: [], decorations: [], browniePoints: 0,
-        browniePointsSpent: 0, decorationDmStrategy: 0,
-      };
+      this.acgState = freshAcgState(
+        (this.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince") ?? "mercenary",
+      );
     }
     const result = attemptPreCareer(this, option);
     applyPreCareerResult(this, option, result);
@@ -700,58 +646,9 @@ export class Character {
     return this.attributes.intelligence + this.attributes.education;
   }
 
-  /**
-   * Enforce the Int+Edu skill cap (PM p. 39). Called after each term's
-   * skill rolls. In auto mode, reduces the most-recently-acquired skill
-   * level repeatedly until the total fits the cap. In interactive mode,
-   * queues a `reduceSkill` choice for the player to pick which skill
-   * level to drop; recurses until under cap.
-   *
-   * No-op for editions without a homeworld rules block (CT).
-   */
+  /** Enforce the Int+Edu skill cap (PM p. 39) — see chargen/skillCap. */
   enforceSkillCap(): void {
-    const ed = getEdition(this.editionId);
-    if (!ed.rules.skillCap) return;
-    const cap = this.skillCap();
-    const total = this.totalSkillLevels();
-    if (total <= cap) return;
-    const excess = total - cap;
-    if (this.choiceMode === "auto") {
-      let remaining = excess;
-      while (remaining > 0 && this.skills.length > 0) {
-        const last = this.skills[this.skills.length - 1]!;
-        if (last[1] > 1) {
-          last[1] -= 1;
-          this.log(ev.skillReduced(last[0], last[1], "Int+Edu cap"));
-        } else {
-          this.skills.pop();
-          this.log(ev.skillForfeited(last[0], "Int+Edu cap"));
-        }
-        remaining -= 1;
-      }
-      return;
-    }
-    const options = this.skills.map(([n, l]) => `${n}-${l}`);
-    this.pickOrDefer({
-      kind: "reduceSkill",
-      label: `Skill total ${total} exceeds Int+Edu cap ${cap}. Pick a skill to reduce by 1 (${excess} reduction${excess === 1 ? "" : "s"} needed).`,
-      options,
-      context: { source: "skillCap", excess, cap, total },
-      onResolve: (c, chosen) => {
-        const name = chosen.replace(/-\d+$/, "");
-        const i = c.checkSkill(name);
-        if (i < 0) return;
-        const entry = c.skills[i]!;
-        if (entry[1] > 1) {
-          entry[1] -= 1;
-          c.log(ev.skillReduced(name, entry[1], "Int+Edu cap"));
-        } else {
-          c.skills.splice(i, 1);
-          c.log(ev.skillForfeited(name, "Int+Edu cap"));
-        }
-        c.enforceSkillCap();
-      },
-    });
+    enforceSkillCapImpl(this);
   }
 
   improveAttribute(attrib: AttributeKey, delta = 1) {

@@ -9,7 +9,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { getAcgPathway } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
-import { runAcgYear, runAcgTerm } from "../lib/traveller/engine/acg/runner";
+import { runAcgYear, runAcgTerm } from "../lib/traveller/engine/runners/acg";
+import { freshAcgState } from "../lib/traveller/engine/acg/types";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -279,10 +280,10 @@ describe("Merchant Prince ACG runtime", () => {
       hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
       tech: "Avg Stellar",
     };
-    // Per Rrev5 the Academy is opt-in (PM "may apply"). Force lazy-init
-    // of acgState (browniePoints setter creates it) then set the flag.
-    c.browniePoints = 0;
-    c.acgState!.attemptMerchantAcademy = true;
+    // Per Rrev5 the Academy is opt-in (PM "may apply"). Stash the flag
+    // on a fresh acgState before beginAcg consumes it.
+    c.acgState = freshAcgState("merchantPrince");
+    c.acgState.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     expect(c.acgState!.schoolsAttended).toContain("merchantAcademy");
   });
@@ -321,10 +322,10 @@ describe("Merchant Prince ACG runtime", () => {
       hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
       tech: "Avg Stellar",
     };
-    // Opt in for Rrev5 via the engine. Force lazy-init of acgState
-    // (browniePoints setter creates it) and then set the flag.
-    c.browniePoints = 0;
-    c.acgState!.attemptMerchantAcademy = true;
+    // Opt in for Rrev5: stash the flag on a fresh acgState before
+    // beginAcg consumes it.
+    c.acgState = freshAcgState("merchantPrince");
+    c.acgState.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     expect(c.acgState!.department).toBeDefined();
   });

@@ -4,11 +4,11 @@
 // callers that don't carry edition context fall back to the default edition
 // via `s`.
 
-import type { ServiceDef, ServiceKey } from "../types";
+import type { ServiceDef, ServiceKey } from "./types";
 import {
   DEFAULT_EDITION_ID, getEdition, listEditions,
-} from "../editions";
-import { buildServiceDef } from "../engine/serviceLoader";
+} from "./editions";
+import { buildServiceDef } from "./engine/serviceLoader";
 
 export type ServiceMap = Partial<Record<ServiceKey, ServiceDef>>;
 

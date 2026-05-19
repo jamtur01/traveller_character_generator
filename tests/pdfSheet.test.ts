@@ -3,6 +3,7 @@ import {
   buildCharacterSheetPdf, highestSkillIn, safeFilename, splitSkills,
 } from "../lib/pdfSheet";
 import { Character } from "../lib/traveller/character";
+import { freshAcgState } from "../lib/traveller/engine/acg/types";
 
 describe("safeFilename", () => {
   it("strips diacritics via NFKD", () => {
@@ -133,7 +134,7 @@ describe("buildCharacterSheetPdf", () => {
     c.terms = 3;
     c.useAcg = true;
     c.acgPathway = "mercenary";
-    c.browniePoints = 0; // lazy-init acgState
+    c.acgState = freshAcgState("mercenary");
     const acg = c.requireAcgState();
     acg.rankCode = "O3";
     acg.isOfficer = true;
