@@ -86,9 +86,11 @@ describe("buildPathwaySpecFromConfig drift detection", () => {
       phases: [],
       preRun: "decorationDmTradeoff",
     };
-    expect(() => buildPathwaySpecFromConfig(config, {}, {
+    const spec = buildPathwaySpecFromConfig(config, {}, {
       combatAssignments: () => [],
-    })).not.toThrow();
+    });
+    expect(spec.phases).toEqual([]);
+    expect(typeof spec.preRun).toBe("function");
   });
 
   it("builds a minimal survival-only spec", () => {
