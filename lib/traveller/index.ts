@@ -25,7 +25,7 @@ export {
 // re-evaluations). Callers must use:
 //   import { Character, cloneCharacter } from "@/lib/traveller/character";
 export {
-  s, SERVICES, DRAFT_SERVICES, ENLISTABLE_SERVICES, serviceLabel,
+  serviceLabel,
   getEditionServices, getEnlistableServices, getDraftServices,
 } from "./services";
 export {

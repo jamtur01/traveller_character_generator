@@ -2,8 +2,10 @@
 // the outcomes are deterministic.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { s } from "../lib/traveller";
+import { getEditionServices } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
+
+const ctServices = getEditionServices("ct-classic");
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -201,7 +203,7 @@ describe("musterCash bounds", () => {
     c.service = "navy";
     pinD6(6); // d6=6 + dm=5 = 11 → clamps to 7
     c.musterOutCash(5);
-    expect(c.credits).toBe(s.navy.musterCash[7]);
+    expect(c.credits).toBe(ctServices.navy!.musterCash[7]);
     vi.restoreAllMocks();
   });
 
@@ -210,7 +212,7 @@ describe("musterCash bounds", () => {
     c.service = "navy";
     pinD6(1); // d6=1 + dm=-5 = -4 → clamps to 1
     c.musterOutCash(-5);
-    expect(c.credits).toBe(s.navy.musterCash[1]);
+    expect(c.credits).toBe(ctServices.navy!.musterCash[1]);
     vi.restoreAllMocks();
   });
 });

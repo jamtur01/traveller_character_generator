@@ -8,8 +8,14 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  DRAFT_SERVICES, s, SERVICES, type Attributes,
+  getDraftServices, getEditionServices, getEnlistableServices,
+  type Attributes, type ServiceDef, type ServiceKey,
 } from "../../lib/traveller";
+
+// CT-only audit — see services.snapshot.test.ts for the rationale.
+const s = getEditionServices("ct-classic") as Record<ServiceKey, ServiceDef>;
+const SERVICES = getEnlistableServices("ct-classic");
+const DRAFT_SERVICES = getDraftServices("ct-classic");
 
 // ============================================================================
 // TTB Prior Service Table — page 24
