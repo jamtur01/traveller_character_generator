@@ -211,6 +211,11 @@ export default function Home() {
               onResolve={resolvePending}
             />
           )}
+          {/* Phase panels only render when no choice is pending. Each
+              choice must be resolved before the player can advance —
+              clicking Run term / Enlist / etc. while a prompt is queued
+              would re-enter the paused step with stale defaults. */}
+          {(!character || character.pendingChoices.length === 0) && (<>
 
           {phase === "start" && (
             <StartPhase
@@ -291,6 +296,7 @@ export default function Home() {
               onDownloadPdf={() => downloadCharacterSheetPdf(character)}
             />
           )}
+          </>)}
         </section>
       </div>
 

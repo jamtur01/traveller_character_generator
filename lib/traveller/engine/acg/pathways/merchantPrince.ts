@@ -35,6 +35,7 @@ import { awardBrownie } from "../awards";
 import { applyAcgSkillCell } from "../skills";
 import {
   applyOnce, markComplete, resetIfComplete,
+  alreadyApplied, markApplied,
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
@@ -448,6 +449,11 @@ function merchantRollSkill(ch: Character): void {
   if (tables.length === 0) return;
   // Interactive: let the player pick the table. Auto: round-robin by year.
   if (ch.choiceMode === "interactive" && tables.length > 1) {
+    // Mark applied BEFORE pickOrDefer to suppress duplicate prompts on
+    // re-entry (each "Run term" click while the choice is queued re-
+    // enters the skills phase; without the gate the prompt re-queues).
+    if (alreadyApplied(ch, "merchantSkillTable-prompted")) return;
+    markApplied(ch, "merchantSkillTable-prompted");
     ch.pickOrDefer({
       kind: "merchantSkillTable",
       label: "Merchant: choose which skill table to roll on this year.",
