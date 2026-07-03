@@ -17,7 +17,7 @@
 //     terms served or no reenlistment).
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { getAcgPathway } from "@/lib/traveller/editions";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
@@ -69,7 +69,7 @@ export interface ScoutData {
 }
 
 function dataFor(ch: Character): ScoutData {
-  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.scout;
+  const data = getAcgPathway(ch.editionId, "scout");
   if (!data) throw new Error("Scout pathway requires ACG data");
   return data;
 }

@@ -12,7 +12,7 @@
 //   - Reenlistment is a single target with rank DM.
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import {
   applyStructuredDms, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
@@ -104,7 +104,7 @@ export interface NavyData {
 }
 
 function dataFor(ch: Character): NavyData {
-  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.navy;
+  const data = getAcgPathway(ch.editionId, "navy");
   if (!data) throw new Error("Navy pathway requires ACG data");
   return data;
 }

@@ -148,7 +148,7 @@ function assignmentColumnFor(lineSize: "Large" | "Small" | "FreeTrader"): string
 }
 
 function dataFor(ch: Character): MerchantData {
-  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.merchantPrince;
+  const data = getAcgPathway(ch.editionId, "merchantPrince");
   if (!data) throw new Error("Merchant Prince pathway requires ACG data");
   return data;
 }

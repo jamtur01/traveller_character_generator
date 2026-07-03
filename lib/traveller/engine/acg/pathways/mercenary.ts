@@ -23,7 +23,7 @@
 //     (acgState.decorationDmStrategy, player choice, default 0)
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { getAcgPathway } from "@/lib/traveller/editions";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
@@ -95,7 +95,7 @@ export interface MercenaryData {
 }
 
 function dataFor(ch: Character): MercenaryData {
-  const data = getEdition(ch.editionId).data.advancedCharacterGeneration?.mercenary;
+  const data = getAcgPathway(ch.editionId, "mercenary");
   if (!data) throw new Error("Mercenary pathway requires ACG data");
   return data;
 }
