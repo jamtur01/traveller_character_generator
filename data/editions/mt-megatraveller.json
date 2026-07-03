@@ -3698,6 +3698,7 @@
           },
           "notc": {
             "target": 9,
+            "autoEnlist": { "$rule": "PM p. 47: NOTC graduates auto-enlist as O1 in the Reserve Fleet (navy pathway).", "branch": "navy", "pathway": "navy" },
             "dms": [
               {
                 "attribute": "socialStanding",
@@ -3734,6 +3735,7 @@
           "$rulePreCareer": "PM p. 47: Naval Academy is a 4-year course; graduates receive an automatic O1 commission.",
           "courseYears": 4,
           "commissionRank": "O1",
+          "autoEnlist": { "$rule": "PM p. 47: Naval Academy graduates auto-enlist as O1 Imperial Navy.", "branch": "navy", "pathway": "navy" },
           "eligibility": { "attribute": "social", "min": 8 },
           "admission": {
             "target": 10,
@@ -3790,6 +3792,7 @@
           "$rulePreCareer": "PM p. 47: Military Academy is a 4-year course; graduates receive an automatic O1 commission.",
           "courseYears": 4,
           "commissionRank": "O1",
+          "autoEnlist": { "$rule": "PM p. 47: Military Academy graduates auto-enlist as O1 Army/Marines (mercenary pathway).", "branch": "army", "pathway": "mercenary" },
           "eligibility": { "attribute": "social", "min": 6 },
           "admission": {
             "target": 10,
@@ -3852,6 +3855,7 @@
           "$rulePreCareer": "PM p. 47: Merchant Academy is a 4-year course; graduates receive an automatic O1 commission.",
           "courseYears": 4,
           "commissionRank": "O1",
+          "autoEnlist": { "$rule": "PM p. 47: Merchant Academy graduates auto-enlist as O1 in a merchant line.", "branch": "merchants", "pathway": "merchantPrince" },
           "admission": {
             "target": 9,
             "dms": [

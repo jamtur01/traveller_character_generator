@@ -93,9 +93,11 @@ export function preCareerUiSummary(
   return specFor(editionId, opt)?.uiSummary ?? "";
 }
 
+type AutoEnlistSpec = { branch: PreCareerResult["branch"]; pathway: AcgPathwayId };
 interface ThrowSpec {
   target: number;
   dms: Array<{ attribute: string; min: number; dm: number }>;
+  autoEnlist?: AutoEnlistSpec;
 }
 interface EducationSpec {
   roll: string;
@@ -374,8 +376,9 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       const r = roll(2);
       if (r + dm >= spec.notc.target) {
         out.commissioned = true;
-        out.branch = "navy";
-        out.autoEnlistPathway = "navy";
+        const auto = spec.notc.autoEnlist;
+        out.branch = auto?.branch ?? "navy";
+        out.autoEnlistPathway = auto?.pathway ?? "navy";
         out.notes.push("NOTC commission earned (Navy).");
         ch.log(ev.promoted("O1", "NOTC"));
       }
@@ -423,21 +426,16 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
 
   // Academy auto-commission: per the manual, all academy graduates
   // (Military/Naval/Merchant) receive a commission at rank O1.
-  if (opt === "militaryAcademy") {
-    out.commissioned = true;
-    out.branch = "army";
-    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
-    out.autoEnlistPathway = "mercenary";
-  } else if (opt === "navalAcademy") {
-    out.commissioned = true;
-    out.branch = "navy";
-    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
-    out.autoEnlistPathway = "navy";
-  } else if (opt === "merchantAcademy") {
-    out.commissioned = true;
-    out.branch = "merchants";
-    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
-    out.autoEnlistPathway = "merchantPrince";
+  if (
+    opt === "militaryAcademy" || opt === "navalAcademy" || opt === "merchantAcademy"
+  ) {
+    const auto = pco?.autoEnlist as AutoEnlistSpec | undefined;
+    if (auto) {
+      out.commissioned = true;
+      out.branch = auto.branch;
+      out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
+      out.autoEnlistPathway = auto.pathway;
+    }
   } else if (opt === "medicalSchool" && out.graduated) {
     // PM p. 47: "He may apply for a direct commission (which is granted
     // automatically) as rank O3 in the Navy (Medical Branch), Army,
