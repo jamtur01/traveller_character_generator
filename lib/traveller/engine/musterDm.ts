@@ -1,71 +1,46 @@
-// Edition-aware muster-out DM computation. The cash/benefit DMs are
-// declared in JSON under rules.musterOutRolls; this helper walks the
-// declared conditions and applies the ones the character meets.
+// Edition-aware muster-out DM computation. The cash / benefit DMs are
+// declared in JSON under rules.musterOutRolls as unified Predicate rules
+// (see engine/predicate): the cash table sums every matching rule's dm; the
+// benefit table is a single rule.
 //
-// CT conditions: Gambling-1 → cash +1; rank≥5 → benefit +1.
+// CT conditions: Gambling-1 → cash +1; rank ≥ 5 → benefit +1.
 // MT conditions: as CT, plus Retired → cash +1 and Prospecting-1 → cash +1
-//   (Prospecting only for specific services: merchants/belters/pirates/
-//   rogues/hunters/barbarians).
+//   (Prospecting only for merchants/belters/pirates/rogues/hunters/barbarians,
+//   expressed as the rule's serviceIn atom).
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import {
+  buildPredicateContext, evaluatePredicate, type Predicate,
+} from "@/lib/traveller/engine/predicate";
 
-interface CashTableDmWhen {
-  retired?: boolean;
-  skillAtLeast?: { skill: string; level: number };
-}
-
-interface CashTableDm {
-  when: CashTableDmWhen;
-  dm: number;
-  services?: string[];
-}
-
-interface BenefitTableDm {
-  rankAtLeast?: number;
-  dm: number;
-}
+type MusterDm = Predicate & { dm: number };
 
 interface MusterRules {
-  cashTableDm?: CashTableDm[];
-  benefitTableDm?: BenefitTableDm;
+  cashTableDm?: MusterDm[];
+  benefitTableDm?: MusterDm;
   maxCashTableRolls?: number;
 }
 
 function rules(ch: Character): MusterRules | undefined {
-  return getEdition(ch.editionId).rules.musterOutRolls as
-    MusterRules | undefined;
+  return getEdition(ch.editionId).rules.musterOutRolls as MusterRules | undefined;
 }
 
-/** Cash-table DM for this character under the active edition's rules. */
+/** Cash-table DM for this character: sum every matching rule's dm. */
 export function cashDmFor(ch: Character): number {
   const r = rules(ch);
   if (!r?.cashTableDm) return 0;
+  const ctx = buildPredicateContext(ch);
   let total = 0;
-  for (const c of r.cashTableDm) {
-    if (c.services && !c.services.includes(ch.service)) continue;
-    if (whenMatches(c.when, ch)) {
-      total += c.dm;
-    }
-  }
+  for (const rule of r.cashTableDm) if (evaluatePredicate(rule, ctx)) total += rule.dm;
   return total;
 }
 
-function whenMatches(w: CashTableDmWhen, ch: Character): boolean {
-  if (w.retired === true && !ch.retired) return false;
-  if (w.skillAtLeast && !ch.checkSkillLevel(w.skillAtLeast.skill, w.skillAtLeast.level)) {
-    return false;
-  }
-  return true;
-}
-
-/** Benefit-table DM for this character under the active edition's rules. */
+/** Benefit-table DM for this character: the single rule's dm if it matches. */
 export function benefitDmFor(ch: Character): number {
-  const r = rules(ch);
-  const b = r?.benefitTableDm;
+  const b = rules(ch)?.benefitTableDm;
   if (!b) return 0;
-  if (b.rankAtLeast !== undefined && ch.rank >= b.rankAtLeast) return b.dm;
-  return 0;
+  return evaluatePredicate(b, buildPredicateContext(ch)) ? b.dm : 0;
 }
 
 /** Max cash rolls allowed per character (CT and MT: 3). Anagathics users
@@ -75,7 +50,6 @@ export function maxCashRolls(ch: Character): number {
   const r = rules(ch);
   const base = r?.maxCashTableRolls ?? 3;
   if (!ch.anagathicsEverTaken) return base;
-  const cap =
-    getEdition(ch.editionId).rules.anagathics?.cashRollCap ?? 2;
+  const cap = getEdition(ch.editionId).rules.anagathics?.cashRollCap ?? 2;
   return Math.min(cap, base);
 }

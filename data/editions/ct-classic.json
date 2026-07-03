@@ -130,9 +130,9 @@
         { "rankMin": 3, "rankMax": 4, "additionalRolls": 2 },
         { "rankMin": 5, "rankMax": 6, "additionalRolls": 3 }
       ],
-      "benefitTableDm": { "rankAtLeast": 5, "dm": 1 },
+      "benefitTableDm": { "rankNumAtLeast": 5, "dm": 1 },
       "cashTableDm": [
-        { "when": { "skillAtLeast": { "skill": "Gambling", "level": 1 } }, "dm": 1 }
+        { "skillAtLeast": { "skill": "Gambling", "level": 1 }, "dm": 1 }
       ],
       "maxCashTableRolls": 3,
       "notes": "Per TTB p. 18: one roll per full term plus rank-band bonus (rank 1-2 +1, 3-4 +2, 5-6 +3). Gambling-1 grants +1 DM on the cash table."

@@ -342,16 +342,16 @@
         { "rankMin": 5, "rankMax": 6, "additionalRolls": 3 }
       ],
       "benefitTableDm": {
-        "rankAtLeast": 5,
+        "rankNumAtLeast": 5,
         "dm": 1
       },
       "cashTableDm": [
-        { "when": { "retired": true }, "dm": 1 },
-        { "when": { "skillAtLeast": { "skill": "Gambling", "level": 1 } }, "dm": 1 },
+        { "retired": true, "dm": 1 },
+        { "skillAtLeast": { "skill": "Gambling", "level": 1 }, "dm": 1 },
         {
-          "when": { "skillAtLeast": { "skill": "Prospecting", "level": 1 } },
+          "skillAtLeast": { "skill": "Prospecting", "level": 1 },
           "dm": 1,
-          "services": [
+          "serviceIn": [
             "merchants",
             "belters",
             "pirates",

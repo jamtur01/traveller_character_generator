@@ -67,18 +67,16 @@ export const RulesSchema = z.looseObject({
     perTerm: z.number().optional(),
     rankExtraRolls: z.array(RankExtraRollSchema).optional(),
     cashTableDm: z.array(z.looseObject({
-      when: z.looseObject({
-        retired: z.boolean().optional(),
-        skillAtLeast: z.looseObject({
-          skill: z.string(),
-          level: z.number(),
-        }).optional(),
-      }),
+      retired: z.boolean().optional(),
+      skillAtLeast: z.looseObject({
+        skill: z.string(),
+        level: z.number(),
+      }).optional(),
+      serviceIn: z.array(z.string()).optional(),
       dm: z.number(),
-      services: z.array(z.string()).optional(),
     })).optional(),
     benefitTableDm: z.looseObject({
-      rankAtLeast: z.number().optional(),
+      rankNumAtLeast: z.number().optional(),
       dm: z.number(),
     }).optional(),
     maxCashTableRolls: z.number().optional(),
