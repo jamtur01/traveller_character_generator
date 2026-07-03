@@ -123,7 +123,6 @@ export interface CharacterState {
   ship: boolean;
   TAS: boolean;
   mortgage: number;
-  mortgages: number;
   bladeBenefit: string;
   gunBenefit: string;
   attributes: Attributes;
@@ -217,7 +216,6 @@ export class Character implements CharacterState {
   ship = false;
   TAS = false;
   mortgage = 40;
-  mortgages = 0;
   bladeBenefit = "";
   gunBenefit = "";
   // Initial attributes — rolled by the constructor (or supplied via
@@ -668,36 +666,6 @@ export class Character implements CharacterState {
     );
   }
 
-  /** PM resume field 4 ("Equipment Qualified On"): every weapon/vehicle
-   *  skill at level ≥ 1. Cached on acgState when present so the sheet
-   *  renderer doesn't recompute. */
-  computeEquipmentQualifiedOn(): string[] {
-    const equipKeywords = [
-      "Combat", "Rifle", "Pistol", "Shotgun", "Gunnery", "Vehicle",
-      "Aircraft", "Watercraft", "Pilot", "Ship's Boat", "Vacc Suit",
-      "Tactics", "Demolitions", "Heavy Weapons", "FA Gunner", "Blade",
-      "Gun", "Bow", "Battle Dress",
-    ];
-    const out: string[] = [];
-    for (const [name, level] of this.skills) {
-      if (level < 1) continue;
-      if (equipKeywords.some((kw) => name.includes(kw))) {
-        out.push(`${name}-${level}`);
-      }
-    }
-    if (this.acgState) {
-      this.acgState.equipmentQualifiedOn = out;
-    }
-    return out;
-  }
-
-  /** Physical age (PM p. 15 anagathics: "Age 34 (50)"). Equal to chronological
-   *  age unless the character has been on anagathics or Frozen Watch. */
-  getPhysicalAge(): number {
-    const acgOffset = this.acgState?.physicalAgeOffset ?? 0;
-    return Math.max(0, this.age + acgOffset);
-  }
-
   checkSkill(skill: string): number {
     for (let i = 0; i < this.skills.length; i++) {
       if (this.skills[i]![0] === skill) return i;
@@ -708,13 +676,6 @@ export class Character implements CharacterState {
   checkSkillLevel(skill: string, level: number): boolean {
     const i = this.checkSkill(skill);
     return i >= 0 && this.skills[i]![1] >= level;
-  }
-
-  whichSkillTable(): number {
-    const table = this.forceTable
-      ? this.forceTableIndex
-      : this.rng.int(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
-    return table;
   }
 
   addSkill(skill: string, skillLevel = 1, source?: string) {

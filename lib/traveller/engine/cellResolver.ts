@@ -311,7 +311,6 @@ function applyShipBenefit(
   // repeat rule"). Scout Ship and Corsair use ownership semantics that
   // ignore mortgage entirely — they fall through to the no-mortgage path.
   if (already && detail?.repeatReducesMortgageYears) {
-    ch.mortgages += 1;
     if (ch.mortgage > 0) {
       const paid = Math.min(ch.mortgage, detail.repeatReducesMortgageYears);
       ch.mortgage -= paid;

@@ -53,7 +53,6 @@ function freshCharacter(svc: ServiceKey): Character {
   c.bladeBenefit = "";
   c.gunBenefit = "";
   c.mortgage = 40;
-  c.mortgages = 0;
   c.ship = false;
   c.TAS = false;
   c.service = svc;
