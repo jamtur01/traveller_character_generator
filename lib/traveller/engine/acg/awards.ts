@@ -266,7 +266,6 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   // Dishonorable discharge — character loses 3 mustering-out rolls and gets
   // no pension (manual p. 47). Captured here as flags consulted at muster.
   if (lc.includes("dishonorable") || /\bdd\b/i.test(result)) {
-    ch.acgState.dishonorablyDischarged = true;
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 3;
     ch.acgState.pensionForfeit = true;
@@ -284,12 +283,11 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   if (lc.includes("jail")) {
     const monthsMatch = result.match(/jail\s+2D\s+months/i);
     if (monthsMatch) {
-      // 2D months consumes the current year of service. We mark the year as
-      // "jail-served" so it counts toward terms but provides no skills or
-      // promotion (commission/promotion already short-circuit on
-      // shortTermThisTerm / equivalent jail flag).
+      // "Jail 2D months" is the mildest jail outcome: roll and log the
+      // duration for the record, then end court-martial resolution. (Unlike
+      // the "Jail ND years" path below, it neither ages the character nor
+      // forfeits benefits.)
       const months = ch.rng.roll(1) + ch.rng.roll(1);
-      ch.acgState.jailMonthsThisYear = months;
       ch.log(ev.statusChange(
         "jailed",
         `${months} months — consumes this year of service`,
@@ -297,7 +295,6 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       return;
     }
     // "Jail 1D years; ..." or "Jail 2D years; ..."
-    ch.acgState.dishonorablyDischarged = true;
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 3;
     ch.acgState.pensionForfeit = true;
@@ -321,7 +318,6 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   //   "Death; escape, killing 1D guards; KCr100 reward"
   // We parse the bounty value and any "killing ND guards" suffix.
   if (lc.includes("death")) {
-    ch.acgState.deathSentence = true;
     ch.acgState.musterRollPenalty =
       (ch.acgState.musterRollPenalty ?? 0) - 99; // zero out benefits
     ch.acgState.pensionForfeit = true;
@@ -546,10 +542,6 @@ function queueBpReview(
         `Additional spend post-${req.rollName}`,
         ch.requireAcgState().browniePoints,
       ));
-      ch.requireAcgState().lastBpExtraSpend = {
-        rollName: req.rollName,
-        spent: actual,
-      };
       // Update the sub-step cache so the resumed pathway sees the
       // post-spend totals. Without this the cache returns the original
       // autoMitigate values and the pathway re-fires the failure branch

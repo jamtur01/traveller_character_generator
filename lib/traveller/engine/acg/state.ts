@@ -142,9 +142,6 @@ export interface AcgState {
    *  - "conservative" (default for auto mode): caps lesser rolls.
    *  - "aggressive": spends up to need on any failed roll. */
   bpAutoPolicy?: "conservative" | "aggressive" | "manual";
-  /** Last interactive BP review spend (rollName + spent). The pathway code
-   *  may read this to retroactively upgrade an outcome. */
-  lastBpExtraSpend?: { rollName: string; spent: number };
 
   /** Combat arms or branches the character has been cross-trained into via
    *  special-assignment schools. Drives the Marine cross-training reenlist
@@ -174,19 +171,10 @@ export interface AcgState {
   // Court-martial / discipline consequences propagated to final muster.
   /** -N to the next promotion roll (court-martial Reprimand outcome). */
   nextPromotionPenalty?: number;
-  /** True if dishonorably discharged. Pension and mustering-out reductions
-   *  are computed separately. */
-  dishonorablyDischarged?: boolean;
   /** Pre-muster adjustment to mustering-out roll count (e.g. -3 for DD). */
   musterRollPenalty?: number;
   /** True if pension is forfeit (DD or worse). */
   pensionForfeit?: boolean;
-  /** True if a court-martial death sentence was imposed (with or without
-   *  escape). When true, no mustering-out benefits and no pension. */
-  deathSentence?: boolean;
-  /** Accumulated months of in-service jail; not currently consumed beyond
-   *  the prose record, but observable for sheet/UI output. */
-  jailMonthsThisYear?: number;
   /** SEH recipients get an automatic +1 rank at muster (manual p. 46).
    *  Set true the first time an SEH is awarded; consumed at muster. */
   sehPromotionPending?: boolean;
@@ -212,13 +200,6 @@ export interface AcgState {
   /** Guards killed during a death-sentence escape (PM p. 47: "killing 1D
    *  guards"). Recorded for resume/sheet output. */
   guardsKilledInEscape?: number;
-  /** Years spent on Navy Frozen Watch (PM p. 53). Character is physically
-   *  one year younger per year of Frozen Watch. */
-  frozenWatchYears?: number;
-  /** Physical-age offset relative to chronological character.age. Negative
-   *  when the character has spent time in suspended animation (Frozen
-   *  Watch) — physicalAge = age + physicalAgeOffset. */
-  physicalAgeOffset?: number;
   /** Merchant Prince O0 holders must pass exam for O1 within 4 years or
    *  revert to enlisted (PM Special Duty Commission entry). Stores the
    *  yearsServed value at which the deadline passes; cleared on promotion. */
@@ -236,16 +217,6 @@ export interface AcgState {
   /** Subsector tech code recorded at character generation start (PM
    *  requires this for Naval characters and is harmless for others). */
   subsectorTechCode?: string;
-  /** Dischargeworld — the homeworld-style world where the character left
-   *  the service. Distinct from homeworld for travellers who served
-   *  elsewhere. Free-text (UPP code or world name). */
-  dischargeworld?: string;
-  /** ISO date string for birthdate (Imperial calendar). Stored as a
-   *  free-text field — campaigns vary on canonical form. */
-  birthdate?: string;
-  /** Equipment qualified on: weapons/vehicles the character has at least
-   *  one skill level in, suitable for resume output. Derived but cached. */
-  equipmentQualifiedOn?: string[];
 
   // Interactive-mode runner resumption state.
   /** When a substep of runAcgYear queued an interactive choice and threw
@@ -385,11 +356,4 @@ export interface AssignmentResolution {
   /** "8+" style — when listed in parentheses on the table, officers may
    *  not roll for promotion under this assignment. */
   promotionOfficersBarred?: boolean;
-}
-
-export interface DecorationOutcome {
-  /** Award earned, or null on no award. */
-  award: "MCUF" | "MCG" | "SEH" | null;
-  /** True when the decoration roll failed by 6+ (court martial). */
-  courtMartial: boolean;
 }
