@@ -60,6 +60,6 @@ describe("MT ACG: getAcgCommon content", () => {
     expect(common.preCareerOptions).toBeDefined();
     expect(common.courtMartial).toBeDefined();
     expect(common.browniePoints).toBeDefined();
-    expect(common.decorationAndSurvival).toBeDefined();
+    expect(common.decorationTiers).toBeDefined();
   });
 });

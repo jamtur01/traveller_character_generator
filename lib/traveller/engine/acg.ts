@@ -67,7 +67,7 @@ export function getAcgPathway(editionId: string, pathway: string): AcgPathway {
 }
 
 /** Read-only access to the ACG common tables (preCareerOptions,
- *  courtMartial, browniePoints, decorationAndSurvival). Throws if the
+ *  courtMartial, browniePoints, decorationTiers). Throws if the
  *  edition has no ACG. */
 export function getAcgCommon(editionId: string): Record<string, unknown> {
   const acg = getEdition(editionId).data.advancedCharacterGeneration;

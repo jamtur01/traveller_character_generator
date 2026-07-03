@@ -214,7 +214,7 @@ for (const ed of EDITIONS) {
       expect(common.preCareerOptions).toBeDefined();
       expect(common.courtMartial).toBeDefined();
       expect(common.browniePoints).toBeDefined();
-      expect(common.decorationAndSurvival).toBeDefined();
+      expect(common.decorationTiers).toBeDefined();
     });
 
     const pathways = Object.keys(acg).filter(

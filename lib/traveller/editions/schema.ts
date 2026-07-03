@@ -364,7 +364,6 @@ const AcgCommonSchema = z.looseObject({
       award: z.string(),
     })).optional(),
   }).optional(),
-  decorationAndSurvival: z.looseObject({}).optional(),
 });
 
 const AcgDataSchema = z.looseObject({

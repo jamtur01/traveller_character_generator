@@ -4111,26 +4111,6 @@
             "points": 0
           }
         ]
-      },
-      "decorationAndSurvival": {
-        "decorationBands": [
-          {
-            "condition": "Decoration throw or higher",
-            "award": "MCUF"
-          },
-          {
-            "condition": "Decoration throw +3 to +5",
-            "award": "MCG"
-          },
-          {
-            "condition": "Decoration throw +6 or more",
-            "award": "SEH"
-          }
-        ],
-        "notes": [
-          "A negative survival DM can be converted into an equal positive decoration DM.",
-          "The reverse is allowed, but failure of the decoration roll by 6+ requires a court-martial roll."
-        ]
       }
     },
     "mercenary": {
