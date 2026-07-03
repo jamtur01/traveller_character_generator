@@ -354,21 +354,21 @@ describe("Bug #8: evaluateDM accepts a narrow DmContext (no Character cast requi
     };
     // attribute threshold rule
     expect(evaluateDM(
-      [{ modifier: 1, attribute: "intelligence", min: 8 }],
+      [{ dm: 1, attribute: "intelligence", min: 8 }],
       ctx,
     )).toBe(1);
-    // termNumber rule
-    expect(evaluateDM([{ modifier: "termNumber" }], ctx)).toBe(2);
+    // per-term rule (Belter): dmPerTerm × terms
+    expect(evaluateDM([{ dmPerTerm: 1 }], ctx)).toBe(2);
     // multiple rules sum
     expect(evaluateDM([
-      { modifier: 1, attribute: "intelligence", min: 8 },
-      { modifier: 2, attribute: "education", min: 8 },
+      { dm: 1, attribute: "intelligence", min: 8 },
+      { dm: 2, attribute: "education", min: 8 },
     ], ctx)).toBe(3);
   });
 
   it("threshold below min does not fire", () => {
     expect(evaluateDM(
-      [{ modifier: 1, attribute: "intelligence", min: 9 }],
+      [{ dm: 1, attribute: "intelligence", min: 9 }],
       { attributes: { strength: 7, dexterity: 7, endurance: 7,
         intelligence: 8, education: 7, social: 7 }, terms: 0 },
     )).toBe(0);

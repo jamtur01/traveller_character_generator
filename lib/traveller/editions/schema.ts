@@ -181,12 +181,16 @@ export function parseRules(rulesRaw: unknown, editionId: string): RulesData {
 // --- Canon data (non-rules) schemas ----------------------------------
 
 const DMRuleSchema = z.looseObject({
-  modifier: z.union([z.number(), z.literal("termNumber")]),
+  dm: z.number().optional(),
+  dmPerTerm: z.number().optional(),
   attribute: z.string().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
   description: z.string().optional(),
-});
+}).refine(
+  (r) => (r.dm !== undefined) !== (r.dmPerTerm !== undefined),
+  { message: "DMRule needs exactly one of `dm` or `dmPerTerm`" },
+);
 
 const CheckSchema = z.looseObject({
   target: z.number().nullable(),

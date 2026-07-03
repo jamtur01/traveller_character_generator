@@ -29,8 +29,10 @@ export interface EditionMeta {
 }
 
 export interface DMRule {
-  /** Numeric DM, or a literal token interpreted by the DM evaluator. */
-  modifier: number | "termNumber";
+  /** DM added when the predicate matches (attribute band). */
+  dm?: number;
+  /** DM added once per completed term (×terms) — Belter survival, PM p. 16. */
+  dmPerTerm?: number;
   attribute?: string;
   min?: number;
   max?: number;

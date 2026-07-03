@@ -916,12 +916,12 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 9
             }
@@ -931,7 +931,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 7
             }
@@ -942,7 +942,7 @@
           "target": 10,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "min": 9
             }
@@ -952,7 +952,7 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             }
@@ -1052,12 +1052,12 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 8
             }
@@ -1067,7 +1067,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 8
             }
@@ -1078,7 +1078,7 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 7
             }
@@ -1088,7 +1088,7 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "min": 8
             }
@@ -1188,12 +1188,12 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "dexterity",
               "min": 6
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 5
             }
@@ -1203,7 +1203,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 6
             }
@@ -1214,7 +1214,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "endurance",
               "min": 7
             }
@@ -1224,7 +1224,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 7
             }
@@ -1323,12 +1323,12 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 6
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 8
             }
@@ -1338,7 +1338,7 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 9
             }
@@ -1454,12 +1454,12 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "strength",
               "min": 7
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "dexterity",
               "min": 9
             }
@@ -1469,7 +1469,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "dexterity",
               "min": 8
             }
@@ -1480,7 +1480,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 6
             }
@@ -1490,7 +1490,7 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             }
@@ -1601,12 +1601,12 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "endurance",
               "min": 10
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 8
             }
@@ -1616,7 +1616,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 8
             }
@@ -1627,7 +1627,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 9
             }
@@ -1637,7 +1637,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             }
@@ -1736,12 +1736,12 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 7
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "dexterity",
               "min": 10
             }
@@ -1751,7 +1751,7 @@
           "target": 4,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 7
             }
@@ -1762,7 +1762,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 7
             }
@@ -1772,7 +1772,7 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             }
@@ -1873,12 +1873,12 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "dexterity",
               "min": 9
             }
@@ -1888,7 +1888,7 @@
           "target": 4,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 8
             }
@@ -1996,12 +1996,12 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "social",
               "min": 9
             }
@@ -2011,7 +2011,7 @@
           "target": 4,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 9
             }
@@ -2022,7 +2022,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 8
             }
@@ -2032,7 +2032,7 @@
           "target": 10,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "min": 10
             }
@@ -2138,12 +2138,12 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "max": 8
             }
@@ -2153,7 +2153,7 @@
           "target": 4,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 10
             }
@@ -2164,7 +2164,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "min": 9
             }
@@ -2174,7 +2174,7 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 9
             }
@@ -2275,12 +2275,12 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 9
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 10
             }
@@ -2290,7 +2290,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "education",
               "min": 9
             }
@@ -2409,7 +2409,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "education",
               "min": 9
             }
@@ -2419,7 +2419,7 @@
           "target": 12,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 10
             }
@@ -2520,12 +2520,12 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "strength",
               "min": 7
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 6
             }
@@ -2535,7 +2535,7 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 7
             }
@@ -2546,7 +2546,7 @@
           "target": 4,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 6
             }
@@ -2556,7 +2556,7 @@
           "target": 10,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 9
             }
@@ -2655,12 +2655,12 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "dexterity",
               "min": 9
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 6
             }
@@ -2670,7 +2670,7 @@
           "target": 9,
           "dm": [
             {
-              "modifier": "termNumber",
+              "dmPerTerm": 1,
               "description": "+1 per term served (Belter only)"
             }
           ]
@@ -2783,12 +2783,12 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "max": 7
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 9
             }
@@ -2798,7 +2798,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 8
             }
@@ -2809,7 +2809,7 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "strength",
               "min": 10
             }
@@ -2819,7 +2819,7 @@
           "target": 8,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 9
             }
@@ -2919,12 +2919,12 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "social",
               "max": 8
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 7
             }
@@ -2934,7 +2934,7 @@
           "target": 7,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "intelligence",
               "min": 9
             }
@@ -3042,12 +3042,12 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "dexterity",
               "min": 10
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "endurance",
               "min": 9
             }
@@ -3057,7 +3057,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 10
             }
@@ -3165,12 +3165,12 @@
           "target": 5,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "endurance",
               "min": 9
             },
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 10
             }
@@ -3180,7 +3180,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 2,
+              "dm": 2,
               "attribute": "strength",
               "min": 8
             }
@@ -3191,7 +3191,7 @@
           "target": 6,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "strength",
               "min": 10
             }
@@ -3201,7 +3201,7 @@
           "target": 9,
           "dm": [
             {
-              "modifier": 1,
+              "dm": 1,
               "attribute": "intelligence",
               "min": 6
             }
