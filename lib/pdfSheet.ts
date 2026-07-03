@@ -47,6 +47,22 @@ function expandIncludes(editionId: string, name: string): string[] {
     .map((item) => item.replace(/-\d+$/, "").trim());
 }
 
+/** Skills that populate the sheet's "Equipment Qualified On" box: the
+ *  edition's vehicle cascade (its umbrella of vehicle / aircraft /
+ *  watercraft skills) plus fixed individual equipment-operation skills.
+ *  Edition-aware, so CT "Prop-driven Fixed Wing" and MT "Lighter-Than-Air
+ *  Craft" are kept rather than dropped by a hardcoded substring filter. */
+export function equipmentQualifiedOn(c: Character): string[] {
+  const equipSkills = new Set<string>([
+    "ATV", "Air/Raft", "Vacc Suit", "Battle Dress", "Ship's Boat", "Pilot", "Gunnery",
+  ]);
+  for (const name of cascadePoolByKey("vehicle", c.editionId)) {
+    equipSkills.add(name);
+    for (const inner of expandIncludes(c.editionId, name)) equipSkills.add(inner);
+  }
+  return c.skills.filter(([n]) => equipSkills.has(n)).map(([n]) => n);
+}
+
 /** Ship/passage display names sourced from the edition's benefitDetails:
  *  every key with a `shipType` is a ship; passage names come from the
  *  `passages` block's displayName fields. */
@@ -370,18 +386,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // 17. Equipment Qualified On
   doc.rect(X0, y, W, 44);
   fieldLabel(doc, X0 + 4, y + 10, "17. Equipment Qualified On");
-  const equipment: string[] = [];
-  for (const [n] of c.skills) {
-    if (
-      n === "ATV" || n === "Air/Raft" || n === "Vacc Suit" || n === "Ship's Boat" ||
-      n === "Battle Dress" || n.includes("Aircraft") || n.includes("Watercraft") ||
-      n === "Helicopter" || n === "Hovercraft" || n === "Submersible" ||
-      n === "Tracked Vehicle" || n === "Wheeled Vehicle" || n === "Grav Vehicle" ||
-      n === "Pilot" || n === "Gunnery"
-    ) {
-      equipment.push(n);
-    }
-  }
+  const equipment = equipmentQualifiedOn(c);
   if (equipment.length > 0)
     fieldValue(doc, X0 + 6, y + 26, equipment.join(", "), W - 12, 10);
   y += 44;

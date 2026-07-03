@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildCharacterSheetPdf, highestSkillIn, safeFilename, splitSkills,
+  buildCharacterSheetPdf, equipmentQualifiedOn, highestSkillIn,
+  safeFilename, splitSkills,
 } from "../lib/pdfSheet";
 import { Character } from "../lib/traveller/character";
 import { freshAcgState } from "../lib/traveller/engine/acg/state";
@@ -184,5 +185,46 @@ describe("buildCharacterSheetPdf", () => {
     const text = Buffer.from(bytes).toString("latin1");
     expect(text).toContain("Commander");
     expect(text).toContain("Navy");
+  });
+});
+
+// H4 regression — "Equipment Qualified On" dropped edition-specific vehicle
+// skills.
+//
+// Bug: the sheet used an edition-blind substring filter that dropped CT
+// "Prop-driven Fixed Wing" / "Jet-driven Fixed Wing" and MT "Lighter-Than-
+// Air Craft". The fix reads the active edition's vehicle cascade, so those
+// skills survive while non-equipment skills (e.g. Admin) are still excluded.
+//
+// No dice: equipmentQualifiedOn reads only c.skills and c.editionId.
+//
+// Teeth: the pre-fix substring filter excluded these exact skills, so the
+// "toContain" assertions below fail against it. The "not.toContain('Admin')"
+// assertion guards the other direction — only vehicle/equipment skills pass.
+describe("H4: equipmentQualifiedOn is edition-aware (vehicle cascade)", () => {
+  it("CT keeps Prop-driven and Jet-driven Fixed Wing, drops non-equipment skills", () => {
+    const c = new Character();
+    c.editionId = "ct-classic";
+    c.skills = [
+      ["Prop-driven Fixed Wing", 1],
+      ["Jet-driven Fixed Wing", 1],
+      ["Admin", 1],
+    ];
+    const qualified = equipmentQualifiedOn(c);
+    expect(qualified).toContain("Prop-driven Fixed Wing");
+    expect(qualified).toContain("Jet-driven Fixed Wing");
+    expect(qualified).not.toContain("Admin");
+  });
+
+  it("MT keeps Lighter-Than-Air Craft, drops non-equipment skills", () => {
+    const c = new Character();
+    c.editionId = "mt-megatraveller";
+    c.skills = [
+      ["Lighter-Than-Air Craft", 1],
+      ["Admin", 1],
+    ];
+    const qualified = equipmentQualifiedOn(c);
+    expect(qualified).toContain("Lighter-Than-Air Craft");
+    expect(qualified).not.toContain("Admin");
   });
 });
