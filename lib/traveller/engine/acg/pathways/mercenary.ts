@@ -39,7 +39,7 @@ import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags,
-  combatFinalize, combatResolutionDms,
+  combatFinalize, combatResolutionDms, advanceRankRow,
 } from "./shared";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../state";
@@ -410,23 +410,14 @@ function rollMercenarySkillFromColumn(ch: Character, col: string): void {
 
 /** Advance the rank by one step per the pathway's rank ladder. */
 function promoteMercenary(ch: Character): void {
+  const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (ch.requireAcgState().isOfficer) {
-    const codes = data.ranks.officer.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
-    if (idx >= 0 && idx < codes.length - 1) {
-      ch.requireAcgState().rankCode = codes[idx + 1]!;
-      ch.requireAcgState().promotedThisTerm = true;
-      ch.log(ev.promoted(data.ranks.officer[idx + 1]![1]));
-    }
-  } else {
-    const codes = data.ranks.enlisted.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
-    if (idx >= 0 && idx < codes.length - 1) {
-      ch.requireAcgState().rankCode = codes[idx + 1]!;
-      ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
-    }
-  }
+  const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
+  const next = advanceRankRow(ladder, acg.rankCode);
+  if (!next) return;
+  acg.rankCode = next[0];
+  if (acg.isOfficer) acg.promotedThisTerm = true;
+  ch.log(ev.promoted(next[1]));
 }
 
 /** Special Assignment table — replaces the normal assignment when the

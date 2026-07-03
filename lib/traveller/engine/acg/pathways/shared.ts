@@ -132,3 +132,19 @@ export function combatResolutionDms(
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
 }
+
+/** One rank-ladder row: [code, title, ...extra]. */
+type RankRow = readonly [string, string, ...unknown[]];
+
+/** Advance one step up a rank ladder. Returns the next row if `currentCode`
+ *  is on the ladder and below `cap` (a 1-based rank count — navy fleets cap
+ *  officer rank), else null (already at top, capped, or not found). */
+export function advanceRankRow(
+  ladder: readonly RankRow[], currentCode: string, cap?: number,
+): RankRow | null {
+  const idx = ladder.findIndex((r) => r[0] === currentCode);
+  if (idx < 0) return null;
+  const targetIdx = cap !== undefined ? Math.min(idx + 1, cap - 1) : idx + 1;
+  if (targetIdx <= idx || targetIdx >= ladder.length) return null;
+  return ladder[targetIdx] ?? null;
+}

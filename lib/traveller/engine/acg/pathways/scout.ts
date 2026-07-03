@@ -27,7 +27,7 @@ import { applyAcgSkillCell } from "../skills";
 import { applyScoutSchool } from "../schools";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
-import { createPathwaySpecRegistry } from "./shared";
+import { createPathwaySpecRegistry, advanceRankRow } from "./shared";
 import { recordTransfer } from "../state";
 import { event as ev } from "../../../history";
 
@@ -410,30 +410,21 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
 
 function promoteScout(ch: Character): void {
   const data = dataFor(ch);
-  // Ordinary rank can climb to IS-9; beyond that requires admin school.
-  // Per PM p. 57: "Each time a promotion is received, the individual is
-  // allowed to receive one new skill. Ordinary rank allows a skill from the
-  // appropriate office column or the scout life column; administrator rank
-  // allows a skill from the administrator rank column."
-  if (!ch.requireAcgState().isOfficer) {
-    const codes = data.ranks.ordinary.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
-    if (idx >= 0 && idx < codes.length - 1) {
-      ch.requireAcgState().rankCode = codes[idx + 1]!;
-      ch.log(ev.promoted(data.ranks.ordinary[idx + 1]![1]));
-      // Ordinary promotion: one skill from office column or scout life.
-      scoutRollSkill(ch);
-    }
+  const acg = ch.requireAcgState();
+  // PM p. 57: each promotion grants one skill — the office/scout-life
+  // column for ordinary rank, the administrator column for administrator
+  // rank (a separate ladder). Ordinary caps at IS-9; higher requires
+  // administrator school.
+  const ladder = acg.isOfficer ? data.ranks.administrator : data.ranks.ordinary;
+  const next = advanceRankRow(ladder, acg.rankCode);
+  if (!next) return;
+  acg.rankCode = next[0];
+  ch.log(ev.promoted(next[1]));
+  if (acg.isOfficer) {
+    acg.promotedThisTerm = true;
+    scoutRollSkillFromColumn(ch, "administratorRank");
   } else {
-    const codes = data.ranks.administrator.map((r) => r[0]);
-    const idx = codes.indexOf(ch.requireAcgState().rankCode);
-    if (idx >= 0 && idx < codes.length - 1) {
-      ch.requireAcgState().rankCode = codes[idx + 1]!;
-      ch.requireAcgState().promotedThisTerm = true;
-      ch.log(ev.promoted(data.ranks.administrator[idx + 1]![1]));
-      // Administrator promotion: one skill from administrator rank column.
-      scoutRollSkillFromColumn(ch, "administratorRank");
-    }
+    scoutRollSkill(ch);
   }
 }
 

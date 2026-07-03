@@ -29,7 +29,7 @@ import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags,
-  combatFinalize, combatResolutionDms,
+  combatFinalize, combatResolutionDms, advanceRankRow,
 } from "./shared";
 import { event as ev } from "../../../history";
 
@@ -475,25 +475,13 @@ function promoteNavy(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireNavyAcg();
   const caps = data.rankCaps ?? { imperialNavy: 10, reserveFleet: 8, systemSquadron: 7 };
-  const cap = caps[acg.fleet] ?? 10;
-
-  if (acg.isOfficer) {
-    const codes = data.ranks.officer.map((r) => r[0]);
-    const idx = codes.indexOf(acg.rankCode);
-    const targetIdx = Math.min(idx + 1, cap - 1);
-    if (idx >= 0 && idx < targetIdx && targetIdx < codes.length) {
-      acg.rankCode = codes[targetIdx]!;
-      acg.promotedThisTerm = true;
-      ch.log(ev.promoted(data.ranks.officer[targetIdx]![1]));
-    }
-  } else {
-    const codes = data.ranks.enlisted.map((r) => r[0]);
-    const idx = codes.indexOf(acg.rankCode);
-    if (idx >= 0 && idx < codes.length - 1) {
-      acg.rankCode = codes[idx + 1]!;
-      ch.log(ev.promoted(data.ranks.enlisted[idx + 1]![1]));
-    }
-  }
+  const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
+  const cap = acg.isOfficer ? (caps[acg.fleet] ?? 10) : undefined;
+  const next = advanceRankRow(ladder, acg.rankCode, cap);
+  if (!next) return;
+  acg.rankCode = next[0];
+  if (acg.isOfficer) acg.promotedThisTerm = true;
+  ch.log(ev.promoted(next[1]));
 }
 
 export function navyRetention(ch: Character, assignment: string): void {
