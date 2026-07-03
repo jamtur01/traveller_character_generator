@@ -38,22 +38,19 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
-  combatResolutionDms, advanceRankRow, rollSpecialAssignment,
-  runReenlist, offerRoleChange,
+  combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
+  applyPromotion, serviceSkillColumnFor, clearRetention,
+  consumeRetainedAssignment, clampedRoll,
+  type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
+import { rankNum } from "@/lib/traveller/engine/predicate";
 
 const PATHWAY = "mercenary";
 
 export interface MercenaryData {
   ocsAdvancement?: { ageLimit?: number; [k: string]: unknown };
-  skillColumnPolicy?: {
-    officerInCommand: string;
-    officerStaff: string;
-    enlistedNcoMinRank: string;
-    enlistedNcoColumn: string;
-    enlistedLowRankColumns: Record<string, string>;
-  };
+  skillColumnPolicy?: SkillColumnPolicy;
   combatArms: string[];
   combatArmEligibility?: {
     army?: string[];
@@ -203,7 +200,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   // PM p. 51: homeworld tech DM (+1 at Avg Stellar+) lives in data.mos.dms
   // as a StructuredDm (homeworldTechAtLeast); evaluate it here.
   const dm = applyDmRules(data.mos.dms, ch, "skills");
-  const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
+  const r = clampedRoll(ch, 1, dm, 1, 7);
   const row = data.mos.rows.find((row) => row.die === r);
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
   const mosSkill = row[armKey] as string | undefined;
@@ -251,14 +248,8 @@ export function mercenaryCommandDuty(ch: Character): void {
 export function mercenaryRollAssignment(ch: Character): string {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (acg.justRetained && acg.retainedAssignment) {
-    const retained = acg.retainedAssignment;
-    acg.justRetained = false;
-    acg.retainedAssignment = null;
-    // Runner emits ev.assignmentRolled with retained=true (captured before
-    // this pathway clears the flag).
-    return retained;
-  }
+  const retained = consumeRetainedAssignment(acg);
+  if (retained) return retained;
   const armKey = labelToColumnKey(acg.combatArm!);
   const r = ch.rng.roll(2);
   const row = data.assignment.rows.find((row) => row.die === r);
@@ -358,42 +349,18 @@ function rollMercenarySkill(ch: Character): void {
       return;
     }
   }
-  const col = mercenaryDefaultSkillColumn(ch);
+  const col = serviceSkillColumnFor(ch, dataFor(ch).skillColumnPolicy);
   rollMercenarySkillFromColumn(ch, col);
-}
-
-/** NCO-skills minimum enlisted rank as a number, from the pathway's
- *  skillColumnPolicy.enlistedNcoMinRank (PM p. 51). 0 when unconfigured. */
-function enlistedNcoMinRankNum(ch: Character): number {
-  const pol = dataFor(ch).skillColumnPolicy;
-  return pol ? (parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 0) : 0;
-}
-
-function mercenaryDefaultSkillColumn(ch: Character): string {
-  // Per JSON skillColumnPolicy (PM p. 51 line 3194-3196).
-  const data = dataFor(ch);
-  const pol = data.skillColumnPolicy;
-  if (!pol) return "ncoSkills";
-  if (ch.requireAcgState().isOfficer) {
-    return ch.requireAcgState().inCommand ? pol.officerInCommand : pol.officerStaff;
-  }
-  // Enlisted: rank below the NCO threshold uses Army/Marine Life column.
-  const rank = ch.requireAcgState().rankCode;
-  const enlistedNum = parseInt(rank.replace(/[^\d]/g, ""), 10) || 0;
-  const ncoMin = enlistedNcoMinRankNum(ch);
-  if (enlistedNum < ncoMin) {
-    const branch = ch.requireAcgState().branch ?? "";
-    return pol.enlistedLowRankColumns[branch] ?? pol.enlistedLowRankColumns["army"] ?? "armyLife";
-  }
-  return pol.enlistedNcoColumn;
 }
 
 function mercenaryAvailableSkillColumns(ch: Character): string[] {
   const cols: string[] = [];
   const lifeCol = ch.requireAcgState().branch === "Marines" ? "marineLife" : "armyLife";
   cols.push(lifeCol);
-  const rankNum = parseInt(ch.requireAcgState().rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  if (!ch.requireAcgState().isOfficer && rankNum >= enlistedNcoMinRankNum(ch)) cols.push("ncoSkills");
+  const rank = rankNum(ch.requireAcgState().rankCode);
+  const pol = dataFor(ch).skillColumnPolicy;
+  const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 0;
+  if (!ch.requireAcgState().isOfficer && rank >= ncoMin) cols.push("ncoSkills");
   if (ch.requireAcgState().isOfficer) {
     if (ch.requireAcgState().inCommand) cols.push("commandSkills");
     else cols.push("staffSkills");
@@ -418,11 +385,7 @@ function promoteMercenary(ch: Character): void {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
   const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
-  const next = advanceRankRow(ladder, acg.rankCode);
-  if (!next) return;
-  acg.rankCode = next[0];
-  if (acg.isOfficer) acg.promotedThisTerm = true;
-  ch.log(ev.promoted(next[1]));
+  applyPromotion(ch, ladder);
 }
 
 /** Special Assignment table — replaces the normal assignment when the
@@ -432,15 +395,6 @@ export function mercenarySpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   const sa = rollSpecialAssignment(ch, data.specialAssignments, data.ocsAdvancement?.ageLimit);
   if (sa) applyMercenarySchool(ch, sa);
-}
-
-/** Retention is Navy-only in MT. Kept as a no-op for back-compat with the
- *  pathway impl interface. */
-export function mercenaryRetention(ch: Character, _assignment: string): void {
-  if (ch.acgState) {
-    ch.acgState.justRetained = false;
-    ch.acgState.retainedAssignment = null;
-  }
 }
 
 /** Reenlistment per service. Returns true if continuing.
@@ -505,7 +459,7 @@ export function getMercenaryPathway() {
     rollAssignment: mercenaryRollAssignment,
     resolveAssignment: mercenaryResolveAssignment,
     specialAssignment: mercenarySpecialAssignment,
-    retention: mercenaryRetention,
+    retention: clearRetention,
     reenlist: mercenaryReenlist,
     startOfTerm: mercenaryStartOfTerm,
   };

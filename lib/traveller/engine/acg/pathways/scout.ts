@@ -27,8 +27,12 @@ import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
-import { createPathwaySpecRegistry, advanceRankRow, mandatoryReenlistRoll } from "./shared";
+import {
+  createPathwaySpecRegistry, applyPromotion, runReenlist,
+  clearRetention, consumeRetainedAssignment, clampedRoll,
+} from "./shared";
 import { event as ev } from "@/lib/traveller/history";
+import { rankNum } from "@/lib/traveller/engine/predicate";
 
 const PATHWAY = "scout";
 
@@ -131,7 +135,7 @@ function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
   const division: "field" | "bureaucracy" = ch.requireAcgState().division ?? "field";
   ch.requireAcgState().division = division;
-  const r = Math.max(2, Math.min(12, ch.rng.roll(2)));
+  const r = clampedRoll(ch, 2, 0, 2, 12);
   const row = data.officeAssignment.rows.find((row) => row.die === r);
   if (!row) { ch.requireAcgState().office = "Survey"; return; }
   const off = row[division];
@@ -175,23 +179,11 @@ function scoutRollSkill(ch: Character): void {
   }
 }
 
-/** Parse the numeric part of a scout rank code ("IS-10" → 10); NaN if the
- *  code is not an IS-rank. Ordinary ranks and the administrator floor are
- *  compared against the ranks ladders in JSON rather than hardcoded. */
-function scoutRankNum(rankCode: string): number {
-  const m = rankCode.match(/^IS-(\d+)$/);
-  return m ? parseInt(m[1]!, 10) : NaN;
-}
-
 export function scoutRollAssignment(ch: Character): string {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (acg.justRetained && acg.retainedAssignment) {
-    const retained = acg.retainedAssignment;
-    acg.justRetained = false;
-    acg.retainedAssignment = null;
-    return retained;
-  }
+  const retained = consumeRetainedAssignment(acg);
+  if (retained) return retained;
   const division = ch.requireAcgState().division ?? "field";
   // PM p. 57: administrators (rank ≥ the administrator floor) in the
   // Bureaucracy may voluntarily take a +DM on the duty roll. Both the
@@ -199,12 +191,11 @@ export function scoutRollAssignment(ch: Character): string {
   // ladder and the dutyAssignment.dms rankAtLeast gate). A natural 2 always
   // forces a war mission regardless of the DM.
   const adminMin = Math.min(
-    ...data.ranks.administrator.map((r) => scoutRankNum(String(r[0]))),
+    ...data.ranks.administrator.map((r) => rankNum(String(r[0]))),
   );
   const adminDm = data.dutyAssignment.dms?.find((d) => d.rankAtLeast !== undefined)?.dm ?? 0;
-  const rankNum = scoutRankNum(ch.requireAcgState().rankCode);
-  const adminEligible = division === "bureaucracy" &&
-    !Number.isNaN(rankNum) && rankNum >= adminMin;
+  const rank = rankNum(ch.requireAcgState().rankCode);
+  const adminEligible = division === "bureaucracy" && rank >= adminMin;
   // Default to taking the DM; interactive mode exposes the choice.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
@@ -387,7 +378,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     const fromDivision = acg.division ?? "field";
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
-    const r = Math.max(2, Math.min(12, ch.rng.roll(2)));
+    const r = clampedRoll(ch, 2, 0, 2, 12);
     const row = data.officeAssignment.rows.find((row) => row.die === r);
     const off = row?.bureaucracy;
     const newOffice = typeof off === "string" ? off : "Technical";
@@ -395,7 +386,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     // Bureaucracy has rank; ordinary rank becomes terms served, capped at
     // the top ordinary rank defined in JSON (PM p. 57: IS-9).
     const termsServed = Math.max(1, ch.terms);
-    const ordinaryMax = Math.max(...data.ranks.ordinary.map((r) => scoutRankNum(String(r[0]))));
+    const ordinaryMax = Math.max(...data.ranks.ordinary.map((r) => rankNum(String(r[0]))));
     acg.rankCode = `IS-${Math.min(ordinaryMax, termsServed)}`;
     ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
   }
@@ -419,16 +410,12 @@ function promoteScout(ch: Character): void {
   // rank (a separate ladder). Ordinary caps at IS-9; higher requires
   // administrator school.
   const ladder = acg.isOfficer ? data.ranks.administrator : data.ranks.ordinary;
-  const next = advanceRankRow(ladder, acg.rankCode);
-  if (!next) return;
-  acg.rankCode = next[0];
-  ch.log(ev.promoted(next[1]));
-  if (acg.isOfficer) {
-    acg.promotedThisTerm = true;
-    scoutRollSkillFromColumn(ch, "administratorRank");
-  } else {
-    scoutRollSkill(ch);
-  }
+  applyPromotion(ch, ladder, {
+    onPromote: (ch) => {
+      if (acg.isOfficer) scoutRollSkillFromColumn(ch, "administratorRank");
+      else scoutRollSkill(ch);
+    },
+  });
 }
 
 /** Detached Duty benefit at muster (PM p. 57): "Any scout who is serving
@@ -458,33 +445,18 @@ export function scoutFinalizeMuster(ch: Character): void {
   ch.addBenefit(stipendLabel);
 }
 
-/** Retention is Navy-only in MT. Kept as a no-op for back-compat. */
-export function scoutRetention(ch: Character, _assignment: string): void {
-  if (ch.acgState) {
-    ch.acgState.justRetained = false;
-    ch.acgState.retainedAssignment = null;
-  }
-}
-
 export function scoutReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  // Up-or-out: ordinary rank must be ≥ terms served.
-  const rankNum = parseInt(ch.requireAcgState().rankCode.replace("IS-", ""), 10) || 0;
-  if (!ch.requireAcgState().isOfficer && rankNum < ch.terms) {
+  // Up-or-out: ordinary rank must be ≥ terms served (PM p. 57).
+  if (!ch.requireAcgState().isOfficer && rankNum(ch.requireAcgState().rankCode) < ch.terms) {
     ch.requireAcgState().reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }
-  const r = ch.rng.roll(2);
-  const target = data.reenlistment.target;
-  const mandatory = mandatoryReenlistRoll(ch);
-  const isMandatory = mandatory !== undefined && r === mandatory;
-  const succeeded = isMandatory || r >= target;
-  ch.log(ev.roll("Reenlistment", r, 0, target, succeeded, "scout"));
-  if (isMandatory) {
-    ch.enterMandatoryReenlist();
-    return true;
-  }
-  return r >= target;
+  return runReenlist(ch, {
+    target: data.reenlistment.target,
+    label: "scout",
+    onContinue: () => {},
+  });
 }
 
 export function getScoutPathway() {
@@ -494,7 +466,7 @@ export function getScoutPathway() {
     initialTraining: scoutInitialTraining,
     rollAssignment: scoutRollAssignment,
     resolveAssignment: scoutResolveAssignment,
-    retention: scoutRetention,
+    retention: clearRetention,
     reenlist: scoutReenlist,
   };
 }

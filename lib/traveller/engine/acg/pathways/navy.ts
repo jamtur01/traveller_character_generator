@@ -28,8 +28,8 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
-  combatResolutionDms, advanceRankRow, rollSpecialAssignment,
-  runReenlist, offerRoleChange,
+  combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
+  applyPromotion, consumeRetainedAssignment, clampedRoll,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 
@@ -251,7 +251,7 @@ function navyAssignBranch(ch: Character): void {
   // doesn't have it (cap at 8 attempts as a safety net — the table has
   // multiple non-Tech-Services rows so re-roll converges quickly).
   for (let attempt = 0; attempt < 8; attempt++) {
-    const r = Math.max(0, Math.min(7, ch.rng.roll(1) + dm));
+    const r = clampedRoll(ch, 1, dm, 0, 7);
     const row = data.branchAssignment.rows.find((row) => row.die === r);
     const candidate = String(row?.[col] ?? "Line");
     if (isBranchAllowedForFleet(ch, candidate)) {
@@ -397,14 +397,10 @@ function navyRollCommandDuty(ch: Character): void {
 export function navyRollAssignment(ch: Character): string {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (acg.justRetained && acg.retainedAssignment) {
-    const retained = acg.retainedAssignment;
-    acg.justRetained = false;
-    acg.retainedAssignment = null;
-    return retained;
-  }
+  const retained = consumeRetainedAssignment(acg);
+  if (retained) return retained;
   const dm = applyStructuredDms(data.assignment.dms, ch);
-  const r = Math.max(2, Math.min(12, ch.rng.roll(2) + dm));
+  const r = clampedRoll(ch, 2, dm, 2, 12);
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Navy assignment table missing row for die=${r}`);
   return String(row.assignment);
@@ -479,12 +475,8 @@ function promoteNavy(ch: Character): void {
     );
   }
   const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
-  const cap = acg.isOfficer ? (caps[acg.fleet] ?? 10) : undefined;
-  const next = advanceRankRow(ladder, acg.rankCode, cap);
-  if (!next) return;
-  acg.rankCode = next[0];
-  if (acg.isOfficer) acg.promotedThisTerm = true;
-  ch.log(ev.promoted(next[1]));
+  const opts = acg.isOfficer ? { cap: caps[acg.fleet] ?? 10 } : undefined;
+  applyPromotion(ch, ladder, opts);
 }
 
 export function navyRetention(ch: Character, assignment: string): void {
