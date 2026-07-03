@@ -31,7 +31,7 @@ import {
   parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
-import { awardBrownie } from "../awards";
+import { awardBrownie, bpAwardFor } from "../awards";
 import { applyAcgSkillCell } from "../skills";
 import {
   applyOnce, markComplete, resetIfComplete,
@@ -79,6 +79,8 @@ export interface MerchantData {
       lineSize: "Large" | "Small" | null;
       target: string | number;
     }>;
+    startingRank: string;
+    enlistedRankMax?: string;
     dms?: StructuredDm[];
   };
   departmentAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
@@ -199,7 +201,7 @@ export function merchantEnlist(
   // Merchants as Purser Department Medic per PM p. 47). Otherwise default
   // to E1 enlisted.
   if (!ch.requireAcgState().preCareerCommission) {
-    ch.requireAcgState().rankCode = "E1";
+    ch.requireAcgState().rankCode = data.enlistment.startingRank;
     ch.requireAcgState().isOfficer = false;
   } else if (ch.requireAcgState().schoolsAttended.includes("medicalSchool")) {
     ch.requireAcgState().department = "Purser";
@@ -561,7 +563,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   if (typeof sa !== "string") return;
   ch.requireAcgState().schoolsAttended.push(sa);
   ch.log(ev.schoolAssigned(sa, "merchantPrince"));
-  awardBrownie(ch, 1, `Special Duty: ${sa}`);
+  awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
 }
 
@@ -695,13 +697,18 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 export function merchantStartOfTerm(ch: Character): void {
   // Reset per-term flags before any per-year resolution fires.
   delete ch.requireAcgState().routeAssignmentThisTerm;
-  // Enlisted ranks advance every 4 years (per manual p. 60).
+  // PM p. 60: enlisted personnel advance one grade every four years. The
+  // merchant service defines no enlisted rank titles above the starting
+  // grade, so seniority numbering is capped at enlistedRankMax to avoid
+  // emitting phantom ranks (e.g. E15) for improbably long enlisted careers.
   if (!ch.requireAcgState().isOfficer && ch.terms > 0) {
     const code = ch.requireAcgState().rankCode;
     const m = code.match(/^E(\d+)$/);
     if (m) {
       const n = parseInt(m[1]!, 10);
-      ch.requireAcgState().rankCode = `E${n + 1}`;
+      const maxCode = dataFor(ch).enlistment.enlistedRankMax ?? code;
+      const maxN = parseInt(maxCode.replace(/[^\d]/g, ""), 10) || n;
+      if (n < maxN) ch.requireAcgState().rankCode = `E${n + 1}`;
     }
     return;
   }

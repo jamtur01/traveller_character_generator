@@ -238,17 +238,19 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     }
   }
 
-  // Rrev11: Social-standing eligibility gates per PM p. 47.
-  //   Naval Academy: Social 8+ required to apply.
-  //   Military Academy: Social 6+ required to apply.
+  // Attribute eligibility gates per PM p. 47 (Naval Academy Social 8+,
+  // Military Academy Social 6+). Thresholds live in JSON
+  // (preCareerOptions.<opt>.eligibility) and are read via isPreCareerEligible.
   // Failing the gate is "may not apply" — character isn't aged or drafted,
   // they simply can't enter (different from admission-roll failure).
-  if (opt === "navalAcademy" && ch.attributes.social < 8) {
-    out.notes.push("Naval Academy requires Social Standing 8+.");
+  if (opt === "navalAcademy" && !isPreCareerEligible(ch, opt)) {
+    const min = preCareerEligibility(ch.editionId, opt)?.min;
+    out.notes.push(`Naval Academy requires Social Standing ${min}+.`);
     return out;
   }
-  if (opt === "militaryAcademy" && ch.attributes.social < 6) {
-    out.notes.push("Military Academy requires Social Standing 6+.");
+  if (opt === "militaryAcademy" && !isPreCareerEligible(ch, opt)) {
+    const min = preCareerEligibility(ch.editionId, opt)?.min;
+    out.notes.push(`Military Academy requires Social Standing ${min}+.`);
     return out;
   }
 

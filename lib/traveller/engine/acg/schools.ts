@@ -10,7 +10,7 @@
 import type { Character } from "../../character";
 import { getEdition, getAcgPathway } from "../../editions";
 import { roll, arnd } from "../../random";
-import { awardBrownie } from "./awards";
+import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { recordTransfer } from "./state";
 import { event as ev } from "../../history";
@@ -49,7 +49,7 @@ export function applySpecialAssignment(
   if (!ch.acgState) return;
   ch.acgState.schoolsAttended.push(assignment);
   ch.log(ev.schoolAssigned(assignment, pathway));
-  awardBrownie(ch, 1, `Special Assignment: ${assignment}`);
+  awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Special Assignment: ${assignment}`);
 
   const data = pathwayData(ch, pathway);
   const spec = data?.specialAssignmentDetails?.[assignment];
@@ -419,7 +419,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   if (meta?.promotesToRank) {
     ch.acgState.schoolsAttended.push(school);
     ch.log(ev.schoolAssigned(school, "scout"));
-    awardBrownie(ch, 1, `Scout school: ${school}`);
+    awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Scout school: ${school}`);
     if (meta.promotesToOfficer) ch.acgState.isOfficer = true;
     const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
     if (!pattern || !ch.acgState.rankCode.match(pattern)) {
@@ -431,7 +431,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
 
   ch.acgState.schoolsAttended.push(school);
   ch.log(ev.schoolAssigned(school, "scout"));
-  awardBrownie(ch, 1, `Scout school: ${school}`);
+  awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Scout school: ${school}`);
 
   const scout = getEdition(ch.editionId).data.advancedCharacterGeneration?.scout;
   const schools = scout?.schools;

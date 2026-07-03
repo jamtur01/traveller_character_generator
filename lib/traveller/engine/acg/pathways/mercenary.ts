@@ -91,7 +91,7 @@ export interface MercenaryData {
   };
   specialistSchool?: Record<string, unknown>;
   serviceSkills: { columns: string[]; rows: Array<Record<string, unknown>> };
-  mos: { columns: string[]; rows: Array<Record<string, unknown>> };
+  mos: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   ranks: { enlisted: Array<[string, string]>; officer: Array<[string, string, number]> };
   reenlistment: {
     army: { target: number; dms: StructuredDm[] };
@@ -202,9 +202,9 @@ export function mercenaryInitialTraining(ch: Character): void {
 
   const acg = ch.requireMercenaryAcg();
   const armKey = labelToColumnKey(acg.combatArm);
-  let dm = 0;
-  const hwTech = ch.homeworld?.tech;
-  if (hwTech === "Avg Stellar" || hwTech === "High Stellar") dm += 1;
+  // PM p. 51: homeworld tech DM (+1 at Avg Stellar+) lives in data.mos.dms
+  // as a StructuredDm (homeworldTechAtLeast); evaluate it here.
+  const dm = applyDmRules(data.mos.dms, ch, "skills");
   const r = Math.max(1, Math.min(7, roll(1) + dm));
   const row = data.mos.rows.find((row) => row.die === r);
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
@@ -465,12 +465,14 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
   const current = ch.acgState.combatArm ?? "Infantry";
   const isOfficer = ch.acgState.isOfficer === true;
   const crossTrained = ch.acgState.crossTrainedArms ?? [];
-  const commandoEligible =
-    (ch.acgState.honorsGraduations ?? []).includes("militaryAcademy") ||
-    crossTrained.includes("Commando");
+  const honors = ch.acgState.honorsGraduations ?? [];
+  // PM p. 50: some arms (Commando) are gated behind an honors graduation;
+  // the gate lives in JSON (combatArmEligibility.armGates.<arm>.honorsGraduateOf).
+  const armGates = data.combatArmEligibility?.armGates ?? {};
   const eligibleArms = data.combatArms.filter((arm) => {
     if (arm === current) return true;
-    if (arm === "Commando") return commandoEligible;
+    const gate = armGates[arm]?.honorsGraduateOf;
+    if (gate) return honors.includes(gate) || crossTrained.includes(arm);
     if (isOfficer) return true;
     return crossTrained.includes(arm);
   });

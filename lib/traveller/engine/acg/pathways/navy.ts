@@ -475,7 +475,13 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
 function promoteNavy(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireNavyAcg();
-  const caps = data.rankCaps ?? { imperialNavy: 10, reserveFleet: 8, systemSquadron: 7 };
+  // PM p. 55: per-fleet officer rank caps live in JSON (navy.rankCaps).
+  const caps = data.rankCaps;
+  if (!caps) {
+    throw new Error(
+      "Navy pathway requires rankCaps (advancedCharacterGeneration.navy.rankCaps).",
+    );
+  }
   const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
   const cap = acg.isOfficer ? (caps[acg.fleet] ?? 10) : undefined;
   const next = advanceRankRow(ladder, acg.rankCode, cap);

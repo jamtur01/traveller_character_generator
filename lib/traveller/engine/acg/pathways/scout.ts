@@ -19,6 +19,7 @@
 import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
+import { numCommaSep } from "../../../formatting";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
@@ -62,6 +63,7 @@ export interface ScoutData {
   skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>> }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>> } };
   ranks: { ordinary: Array<[string, string]>; administrator: Array<[string, string, number]> };
   reenlistment: { target: number; upOrOut: string };
+  detachedDuty: { musterTarget: number; stipendPerYear: number };
 }
 
 function dataFor(ch: Character): ScoutData {
@@ -175,16 +177,12 @@ function scoutRollSkill(ch: Character): void {
   }
 }
 
-/** Scout administrators (IS-10..IS-18) may voluntarily apply DM +2 to the
- *  Duty Assignment roll (manual p. 57: "Scouts in the Bureaucracy who hold
- *  administrator rank are allowed a DM of +2 on the duty assignment table,
- *  which allows them to avoid some training (the DM is voluntary).
- *  However, a natural roll of 2 always means a war mission, regardless of
- *  the DM."). Auto-mode applies the DM; interactive mode asks the player. */
-function isScoutAdministratorRank(rankCode: string): boolean {
+/** Parse the numeric part of a scout rank code ("IS-10" → 10); NaN if the
+ *  code is not an IS-rank. Ordinary ranks and the administrator floor are
+ *  compared against the ranks ladders in JSON rather than hardcoded. */
+function scoutRankNum(rankCode: string): number {
   const m = rankCode.match(/^IS-(\d+)$/);
-  if (!m) return false;
-  return parseInt(m[1]!, 10) >= 10;
+  return m ? parseInt(m[1]!, 10) : NaN;
 }
 
 export function scoutRollAssignment(ch: Character): string {
@@ -197,12 +195,23 @@ export function scoutRollAssignment(ch: Character): string {
     return retained;
   }
   const division = ch.requireAcgState().division ?? "field";
+  // PM p. 57: administrators (rank ≥ the administrator floor) in the
+  // Bureaucracy may voluntarily take a +DM on the duty roll. Both the
+  // eligible-rank floor and the DM value come from JSON (the administrator
+  // ladder and the dutyAssignment.dms rankAtLeast gate). A natural 2 always
+  // forces a war mission regardless of the DM.
+  const adminMin = Math.min(
+    ...data.ranks.administrator.map((r) => scoutRankNum(String(r[0]))),
+  );
+  const adminDm = data.dutyAssignment.dms?.find((d) => d.rankAtLeast !== undefined)?.dm ?? 0;
+  const rankNum = scoutRankNum(ch.requireAcgState().rankCode);
   const adminEligible = division === "bureaucracy" &&
-    isScoutAdministratorRank(ch.requireAcgState().rankCode);
+    !Number.isNaN(rankNum) && rankNum >= adminMin;
   // Default to taking the DM; interactive mode exposes the choice.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
     const acg = ch.requireAcgState();
+    const takeLabel = `Take DM +${adminDm}`;
     if (acg.scoutAdminDmDecision !== undefined) {
       // Resume case — decision was made in the previous pause/resume
       // cycle. Consume it.
@@ -214,15 +223,15 @@ export function scoutRollAssignment(ch: Character): string {
       // is captured on acgState so the resumed call reads it above.
       ch.pickOrDefer({
         kind: "scoutAdminDm",
-        label: "Take administrator DM +2 on the duty roll? (Natural 2 still forces war mission.)",
-        options: ["Take DM +2", "Roll without DM"],
+        label: `Take administrator DM +${adminDm} on the duty roll? (Natural 2 still forces war mission.)`,
+        options: [takeLabel, "Roll without DM"],
         onResolve: (c, choice) => {
-          c.requireAcgState().scoutAdminDmDecision = choice === "Take DM +2";
+          c.requireAcgState().scoutAdminDmDecision = choice === takeLabel;
         },
       });
     }
   }
-  const dm = useAdminDm ? 2 : 0;
+  const dm = useAdminDm ? adminDm : 0;
   const baseRoll = roll(2);
   // Natural 2 always means war mission regardless of any DM.
   const dieKey = baseRoll === 2 ? 2 : Math.max(2, Math.min(12, baseRoll + dm));
@@ -391,9 +400,11 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     recordTransfer(acg, "office", fromOffice, newOffice,
       acg.yearsServed ?? 0);
     acg.office = newOffice;
-    // Bureaucracy has rank; ordinary rank becomes terms served.
+    // Bureaucracy has rank; ordinary rank becomes terms served, capped at
+    // the top ordinary rank defined in JSON (PM p. 57: IS-9).
     const termsServed = Math.max(1, ch.terms);
-    acg.rankCode = `IS-${Math.min(9, termsServed)}`;
+    const ordinaryMax = Math.max(...data.ranks.ordinary.map((r) => scoutRankNum(String(r[0]))));
+    acg.rankCode = `IS-${Math.min(ordinaryMax, termsServed)}`;
     ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
   }
   // Resolve a fresh assignment in the new division. Cache the rolled
@@ -437,10 +448,11 @@ function promoteScout(ch: Character): void {
 export function scoutFinalizeMuster(ch: Character): void {
   if (!ch.acgState) return;
   if (ch.acgState.office !== "Detached Duty") return;
+  const { musterTarget, stipendPerYear } = dataFor(ch).detachedDuty;
   const r = roll(2);
   const dm = ch.terms;
-  const succeeded = r + dm >= 9;
-  ch.log(ev.roll("Detached Duty", r, dm, 9, succeeded));
+  const succeeded = r + dm >= musterTarget;
+  ch.log(ev.roll("Detached Duty", r, dm, musterTarget, succeeded));
   if (!succeeded) return;
   ch.log(ev.decoration("Permanent Detached Duty", "PM p. 57"));
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
@@ -448,9 +460,10 @@ export function scoutFinalizeMuster(ch: Character): void {
     ch.log(ev.raw("Scout/Courier (Detached Duty)", "simple"));
     ch.addBenefit("Scout/Courier (Detached Duty)");
   }
-  ch.retirementPay = (ch.retirementPay ?? 0) + 4000;
-  ch.log(ev.raw("Cr4,000/yr Detached Duty stipend", "simple"));
-  ch.addBenefit("Cr4,000/yr Detached Duty stipend");
+  ch.retirementPay = (ch.retirementPay ?? 0) + stipendPerYear;
+  const stipendLabel = `Cr${numCommaSep(stipendPerYear)}/yr Detached Duty stipend`;
+  ch.log(ev.raw(stipendLabel, "simple"));
+  ch.addBenefit(stipendLabel);
 }
 
 /** Retention is Navy-only in MT. Kept as a no-op for back-compat. */

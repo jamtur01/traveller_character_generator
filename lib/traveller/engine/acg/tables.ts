@@ -149,11 +149,17 @@ export function applyDmRules(
     if (rule.rollType !== undefined && rule.rollType !== rollType) continue;
     if (matchesStructuredDm(rule, ch)) total += rule.dm;
   }
-  // PM p. 15: anagathics user takes -1 (-2 for nobles) survival DM.
-  // Applies whether or not the supply is found; only on the survival roll.
+  // PM p. 15: anagathics user takes a survival DM (a steeper one for the
+  // noble service). Magnitudes live in JSON (rules.anagathics); mirror the
+  // basic-chargen read in engine/serviceLoader.ts.
   if (rollType === "survival" &&
       (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm)) {
-    total += ch.service === "nobles" ? -2 : -1;
+    const anag = getEdition(ch.editionId).rules.anagathics;
+    const noblePenalty = anag?.nobleSurvivalDm;
+    const standardPenalty = anag?.survivalDm ?? 0;
+    const nobleService = anag?.nobleService;
+    const isNoble = nobleService !== undefined && ch.service === nobleService;
+    total += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
   }
   return total;
 }

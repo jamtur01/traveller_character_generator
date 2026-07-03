@@ -4890,6 +4890,10 @@
         ]
       },
       "mos": {
+        "$rule": "PM p. 51: homeworld Avg Stellar+ grants MOS DM +1.",
+        "dms": [
+          { "homeworldTechAtLeast": "Avg Stellar", "dm": 1, "note": "PM p. 51: better tech base yields better-trained troopers" }
+        ],
         "columns": [
           "die",
           "artillery",
@@ -7230,6 +7234,11 @@
       "reenlistment": {
         "target": 3,
         "upOrOut": "Ordinary rank must be at least equal to number of terms served or reenlistment is not permitted."
+      },
+      "detachedDuty": {
+        "$rule": "PM p. 57: Detached Duty scouts get permanent detached duty on a roll of 9+ (DM + terms served), with a Cr4000/yr stipend.",
+        "musterTarget": 9,
+        "stipendPerYear": 4000
       }
     },
     "merchantPrince": {
@@ -7311,6 +7320,10 @@
         "Conclude term with aging, reenlistment, or mustering out"
       ],
       "enlistment": {
+        "$rule": "PM p. 60: enlisted merchants start at rank E1.",
+        "startingRank": "E1",
+        "$ruleEnlistedRankMax": "PM p. 60: enlisted advance one grade every four years; no titles are defined above the starting grade, so seniority numbering is capped here to avoid phantom ranks.",
+        "enlistedRankMax": "E9",
         "columns": [
           "typeOfLine",
           "minimumStarport",
