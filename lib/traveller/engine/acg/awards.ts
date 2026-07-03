@@ -113,10 +113,7 @@ interface CourtMartialDmWhen {
   currentlyInCommand?: boolean;
 }
 interface CourtMartialDm {
-  /** Legacy free-text. */
-  condition?: string;
-  /** Structured form. */
-  when?: CourtMartialDmWhen;
+  when: CourtMartialDmWhen;
   dm: number;
 }
 interface CourtMartialSpec {
@@ -185,10 +182,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   // Result roll.
   let dm = 0;
   for (const d of cm.resultRoll?.dms ?? []) {
-    const matches = d.when
-      ? resultDmWhenMatches(ch, d.when, assignment)
-      : resultDmApplies(ch, d.condition ?? "", assignment);
-    if (matches) dm += d.dm;
+    if (resultDmWhenMatches(ch, d.when, assignment)) dm += d.dm;
   }
   const dieN = cm.resultRoll?.die === "2D" ? 2 : 1;
   let dieTotal = 0;
@@ -246,29 +240,6 @@ function resultDmWhenMatches(
   }
   if (when.currentlyInCommand === true && !ch.acgState?.inCommand) return false;
   return true;
-}
-
-function resultDmApplies(
-  ch: Character, condition: string, assignment?: string,
-): boolean {
-  const lc = condition.toLowerCase();
-  const rankCode = ch.acgState?.rankCode ?? "";
-  if (lc.includes("e7 to e9")) {
-    const m = rankCode.match(/^E(\d+)$/);
-    return !!m && parseInt(m[1]!, 10) >= 7 && parseInt(m[1]!, 10) <= 9;
-  }
-  if (lc.includes("o7+")) {
-    const m = rankCode.match(/^O(\d+)$/);
-    return !!m && parseInt(m[1]!, 10) >= 7;
-  }
-  if (lc.includes("combat assignment")) {
-    if (!assignment) return false;
-    const pw = getAcgPathway(ch.editionId, ch.acgState?.pathway);
-    return pw?.combatAssignments?.includes(assignment) ?? false;
-  }
-  if (lc.includes("training")) return assignment === "Training";
-  if (lc.includes("command duty")) return !!ch.acgState?.inCommand;
-  return false;
 }
 
 function applyCourtMartialResult(ch: Character, result: string): void {

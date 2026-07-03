@@ -35,13 +35,11 @@ export interface HomeworldData {
   };
   starportXRoll: { results: Record<string, string> };
   dmsByColumn: Record<string, Array<{
-    condition?: string;
-    when?: DmConditionWhen;
+    when: DmConditionWhen;
     dm: number;
   }>>;
   defaultSkills: Array<{
-    condition?: string;
-    when?: {
+    when: {
       serviceIn?: string[];
       serviceNotIn?: string[];
       techAtLeast?: string;
@@ -113,8 +111,7 @@ export function rollHomeworld(ch: Character): Homeworld | null {
     // Apply DMs based on previously-rolled values.
     const dms = data.dmsByColumn[col] ?? [];
     for (const rule of dms) {
-      const cond = rule.when ?? rule.condition;
-      if (matchesCondition(cond, result, data.techCodeOrder)) r += rule.dm;
+      if (matchesCondition(rule.when, result, data.techCodeOrder)) r += rule.dm;
     }
     r = Math.max(2, Math.min(12, r));
     const row = data.rollTable.rows.find((row) => row.die === r);
@@ -157,31 +154,19 @@ interface DmConditionWhen {
 }
 
 function matchesCondition(
-  raw: string | { when?: DmConditionWhen } | DmConditionWhen | undefined,
+  w: DmConditionWhen | undefined,
   partial: Partial<Homeworld>,
   techCodeOrder?: string[],
 ): boolean {
-  if (raw == null) return false;
-  // Structured form: object with `when` or a flat shape.
-  if (typeof raw === "object") {
-    const w: DmConditionWhen = ("when" in raw && raw.when ? raw.when : raw) as DmConditionWhen;
-    if (!w.column) return false;
-    const actual = (partial as Record<string, string | undefined>)[w.column];
-    if (actual === undefined) return false;
-    if (w.equals !== undefined) return actual === w.equals;
-    if (w.in) return w.in.includes(actual);
-    if (w.atLeast && techCodeOrder && w.column === "tech") {
-      return techCodeOrder.indexOf(actual) >= techCodeOrder.indexOf(w.atLeast);
-    }
-    return false;
+  if (!w?.column) return false;
+  const actual = (partial as Record<string, string | undefined>)[w.column];
+  if (actual === undefined) return false;
+  if (w.equals !== undefined) return actual === w.equals;
+  if (w.in) return w.in.includes(actual);
+  if (w.atLeast && techCodeOrder && w.column === "tech") {
+    return techCodeOrder.indexOf(actual) >= techCodeOrder.indexOf(w.atLeast);
   }
-  // Legacy string form (kept for back-compat with any non-MT JSON).
-  const m = raw.match(/^([\w]+)\s*=\s*(.+)$/);
-  if (!m) return false;
-  const col = m[1]!.trim();
-  const expected = m[2]!.trim();
-  const actual = (partial as Record<string, string>)[col];
-  return actual === expected;
+  return false;
 }
 
 /** Apply the homeworld's default skills to the character. */
@@ -201,41 +186,15 @@ function evalDefaultSkillCondition(
   ch: Character,
   techCodeOrder: string[],
 ): boolean {
-  // Structured form preferred.
-  if (entry.when) {
-    const w = entry.when;
-    if (w.serviceIn && !w.serviceIn.includes(String(ch.service))) return false;
-    if (w.serviceNotIn && w.serviceNotIn.includes(String(ch.service))) return false;
-    if (w.techAtLeast &&
-        techCodeOrder.indexOf(hw.tech) < techCodeOrder.indexOf(w.techAtLeast)) {
-      return false;
-    }
-    if (w.techIn && !w.techIn.includes(hw.tech)) return false;
-    return true;
+  const w = entry.when;
+  if (w.serviceIn && !w.serviceIn.includes(String(ch.service))) return false;
+  if (w.serviceNotIn && w.serviceNotIn.includes(String(ch.service))) return false;
+  if (w.techAtLeast &&
+      techCodeOrder.indexOf(hw.tech) < techCodeOrder.indexOf(w.techAtLeast)) {
+    return false;
   }
-  // Legacy string form.
-  const condition = entry.condition;
-  if (!condition) return false;
-  const serviceIn = condition.match(/^service\s+in\s+\[([^\]]+)\]/);
-  if (serviceIn) {
-    const list = serviceIn[1]!.split(",").map((s) => s.trim());
-    return list.includes(String(ch.service));
-  }
-  const serviceNotIn = condition.match(/^service\s+not\s+in\s+\[([^\]]+)\]/);
-  if (serviceNotIn) {
-    const list = serviceNotIn[1]!.split(",").map((s) => s.trim());
-    return !list.includes(String(ch.service));
-  }
-  const techGte = condition.match(/^tech\s+>=\s+(.+)$/);
-  if (techGte) {
-    return techCodeOrder.indexOf(hw.tech) >= techCodeOrder.indexOf(techGte[1]!.trim());
-  }
-  const techIn = condition.match(/^tech\s+in\s+\[([^\]]+)\]/);
-  if (techIn) {
-    const list = techIn[1]!.split(",").map((s) => s.trim());
-    return list.includes(hw.tech);
-  }
-  return false;
+  if (w.techIn && !w.techIn.includes(hw.tech)) return false;
+  return true;
 }
 
 /** Returns the list of services available for enlistment given the
@@ -308,12 +267,11 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
   // skills are applied at enlistment time.
   const data = dataFor(ch.editionId)!;
   for (const entry of data.defaultSkills) {
-    // Filter to tech-conditional entries only (legacy: condition string
-    // starts with "tech"; structured: when.techAtLeast or when.techIn).
-    const isTechOnly = entry.when
-      ? (entry.when.techAtLeast !== undefined || entry.when.techIn !== undefined) &&
-        entry.when.serviceIn === undefined && entry.when.serviceNotIn === undefined
-      : /^tech\b/.test(entry.condition ?? "");
+    // Filter to tech-conditional entries only (when.techAtLeast/techIn with
+    // no service condition); service-based skills apply at enlistment.
+    const isTechOnly =
+      (entry.when.techAtLeast !== undefined || entry.when.techIn !== undefined) &&
+      entry.when.serviceIn === undefined && entry.when.serviceNotIn === undefined;
     if (!isTechOnly) continue;
     if (evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) {
       if (ch.checkSkill(entry.skill) < 0) {
