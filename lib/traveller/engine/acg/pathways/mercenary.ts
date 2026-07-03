@@ -284,7 +284,7 @@ const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
 export const validateMercenaryConfig = REGISTRY.validate;
-function getSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
+function getMercenarySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 /** Resolve one assignment via the JSON-driven phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
@@ -313,7 +313,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   const res = lookupResolution(resTable, assignment);
 
   const dms = combatResolutionDms(ch, resTable);
-  runPhases(getSpec(ch), { ch, assignment, resTable, res, dms });
+  runPhases(getMercenarySpec(ch), { ch, assignment, resTable, res, dms });
 }
 
 /** Roll one skill from a column appropriate for current rank/duty.

@@ -41,13 +41,13 @@ function runStep(
   try {
     fn();
     return true;
-  } catch (e) {
-    if (e instanceof ChoicePendingError) {
+  } catch (err) {
+    if (err instanceof ChoicePendingError) {
       // Preserve where we paused so resumption picks the right step.
       ch.requireAcgState().pausedAtStep = stepName;
       return false;
     }
-    throw e;
+    throw err;
   }
 }
 
