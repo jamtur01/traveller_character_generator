@@ -746,8 +746,6 @@ function applyDeckAutoTransferIfDue(ch: Character): void {
   if (ch.acgState.department === rule.destinationDepartment) return;
   // PM says "after one full term in rank O4" — we trigger at startOfTerm
   // when the rank was reached in the previous term.
-  const lastPromotion = ch.acgState.assignmentHistory.length;
-  void lastPromotion; // kept for future term-since-promotion tracking
   const from = ch.acgState.department ?? "";
   recordTransfer(ch.acgState, "department", from, rule.destinationDepartment,
     ch.acgState.yearsServed ?? 0);

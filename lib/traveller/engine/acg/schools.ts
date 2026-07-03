@@ -190,8 +190,7 @@ interface EffectWhen {
 }
 
 function effectWhenMatches(ch: Character, effect: Effect): boolean {
-  // Effects may include a structured `when` (preferred) or a legacy
-  // free-text `condition`. Missing means "always applies".
+  // Effects may carry a structured `when`; missing means "always applies".
   const when = (effect.when as EffectWhen | undefined) ?? null;
   const code = ch.acgState?.rankCode ?? "";
   if (when) {
@@ -208,16 +207,6 @@ function effectWhenMatches(ch: Character, effect: Effect): boolean {
       return parseInt(m[1]!, 10) >= min;
     }
     return true;
-  }
-  const condition = effect.condition as string | undefined;
-  if (!condition) return true;
-  const m = condition.match(/^rank below ([A-Za-z]+)(\d+)$/);
-  if (m) {
-    const letter = m[1]!;
-    const n = parseInt(m[2]!, 10);
-    const codeM = code.match(new RegExp(`^${letter}(\\d+)$`));
-    if (!codeM) return true;
-    return parseInt(codeM[1]!, 10) < n;
   }
   return true;
 }

@@ -42,7 +42,6 @@ import {
   runReenlist, offerRoleChange,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
-import type { AcgState, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 
 const PATHWAY = "mercenary";
 
@@ -511,6 +510,3 @@ export function getMercenaryPathway() {
     startOfTerm: mercenaryStartOfTerm,
   };
 }
-
-// re-export for compatibility
-export type { AcgState, ResolutionTarget };
