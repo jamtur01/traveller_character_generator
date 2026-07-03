@@ -85,6 +85,10 @@ export interface ServiceData {
   hooks?: {
     doPromotion?: string;
   };
+  /** CoTI nobles: starting rank derives from social standing each term
+   *  (rank = social + rankOffset, clamped to [1, maxRank]; social floored
+   *  at socialFloor). Absent for services promoted by roll. */
+  rankBySocial?: { socialFloor: number; rankOffset: number; maxRank: number };
   skillTables: {
     personalDevelopment: (string | null)[];
     serviceSkills: (string | null)[];

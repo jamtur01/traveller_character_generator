@@ -18,6 +18,7 @@ import { Character, cloneCharacter } from "../character";
 import { ChoicePendingError } from "../engine/choices";
 import { runAcgYear } from "../engine/runners/acg";
 import { getEditionServices } from "../services";
+import { getEdition } from "../editions";
 import { editionHasAcg } from "../engine/acg";
 import { freshAcgState } from "../engine/acg/state";
 import { event as ev } from "../history";
@@ -248,13 +249,17 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
   // so the player has the resolve action in front of them.
   if (snap.character.pendingChoices.length > 0) return snap;
   const c = cloneCharacter(snap.character);
-  // CT nobles rank-from-social: starting rank is social - 10, capped at 5.
-  // MT defines `nobles` differently (Position check at PM data line 2390);
-  // applying CT's rank derivation there would corrupt MT noble starting state.
-  if (c.editionId === "ct-classic" && c.service === "nobles") {
-    if (c.attributes.social < 10) c.attributes.social = 10;
-    const startingRank = c.attributes.social - 10;
-    if (c.rank < startingRank && startingRank >= 1 && startingRank <= 5) {
+  // Some services (CoTI nobles) derive starting rank from social standing
+  // each term rather than by a promotion roll. The rule lives in the
+  // service's JSON rankBySocial block; absent for services promoted by roll
+  // (e.g. MT nobles use a Position check, so their rank is untouched here).
+  const rankRule = getEdition(c.editionId).data.services[c.service]?.rankBySocial;
+  if (rankRule) {
+    if (c.attributes.social < rankRule.socialFloor) {
+      c.attributes.social = rankRule.socialFloor;
+    }
+    const startingRank = c.attributes.social + rankRule.rankOffset;
+    if (c.rank < startingRank && startingRank >= 1 && startingRank <= rankRule.maxRank) {
       c.rank = startingRank;
       c.commissioned = true;
     }

@@ -142,12 +142,12 @@
       "mandatoryOnExactRoll": 12,
       "mandatoryRetireAfterTerm": 7
     },
-    "retirementPay": {
-      "source": "ttb",
-      "excludedServices": ["scouts", "other"],
-      "annualCreditsByTerms": { "5": 4000, "6": 6000, "7": 8000, "8": 10000, "9": 12000 },
-      "additionalAnnualCreditsPerTermAfter9": 2000,
-      "cotiNotes": ["Rates vary by career type in prose; barbarians cannot retire."]
+    "retirement": {
+      "$rule": "TTB p. 18: pension eligible after 5 completed terms; Cr4000/yr at 5 terms + Cr2000/yr per further term (Cr4000+(terms-5)*2000, matching the printed 4000/6000/8000/10000/12000 table). Scouts and Other cannot retire; barbarians retire only in prose.",
+      "eligibleAfterCompletedTerm": 5,
+      "basePensionCredits": 4000,
+      "pensionCreditsPerTerm": 2000,
+      "excludedServices": ["scouts", "other"]
     },
     "hexadecimalNotation": {
       "0": "0",
@@ -714,6 +714,7 @@
         "promotion": { "target": 12, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 10 }] },
         "reenlistment": { "target": 4 }
       },
+      "rankBySocial": { "$rule": "CotI p. 8: noble starting rank = Social - 10 (Knight B/11 ... Duke F/15), capped at rank 5; Social floored at 10.", "socialFloor": 10, "rankOffset": -10, "maxRank": 5 },
       "ranks": [null, "B Knight", "C Baron", "D Marquis", "E Count", "F Duke", null],
       "automaticSkills": [
         { "trigger": "rank", "rank": 1, "effect": "+1 Social" },
