@@ -206,7 +206,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
       ));
       applyServiceStartAge(ch, "nobles");
       ch.service = "nobles";
-      if (ch.homeworld) applyHomeworldSkills(ch, ch.homeworld);
+      if (ch.homeworld) applyHomeworldSkills(ch);
       const skills = ch.editionService("nobles").getServiceSkills(ch);
       for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
       return "nobles";
@@ -223,7 +223,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
   if (succeeded) {
     applyServiceStartAge(ch, preferredService);
     ch.service = preferredService;
-    if (ch.homeworld) applyHomeworldSkills(ch, ch.homeworld);
+    if (ch.homeworld) applyHomeworldSkills(ch);
     const skills = pref.getServiceSkills(ch);
     for (const sk of skills) ch.addSkill(sk, 1, `${pref.serviceName} service skill`);
     return preferredService;
@@ -237,7 +237,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
   ch.log(ev.drafted(draftService));
   applyServiceStartAge(ch, draftService);
   ch.service = draftService;
-  if (ch.homeworld) applyHomeworldSkills(ch, ch.homeworld);
+  if (ch.homeworld) applyHomeworldSkills(ch);
   const draftDef = ch.editionService(draftService);
   const skills = draftDef.getServiceSkills(ch);
   for (const sk of skills) ch.addSkill(sk, 1, `${draftDef.serviceName} service skill`);

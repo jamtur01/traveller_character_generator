@@ -147,7 +147,8 @@ describe("applyHomeworldSkills", () => {
       hydrosphere: "Wet World" as const, population: "Mod Pop" as const,
       law: "Mod Law" as const, tech: "Early Stellar" as const,
     };
-    applyHomeworldSkills(c, hw);
+    c.homeworld = hw;
+    applyHomeworldSkills(c);
     expect(skillLevel(c, "Computer")).toBe(0);
     expect(skillLevel(c, "Wheeled Vehicle")).toBe(0); // Industrial/Pre-Stellar/Early Stellar
     expect(c.checkSkill("Grav Vehicle")).toBe(-1); // requires Avg Stellar+
@@ -163,7 +164,8 @@ describe("applyHomeworldSkills", () => {
       hydrosphere: "Wet World" as const, population: "High Pop" as const,
       law: "High Law" as const, tech: "Avg Stellar" as const,
     };
-    applyHomeworldSkills(c, hw);
+    c.homeworld = hw;
+    applyHomeworldSkills(c);
     expect(skillLevel(c, "Computer")).toBe(0);
     expect(skillLevel(c, "Grav Vehicle")).toBe(0);
   });
@@ -179,7 +181,8 @@ describe("applyHomeworldSkills", () => {
       hydrosphere: "Desert" as const, population: "Low Pop" as const,
       law: "No Law" as const, tech: "Pre-Industrial" as const,
     };
-    applyHomeworldSkills(c, hw);
+    c.homeworld = hw;
+    applyHomeworldSkills(c);
     expect(c.checkSkill("Computer")).toBe(-1);
     expect(c.checkSkill("Grav Vehicle")).toBe(-1);
     expect(c.checkSkill("Wheeled Vehicle")).toBe(-1);
@@ -198,7 +201,8 @@ describe("applyHomeworldSkills", () => {
       hydrosphere: "Wet World" as const, population: "Mod Pop" as const,
       law: "Mod Law" as const, tech: "Early Stellar" as const,
     };
-    applyHomeworldSkills(c, hw);
+    c.homeworld = hw;
+    applyHomeworldSkills(c);
     expect(skillLevel(c, "Vacc Suit")).toBe(0);
     expect(skillLevel(c, "Gun Combat")).toBe(0);
   });
@@ -214,7 +218,8 @@ describe("applyHomeworldSkills", () => {
       hydrosphere: "Wet World" as const, population: "Mod Pop" as const,
       law: "Low Law" as const, tech: "Pre-Industrial" as const,
     };
-    applyHomeworldSkills(c, hw);
+    c.homeworld = hw;
+    applyHomeworldSkills(c);
     expect(c.checkSkill("Vacc Suit")).toBe(-1);
     expect(c.checkSkill("Gun Combat")).toBe(-1);
   });

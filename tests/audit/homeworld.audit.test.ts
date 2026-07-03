@@ -9,12 +9,10 @@ import { getEdition } from "../../lib/traveller/editions";
 interface DefaultSkill {
   skill: string;
   level: number;
-  when?: {
-    serviceIn?: string[];
-    serviceNotIn?: string[];
-    techAtLeast?: string;
-    techIn?: string[];
-  };
+  serviceIn?: string[];
+  serviceNotIn?: string[];
+  homeworldTechAtLeast?: string;
+  homeworldField?: { field: string; in?: string[]; equals?: string };
 }
 
 const HW = () => getEdition("mt-megatraveller").data.homeworld as
@@ -57,7 +55,7 @@ describe("MT homeworld default skills (PM p. 15)", () => {
   it("Navy/Marines/Flyers/Scouts/Merchants/Pirates: Vacc Suit-0", () => {
     const entry = ds().find((e) => e.skill === "Vacc Suit");
     expect(entry?.level).toBe(0);
-    const svcs = entry?.when?.serviceIn ?? [];
+    const svcs = entry?.serviceIn ?? [];
     for (const svc of ["navy", "marines", "flyers", "scouts", "merchants", "pirates"]) {
       expect(svcs, `${svc} should get Vacc Suit-0`).toContain(svc);
     }
@@ -66,25 +64,26 @@ describe("MT homeworld default skills (PM p. 15)", () => {
   it("All except Barbarians: Gun Combat-0", () => {
     const entry = ds().find((e) => e.skill === "Gun Combat");
     expect(entry?.level).toBe(0);
-    expect(entry?.when?.serviceNotIn).toContain("barbarians");
+    expect(entry?.serviceNotIn).toContain("barbarians");
   });
 
   it("Early Stellar+: Computer-0", () => {
     const entry = ds().find((e) => e.skill === "Computer");
     expect(entry?.level).toBe(0);
-    expect(entry?.when?.techAtLeast).toBe("Early Stellar");
+    expect(entry?.homeworldTechAtLeast).toBe("Early Stellar");
   });
 
   it("Avg Stellar+: Grav Vehicle-0", () => {
     const entry = ds().find((e) => e.skill === "Grav Vehicle");
     expect(entry?.level).toBe(0);
-    expect(entry?.when?.techAtLeast).toBe("Avg Stellar");
+    expect(entry?.homeworldTechAtLeast).toBe("Avg Stellar");
   });
 
   it("Industrial/Pre-Stellar/Early Stellar: Wheeled Vehicle-0", () => {
     const entry = ds().find((e) => e.skill === "Wheeled Vehicle");
     expect(entry?.level).toBe(0);
-    expect(entry?.when?.techIn).toEqual(
+    expect(entry?.homeworldField?.field).toBe("tech");
+    expect(entry?.homeworldField?.in).toEqual(
       expect.arrayContaining(["Industrial", "Pre-Stellar", "Early Stellar"]),
     );
   });
@@ -106,11 +105,12 @@ describe("MT homeworld starport X follow-up (PM p. 15)", () => {
 });
 
 describe("MT homeworld DMs by column (PM p. 15)", () => {
-  it("Atmosphere, hydrosphere, law, tech have DM tables", () => {
-    const dms = HW().dmsByColumn as Record<string, unknown>;
-    expect(dms.atmosphere).toBeDefined();
-    expect(dms.hydrosphere).toBeDefined();
-    expect(dms.law).toBeDefined();
-    expect(dms.tech).toBeDefined();
+  it("Atmosphere, hydrosphere, law, tech have DM entries", () => {
+    const dms = HW().columnDms as Array<{ column: string }>;
+    expect(Array.isArray(dms)).toBe(true);
+    for (const col of ["atmosphere", "hydrosphere", "law", "tech"]) {
+      expect(dms.some((d) => d.column === col),
+        `${col} should have at least one DM entry`).toBe(true);
+    }
   });
 });

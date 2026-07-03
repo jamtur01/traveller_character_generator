@@ -3361,37 +3361,29 @@
       "die": "1D",
       "results": { "1": "D", "2": "D", "3": "D", "4": "E", "5": "E", "6": "X" }
     },
-    "dmsByColumn": {
-      "atmosphere": [
-        { "when": { "column": "size", "equals": "Asteroid" }, "dm": -9 },
-        { "when": { "column": "size", "equals": "Small" }, "dm": -2 },
-        { "when": { "column": "size", "equals": "Large" }, "dm": 2 }
-      ],
-      "hydrosphere": [
-        { "when": { "column": "size", "equals": "Small" }, "dm": -2 },
-        { "when": { "column": "size", "equals": "Large" }, "dm": 2 }
-      ],
-      "law": [
-        { "when": { "column": "population", "equals": "Low Pop" }, "dm": -1 },
-        { "when": { "column": "population", "equals": "High Pop" }, "dm": 1 }
-      ],
-      "tech": [
-        { "when": { "column": "starport", "equals": "A" }, "dm": 3 },
-        { "when": { "column": "starport", "equals": "B" }, "dm": 2 },
-        { "when": { "column": "starport", "equals": "C" }, "dm": 1 },
-        { "when": { "column": "starport", "equals": "X" }, "dm": -2 },
-        { "when": { "column": "size", "equals": "Asteroid" }, "dm": 1 },
-        { "when": { "column": "hydrosphere", "equals": "Water World" }, "dm": 1 },
-        { "when": { "column": "population", "equals": "Low Pop" }, "dm": 1 },
-        { "when": { "column": "population", "equals": "High Pop" }, "dm": 2 }
-      ]
-    },
+    "columnDms": [
+      { "column": "atmosphere", "homeworldField": { "field": "size", "equals": "Asteroid" }, "dm": -9 },
+      { "column": "atmosphere", "homeworldField": { "field": "size", "equals": "Small" }, "dm": -2 },
+      { "column": "atmosphere", "homeworldField": { "field": "size", "equals": "Large" }, "dm": 2 },
+      { "column": "hydrosphere", "homeworldField": { "field": "size", "equals": "Small" }, "dm": -2 },
+      { "column": "hydrosphere", "homeworldField": { "field": "size", "equals": "Large" }, "dm": 2 },
+      { "column": "law", "homeworldField": { "field": "population", "equals": "Low Pop" }, "dm": -1 },
+      { "column": "law", "homeworldField": { "field": "population", "equals": "High Pop" }, "dm": 1 },
+      { "column": "tech", "homeworldField": { "field": "starport", "equals": "A" }, "dm": 3 },
+      { "column": "tech", "homeworldField": { "field": "starport", "equals": "B" }, "dm": 2 },
+      { "column": "tech", "homeworldField": { "field": "starport", "equals": "C" }, "dm": 1 },
+      { "column": "tech", "homeworldField": { "field": "starport", "equals": "X" }, "dm": -2 },
+      { "column": "tech", "homeworldField": { "field": "size", "equals": "Asteroid" }, "dm": 1 },
+      { "column": "tech", "homeworldField": { "field": "hydrosphere", "equals": "Water World" }, "dm": 1 },
+      { "column": "tech", "homeworldField": { "field": "population", "equals": "Low Pop" }, "dm": 1 },
+      { "column": "tech", "homeworldField": { "field": "population", "equals": "High Pop" }, "dm": 2 }
+    ],
     "defaultSkills": [
-      { "when": { "serviceIn": ["navy", "marines", "flyers", "scouts", "merchants", "pirates"] }, "skill": "Vacc Suit",       "level": 0, "source": "MT p. 13" },
-      { "when": { "serviceNotIn": ["barbarians"] },                                                "skill": "Gun Combat",      "level": 0, "source": "MT p. 13" },
-      { "when": { "techAtLeast": "Early Stellar" },                                                "skill": "Computer",        "level": 0, "source": "MT p. 13" },
-      { "when": { "techAtLeast": "Avg Stellar" },                                                  "skill": "Grav Vehicle",    "level": 0, "source": "MT p. 13" },
-      { "when": { "techIn": ["Industrial", "Pre-Stellar", "Early Stellar"] },                      "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
+      { "serviceIn": ["navy", "marines", "flyers", "scouts", "merchants", "pirates"], "skill": "Vacc Suit", "level": 0, "source": "MT p. 13" },
+      { "serviceNotIn": ["barbarians"], "skill": "Gun Combat", "level": 0, "source": "MT p. 13" },
+      { "homeworldTechAtLeast": "Early Stellar", "skill": "Computer", "level": 0, "source": "MT p. 13" },
+      { "homeworldTechAtLeast": "Avg Stellar", "skill": "Grav Vehicle", "level": 0, "source": "MT p. 13" },
+      { "homeworldField": { "field": "tech", "in": ["Industrial", "Pre-Stellar", "Early Stellar"] }, "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
     ],
     "careerAvailability": [
       { "requiresTechAtLeast": "Pre-Stellar",   "services": ["army", "marines", "navy", "scientists"] },

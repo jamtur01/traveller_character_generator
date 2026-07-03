@@ -4,6 +4,10 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import {
+  buildPredicateContext, evaluatePredicate,
+  type Predicate, type PredicateContext,
+} from "@/lib/traveller/engine/predicate";
 import { event as ev } from "@/lib/traveller/history";
 import type { ServiceKey } from "@/lib/traveller/types";
 
@@ -33,21 +37,8 @@ export interface HomeworldData {
     rows: Array<Record<string, string | number>>;
   };
   starportXRoll: { results: Record<string, string> };
-  dmsByColumn: Record<string, Array<{
-    when: DmConditionWhen;
-    dm: number;
-  }>>;
-  defaultSkills: Array<{
-    when: {
-      serviceIn?: string[];
-      serviceNotIn?: string[];
-      techAtLeast?: string;
-      techIn?: string[];
-    };
-    skill: string;
-    level: number;
-    source?: string;
-  }>;
+  columnDms: Array<Predicate & { column?: string; dm: number }>;
+  defaultSkills: Array<Predicate & { skill: string; level: number; source?: string }>;
   careerAvailability: Array<{
     /** Legacy form: deny services if homeworld tech is in this list. */
     denyIfTechIn?: string[];
@@ -97,7 +88,7 @@ export function editionHasHomeworld(editionId: string): boolean {
 }
 
 /** Roll a homeworld for the character. Reads the active edition's rollTable
- *  and dmsByColumn. Mutates character history but not other state. */
+ *  and columnDms. Mutates character history but not other state. */
 export function rollHomeworld(ch: Character): Homeworld | null {
   const data = dataFor(ch.editionId);
   if (!data) return null;
@@ -107,12 +98,19 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   const cols = data.rollTable.columns.filter((c) => c !== "die");
   const result: Partial<Homeworld> = {};
 
+  const genCtx: PredicateContext = {
+    attributes: ch.attributes,
+    terms: ch.terms,
+    homeworldColumns: result as Record<string, string | undefined>,
+    techCodeOrder: data.techCodeOrder,
+  };
   for (const col of cols) {
     let r = ch.rng.roll(2);
-    // Apply DMs based on previously-rolled values.
-    const dms = data.dmsByColumn[col] ?? [];
-    for (const rule of dms) {
-      if (matchesCondition(rule.when, result, data.techCodeOrder)) r += rule.dm;
+    // Cross-column DMs: columnDms filtered by the rolled column, then
+    // matched via the shared predicate against the partial homeworld.
+    for (const rule of data.columnDms ?? []) {
+      if (rule.column && rule.column !== col) continue;
+      if (evaluatePredicate(rule, genCtx)) r += rule.dm;
     }
     r = Math.max(2, Math.min(12, r));
     const row = data.rollTable.rows.find((row) => row.die === r);
@@ -147,55 +145,16 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   return hw;
 }
 
-interface DmConditionWhen {
-  column?: string;
-  equals?: string;
-  in?: string[];
-  atLeast?: string;
-}
-
-function matchesCondition(
-  w: DmConditionWhen | undefined,
-  partial: Partial<Homeworld>,
-  techCodeOrder?: string[],
-): boolean {
-  if (!w?.column) return false;
-  const actual = (partial as Record<string, string | undefined>)[w.column];
-  if (actual === undefined) return false;
-  if (w.equals !== undefined) return actual === w.equals;
-  if (w.in) return w.in.includes(actual);
-  if (w.atLeast && techCodeOrder && w.column === "tech") {
-    return techCodeOrder.indexOf(actual) >= techCodeOrder.indexOf(w.atLeast);
-  }
-  return false;
-}
-
 /** Apply the homeworld's default skills to the character. */
-export function applyHomeworldSkills(ch: Character, hw: Homeworld): void {
+export function applyHomeworldSkills(ch: Character): void {
   const data = dataFor(ch.editionId);
   if (!data) return;
+  const ctx = buildPredicateContext(ch);
   for (const entry of data.defaultSkills) {
-    if (!evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) continue;
+    if (!evaluatePredicate(entry, ctx)) continue;
     if (ch.checkSkill(entry.skill) >= 0) continue; // already known
     ch.addSkill(entry.skill, entry.level, "Homeworld");
   }
-}
-
-function evalDefaultSkillCondition(
-  entry: HomeworldData["defaultSkills"][number],
-  hw: Homeworld,
-  ch: Character,
-  techCodeOrder: string[],
-): boolean {
-  const w = entry.when;
-  if (w.serviceIn && !w.serviceIn.includes(String(ch.service))) return false;
-  if (w.serviceNotIn && w.serviceNotIn.includes(String(ch.service))) return false;
-  if (w.techAtLeast &&
-      techCodeOrder.indexOf(hw.tech) < techCodeOrder.indexOf(w.techAtLeast)) {
-    return false;
-  }
-  if (w.techIn && !w.techIn.includes(hw.tech)) return false;
-  return true;
 }
 
 /** Returns the list of services available for enlistment given the
@@ -267,17 +226,16 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
   // tech-based ones since service isn't yet selected. The service-based
   // skills are applied at enlistment time.
   const data = dataFor(ch.editionId)!;
+  const ctx = buildPredicateContext(ch);
   for (const entry of data.defaultSkills) {
-    // Filter to tech-conditional entries only (when.techAtLeast/techIn with
-    // no service condition); service-based skills apply at enlistment.
-    const isTechOnly =
-      (entry.when.techAtLeast !== undefined || entry.when.techIn !== undefined) &&
-      entry.when.serviceIn === undefined && entry.when.serviceNotIn === undefined;
-    if (!isTechOnly) continue;
-    if (evalDefaultSkillCondition(entry, hw, ch, data.techCodeOrder)) {
-      if (ch.checkSkill(entry.skill) < 0) {
-        ch.addSkill(entry.skill, entry.level, "Homeworld");
-      }
+    // Tech-conditional entries only (no service condition); the service-based
+    // skills apply at enlistment once the service is chosen.
+    if (entry.serviceIn !== undefined || entry.serviceNotIn !== undefined) continue;
+    const isTech = entry.homeworldTechAtLeast !== undefined
+      || entry.homeworldField?.field === "tech";
+    if (!isTech) continue;
+    if (evaluatePredicate(entry, ctx) && ch.checkSkill(entry.skill) < 0) {
+      ch.addSkill(entry.skill, entry.level, "Homeworld");
     }
   }
   return hw;

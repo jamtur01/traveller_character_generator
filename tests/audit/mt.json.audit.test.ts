@@ -215,35 +215,33 @@ describe("MT homeworld defaultSkills match PM p. 13", () => {
       defaultSkills: Array<{
         skill: string;
         level: number;
-        when?: {
-          serviceIn?: string[];
-          serviceNotIn?: string[];
-          techAtLeast?: string;
-          techIn?: string[];
-        };
+        serviceIn?: string[];
+        serviceNotIn?: string[];
+        homeworldTechAtLeast?: string;
+        homeworldField?: { field: string; in?: string[]; equals?: string };
       }>;
     }).defaultSkills;
     // Vacc Suit-0 for navy/marines/flyers/scouts/merchants/pirates.
     expect(ds.some((d) =>
       d.skill === "Vacc Suit" &&
-      d.when?.serviceIn?.includes("navy") === true,
+      d.serviceIn?.includes("navy") === true,
     )).toBe(true);
     // Gun Combat-0 for all except barbarians.
     expect(ds.some((d) =>
       d.skill === "Gun Combat" &&
-      d.when?.serviceNotIn?.includes("barbarians") === true,
+      d.serviceNotIn?.includes("barbarians") === true,
     )).toBe(true);
     // Computer-0 for Early Stellar+.
     expect(ds.some((d) =>
-      d.skill === "Computer" && d.when?.techAtLeast === "Early Stellar",
+      d.skill === "Computer" && d.homeworldTechAtLeast === "Early Stellar",
     )).toBe(true);
     // Grav Vehicle-0 for Avg Stellar+.
     expect(ds.some((d) =>
-      d.skill === "Grav Vehicle" && d.when?.techAtLeast === "Avg Stellar",
+      d.skill === "Grav Vehicle" && d.homeworldTechAtLeast === "Avg Stellar",
     )).toBe(true);
     // Wheeled Vehicle-0 for Industrial/Pre-Stellar/Early Stellar.
     expect(ds.some((d) =>
-      d.skill === "Wheeled Vehicle" && d.when?.techIn?.includes("Industrial") === true,
+      d.skill === "Wheeled Vehicle" && d.homeworldField?.in?.includes("Industrial") === true,
     )).toBe(true);
   });
 });
