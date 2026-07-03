@@ -171,9 +171,12 @@ export function buildServiceDef(
       runTablePick(ch, ch.forceTableIndex);
       return;
     }
-    const eduBonus = ch.attributes.education >= 8;
-    const tables = ["Personal Development", "Service Skills", "Advanced Education"];
-    if (eduBonus) tables.push("Advanced Education (Edu 8+)");
+    const meta = data.skillTableMeta;
+    if (!meta) throw new Error(`Edition ${ch.editionId} missing skillTableMeta`);
+    const available = meta.order.filter((key) =>
+      key !== "advancedEducation8Plus"
+      || ch.attributes.education >= meta.advancedEducationEduMin);
+    const tables = available.map((key) => meta.displayNames[key] ?? key);
     ch.pickOrDefer({
       kind: "skillTable",
       label: "Choose a skill table to roll on",

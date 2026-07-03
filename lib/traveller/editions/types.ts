@@ -136,6 +136,15 @@ export interface LifecycleSpec {
   terms: LifecycleStep[];
 }
 
+export interface SkillTableMeta {
+  /** Skill-table keys in index order (index+1 → the service's table). */
+  order: string[];
+  /** Player-facing labels for each table key. */
+  displayNames: Record<string, string>;
+  /** Minimum Education for the advancedEducation8Plus table (PM/TTB). */
+  advancedEducationEduMin: number;
+}
+
 export interface CanonData {
   schemaVersion: number;
   edition: EditionMeta;
@@ -168,6 +177,9 @@ export interface CanonData {
    *  declare it under this key. The engine exposes `editionHasAcg(id)` /
    *  `listAcgPathways(id)` over this block. */
   advancedCharacterGeneration?: AcgData;
+  /** Declarative skill-table ordering / labels / Edu gate for basic-chargen
+   *  skill rolls (engine/serviceLoader acquireSkill). */
+  skillTableMeta?: SkillTableMeta;
 }
 
 export interface AcgData {

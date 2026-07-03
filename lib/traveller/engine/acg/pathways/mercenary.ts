@@ -364,6 +364,13 @@ function rollMercenarySkill(ch: Character): void {
   rollMercenarySkillFromColumn(ch, col);
 }
 
+/** NCO-skills minimum enlisted rank as a number, from the pathway's
+ *  skillColumnPolicy.enlistedNcoMinRank (PM p. 51). 0 when unconfigured. */
+function enlistedNcoMinRankNum(ch: Character): number {
+  const pol = dataFor(ch).skillColumnPolicy;
+  return pol ? (parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 0) : 0;
+}
+
 function mercenaryDefaultSkillColumn(ch: Character): string {
   // Per JSON skillColumnPolicy (PM p. 51 line 3194-3196).
   const data = dataFor(ch);
@@ -375,7 +382,7 @@ function mercenaryDefaultSkillColumn(ch: Character): string {
   // Enlisted: rank below the NCO threshold uses Army/Marine Life column.
   const rank = ch.requireAcgState().rankCode;
   const enlistedNum = parseInt(rank.replace(/[^\d]/g, ""), 10) || 0;
-  const ncoMin = parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 3;
+  const ncoMin = enlistedNcoMinRankNum(ch);
   if (enlistedNum < ncoMin) {
     const branch = ch.requireAcgState().branch ?? "";
     return pol.enlistedLowRankColumns[branch] ?? pol.enlistedLowRankColumns["army"] ?? "armyLife";
@@ -388,7 +395,7 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
   const lifeCol = ch.requireAcgState().branch === "Marines" ? "marineLife" : "armyLife";
   cols.push(lifeCol);
   const rankNum = parseInt(ch.requireAcgState().rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  if (!ch.requireAcgState().isOfficer && rankNum >= 3) cols.push("ncoSkills");
+  if (!ch.requireAcgState().isOfficer && rankNum >= enlistedNcoMinRankNum(ch)) cols.push("ncoSkills");
   if (ch.requireAcgState().isOfficer) {
     if (ch.requireAcgState().inCommand) cols.push("commandSkills");
     else cols.push("staffSkills");

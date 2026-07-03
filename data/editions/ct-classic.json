@@ -78,7 +78,8 @@
       "serviceSkills": "Service Skills",
       "advancedEducation": "Advanced Education",
       "advancedEducation8Plus": "Advanced Education (Edu 8+)"
-    }
+    },
+    "advancedEducationEduMin": 8
   },
   "rules": {
     "nobleTitles": {

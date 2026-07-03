@@ -47,6 +47,9 @@ export interface NavyData {
   branchAssignment: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   branchResolution?: Record<string, string>;
   branches?: string[];
+  /** Social standing at/above which a character may CHOOSE their branch
+   *  interactively instead of rolling (PM p. 52). */
+  branchChoiceSocialMin: number;
   branchFleetRestrictions?: Record<string, string[]>;
   preCareerFleetAssignment?: {
     bySchool?: Record<string, { fleet?: string; branch?: string }>;
@@ -228,7 +231,8 @@ function navyAssignBranch(ch: Character): void {
     ch.requireAcgState().branch = "Flight";
     return;
   }
-  if (ch.attributes.social >= 9 && data.branches && ch.choiceMode === "interactive") {
+  if (ch.attributes.social >= data.branchChoiceSocialMin
+    && data.branches && ch.choiceMode === "interactive") {
     // F7: Technical Services exists only in the Imperial Navy (PM p. 52
     // line 3261). Filter the available branches accordingly.
     const filtered = filterBranchesByFleet(ch, data.branches);

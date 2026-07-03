@@ -290,7 +290,8 @@
       "serviceSkills": "Service Skills",
       "advancedEducation": "Advanced Education",
       "advancedEducation8Plus": "Advanced Education (Edu 8+)"
-    }
+    },
+    "advancedEducationEduMin": 8
   },
   "rules": {
     "dice": {
@@ -5309,6 +5310,7 @@
         "Medical",
         "Technical"
       ],
+      "branchChoiceSocialMin": 9,
       "branchFleetRestrictions": {
         "$comment": "PM p. 52 line 3261: 'The Technical Services branch exists only in the Imperial Navy.' Other branches are unrestricted.",
         "Technical": ["imperialNavy"]
