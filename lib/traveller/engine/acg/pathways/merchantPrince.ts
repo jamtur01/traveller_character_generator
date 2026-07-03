@@ -440,7 +440,6 @@ const REGISTRY = createPathwaySpecRegistry<MerchantData>({
   callbacks: MERCHANT_CALLBACKS,
   combatAssignments: () => [],
 });
-export const clearMerchantSpecCache = REGISTRY.clear;
 export const validateMerchantConfig = REGISTRY.validate;
 function getMerchantSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 

@@ -10,29 +10,10 @@ import type { MercenaryData } from "./acg/pathways/mercenary";
 import type { NavyData } from "./acg/pathways/navy";
 import type { ScoutData } from "./acg/pathways/scout";
 import type { MerchantData } from "./acg/pathways/merchantPrince";
-import {
-  clearMercenarySpecCache, validateMercenaryConfig,
-} from "./acg/pathways/mercenary";
-import {
-  clearNavySpecCache, validateNavyConfig,
-} from "./acg/pathways/navy";
-import {
-  clearScoutSpecCache, validateScoutConfig,
-} from "./acg/pathways/scout";
-import {
-  clearMerchantSpecCache, validateMerchantConfig,
-} from "./acg/pathways/merchantPrince";
-
-/** Purge every pathway's PathwaySpec cache. Use when JSON config has
- *  been reloaded (test fixtures, hot module reload) so subsequent
- *  resolveAssignment calls rebuild the spec against the new config and
- *  callback registry rather than serving the stale build. */
-export function clearAcgSpecCaches(): void {
-  clearMercenarySpecCache();
-  clearNavySpecCache();
-  clearScoutSpecCache();
-  clearMerchantSpecCache();
-}
+import { validateMercenaryConfig } from "./acg/pathways/mercenary";
+import { validateNavyConfig } from "./acg/pathways/navy";
+import { validateScoutConfig } from "./acg/pathways/scout";
+import { validateMerchantConfig } from "./acg/pathways/merchantPrince";
 
 /** Build (and discard) the PathwaySpec for every pathway the edition
  *  declares. Surfaces missing callback names, malformed phase configs,

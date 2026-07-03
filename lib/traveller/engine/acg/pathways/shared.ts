@@ -31,10 +31,6 @@ export interface PathwayRegistry {
    *  on first access. Throws if the edition declares the pathway but
    *  omits the resolveAssignment config. */
   get(ch: Character): PathwaySpec;
-  /** Drop every cached spec. Required when edition JSON is reloaded so
-   *  the next resolveAssignment rebuilds against the updated config and
-   *  callback registry. */
-  clear(): void;
   /** Build and discard the spec for an edition to surface missing
    *  callback names / malformed phase configs at edition load instead
    *  of at first ACG run. No-op if the edition doesn't declare this
@@ -78,7 +74,6 @@ export function createPathwaySpecRegistry<TData>(
       cache.set(ch.editionId, spec);
       return spec;
     },
-    clear() { cache.clear(); },
     validate(editionId) {
       const data = dataForEdition(editionId);
       if (!data?.resolveAssignment) return;

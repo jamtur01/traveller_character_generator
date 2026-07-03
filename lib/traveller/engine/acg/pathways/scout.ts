@@ -318,7 +318,6 @@ const REGISTRY = createPathwaySpecRegistry<ScoutData>({
   callbacks: SCOUT_CALLBACKS,
   combatAssignments: () => [],
 });
-export const clearScoutSpecCache = REGISTRY.clear;
 export const validateScoutConfig = REGISTRY.validate;
 function getScoutSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 

@@ -293,7 +293,6 @@ const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
   callbacks: MERCENARY_CALLBACKS,
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
-export const clearMercenarySpecCache = REGISTRY.clear;
 export const validateMercenaryConfig = REGISTRY.validate;
 function getSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 

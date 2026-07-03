@@ -422,7 +422,6 @@ const REGISTRY = createPathwaySpecRegistry<NavyData & { combatAssignments?: read
   callbacks: NAVY_CALLBACKS,
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
-export const clearNavySpecCache = REGISTRY.clear;
 export const validateNavyConfig = REGISTRY.validate;
 function getNavySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
