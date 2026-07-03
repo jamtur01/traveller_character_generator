@@ -7473,9 +7473,13 @@
           { "attribute": "intelligence", "min": 9, "dm": 1 },
           { "attribute": "education", "min": 9, "dm": 1 }
         ],
-        "notes": [
-          "Free Traders throw 8+ with DM +1 if Int 9+."
-        ]
+        "freeTrader": {
+          "$rule": "PM p. 64 lines 53-60: Free Traders throw 8+ to determine position availability, DM +1 if Int 9+. If no position is available the officer serves one rank lower (O1 -> enlisted-equivalent).",
+          "target": "8+",
+          "dms": [
+            { "attribute": "intelligence", "min": 9, "dm": 1 }
+          ]
+        }
       },
       "specificAssignment": {
         "columns": [

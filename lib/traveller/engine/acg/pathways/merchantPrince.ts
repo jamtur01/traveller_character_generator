@@ -41,9 +41,10 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange,
 } from "./shared";
-import type { AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
+import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
 import { event as ev } from "@/lib/traveller/history";
+import { rankNum } from "@/lib/traveller/engine/predicate";
 
 const PATHWAY = "merchantPrince";
 
@@ -87,6 +88,7 @@ export interface MerchantData {
     columns: string[];
     rows: Array<Record<string, unknown>>;
     dms?: StructuredDm[];
+    freeTrader?: { target: string; dms?: StructuredDm[] };
   };
   specificAssignment: {
     columns: string[];
@@ -443,29 +445,37 @@ export const validateMerchantConfig = REGISTRY.validate;
 function getMerchantSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 function merchantCheckAvailablePosition(ch: Character): void {
+  const acg = ch.requireAcgState();
+  // Reset the prior year's temporary demotion before re-evaluating.
+  acg.effectiveRankCode = null;
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
-  if (size === "FreeTrader") return;
-  const col = size === "Large" ? "largeLine" : "smallLine";
-  const row = data.availablePositions.rows.find((r) => r.department === ch.requireAcgState().department);
-  if (!row) return;
-  const target = parseResolutionTarget(row[col]).target;
-  const dm = applyStructuredDms(data.availablePositions.dms, ch);
-  const r = ch.rng.roll(2);
-  // Reset any prior temporary effective rank before evaluating this year.
-  ch.requireAcgState().effectiveRankCode = null;
-  if (typeof target === "number" && r + dm < target) {
-    // No position available — serve one rank lower for this year's skill
-    // column selection (manual p. 60). The permanent rank is unchanged.
-    const m = ch.requireAcgState().rankCode.match(/^O(\d+)$/);
-    if (m) {
-      const cur = parseInt(m[1]!, 10);
-      const lower = Math.max(0, cur - 1);
-      ch.requireAcgState().effectiveRankCode = lower === 0 ? "O0" : `O${lower}`;
-    }
-    // effectiveRankCode is observable; the failed position throw is reflected
-    // implicitly by the absence of a Promotion event this year.
+  const ap = data.availablePositions;
+  const size = lineSizeFor(data, acg.lineType ?? "");
+  let target: ResolutionTarget;
+  let dm: number;
+  if (size === "FreeTrader") {
+    // PM p. 64: Free Traders throw 8+ to determine position availability.
+    if (!ap.freeTrader) return;
+    target = parseResolutionTarget(ap.freeTrader.target).target;
+    dm = applyStructuredDms(ap.freeTrader.dms, ch);
+  } else {
+    const col = size === "Large" ? "largeLine" : "smallLine";
+    const row = ap.rows.find((r) => r.department === acg.department);
+    if (!row) return;
+    target = parseResolutionTarget(row[col]).target;
+    dm = applyStructuredDms(ap.dms, ch);
   }
+  // PM p. 63/64: no position at rank -> serve one rank lower this year (the
+  // permanent rank is unchanged). effectiveRankCode gates the promotion exam.
+  if (typeof target === "number" && ch.rng.roll(2) + dm < target) {
+    serveOneRankLower(acg);
+  }
+}
+
+/** PM p. 63/64: mark an officer as serving one rank lower this year (no
+ *  available position). O1 falls to O0 (enlisted-equivalent). */
+function serveOneRankLower(acg: AcgState): void {
+  acg.effectiveRankCode = `O${Math.max(0, rankNum(acg.rankCode) - 1)}`;
 }
 
 function merchantRollSkill(ch: Character): void {
@@ -498,9 +508,8 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
   const r = ch.rng.roll(1);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
-  // Use the effective rank (temporary demotion) for column selection where
-  // applicable; for now we simply take the first non-die column value, but
-  // the rank-down setter is observable for future column-specific logic.
+  // Merchant skill tables list one skill per die row (the columns are skill
+  // variants, not rank bands), so take the first non-die value.
   for (const col of table.columns) {
     if (col === "die") continue;
     const v = row[col];
@@ -693,6 +702,7 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 export function merchantStartOfTerm(ch: Character): void {
   // Reset per-term flags before any per-year resolution fires.
   delete ch.requireAcgState().routeAssignmentThisTerm;
+  delete ch.requireAcgState().canTakeDeptTest;
   // PM p. 60: enlisted personnel advance one grade every four years. The
   // merchant service defines no enlisted rank titles above the starting
   // grade, so seniority numbering is capped at enlistedRankMax to avoid
@@ -814,6 +824,19 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireAcgState();
   if (!acg.isOfficer) return;
+  // PM p. 63: only officers serving in a position normally filled by their
+  // rank may test for promotion. A failed Available Position check this year
+  // sets effectiveRankCode (serving one rank lower), which bars the exam —
+  // unless the character earned a Department Test (PM p. 65), the one stated
+  // exception. canTakeDeptTest is a one-shot, consumed here.
+  const deptTest = acg.canTakeDeptTest === true;
+  acg.canTakeDeptTest = false;
+  if (acg.effectiveRankCode && !deptTest) {
+    ch.log(ev.statusChange(
+      "promotionSkipped", "no position available at rank; not eligible to test",
+    ));
+    return;
+  }
   const ladder = merchantRankLadder(ch, data);
   if (!ladder) return;
   const cur = merchantRankNum(acg.rankCode);
