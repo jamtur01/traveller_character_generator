@@ -59,6 +59,29 @@ describe("cloneCharacter", () => {
     expect(b.bladeBenefit).toBe("Cutlass");
     expect(b.gunBenefit).toBe("Revolver");
   });
+
+  it("forks an independent rng stream at the same position", () => {
+    // The clone must draw from an INDEPENDENT stream starting at the source's
+    // current position: two independent streams at the same position produce
+    // identical sequences. (A shared-by-reference rng advances the source when
+    // the clone draws, so seqB would continue the source's stream instead of
+    // restarting from the shared point — diverging from seqA.)
+    const a = new Character({ seed: 7 });
+    const b = cloneCharacter(a);
+    const seqA = [a.rng.roll(2), a.rng.roll(2), a.rng.roll(2)];
+    const seqB = [b.rng.roll(2), b.rng.roll(2), b.rng.roll(2)];
+    expect(seqB).toEqual(seqA);
+
+    // Mutation isolation, the other direction: exhausting the clone's stream
+    // must not advance the untouched source. After 10 draws on the clone, the
+    // source's next draw must still match a freshly-seeded character's first
+    // draw (i.e. the source sits exactly where the clone left it at fork time).
+    const c = new Character({ seed: 7 });
+    const d = cloneCharacter(c);
+    for (let i = 0; i < 10; i++) d.rng.roll(2);
+    const fresh = new Character({ seed: 7 });
+    expect(c.rng.roll(2)).toBe(fresh.rng.roll(2));
+  });
 });
 
 describe("addSkill", () => {

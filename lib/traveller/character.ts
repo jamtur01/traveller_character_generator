@@ -953,6 +953,12 @@ export class Character implements CharacterState {
  */
 export function cloneCharacter(ch: Character): Character {
   const next = Object.assign(Object.create(Character.prototype), ch) as Character;
+  // rng is a per-instance MUTABLE stream (its state advances on every draw).
+  // Clone it so the copy is independent: drawing on the clone must not advance
+  // the source snapshot's stream (the immutable-snapshot contract session.ts
+  // relies on, and the seeded-determinism invariant). Rng.clone() forks an
+  // independent stream at the same position.
+  next.rng = ch.rng.clone();
   next.attributes = { ...ch.attributes };
   next.skills = ch.skills.map(([n, l]) => [n, l] as Skill);
   next.benefits = [...ch.benefits];
