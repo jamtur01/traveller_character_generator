@@ -72,12 +72,14 @@ export interface StartCareerOptions {
   supportsInteractive: boolean;
   useAcg: boolean;
   acgPathway: string;
+  /** Seed the character's RNG for a reproducible run (see chargen/replay). */
+  seed?: number;
 }
 
 /** Begin a new character. Decides whether to enter pre-career (ACG) or
  *  jump straight to basic enlistment. */
 export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
-  const ch = new Character();
+  const ch = new Character(opts.seed !== undefined ? { seed: opts.seed } : {});
   ch.editionId = opts.edition;
   ch.showHistory = opts.verbose ? "verbose" : "simple";
   // Set choiceMode before generateHomeworld so that any homeworld
