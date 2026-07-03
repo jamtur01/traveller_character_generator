@@ -109,7 +109,7 @@ export const RulesSchema = z.looseObject({
   }).optional(),
   // Survival-failure consequence. CT defaults to death; MT to shortTerm.
   survival: z.object({
-    onFailure: z.enum(["death", "musterOut", "shortTerm"]).optional(),
+    onFailure: z.enum(["death", "shortTerm"]).optional(),
     shortTermYears: z.number().optional(),
     fullTermYears: z.number().optional(),
     shortTermDoesNotCountForMusterBenefits: z.boolean().optional(),

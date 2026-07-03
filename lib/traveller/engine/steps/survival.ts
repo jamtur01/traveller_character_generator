@@ -11,10 +11,6 @@
 //   "death"     — CT default, character dies, term halts.
 //   "shortTerm" — MT default, sets shortTermThisTerm, rewinds 2 years,
 //                  flags activeDuty=false so reenlistment forces muster.
-//   "musterOut" — back-compat alias for legacy MT JSON without short-term
-//                  short-term semantics; same as "shortTerm" but does not
-//                  rewind age (preserved for any callers relying on the
-//                  old behavior; not used by current MT JSON).
 
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
@@ -22,15 +18,13 @@ import type { StepFn } from "./types";
 export const survivalStep: StepFn = ({ ch, service, edition }) => {
   if (service.checkSurvival(ch)) return;
   const onFailure = edition.rules.survival?.onFailure ?? "death";
-  if (onFailure === "shortTerm" || onFailure === "musterOut") {
+  if (onFailure === "shortTerm") {
     const s = edition.rules.survival;
     const short = s?.shortTermYears ?? 2;
     const reason = `injured in service — only ${short} years of this term served`;
     // doServiceTermStep already added the full term's years; rewind to the
-    // short-term length. "musterOut" is a legacy alias that keeps the age.
-    if (onFailure === "shortTerm") {
-      ch.age -= (s?.fullTermYears ?? 4) - short;
-    }
+    // short-term length.
+    ch.age -= (s?.fullTermYears ?? 4) - short;
     ch.enterShortTerm(reason);
     ch.log(ev.statusChange("shortTerm", reason));
     return;

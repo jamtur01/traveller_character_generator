@@ -37,7 +37,7 @@ export function TermPhase({
   // differ — read directly from the edition rules so the UI doesn't
   // overstate the mechanics.
   const survivalRules = (editionData.rules as {
-    survival?: { onFailure?: "death" | "shortTerm" | "musterOut" };
+    survival?: { onFailure?: "death" | "shortTerm" };
   } | undefined)?.survival;
   const failureIsDeath = (survivalRules?.onFailure ?? "death") === "death";
   const checklist = hasMtRules
