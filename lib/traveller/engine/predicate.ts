@@ -217,9 +217,7 @@ function homeworldFieldOk(f: HomeworldFieldTest, ctx: PredicateContext): boolean
  *  department skill-name sets so the evaluator stays free of edition data. */
 export function buildPredicateContext(ch: Character): PredicateContext {
   const acg = ch.acgState;
-  const hwData = getEdition(ch.editionId).data as {
-    homeworld?: { techCodeOrder?: string[] };
-  };
+  const hwData = getEdition(ch.editionId).data;
   return {
     attributes: ch.attributes,
     terms: ch.terms,

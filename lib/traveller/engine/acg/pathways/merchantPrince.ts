@@ -158,9 +158,7 @@ function starportMeets(
 ): boolean {
   if (!home) return false;
   if (!minimum || minimum.toLowerCase() === "any") return true;
-  const order = (getEdition(ch.editionId).data as {
-    homeworld?: { starportOrder?: string[] };
-  }).homeworld?.starportOrder ?? [];
+  const order = getEdition(ch.editionId).data.homeworld?.starportOrder ?? [];
   const have = order.indexOf(home.toUpperCase());
   const want = order.indexOf(minimum.toUpperCase());
   if (have < 0 || want < 0) return true;

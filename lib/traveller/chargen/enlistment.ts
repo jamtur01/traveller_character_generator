@@ -112,9 +112,7 @@ export function beginAcg(
   // clamped to Early Stellar minimum.
   if (pathway === "navy") {
     const homeworldTech = ch.homeworld?.tech;
-    const order = (getEdition(ch.editionId).data as {
-      homeworld?: { techCodeOrder?: string[] };
-    }).homeworld?.techCodeOrder ?? [];
+    const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder ?? [];
     let subsectorTech = options.subsectorTechCode ?? homeworldTech;
     const earlyIdx = order.indexOf("Early Stellar");
     if (subsectorTech && order.length > 0 && earlyIdx >= 0) {

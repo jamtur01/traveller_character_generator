@@ -314,9 +314,7 @@ function ocsCommission(ch: Character): void {
   // F4/F17: PM lines 778, 3081, 3343, 3849 — drafted characters cannot
   // attend OCS / receive a commission during their first four-year term.
   // The rule is data-driven via rules.draft.noCommissionFirstTerm.
-  const draftRules = (getEdition(ch.editionId).data as {
-    rules?: { draft?: { noCommissionFirstTerm?: boolean } };
-  }).rules?.draft;
+  const draftRules = getEdition(ch.editionId).rules.draft;
   if (draftRules?.noCommissionFirstTerm && ch.drafted && ch.terms === 0) {
     ch.log(ev.statusChange(
       "ocsDenied",
@@ -418,9 +416,7 @@ function scoutCanAttendSchool(ch: Character, school: string): boolean {
   if (meta.onceOnly) {
     // The first-term-no-commission rule mirrors PM line 3588 for any
     // school that promotes to officer status.
-    const draftRules = (getEdition(ch.editionId).data as {
-      rules?: { draft?: { noCommissionFirstTerm?: boolean } };
-    }).rules?.draft;
+    const draftRules = getEdition(ch.editionId).rules.draft;
     if (meta.promotesToOfficer && draftRules?.noCommissionFirstTerm &&
         ch.drafted && ch.terms === 0) {
       return false;

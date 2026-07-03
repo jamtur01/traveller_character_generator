@@ -363,6 +363,7 @@ const AcgDataSchema = z.looseObject({
 
 const BenefitDetailSchema = z.looseObject({
   shipType: z.string().optional(),
+  displayName: z.string().optional(),
   firstReceiptMortgageYears: z.number().optional(),
   repeatReducesMortgageYears: z.number().optional(),
   repeat: z.string().optional(),

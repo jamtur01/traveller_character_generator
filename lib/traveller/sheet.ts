@@ -37,10 +37,8 @@ function wrapList(items: string[], width: number, indent = ""): string {
  *  raw benefit string if no override is declared. Free Trader gets
  *  mortgage status appended. */
 export function formatBenefit(b: string, ch: Character): string {
-  const details = (getEdition(ch.editionId).data as {
-    benefitDetails?: Record<string, { displayName?: string; firstReceiptMortgageYears?: number }>;
-  }).benefitDetails;
-  const entry = details?.[b];
+  const details = getEdition(ch.editionId).data.benefitDetails;
+  const entry = details[b];
   if (!entry) return b;
   const display = entry.displayName ?? b;
   // Mortgage suffix for any ship whose entry declares

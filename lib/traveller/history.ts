@@ -678,7 +678,7 @@ export function formatEvent(e: HistoryEvent): string {
       // and the runtime throws instead of silently returning undefined.
       const _: never = e;
       void _;
-      throw new Error(`Unhandled history event kind: ${String((e as { kind?: unknown }).kind)}`);
+      throw new Error(`Unhandled history event: ${JSON.stringify(e)}`);
     }
   }
 }

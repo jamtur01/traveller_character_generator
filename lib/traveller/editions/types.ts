@@ -106,6 +106,7 @@ export interface ServiceData {
 
 export interface BenefitDetail {
   shipType?: string;
+  displayName?: string;
   firstReceiptMortgageYears?: number;
   repeatReducesMortgageYears?: number;
   repeat?: string;
