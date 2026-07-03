@@ -9,7 +9,7 @@
 // This module defines ONE `Predicate` schema (a flat bag of optional,
 // implicitly-ANDed condition atoms) and ONE `evaluatePredicate` interpreter
 // that every DM / eligibility rule references. A rule that also carries a DM
-// value or caller-side filters wraps a Predicate (see DmRule below); the
+// value or caller-side filters wraps a Predicate (StructuredDm, tables.ts); the
 // value (`dm`/`dmPerTerm`) and filters (`column`/`rollType`) are NOT
 // conditions and live on the wrapper, never inside the Predicate — which is
 // what keeps the homeworld column *condition* (`homeworldField`) from
@@ -62,8 +62,6 @@ export interface Predicate {
   // ACG roles.
   crossTrainedInAny?: string[];
   currentCombatArmIn?: string[];
-  currentBranchIn?: string[];
-  currentDepartmentIn?: string[];
   currentDepartmentNotIn?: string[];
   attendedAnyOf?: string[];
   // Homeworld gates.
@@ -87,7 +85,6 @@ export interface PredicateContext {
   fleet?: string | undefined;
   skills?: readonly Skill[];
   combatArm?: string;
-  branch?: string;
   department?: string;
   crossTrainedArms?: readonly string[];
   schoolsAttended?: readonly string[];
@@ -167,8 +164,6 @@ export function evaluatePredicate(p: Predicate, ctx: PredicateContext): boolean 
     if (!p.crossTrainedInAny.some((a) => xt.includes(a))) return false;
   }
   if (p.currentCombatArmIn && !p.currentCombatArmIn.includes(ctx.combatArm ?? "")) return false;
-  if (p.currentBranchIn && !p.currentBranchIn.includes(ctx.branch ?? "")) return false;
-  if (p.currentDepartmentIn && !p.currentDepartmentIn.includes(ctx.department ?? "")) return false;
   if (p.currentDepartmentNotIn && p.currentDepartmentNotIn.includes(ctx.department ?? "")) return false;
   if (p.termsAtLeast !== undefined && ctx.terms < p.termsAtLeast) return false;
   if (p.attendedAnyOf) {
@@ -230,7 +225,6 @@ export function buildPredicateContext(ch: Character): PredicateContext {
     fleet: acg?.fleet,
     skills: ch.skills,
     combatArm: acg?.combatArm ?? "",
-    branch: acg?.branch ?? "",
     department: acg?.department ?? "",
     crossTrainedArms: acg?.crossTrainedArms ?? [],
     schoolsAttended: acg?.schoolsAttended ?? [],
