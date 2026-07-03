@@ -9,21 +9,21 @@ import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
-export const specialDutyStep: StepFn = ({ character, edition, config }) => {
-  if (character.deceased) return;
-  const data = edition.data.services[character.service];
+export const specialDutyStep: StepFn = ({ ch, edition, config }) => {
+  if (ch.deceased) return;
+  const data = edition.data.services[ch.service];
   const target = data?.checks.specialDuty?.target;
   if (target === undefined) return;
 
   const r = roll(2);
   const succeeded = r >= target;
-  character.log(ev.roll("Special Duty", r, 0, target, succeeded));
+  ch.log(ev.roll("Special Duty", r, 0, target, succeeded));
   if (!succeeded) return;
-  character.skillPoints += 1;
+  ch.skillPoints += 1;
 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && r >= target + overshootN) {
-    character.skillPoints += 1;
-    character.log(ev.bonusSkillPoint("Special Duty", overshootN));
+    ch.skillPoints += 1;
+    ch.log(ev.bonusSkillPoint("Special Duty", overshootN));
   }
 };

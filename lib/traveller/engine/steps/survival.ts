@@ -19,8 +19,8 @@
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
-export const survivalStep: StepFn = ({ character, service, edition }) => {
-  if (service.checkSurvival(character)) return;
+export const survivalStep: StepFn = ({ ch, service, edition }) => {
+  if (service.checkSurvival(ch)) return;
   const onFailure = edition.rules.survival?.onFailure ?? "death";
   if (onFailure === "shortTerm" || onFailure === "musterOut") {
     const s = edition.rules.survival;
@@ -29,11 +29,11 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
     // doServiceTermStep already added the full term's years; rewind to the
     // short-term length. "musterOut" is a legacy alias that keeps the age.
     if (onFailure === "shortTerm") {
-      character.age -= (s?.fullTermYears ?? 4) - short;
+      ch.age -= (s?.fullTermYears ?? 4) - short;
     }
-    character.enterShortTerm(reason);
-    character.log(ev.statusChange("shortTerm", reason));
+    ch.enterShortTerm(reason);
+    ch.log(ev.statusChange("shortTerm", reason));
     return;
   }
-  character.endChargenDeceased("killed in service");
+  ch.endChargenDeceased("killed in service");
 };

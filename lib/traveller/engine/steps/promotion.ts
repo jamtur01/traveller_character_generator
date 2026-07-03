@@ -7,37 +7,37 @@ import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
-export const promotionStep: StepFn = ({ character, service, config, edition }) => {
-  if (character.deceased) return;
-  if (character.shortTermThisTerm) {
-    character.log(ev.statusChange(
+export const promotionStep: StepFn = ({ ch, service, config, edition }) => {
+  if (ch.deceased) return;
+  if (ch.shortTermThisTerm) {
+    ch.log(ev.statusChange(
       "promotionSkipped", "short term after survival failure",
     ));
     return;
   }
-  if (!character.commissioned) return;
-  if (character.rank >= 6) return;
+  if (!ch.commissioned) return;
+  if (ch.rank >= 6) return;
   if (service.promotionThrow === undefined) return;
 
-  const data = edition.data.services[character.service];
+  const data = edition.data.services[ch.service];
   const dm = data?.checks.promotion
-    ? evaluateDM(data.checks.promotion.dm, character)
+    ? evaluateDM(data.checks.promotion.dm, ch)
     : 0;
   const r = roll(2);
   const total = r + dm;
   const succeeded = total >= service.promotionThrow;
-  character.log(ev.roll("Promotion", r, dm, service.promotionThrow, succeeded));
+  ch.log(ev.roll("Promotion", r, dm, service.promotionThrow, succeeded));
   if (!succeeded) return;
 
-  character.rank += 1;
-  character.skillPoints += 1;
+  ch.rank += 1;
+  ch.skillPoints += 1;
 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
   if (overshootN && total >= service.promotionThrow + overshootN) {
-    character.skillPoints += 1;
-    character.log(ev.bonusSkillPoint("Promotion", overshootN));
+    ch.skillPoints += 1;
+    ch.log(ev.bonusSkillPoint("Promotion", overshootN));
   }
 
-  service.doPromotion(character);
-  character.log(ev.promoted(service.ranks[character.rank] ?? `rank ${character.rank}`));
+  service.doPromotion(ch);
+  ch.log(ev.promoted(service.ranks[ch.rank] ?? `rank ${ch.rank}`));
 };

@@ -237,7 +237,7 @@ function navyAssignBranch(ch: Character): void {
       kind: "navyBranch",
       label: "Choose your Naval branch (Social 9+ may select).",
       options: filtered,
-      onResolve: (c, branch) => { c.requireAcgState().branch = branch; },
+      onResolve: (ch, branch) => { ch.requireAcgState().branch = branch; },
     });
     return;
   }
@@ -307,9 +307,9 @@ function navyOfficerSkillChoice(ch: Character): void {
     kind: "navyOfficerSkillTable",
     label: "Officer training: roll on which skill table?",
     options: ["Branch Skills", "Officer Staff Skills"],
-    onResolve: (c, table) => {
-      if (table === "Officer Staff Skills") navyServiceSkillRoll(c, "staffOfficer");
-      else navyBranchSkillRoll(c);
+    onResolve: (ch, table) => {
+      if (table === "Officer Staff Skills") navyServiceSkillRoll(ch, "staffOfficer");
+      else navyBranchSkillRoll(ch);
     },
   });
 }
@@ -335,8 +335,8 @@ function navyBranchSkillRoll(ch: Character): void {
   const candidates = [col, col === "line" ? "lineCrew" : col,
     col === "crew" ? "lineCrew" : col];
   let skill: string | undefined;
-  for (const c of candidates) {
-    const v = row[c];
+  for (const cand of candidates) {
+    const v = row[cand];
     if (typeof v === "string") { skill = v; break; }
   }
   if (skill) applyAcgSkillCell(ch, skill, `Navy ${ch.requireAcgState().branch ?? "Line"} branch skills`);
@@ -362,12 +362,12 @@ export function navyCommandDuty(ch: Character): void {
       kind: "commandDutyOptIn",
       label: "Attempt the command-duty roll this year?",
       options: ["Roll for command", "Take staff position"],
-      onResolve: (c, choice) => {
+      onResolve: (ch, choice) => {
         if (choice === "Take staff position") {
-          c.requireAcgState().inCommand = false;
+          ch.requireAcgState().inCommand = false;
           return;
         }
-        navyRollCommandDuty(c);
+        navyRollCommandDuty(ch);
       },
     });
     return;
@@ -559,10 +559,10 @@ function offerNavyBranchChange(ch: Character): void {
     options: eligible,
     label,
     context: { source: "reenlist", reenlistChangeBranch: true },
-    apply: (c, chosen) => {
-      if (!c.acgState) return;
-      c.acgState.branch = chosen;
-      c.log(ev.transferred(chosen, "branch", current, "reenlist (via cross-training)"));
+    apply: (ch, chosen) => {
+      if (!ch.acgState) return;
+      ch.acgState.branch = chosen;
+      ch.log(ev.transferred(chosen, "branch", current, "reenlist (via cross-training)"));
     },
   });
 }

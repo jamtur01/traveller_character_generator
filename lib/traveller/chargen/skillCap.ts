@@ -30,19 +30,19 @@ export function enforceSkillCap(ch: Character): void {
       `reduce by 1 (${excess} reduction${excess === 1 ? "" : "s"} needed).`,
     options,
     context: { source: "skillCap", excess, cap, total },
-    onResolve: (c, chosen) => {
+    onResolve: (ch, chosen) => {
       const name = chosen.replace(/-\d+$/, "");
-      const i = c.checkSkill(name);
+      const i = ch.checkSkill(name);
       if (i < 0) return;
-      const entry = c.skills[i]!;
+      const entry = ch.skills[i]!;
       if (entry[1] > 1) {
         entry[1] -= 1;
-        c.log(ev.skillReduced(name, entry[1], "Int+Edu cap"));
+        ch.log(ev.skillReduced(name, entry[1], "Int+Edu cap"));
       } else {
-        c.skills.splice(i, 1);
-        c.log(ev.skillForfeited(name, "Int+Edu cap"));
+        ch.skills.splice(i, 1);
+        ch.log(ev.skillForfeited(name, "Int+Edu cap"));
       }
-      enforceSkillCap(c);
+      enforceSkillCap(ch);
     },
   });
 }

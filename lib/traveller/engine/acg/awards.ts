@@ -529,7 +529,7 @@ function queueBpReview(
     options,
     preferred: ["Spend 0 more (accept current outcome)"],
     context: { source: "bpReview", rollName: req.rollName, consequence: req.consequence },
-    onResolve: (c, chosen) => {
+    onResolve: (ch, chosen) => {
       const m = chosen.match(/Spend (\d+) more/);
       const extra = m ? parseInt(m[1]!, 10) : 0;
       const phase = asCacheableKey(req.rollName);
@@ -539,15 +539,15 @@ function queueBpReview(
         // the resumed pathway will read — that's correct (no change).
         return;
       }
-      const actual = Math.min(extra, c.requireAcgState().browniePoints);
-      c.requireAcgState().browniePoints -= actual;
-      c.requireAcgState().browniePointsSpent += actual;
-      c.log(ev.browniePoint(
+      const actual = Math.min(extra, ch.requireAcgState().browniePoints);
+      ch.requireAcgState().browniePoints -= actual;
+      ch.requireAcgState().browniePointsSpent += actual;
+      ch.log(ev.browniePoint(
         -actual,
         `Additional spend post-${req.rollName}`,
-        c.requireAcgState().browniePoints,
+        ch.requireAcgState().browniePoints,
       ));
-      c.requireAcgState().lastBpExtraSpend = {
+      ch.requireAcgState().lastBpExtraSpend = {
         rollName: req.rollName,
         spent: actual,
       };
@@ -558,13 +558,13 @@ function queueBpReview(
       // their way out.
       const totalSpent = result.spent + actual;
       const finalMargin = req.margin + totalSpent;
-      if (phase) cacheMitigation(c, phase, totalSpent, finalMargin);
+      if (phase) cacheMitigation(ch, phase, totalSpent, finalMargin);
       // F16: if the total spend pushed the margin to ≥ 0 and the
       // request carries an onMitigated callback, run it now to apply
       // the success outcome retroactively (revival / retroactive
       // decoration / etc.).
       if (finalMargin >= 0 && req.onMitigated) {
-        req.onMitigated(c);
+        req.onMitigated(ch);
       }
     },
   });

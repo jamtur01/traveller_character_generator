@@ -180,9 +180,9 @@ export function buildServiceDef(
       label: "Choose a skill table to roll on",
       options: tables,
       context: { source: "skillRoll" },
-      onResolve: (c, tableName) => {
+      onResolve: (ch, tableName) => {
         const idx = tables.indexOf(tableName) + 1;
-        runTablePick(c, idx);
+        runTablePick(ch, idx);
       },
     });
   };

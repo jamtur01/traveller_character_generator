@@ -59,10 +59,10 @@ export interface ChargenResult {
 
 /** Which skill-picker phase to enter based on the character's pending
  *  picker context. */
-function pickSkillPhase(c: Character): ChargenPhase {
+function pickSkillPhase(ch: Character): ChargenPhase {
   // The phase distinction is for the UI's stepper / progress bar only;
   // the engine treats the two identically.
-  return c.forceTableIndex >= 3 ? "skill_adv" : "skill_basic";
+  return ch.forceTableIndex >= 3 ? "skill_adv" : "skill_basic";
 }
 
 export interface StartCareerOptions {
@@ -77,22 +77,22 @@ export interface StartCareerOptions {
 /** Begin a new character. Decides whether to enter pre-career (ACG) or
  *  jump straight to basic enlistment. */
 export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
-  const c = new Character();
-  c.editionId = opts.edition;
-  c.showHistory = opts.verbose ? "verbose" : "simple";
+  const ch = new Character();
+  ch.editionId = opts.edition;
+  ch.showHistory = opts.verbose ? "verbose" : "simple";
   // Set choiceMode before generateHomeworld so that any homeworld
   // generation step that consults choiceMode (e.g., future interactive
   // homeworld picks) sees the configured mode rather than the default.
-  c.choiceMode = (opts.interactiveMode && opts.supportsInteractive)
+  ch.choiceMode = (opts.interactiveMode && opts.supportsInteractive)
     ? "interactive"
     : "auto";
-  c.generateHomeworld();
+  ch.generateHomeworld();
   if (opts.useAcg && editionHasAcg(opts.edition) && opts.acgPathway) {
-    c.useAcg = true;
-    c.acgPathway = opts.acgPathway;
-    return { character: c, phase: "pre_career" };
+    ch.useAcg = true;
+    ch.acgPathway = opts.acgPathway;
+    return { character: ch, phase: "pre_career" };
   }
-  return { character: c, phase: "career" };
+  return { character: ch, phase: "career" };
 }
 
 export type PreCareerOption =
@@ -107,28 +107,28 @@ export function applyPreCareer(
   snap: ChargenSnapshot,
   opt: PreCareerOption,
 ): ChargenResult {
-  const c = cloneCharacter(snap.character);
+  const ch = cloneCharacter(snap.character);
   if (opt === "skip") {
-    return { snapshot: { character: c, phase: c.useAcg ? "acg_enlist" : "career" } };
+    return { snapshot: { character: ch, phase: ch.useAcg ? "acg_enlist" : "career" } };
   }
-  let r: ReturnType<typeof c.doPreCareer>;
+  let r: ReturnType<typeof ch.doPreCareer>;
   try {
-    r = c.doPreCareer(opt);
+    r = ch.doPreCareer(opt);
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    return { snapshot: { character: c, phase: "pre_career" } };
+    return { snapshot: { character: ch, phase: "pre_career" } };
   }
   const hints: UiHints = {};
   if (r.autoEnlistPathway) {
-    c.acgPathway = r.autoEnlistPathway;
+    ch.acgPathway = r.autoEnlistPathway;
     hints.acgPathway = r.autoEnlistPathway;
-    const branch = c.acgState?.preCareerBranch;
+    const branch = ch.acgState?.preCareerBranch;
     if (branch === "army" || branch === "marines") hints.acgService = branch;
     if (r.autoEnlistPathway === "navy" && opt === "navalAcademy") {
       hints.acgFleet = "imperialNavy";
     }
   }
-  return { snapshot: { character: c, phase: "pre_career" }, hints };
+  return { snapshot: { character: ch, phase: "pre_career" }, hints };
 }
 
 export interface EnlistOptions {
@@ -146,19 +146,19 @@ export interface EnlistOptions {
 }
 
 export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnapshot {
-  const c = cloneCharacter(snap.character);
-  c.showHistory = opts.verbose ? "verbose" : "simple";
-  if (c.useAcg && c.acgPathway) {
-    if (c.acgPathway === "merchantPrince" &&
+  const ch = cloneCharacter(snap.character);
+  ch.showHistory = opts.verbose ? "verbose" : "simple";
+  if (ch.useAcg && ch.acgPathway) {
+    if (ch.acgPathway === "merchantPrince" &&
         (opts.acgLineType === "Megacorp" || opts.acgLineType === "Sector-wide") &&
         opts.acgMerchantAcademy) {
       // Stash attemptMerchantAcademy on acgState before beginAcg
       // consumes it. Initialize acgState if it doesn't exist yet.
-      if (!c.acgState) c.acgState = freshAcgState("merchantPrince");
-      c.acgState.attemptMerchantAcademy = true;
+      if (!ch.acgState) ch.acgState = freshAcgState("merchantPrince");
+      ch.acgState.attemptMerchantAcademy = true;
     }
     try {
-      c.beginAcg(c.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {
+      ch.beginAcg(ch.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {
         service: opts.acgService,
         combatArm: opts.acgCombatArm,
         fleet: opts.acgFleet,
@@ -167,18 +167,18 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
         ...(opts.acgSubsectorTech ? { subsectorTechCode: opts.acgSubsectorTech } : {}),
       });
     } catch (err) {
-      c.log(ev.endGeneration(
+      ch.log(ev.endGeneration(
         "retired",
         `ACG enlistment failed: ${(err as Error).message}`,
       ));
-      return { character: c, phase: "end" };
+      return { character: ch, phase: "end" };
     }
   } else {
-    c.service = c.doEnlistment(
+    ch.service = ch.doEnlistment(
       opts.preferredService === "random" ? "" : opts.preferredService,
     );
   }
-  return { character: c, phase: "term" };
+  return { character: ch, phase: "term" };
 }
 
 /** Resolve a pending player choice. Handles the entire choice-chain
@@ -190,51 +190,51 @@ export function resolvePending(
   choiceId: string,
   optionIdx: number,
 ): ChargenSnapshot {
-  const c = cloneCharacter(snap.character);
+  const ch = cloneCharacter(snap.character);
   const phase = snap.phase;
   try {
-    c.resolveChoice(choiceId, optionIdx);
+    ch.resolveChoice(choiceId, optionIdx);
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
   }
-  if (c.useAcg && c.acgState?.pausedAtStep && c.pendingChoices.length === 0) {
+  if (ch.useAcg && ch.acgState?.pausedAtStep && ch.pendingChoices.length === 0) {
     try {
-      runAcgYear(c);
+      runAcgYear(ch);
     } catch (err) {
       if (!(err instanceof ChoicePendingError)) throw err;
     }
   }
-  if (c.pendingChoices.length > 0) {
-    return { character: c, phase };
+  if (ch.pendingChoices.length > 0) {
+    return { character: ch, phase };
   }
   // Muster roll finalization (deferred from musterChoice when the cascade
   // paused). The sentinel persists across nested choices (e.g. skillCap
   // queued from addSkill); decrement only when the entire chain drains.
-  if (c.pendingMusterRoll) {
-    c.pendingMusterRoll = false;
+  if (ch.pendingMusterRoll) {
+    ch.pendingMusterRoll = false;
     // Defensive: never decrement below zero. The sentinel/decrement
     // pairing is supposed to be exact, but a redundant drain (e.g., a
     // nested choice chain finalized via another path first) must not
     // corrupt the roll budget.
-    if (c.musterRolls > 0) c.musterRolls -= 1;
-    if (c.musterRolls === 0) {
-      c.musterOutPay();
-      c.markMustered();
-      return { character: c, phase: "end" };
+    if (ch.musterRolls > 0) ch.musterRolls -= 1;
+    if (ch.musterRolls === 0) {
+      ch.musterOutPay();
+      ch.markMustered();
+      return { character: ch, phase: "end" };
     }
-    if (c.musterCashUsed >= maxCashRolls(c)) {
-      return { character: c, phase: "muster_no_cash" };
+    if (ch.musterCashUsed >= maxCashRolls(ch)) {
+      return { character: ch, phase: "muster_no_cash" };
     }
-    return { character: c, phase: "muster" };
+    return { character: ch, phase: "muster" };
   }
   // Basic-chargen skill-pick advancement.
-  if (!c.useAcg && (phase === "skill_basic" || phase === "skill_adv")) {
-    if (c.skillPoints > 0) {
-      return { character: c, phase: pickSkillPhase(c) };
+  if (!ch.useAcg && (phase === "skill_basic" || phase === "skill_adv")) {
+    if (ch.skillPoints > 0) {
+      return { character: ch, phase: pickSkillPhase(ch) };
     }
-    return finishTerm(c);
+    return finishTerm(ch);
   }
-  return { character: c, phase };
+  return { character: ch, phase };
 }
 
 /** Run one service term. ACG dispatches into runAcgTerm; basic chargen
@@ -248,92 +248,92 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
   // The UI's PendingChoicesPanel renders alongside the Run term button,
   // so the player has the resolve action in front of them.
   if (snap.character.pendingChoices.length > 0) return snap;
-  const c = cloneCharacter(snap.character);
+  const ch = cloneCharacter(snap.character);
   // Some services (CoTI nobles) derive starting rank from social standing
   // each term rather than by a promotion roll. The rule lives in the
   // service's JSON rankBySocial block; absent for services promoted by roll
   // (e.g. MT nobles use a Position check, so their rank is untouched here).
-  const rankRule = getEdition(c.editionId).data.services[c.service]?.rankBySocial;
+  const rankRule = getEdition(ch.editionId).data.services[ch.service]?.rankBySocial;
   if (rankRule) {
-    if (c.attributes.social < rankRule.socialFloor) {
-      c.attributes.social = rankRule.socialFloor;
+    if (ch.attributes.social < rankRule.socialFloor) {
+      ch.attributes.social = rankRule.socialFloor;
     }
-    const startingRank = c.attributes.social + rankRule.rankOffset;
-    if (c.rank < startingRank && startingRank >= 1 && startingRank <= rankRule.maxRank) {
-      c.rank = startingRank;
-      c.commissioned = true;
+    const startingRank = ch.attributes.social + rankRule.rankOffset;
+    if (ch.rank < startingRank && startingRank >= 1 && startingRank <= rankRule.maxRank) {
+      ch.rank = startingRank;
+      ch.commissioned = true;
     }
   }
   try {
-    c.doServiceTermStep();
+    ch.doServiceTermStep();
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    return { character: c, phase: "term" };
+    return { character: ch, phase: "term" };
   }
-  if (c.deceased) return { character: c, phase: "end" };
-  if (c.skillPoints > 0) {
-    return { character: c, phase: pickSkillPhase(c) };
+  if (ch.deceased) return { character: ch, phase: "end" };
+  if (ch.skillPoints > 0) {
+    return { character: ch, phase: pickSkillPhase(ch) };
   }
-  if (!c.useAcg) {
+  if (!ch.useAcg) {
     try {
-      c.enforceSkillCap();
+      ch.enforceSkillCap();
     } catch (err) {
       if (!(err instanceof ChoicePendingError)) throw err;
-      return { character: c, phase: "term" };
+      return { character: ch, phase: "term" };
     }
   }
-  if (!c.useAcg && !c.deceased) c.doAging();
-  if (c.deceased) return { character: c, phase: "end" };
-  if (!c.activeDuty) return enterMuster(c);
-  return { character: c, phase: "term" };
+  if (!ch.useAcg && !ch.deceased) ch.doAging();
+  if (ch.deceased) return { character: ch, phase: "end" };
+  if (!ch.activeDuty) return enterMuster(ch);
+  return { character: ch, phase: "term" };
 }
 
 /** Pick a skill table (or pass 0 for the service's default). Advances
  *  to the next skill-pick phase, the cascade-resolution flow, or
  *  end-of-term. */
 export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot {
-  const c = cloneCharacter(snap.character);
+  const ch = cloneCharacter(snap.character);
   if (table === 0) {
-    c.forceTable = false;
+    ch.forceTable = false;
   } else {
-    c.forceTable = true;
-    c.forceTableIndex = table;
+    ch.forceTable = true;
+    ch.forceTableIndex = table;
   }
-  c.skillPoints -= 1;
+  ch.skillPoints -= 1;
   try {
-    getEditionServices(c.editionId)[c.service]!.acquireSkill(c);
+    getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch);
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    return { character: c, phase: pickSkillPhase(c) };
+    return { character: ch, phase: pickSkillPhase(ch) };
   }
-  if (c.skillPoints > 0) {
-    return { character: c, phase: pickSkillPhase(c) };
+  if (ch.skillPoints > 0) {
+    return { character: ch, phase: pickSkillPhase(ch) };
   }
-  return finishTerm(c);
+  return finishTerm(ch);
 }
 
 /** End-of-term sequence — cap, aging, reenlistment, muster routing.
  *  Called once skillPoints reach 0 and no cascade choices remain. */
-function finishTerm(c: Character): ChargenSnapshot {
+function finishTerm(ch: Character): ChargenSnapshot {
   try {
-    c.enforceSkillCap();
+    ch.enforceSkillCap();
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    return { character: c, phase: "term" };
+    return { character: ch, phase: "term" };
   }
-  if (!c.deceased) c.doAging();
-  if (c.deceased) return { character: c, phase: "end" };
-  if (!c.shortTermThisTerm && c.activeDuty && !c.deceased) {
+  if (!ch.deceased) ch.doAging();
+  if (ch.deceased) return { character: ch, phase: "end" };
+  if (!ch.shortTermThisTerm && ch.activeDuty && !ch.deceased) {
     try {
-      c.doReenlistmentStep();
+      ch.doReenlistmentStep();
     } catch (err) {
       if (!(err instanceof ChoicePendingError)) throw err;
-      return { character: c, phase: "term" };
+      return { character: ch, phase: "term" };
     }
   }
-  if (c.deceased) return { character: c, phase: "end" };
-  if (!c.activeDuty) return enterMuster(c);
-  return { character: c, phase: "term" };
+  if (ch.deceased) return { character: ch, phase: "end" };
+  if (!ch.activeDuty) return enterMuster(ch);
+  return { character: ch, phase: "term" };
 }
 
 /** Voluntary muster-out — player choose to leave service when they were
@@ -341,35 +341,35 @@ function finishTerm(c: Character): ChargenSnapshot {
 export function attemptMusterOut(snap: ChargenSnapshot): ChargenSnapshot {
   const prev = snap.character;
   if (prev.mandatoryReenlistment) return snap;
-  const c = cloneCharacter(prev);
+  const ch = cloneCharacter(prev);
   // Only stamp "voluntary muster" if chargen hasn't already ended with
   // a more specific reason (deceased, court-martial discharge, etc.).
   // Otherwise the original reason would be overwritten by the generic
   // voluntary-muster string.
-  if (!c.isChargenEnded) {
-    c.endChargenRetired(`voluntary muster after ${intToOrdinal(c.terms)} term of service`);
+  if (!ch.isChargenEnded) {
+    ch.endChargenRetired(`voluntary muster after ${intToOrdinal(ch.terms)} term of service`);
   }
-  return enterMuster(c);
+  return enterMuster(ch);
 }
 
 /** Shared muster-out entry: enters the mustered status, computes roll
  *  count, and routes to end (no rolls) or muster (rolls pending). */
-function enterMuster(c: Character): ChargenSnapshot {
+function enterMuster(ch: Character): ChargenSnapshot {
   // Already entered muster — don't reset musterRolls (would discard
   // already-spent rolls if the UI dispatches enterMuster twice).
-  if (c.musteredOut) {
-    if (c.musterRolls === 0) return { character: c, phase: "end" };
-    if (c.musterCashUsed >= maxCashRolls(c)) return { character: c, phase: "muster_no_cash" };
-    return { character: c, phase: "muster" };
+  if (ch.musteredOut) {
+    if (ch.musterRolls === 0) return { character: ch, phase: "end" };
+    if (ch.musterCashUsed >= maxCashRolls(ch)) return { character: ch, phase: "muster_no_cash" };
+    return { character: ch, phase: "muster" };
   }
-  c.enterMustered();
-  c.musterRolls = c.musterOutRolls();
-  if (c.musterRolls === 0) {
-    c.musterOutPay();
-    c.markMustered();
-    return { character: c, phase: "end" };
+  ch.enterMustered();
+  ch.musterRolls = ch.musterOutRolls();
+  if (ch.musterRolls === 0) {
+    ch.musterOutPay();
+    ch.markMustered();
+    return { character: ch, phase: "end" };
   }
-  return { character: c, phase: "muster" };
+  return { character: ch, phase: "muster" };
 }
 
 /** Apply one muster-out cash or benefit roll. Handles the cascade-pauses
@@ -379,40 +379,40 @@ export function musterChoice(
   snap: ChargenSnapshot,
   kind: "cash" | "benefit",
 ): ChargenSnapshot {
-  const c = cloneCharacter(snap.character);
-  const cashDM = cashDmFor(c);
-  const benefitsDM = benefitDmFor(c);
+  const ch = cloneCharacter(snap.character);
+  const cashDM = cashDmFor(ch);
+  const benefitsDM = benefitDmFor(ch);
   // Increment musterCashUsed BEFORE musterOutCash since the call can
   // throw ChoicePendingError mid-cascade. Without this ordering, a
   // paused cash roll wouldn't count toward maxCashRolls on resume — the
   // user could pick "cash" again past the cap.
-  if (kind === "cash") c.musterCashUsed += 1;
+  if (kind === "cash") ch.musterCashUsed += 1;
   try {
     if (kind === "cash") {
-      c.musterOutCash(cashDM);
+      ch.musterOutCash(cashDM);
     } else {
-      c.musterOutBenefit(benefitsDM);
+      ch.musterOutBenefit(benefitsDM);
     }
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    c.pendingMusterRoll = true;
-    return { character: c, phase: snap.phase };
+    ch.pendingMusterRoll = true;
+    return { character: ch, phase: snap.phase };
   }
-  c.musterRolls -= 1;
-  if (c.musterRolls === 0) {
-    c.musterOutPay();
-    c.markMustered();
-    return { character: c, phase: "end" };
+  ch.musterRolls -= 1;
+  if (ch.musterRolls === 0) {
+    ch.musterOutPay();
+    ch.markMustered();
+    return { character: ch, phase: "end" };
   }
-  if (c.musterCashUsed >= maxCashRolls(c)) {
-    return { character: c, phase: "muster_no_cash" };
+  if (ch.musterCashUsed >= maxCashRolls(ch)) {
+    return { character: ch, phase: "muster_no_cash" };
   }
-  return { character: c, phase: "muster" };
+  return { character: ch, phase: "muster" };
 }
 
 /** Update the showHistory level on a snapshot's character. */
 export function setVerbose(snap: ChargenSnapshot, verbose: boolean): ChargenSnapshot {
-  const c = cloneCharacter(snap.character);
-  c.showHistory = verbose ? "verbose" : "simple";
-  return { character: c, phase: snap.phase };
+  const ch = cloneCharacter(snap.character);
+  ch.showHistory = verbose ? "verbose" : "simple";
+  return { character: ch, phase: snap.phase };
 }

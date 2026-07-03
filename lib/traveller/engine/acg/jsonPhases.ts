@@ -176,9 +176,9 @@ function buildSurvival(p: PhaseSurvival, build: BuildContext): PhaseDef {
       target: targetOrZero(ctx.res.survival),
       margin: r.margin,
       consequence: p.consequence,
-      onMitigated: (c) => {
-        c.resumeActive();
-        c.log(reviveStatusChange(p.onMitigatedRevive));
+      onMitigated: (ch) => {
+        ch.resumeActive();
+        ch.log(reviveStatusChange(p.onMitigatedRevive));
       },
     }),
     onFail: (): PhaseFailResult => ({ endChargen: p.endChargenOnFail }),
@@ -401,12 +401,12 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
       "balance for this assignment.",
     options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
       "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
-    onResolve: (c, choice) => {
-      if (choice.startsWith("-2")) c.requireAcgState().decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) c.requireAcgState().decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) c.requireAcgState().decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) c.requireAcgState().decorationDmStrategy = 2;
-      else c.requireAcgState().decorationDmStrategy = 0;
+    onResolve: (ch, choice) => {
+      if (choice.startsWith("-2")) ch.requireAcgState().decorationDmStrategy = -2;
+      else if (choice.startsWith("-1")) ch.requireAcgState().decorationDmStrategy = -1;
+      else if (choice.startsWith("+1")) ch.requireAcgState().decorationDmStrategy = 1;
+      else if (choice.startsWith("+2")) ch.requireAcgState().decorationDmStrategy = 2;
+      else ch.requireAcgState().decorationDmStrategy = 0;
     },
   });
 });

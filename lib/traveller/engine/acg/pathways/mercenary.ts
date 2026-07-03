@@ -356,7 +356,7 @@ function rollMercenarySkill(ch: Character): void {
         kind: "skillTable",
         label: "Choose a service-skills column to roll on",
         options,
-        onResolve: (c, col) => rollMercenarySkillFromColumn(c, col),
+        onResolve: (ch, col) => rollMercenarySkillFromColumn(ch, col),
       });
       return;
     }
@@ -481,10 +481,10 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
     options: eligibleArms,
     label: `Change combat arm for next term (current: ${current})`,
     context: { source: "reenlist", reenlistChangeArm: true },
-    apply: (c, chosen) => {
-      if (!c.acgState) return;
-      c.acgState.combatArm = chosen;
-      c.log(ev.transferred(chosen, "combatArm", current, "reenlist (via cross-training)"));
+    apply: (ch, chosen) => {
+      if (!ch.acgState) return;
+      ch.acgState.combatArm = chosen;
+      ch.log(ev.transferred(chosen, "combatArm", current, "reenlist (via cross-training)"));
     },
   });
 }

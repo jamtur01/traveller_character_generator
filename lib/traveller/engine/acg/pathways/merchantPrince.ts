@@ -253,9 +253,9 @@ function offerMerchantAcademy(ch: Character): void {
     options: ["Apply for Merchant Academy", "Skip — proceed to department assignment"],
     preferred: ["Skip — proceed to department assignment"],
     context: { source: "merchantAcademyOptIn" },
-    onResolve: (c, chosen) => {
+    onResolve: (ch, chosen) => {
       if (chosen.startsWith("Apply")) {
-        maybeAttemptMerchantAcademy(c);
+        maybeAttemptMerchantAcademy(ch);
       }
     },
   });
@@ -488,7 +488,7 @@ function merchantRollSkill(ch: Character): void {
       kind: "merchantSkillTable",
       label: "Merchant: choose which skill table to roll on this year.",
       options: tables,
-      onResolve: (c, key) => merchantRollFromTable(c, key),
+      onResolve: (ch, key) => merchantRollFromTable(ch, key),
     });
     return;
   }
@@ -693,10 +693,10 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     options: [current, ...[...all].filter((d) => d !== current)],
     label: `Reenlist in different department (current: ${current})`,
     context: { source: "reenlist", reenlistChangeDepartment: true },
-    apply: (c, chosen) => {
-      if (!c.acgState) return;
-      c.acgState.department = chosen;
-      c.log(ev.transferred(chosen, "department", current, "reenlist"));
+    apply: (ch, chosen) => {
+      if (!ch.acgState) return;
+      ch.acgState.department = chosen;
+      ch.log(ev.transferred(chosen, "department", current, "reenlist"));
     },
   });
 }

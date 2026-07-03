@@ -355,10 +355,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             options: ["Army", "Marines"],
             preferred: ["Army"],
             context: { source: "otcBranch" },
-            onResolve: (c, chosen) => {
+            onResolve: (ch, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
-              c.requireAcgState().preCareerBranch = branch;
-              c.log(ev.promoted("O1", `OTC (${chosen})`));
+              ch.requireAcgState().preCareerBranch = branch;
+              ch.log(ev.promoted("O1", `OTC (${chosen})`));
             },
           });
           // Pending choice — set a default so non-pause callers see something.
@@ -453,20 +453,20 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         options: ["Navy (Medical Branch)", "Army", "Scouts", "Merchants (Purser)"],
         preferred: ["Navy (Medical Branch)"],
         context: { source: "medicalCommission" },
-        onResolve: (c, chosen) => {
+        onResolve: (ch, chosen) => {
           if (chosen === "Army") {
-            c.requireAcgState().preCareerBranch = "army";
-            c.acgPathway = "mercenary";
+            ch.requireAcgState().preCareerBranch = "army";
+            ch.acgPathway = "mercenary";
           } else if (chosen === "Scouts") {
             // Scout branch isn't a value in the union — store separately.
-            c.requireAcgState().preCareerBranch = null;
-            c.acgPathway = "scout";
+            ch.requireAcgState().preCareerBranch = null;
+            ch.acgPathway = "scout";
           } else if (chosen === "Merchants (Purser)") {
-            c.requireAcgState().preCareerBranch = "merchants";
-            c.acgPathway = "merchantPrince";
+            ch.requireAcgState().preCareerBranch = "merchants";
+            ch.acgPathway = "merchantPrince";
           } else {
-            c.requireAcgState().preCareerBranch = "navy";
-            c.acgPathway = "navy";
+            ch.requireAcgState().preCareerBranch = "navy";
+            ch.acgPathway = "navy";
           }
         },
       });
@@ -621,7 +621,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     { department?: { columns: string[]; rows: Array<Record<string, unknown>> } }
     | undefined)?.department;
   if (!dept) return;
-  const departments = dept.columns.filter((c) => c !== "die");
+  const departments = dept.columns.filter((col) => col !== "die");
   if (departments.length === 0) return;
   // Skill-attempt parameters from the Academy spec (JSON pco.skills).
   const pco = acg?.common?.preCareerOptions?.merchantAcademy as

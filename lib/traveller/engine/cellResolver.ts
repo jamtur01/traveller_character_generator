@@ -211,12 +211,12 @@ export function applyCell(
       options: pool,
       preferred: known,
       context: { source: mode === "muster" ? "muster" : "skillTable", cellLabel: label },
-      onResolve: (c, name) => {
+      onResolve: (ch, name) => {
         // Homeworld limitation: tech/law-restricted cascade picks (vehicles,
         // weapons) require a 2D 7+ override per PM p. 39. On failure the
         // skill roll is forfeited entirely.
-        if (mode !== "muster" && !acquireSkillWithRestrictionCheck(c, name)) return;
-        c.log(ev.cascadePick(label, name));
+        if (mode !== "muster" && !acquireSkillWithRestrictionCheck(ch, name)) return;
+        ch.log(ev.cascadePick(label, name));
         // PM Includes-skills: picking an umbrella name (Axe, Large Blade,
         // Polearm, Handgun, Combat Rifleman, ATV, Heavy Weapons, etc.)
         // grants every constituent skill at the listed level. The
@@ -224,14 +224,14 @@ export function applyCell(
         // expansion is all-or-nothing — PM doesn't describe a partial-
         // expansion state where a character ends up with some but not
         // all constituents.
-        const expansion = includesExpansion(c.editionId, name);
+        const expansion = includesExpansion(ch.editionId, name);
         if (expansion && mode !== "muster") {
           for (const inner of expansion) {
-            c.addSkill(inner.skill, inner.level, grantSource);
+            ch.addSkill(inner.skill, inner.level, grantSource);
           }
           return;
         }
-        c.addSkill(name, 1, grantSource);
+        ch.addSkill(name, 1, grantSource);
       },
     });
     return;

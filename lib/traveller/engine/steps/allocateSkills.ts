@@ -20,7 +20,7 @@ interface SkillEligibility {
 }
 
 export const allocateSkillsStep: StepFn = ({
-  character, service, edition, config,
+  ch, service, edition, config,
 }) => {
   const elig = edition.rules.skillEligibility as
     SkillEligibility | undefined;
@@ -31,18 +31,18 @@ export const allocateSkillsStep: StepFn = ({
   // 1. Explicit per-service skillsPerTerm from ServiceData wins.
   if (typeof service.skillsPerTerm === "number") {
     let n = service.skillsPerTerm;
-    if (config.term1Bonus && service.skillsPerTerm === 1 && character.terms === 1) n += 1;
-    character.skillPoints += n;
+    if (config.term1Bonus && service.skillsPerTerm === 1 && ch.terms === 1) n += 1;
+    ch.skillPoints += n;
     return;
   }
 
   // 2. Per-service exception list.
-  const except = exceptions[character.service];
+  const except = exceptions[ch.service];
   if (typeof except === "number") {
-    character.skillPoints += except;
+    ch.skillPoints += except;
     return;
   }
 
   // 3. Default: initial on term 1, subsequent thereafter.
-  character.skillPoints += character.terms === 1 ? initial : subsequent;
+  ch.skillPoints += ch.terms === 1 ? initial : subsequent;
 };

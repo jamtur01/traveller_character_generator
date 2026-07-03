@@ -217,7 +217,7 @@ export function offerRoleChange(
     options: readonly string[];
     label: string;
     context: Record<string, unknown>;
-    apply: (c: Character, chosen: string) => void;
+    apply: (ch: Character, chosen: string) => void;
   },
 ): void {
   if (ch.choiceMode === "auto" || opts.options.length <= 1) return;
@@ -227,8 +227,8 @@ export function offerRoleChange(
     options: opts.options,
     preferred: [opts.current],
     context: opts.context,
-    onResolve: (c, chosen) => {
-      if (chosen !== opts.current) opts.apply(c, chosen);
+    onResolve: (ch, chosen) => {
+      if (chosen !== opts.current) opts.apply(ch, chosen);
     },
   });
 }

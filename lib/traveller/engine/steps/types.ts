@@ -11,7 +11,7 @@ import type { ServiceDef } from "@/lib/traveller/types";
 import type { Edition } from "@/lib/traveller/editions/types";
 
 export interface StepContext {
-  character: Character;
+  ch: Character;
   edition: Edition;
   /** The runtime ServiceDef for the character's current career. */
   service: ServiceDef;

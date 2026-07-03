@@ -30,29 +30,29 @@ export function validateLifecycleSteps(editionId: string): void {
   }
 }
 
-export function runTermSteps(character: Character): void {
+export function runTermSteps(ch: Character): void {
   // The character's editionId is authoritative — we don't accept an override
   // here. If callers need a specific edition, they construct a Character
   // with that editionId.
-  const edition = getEdition(character.editionId);
+  const edition = getEdition(ch.editionId);
   const lifecycle = edition.data.lifecycle;
   if (!lifecycle?.terms) {
     throw new Error(
       `Edition ${edition.meta.id} has no lifecycle.terms — cannot run term steps`,
     );
   }
-  if (character.useAcg) {
+  if (ch.useAcg) {
     throw new Error(
       "runTermSteps is for basic chargen only; ACG characters use runAcgYear",
     );
   }
   const sequence = lifecycle.terms;
-  const service = character.serviceDef();
+  const service = ch.serviceDef();
   for (const step of sequence) {
     // Halt the term early if chargen has formally ended for this character
     // — deceased / retired / mustered. Short-term status remains "active"-
     // ish so special-duty + skill steps still fire per PM p. 16.
-    if (character.isChargenEnded) return;
+    if (ch.isChargenEnded) return;
     const fn = STEP_REGISTRY[step.id];
     if (!fn) {
       throw new Error(
@@ -60,7 +60,7 @@ export function runTermSteps(character: Character): void {
       );
     }
     fn({
-      character,
+      ch: ch,
       edition,
       service,
       config: step.config ?? {},

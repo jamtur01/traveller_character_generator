@@ -225,8 +225,8 @@ export function scoutRollAssignment(ch: Character): string {
         kind: "scoutAdminDm",
         label: `Take administrator DM +${adminDm} on the duty roll? (Natural 2 still forces war mission.)`,
         options: [takeLabel, "Roll without DM"],
-        onResolve: (c, choice) => {
-          c.requireAcgState().scoutAdminDmDecision = choice === takeLabel;
+        onResolve: (ch, choice) => {
+          ch.requireAcgState().scoutAdminDmDecision = choice === takeLabel;
         },
       });
     }
@@ -289,7 +289,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   }
   const res = lookupResolution(resTable, assignment);
   // Scout has no decoration phase per PM p. 59 — the resolution tables
-  // omit a Decoration row. (The p. 65 checklist's "c) Decoration" entry
+  // omit a Decoration row. (The p. 65 checklist's "ch) Decoration" entry
   // is template-copied from other pathways; the actual data tables are
   // authoritative.) No `dms.decoration` is needed here.
   const dms = {
@@ -370,8 +370,8 @@ function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
     kind: "scoutTransferDecline",
     label: "Accept transfer from Field to Bureaucracy? (Mandatory on reroll if declined.)",
     options: ["Accept transfer", "Decline (reroll once)"],
-    onResolve: (c, choice) => {
-      c.requireAcgState().scoutTransferDecision = choice === "Accept transfer";
+    onResolve: (ch, choice) => {
+      ch.requireAcgState().scoutTransferDecision = choice === "Accept transfer";
     },
   });
   return true; // unreachable in interactive mode (pickOrDefer threw)

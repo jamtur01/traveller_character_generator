@@ -889,33 +889,33 @@ export class Character {
  * Produce a deep-enough copy that React state updates see a fresh top-level
  * reference and per-instance mutable arrays/objects can't leak across copies.
  */
-export function cloneCharacter(c: Character): Character {
-  const next = Object.assign(Object.create(Character.prototype), c) as Character;
-  next.attributes = { ...c.attributes };
-  next.skills = c.skills.map(([n, l]) => [n, l] as Skill);
-  next.benefits = [...c.benefits];
+export function cloneCharacter(ch: Character): Character {
+  const next = Object.assign(Object.create(Character.prototype), ch) as Character;
+  next.attributes = { ...ch.attributes };
+  next.skills = ch.skills.map(([n, l]) => [n, l] as Skill);
+  next.benefits = [...ch.benefits];
   // Shallow-clone the array AND each event payload. Today event objects
   // are immutable in practice but agingSave carries a `dice` tuple and
   // future event kinds may grow nested arrays/objects — copying defends
   // against a mutation in the clone leaking back into the original.
-  next.events = c.events.map((e) => ({ ...e }));
-  next.musterLog = [...c.musterLog];
+  next.events = ch.events.map((e) => ({ ...e }));
+  next.musterLog = [...ch.musterLog];
   // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate
   // the clone (via pickOrDefer → pendingChoices.push) before committing.
   // A shared reference leaks queued cascades back to the unrelated original
   // when the handler bails on ChoicePendingError, stacking stale choices
   // across stages.
-  next.pendingChoices = [...c.pendingChoices];
+  next.pendingChoices = [...ch.pendingChoices];
   // chargenStatus is a discriminated union; the variant objects are
   // immutable per the helpers, but freshly cloning avoids any chance of
   // shared-reference aliasing on future field additions.
-  next.chargenStatus = { ...c.chargenStatus };
-  if (c.homeworld) next.homeworld = { ...c.homeworld };
+  next.chargenStatus = { ...ch.chargenStatus };
+  if (ch.homeworld) next.homeworld = { ...ch.homeworld };
   // acgState contains nested arrays and objects (assignmentHistory,
   // schoolsAttended, decorations, honorsGraduations, etc.). The UI
   // mutates these via setters and the awards / school helpers; a shared
   // reference leaks mutations back into the snapshot. structuredClone
   // deep-copies all serializable shapes.
-  if (c.acgState) next.acgState = structuredClone(c.acgState);
+  if (ch.acgState) next.acgState = structuredClone(ch.acgState);
   return next;
 }

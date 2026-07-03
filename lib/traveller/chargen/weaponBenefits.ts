@@ -31,11 +31,11 @@ export function doBladeBenefit(ch: Character): void {
     options: pool,
     preferred: known,
     context: { source: "muster", benefit: "Blade" },
-    onResolve: (c, blade) => {
-      c.bladeBenefit = blade;
-      c.addBenefit(blade);
-      c.log(ev.cascadePick("Blade Combat", blade));
-      c.addSkill(blade, 0, "Blade benefit");
+    onResolve: (ch, blade) => {
+      ch.bladeBenefit = blade;
+      ch.addBenefit(blade);
+      ch.log(ev.cascadePick("Blade Combat", blade));
+      ch.addSkill(blade, 0, "Blade benefit");
     },
   });
 }
@@ -54,11 +54,11 @@ export function doGunBenefit(ch: Character): void {
     options: pool,
     preferred: known,
     context: { source: "muster", benefit: "Gun" },
-    onResolve: (c, gun) => {
-      c.gunBenefit = gun;
-      c.addBenefit(gun);
-      c.log(ev.cascadePick("Gun Combat", gun));
-      c.addSkill(gun, 0, "Gun benefit");
+    onResolve: (ch, gun) => {
+      ch.gunBenefit = gun;
+      ch.addBenefit(gun);
+      ch.log(ev.cascadePick("Gun Combat", gun));
+      ch.addSkill(gun, 0, "Gun benefit");
     },
   });
 }
@@ -85,17 +85,17 @@ function doRepeatWeaponBenefit(ch: Character, kind: "blade" | "gun"): void {
     label: `${current} (already received) — repeated weapon benefit choice (PM p. 20)`,
     options: [optBump, optDifferent, optCategory],
     context: { source: "muster", benefit: "RepeatWeapon", current, category: categorySkill },
-    onResolve: (c, chosen) => {
+    onResolve: (ch, chosen) => {
       if (chosen === optBump) {
-        c.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
+        ch.addSkill(current, 1, `Repeat ${kind} benefit (bump)`);
         return;
       }
       if (chosen === optCategory) {
-        c.addSkill(categorySkill, 1, `Repeat ${kind} benefit (+1 category)`);
+        ch.addSkill(categorySkill, 1, `Repeat ${kind} benefit (+1 category)`);
         return;
       }
-      const known = knownFromPool(c, pool);
-      c.pickOrDefer({
+      const known = knownFromPool(ch, pool);
+      ch.pickOrDefer({
         kind: "cascade",
         label: `Choose a different ${kind}`,
         options: pool,
@@ -118,9 +118,9 @@ export function doWeaponBenefit(ch: Character): void {
     label: "Choose weapon type",
     options: ["Blade", "Gun"],
     context: { source: "muster", benefit: "Weapon" },
-    onResolve: (c, type) => {
-      if (type === "Blade") doBladeBenefit(c);
-      else doGunBenefit(c);
+    onResolve: (ch, type) => {
+      if (type === "Blade") doBladeBenefit(ch);
+      else doGunBenefit(ch);
     },
   });
 }
