@@ -24,6 +24,25 @@ const eslintConfig = defineConfig([
       }],
     },
   },
+  // Enforce "absolute imports only" (CLAUDE.md): ban parent-relative ('../')
+  // specifiers in lib/ and app/ source; use '@/…' instead.
+  {
+    files: ["lib/**/*.ts", "app/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^\\.\\./",
+              message:
+                "Use '@/…' absolute imports instead of parent-relative ('../') paths.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
