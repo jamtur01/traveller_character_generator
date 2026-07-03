@@ -39,7 +39,8 @@ import {
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  createPathwaySpecRegistry, runReenlist, offerRoleChange,
+  createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
+  clearRetention, consumeRetainedAssignment,
 } from "./shared";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
@@ -277,12 +278,8 @@ function merchantAssignDepartment(ch: Character): void {
 export function merchantRollAssignment(ch: Character): string {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
-  if (acg.justRetained && acg.retainedAssignment) {
-    const retained = acg.retainedAssignment;
-    acg.justRetained = false;
-    acg.retainedAssignment = null;
-    return retained;
-  }
+  const retained = consumeRetainedAssignment(acg);
+  if (retained) return retained;
   const size = lineSizeFor(data, acg.lineType ?? "");
   const lineCol = assignmentColumnFor(size);
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
@@ -295,7 +292,7 @@ export function merchantRollAssignment(ch: Character): string {
     }, 0);
   // Row 13 is reachable: a natural 12 plus a +1 DM hits 13. The
   // specificAssignment table includes rows for die ∈ [2,13]; do not truncate.
-  const r = Math.max(2, Math.min(13, ch.rng.roll(2) + dm));
+  const r = clampedRoll(ch, 2, dm, 2, 13);
   const row = data.specificAssignment.rows.find((row) => row.die === r);
   if (!row) return "Route";
   return String(row[lineCol] ?? "Route");
@@ -339,89 +336,81 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     return;
   }
   // Available Position check (officers only).
-  if (ch.requireAcgState().isOfficer) {
-    merchantCheckAvailablePosition(ch);
+  if (ch.requireAcgState().isOfficer) merchantCheckAvailablePosition(ch);
+  const { table, colKey } = selectMerchantResolutionTable(ch, assignment);
+  // F14: Free Trader pursuit narrative + skipBonus override (PM p. 61).
+  const flags = freeTraderAssignmentFlags(ch)[assignment];
+  if (flags?.narrative) {
+    ch.log(ev.raw(`${assignment}: ${flags.narrative}`, "verbose"));
   }
+  const { res, dms } =
+    buildMerchantResolution(table, colKey, ch, flags?.skipBonus === true);
+  runPhases(getMerchantSpec(ch), { ch, assignment, resTable: table, res, dms });
+}
 
+type MerchantResolutionTable = MerchantData["assignmentResolution"][string];
+
+/** Select the resolution sub-table + column for a merchant assignment. Free
+ *  Traders use freeTraderTrade (Route/Charter/Exploratory/Speculative) or
+ *  freeTraderOther (Smuggling/Piracy/No Business, flagged `other`); everyone
+ *  else uses the department table. Throws on a missing table/column (PM p.64). */
+function selectMerchantResolutionTable(
+  ch: Character, assignment: string,
+): { table: MerchantResolutionTable; colKey: string } {
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
   const deptKey = labelToColumnKey(acg.department ?? "Deck");
-  // Free Trader characters resolve against one of two tables (both are
-  // distinct from the standard department tables):
-  //   - freeTraderTrade for Route / Charter / Exploratory / Speculative
-  //     assignments (PM p. 64 Free Trader Trade row).
-  //   - freeTraderOther for Smuggling / Piracy / No Business (PM p. 64
-  //     Free Trader Other row — different survival/skills/bonus targets).
-  // Before this fix the engine routed Smuggling through freeTraderTrade
-  // with column "speculative" (assignmentColumnMap remap), which yielded
-  // the wrong survival/bonus targets vs. the PM.
   const isFreeTrader = acg.lineType === "Free Trader";
-  // PM p. 61 'Free Trader Other' row: assignments flagged `other: true`
-  // in freeTraderAssignmentFlags resolve on the freeTraderOther table.
   const isFreeTraderOther =
     isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
-  const resTable = isFreeTrader
+  const table = isFreeTrader
     ? (isFreeTraderOther
         ? data.assignmentResolution.freeTraderOther
         : data.assignmentResolution.freeTraderTrade)
     : data.assignmentResolution[deptKey];
-  if (!resTable) {
+  if (!table) {
     throw new Error(
-      `Merchant: no resolution sub-table for department ` +
-      `"${acg.department}" (key "${deptKey}", lineType: ` +
-      `"${acg.lineType}", edition: ${ch.editionId}).`,
+      `Merchant: no resolution sub-table for department "${acg.department}" ` +
+      `(key "${deptKey}", lineType: "${acg.lineType}", edition: ${ch.editionId}).`,
     );
   }
-  const resolutionTable = resTable;
-  // For free trader Other assignments, the column key is the lower-
-  // camel form of the assignment ("smuggling", "piracy", "noBusiness").
-  // The general assignmentColumnMap is used for Free Trader Trade
-  // assignments (which need the Route/Charter etc. remap).
   const colKey = isFreeTraderOther
     ? labelToColumnKey(assignment)
     : (assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment));
-  if (!resolutionTable.columns.includes(colKey)) {
+  if (!table.columns.includes(colKey)) {
     throw new Error(
       `Merchant: assignment "${assignment}" → column "${colKey}" not in ` +
-      `department "${deptKey}" (available: ${resolutionTable.columns.join(", ")}).`,
+      `department "${deptKey}" (available: ${table.columns.join(", ")}).`,
     );
   }
-  // F14: Free Trader pursuit narrative + mechanical overrides.
-  const freeTraderFlags = freeTraderAssignmentFlags(ch)[assignment];
-  if (freeTraderFlags?.narrative) {
-    ch.log(ev.raw(`${assignment}: ${freeTraderFlags.narrative}`, "verbose"));
-  }
-  const skipBonus = freeTraderFlags?.skipBonus === true;
+  return { table, colKey };
+}
 
-  // Merchant rows are Survival / Skills / Bonus (not the standard
-  // Survival/Decoration/Promotion/Skills shape used by the other
-  // pathways). Synthesize an AssignmentResolution from the rows so the
-  // shared phase runner can drive it.
-  const survRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "survival");
-  const skillRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "skills");
-  const bonusRow = resolutionTable.rows.find((r) => String(r.result).toLowerCase() === "bonus");
-  const res: AssignmentResolution = {
+/** Synthesize an AssignmentResolution from a merchant Survival/Skills/Bonus
+ *  table. Merchant has no decoration or per-assignment promotion phase (PM
+ *  p. 65 — promotion is the end-of-term exam); the bonus target rides the
+ *  `bonus` extension the loader's bonus phase reads. */
+function buildMerchantResolution(
+  table: MerchantResolutionTable, colKey: string, ch: Character, skipBonus: boolean,
+): { res: AssignmentResolution; dms: { survival: number; skills: number; bonus: number } } {
+  const rowFor = (name: string) =>
+    table.rows.find((r) => String(r.result).toLowerCase() === name);
+  const survRow = rowFor("survival");
+  const skillRow = rowFor("skills");
+  const bonusRow = rowFor("bonus");
+  const res = {
     survival: survRow ? parseResolutionTarget(survRow[colKey]).target : "none",
     skills: skillRow ? parseResolutionTarget(skillRow[colKey]).target : "none",
-    decoration: "none", // merchant has no decoration phase
-    promotion: "none",  // promotion happens via the exam at endOfTerm
-  };
-  // Merchant has no decoration or per-assignment promotion phase (PM
-  // p. 65 — promotion is the end-of-term exam, no decoration mechanic).
-  // Only the phases that actually run need a dm here.
+    decoration: "none",
+    promotion: "none",
+    bonus: bonusRow && !skipBonus ? parseResolutionTarget(bonusRow[colKey]).target : "none",
+  } as AssignmentResolution & { bonus?: ResolutionTarget };
   const dms = {
-    survival: applyDmRules(resolutionTable.dms, ch, "survival"),
-    skills: applyDmRules(resolutionTable.dms, ch, "skills"),
-    bonus: applyDmRules(resolutionTable.dms, ch, "bonus"),
+    survival: applyDmRules(table.dms, ch, "survival"),
+    skills: applyDmRules(table.dms, ch, "skills"),
+    bonus: applyDmRules(table.dms, ch, "bonus"),
   };
-  // The bonus phase is merchant-specific; carry its target on a custom
-  // res-extension field that the loader's bonus phase reads.
-  const bonusTarget = bonusRow && !skipBonus
-    ? parseResolutionTarget(bonusRow[colKey]).target
-    : "none";
-  const resWithBonus = res as AssignmentResolution & { bonus?: ResolutionTarget };
-  resWithBonus.bonus = bonusTarget;
-  runPhases(getMerchantSpec(ch), { ch, assignment, resTable: resolutionTable, res, dms });
+  return { res, dms };
 }
 
 const MERCHANT_CALLBACKS: PathwayCallbacks = {
@@ -526,7 +515,7 @@ function merchantAwardBonus(ch: Character): void {
   // musterCash[] which is already the source-of-truth cash table.
   const merchants = ch.editionService("merchants" as never);
   if (!merchants) return;
-  const rawRoll = Math.min(7, Math.max(1, ch.rng.roll(1)));
+  const rawRoll = clampedRoll(ch, 1, 0, 1, 7);
   const fullAmount = merchants.musterCash[rawRoll] ?? 0;
   const cash = Math.floor(fullAmount / 2);
   if (cash <= 0) return;
@@ -562,7 +551,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialDuty) return;
   const dm = applyStructuredDms(data.specialDuty.dms, ch);
-  const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
+  const r = clampedRoll(ch, 1, dm, 1, 7);
   const row = data.specialDuty.rows.find((row) => row.die === r);
   if (!row) return;
   const col = ch.requireAcgState().isOfficer ? "officers" : "deckHands";
@@ -630,14 +619,6 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
       ch.requireAcgState().examDm = (ch.requireAcgState().examDm ?? 0) + 1;
     }
-  }
-}
-
-/** Retention is Navy-only in MT. Kept as a no-op for back-compat. */
-export function merchantRetention(ch: Character, _assignment: string): void {
-  if (ch.acgState) {
-    ch.acgState.justRetained = false;
-    ch.acgState.retainedAssignment = null;
   }
 }
 
@@ -776,11 +757,6 @@ function servedOnRouteThisTerm(ch: Character): boolean {
   return ch.acgState?.routeAssignmentThisTerm === true;
 }
 
-function merchantRankNum(code: string): number {
-  const m = code.match(/(\d+)/);
-  return m ? parseInt(m[1]!, 10) : -1;
-}
-
 /** Officer rank ladder for the character's current department, read from
  *  `ranksAndPromotions` (keyed by department; Free Trader lines use the
  *  `freeTrader` ladder). Rows are [rankCode, title, examTarget, skill]. */
@@ -802,7 +778,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const acg = ch.requireAcgState();
   const ladder = merchantRankLadder(ch, data);
   if (!ladder || ladder.length === 0) return;
-  const entry = ladder.find((r) => merchantRankNum(r[0]) === 1) ?? ladder[0]!;
+  const entry = ladder.find((r) => rankNum(r[0]) === 1) ?? ladder[0]!;
   const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
   const dm = acg.examDm ?? 0;
@@ -839,8 +815,8 @@ function attemptMerchantPromotionExam(ch: Character): void {
   }
   const ladder = merchantRankLadder(ch, data);
   if (!ladder) return;
-  const cur = merchantRankNum(acg.rankCode);
-  const nextRow = ladder.find((r) => merchantRankNum(r[0]) === cur + 1);
+  const cur = rankNum(acg.rankCode);
+  const nextRow = ladder.find((r) => rankNum(r[0]) === cur + 1);
   if (!nextRow) return;
   const target = parseInt(String(nextRow[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
@@ -890,7 +866,7 @@ export function getMerchantPrincePathway() {
     rollAssignment: merchantRollAssignment,
     resolveAssignment: merchantResolveAssignment,
     specialAssignment: merchantSpecialAssignment,
-    retention: merchantRetention,
+    retention: clearRetention,
     reenlist: merchantReenlist,
     startOfTerm: merchantStartOfTerm,
     endOfTerm: merchantEndOfTerm,
