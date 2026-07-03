@@ -47,9 +47,13 @@ export function musterOutRolls(ch: Character): number {
   const perTerm = rules?.perTerm ?? 1;
   const acgPartial = ch.acgState?.partialTerms ?? 0;
   const anagathicsTerms = ch.anagathicsBenefitForfeitedTerms;
+  // A term counted by BOTH shortTermsCount and anagathicsTerms (anagathics
+  // secured in a term that then failed survival) would be excluded twice;
+  // add the recorded overlap back so each excluded term drops one roll.
+  const overlap = ch.anagathicsShortTermOverlap;
   const qualifyingTerms = Math.max(
     0,
-    ch.terms - ch.shortTermsCount - acgPartial - anagathicsTerms,
+    ch.terms - ch.shortTermsCount - acgPartial - anagathicsTerms + overlap,
   );
   let r = perTerm * qualifyingTerms;
   if (rules?.rankExtraRolls?.length) {

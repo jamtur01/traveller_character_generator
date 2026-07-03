@@ -206,6 +206,14 @@ export class Character {
   enterShortTerm(reason: string): void {
     this.chargenStatus = { kind: "shortTerm", reason };
     this.shortTermsCount += 1;
+    // A term that both secured anagathics (forfeiting its benefit roll)
+    // and became a short term is excluded by BOTH counters. Record the
+    // overlap in a dedicated counter so musterOutRolls can subtract each
+    // excluded term exactly once (PM p. 15/16). Kept separate from
+    // anagathicsBenefitForfeitedTerms, which also drives retirement pay.
+    if (this.anagathicsActiveThisTerm) {
+      this.anagathicsShortTermOverlap += 1;
+    }
   }
 
   /** Rolled 12 on reenlistment → must serve another term. Consumed at
@@ -324,6 +332,11 @@ export class Character {
   /** Count of terms in which anagathics was active — those terms forfeit
    *  the muster-out benefit roll (PM p. 15). */
   anagathicsBenefitForfeitedTerms = 0;
+  /** Count of terms that both secured anagathics AND became short terms.
+   *  Such a term is subtracted by both shortTermsCount and
+   *  anagathicsBenefitForfeitedTerms; musterOutRolls adds this back so the
+   *  term is excluded exactly once. Does not affect retirement pay. */
+  anagathicsShortTermOverlap = 0;
   /** Per-term flag: player has declared intent to use anagathics this term.
    *  Set before survival; cleared at the start of each term. When true,
    *  survival receives the -1 (-2 for nobles) DM whether or not the supply

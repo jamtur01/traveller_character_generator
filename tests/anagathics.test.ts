@@ -236,3 +236,59 @@ describe("anagathics integration (B5)", () => {
     });
   });
 });
+
+// H2 regression — muster-out double-subtracted a term that was BOTH an
+// anagathics-benefit-forfeit term AND a short term.
+//
+// A term that both secured anagathics (forfeiting its benefit roll) and then
+// became a short term is counted by BOTH `shortTermsCount` and
+// `anagathicsBenefitForfeitedTerms`, so it was excluded twice. The fix:
+// `enterShortTerm` records the collision in `anagathicsShortTermOverlap`
+// (only while `anagathicsActiveThisTerm`), and `musterOutRolls` adds that
+// overlap back so the term drops exactly one roll's worth of benefits.
+//
+// No dice are rolled by enterShortTerm or musterOutRolls, so no Math.random
+// mock is needed. MT rules.musterOutRolls.perTerm = 2.
+//
+// Teeth: pre-fix there was no overlap counter and no add-back, so a doubly-
+// excluded term subtracted 2×perTerm. The counter assertion (1, not 0) and
+// the roll-count assertion (6, not 4) both fail against that behavior.
+describe("H2: anagathics short-term overlap counter", () => {
+  it("enterShortTerm records the overlap when anagathics is active this term", () => {
+    const c = makeMtChar();
+    c.anagathicsActiveThisTerm = true;
+    c.enterShortTerm("survival fail");
+    expect(c.anagathicsShortTermOverlap).toBe(1);
+    expect(c.shortTermsCount).toBe(1);
+  });
+
+  it("enterShortTerm leaves overlap at 0 when anagathics is NOT active", () => {
+    const c = makeMtChar();
+    c.anagathicsActiveThisTerm = false;
+    c.enterShortTerm("reenlistment denied");
+    expect(c.anagathicsShortTermOverlap).toBe(0);
+    expect(c.shortTermsCount).toBe(1);
+  });
+
+  it("musterOutRolls excludes the overlapping term exactly once (3 qualifying terms, not 2)", () => {
+    const c = makeMtChar();
+    c.rank = 0; // no rank-band extra rolls
+    c.terms = 4;
+    c.shortTermsCount = 1;
+    c.anagathicsBenefitForfeitedTerms = 1;
+    // The short term and the forfeit term are the SAME term.
+    c.anagathicsShortTermOverlap = 1;
+    // qualifyingTerms = 4 - 1 - 1 + 1 = 3; perTerm 2 → 6 rolls.
+    const withAddBack = c.musterOutRolls();
+    expect(withAddBack).toBe(6);
+
+    // Drop the add-back → the term is excluded twice (the pre-fix bug):
+    // qualifyingTerms = 4 - 1 - 1 = 2; perTerm 2 → 4 rolls.
+    c.anagathicsShortTermOverlap = 0;
+    const doublyExcluded = c.musterOutRolls();
+    expect(doublyExcluded).toBe(4);
+
+    // The add-back restores exactly one term's worth of rolls (perTerm=2).
+    expect(withAddBack - doublyExcluded).toBe(2);
+  });
+});
