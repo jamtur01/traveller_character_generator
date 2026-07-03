@@ -12,6 +12,12 @@ import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { event as ev } from "@/lib/traveller/history";
+import {
+  serviceSkillColumnFor, type SkillColumnPolicy,
+} from "@/lib/traveller/engine/acg/pathways/shared";
+import {
+  buildPredicateContext, evaluatePredicate, type Predicate,
+} from "@/lib/traveller/engine/predicate";
 
 type Effect = Record<string, unknown> & { type: string };
 
@@ -32,13 +38,7 @@ interface PathwayData {
     schoolingThreshold?: number;
   };
   serviceSkills?: { rows: Array<Record<string, unknown>> };
-  skillColumnPolicy?: {
-    officerInCommand: string;
-    officerStaff: string;
-    enlistedNcoMinRank: string;
-    enlistedNcoColumn: string;
-    enlistedLowRankColumns: Record<string, string>;
-  };
+  skillColumnPolicy?: SkillColumnPolicy;
   branchSkills?: { rows: Array<Record<string, unknown>> };
   ranks?: { officer: Array<unknown[]> };
 }
@@ -187,21 +187,23 @@ interface EffectWhen {
 function effectWhenMatches(ch: Character, effect: Effect): boolean {
   // Effects may carry a structured `when`; missing means "always applies".
   const when = (effect.when as EffectWhen | undefined) ?? null;
-  const code = ch.acgState?.rankCode ?? "";
-  if (when) {
-    if (when.rankBelow) {
-      const { letter, n } = when.rankBelow;
-      const m = code.match(new RegExp(`^${letter}(\\d+)$`));
-      if (!m) return true; // not in that band; legacy semantics
-      return parseInt(m[1]!, 10) < n;
-    }
-    if (when.rankAtLeast) {
-      const { letter, min } = when.rankAtLeast;
-      const m = code.match(new RegExp(`^${letter}(\\d+)$`));
-      if (!m) return false;
-      return parseInt(m[1]!, 10) >= min;
-    }
-    return true;
+  if (!when) return true;
+  if (when.rankBelow) {
+    // rankBelow keeps legacy "not in that band -> applies" semantics: after
+    // ocsCommission a character carries an O-band code, so an E-band rankBelow
+    // gate still passes and the OCS skill rolls run. A rankAtMost Predicate
+    // fails closed off-band, so this has no clean Predicate equivalent and
+    // stays inline (PM p. 51 line 3182-3196).
+    const { letter, n } = when.rankBelow;
+    const m = (ch.acgState?.rankCode ?? "").match(new RegExp(`^${letter}(\\d+)$`));
+    if (!m) return true;
+    return parseInt(m[1]!, 10) < n;
+  }
+  if (when.rankAtLeast) {
+    const pred: Predicate = {
+      rankAtLeast: `${when.rankAtLeast.letter}${when.rankAtLeast.min}`,
+    };
+    return evaluatePredicate(pred, buildPredicateContext(ch));
   }
   return true;
 }
@@ -269,26 +271,7 @@ function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: strin
   const r = ch.rng.roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
-  let col: string;
-  const rankNum = parseInt(ch.acgState.rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  if (ch.acgState.isOfficer) {
-    col = ch.acgState.inCommand ? "commandSkills" : "staffSkills";
-  } else {
-    // NCO threshold + branch-life columns are driven by the pathway's
-    // skillColumnPolicy (PM p. 51 line 3194-3196); mercenary defines it.
-    const pol = data.skillColumnPolicy;
-    const ncoMin = pol
-      ? parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 3
-      : 3;
-    if (rankNum >= ncoMin) {
-      col = pol?.enlistedNcoColumn ?? "ncoSkills";
-    } else {
-      const branch = ch.acgState.branch ?? "";
-      col = pol?.enlistedLowRankColumns[branch]
-        ?? pol?.enlistedLowRankColumns["army"]
-        ?? (branch === "Marines" ? "marineLife" : "armyLife");
-    }
-  }
+  const col = serviceSkillColumnFor(ch, data.skillColumnPolicy);
   const skill = row[col];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
 }

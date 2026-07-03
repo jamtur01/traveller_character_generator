@@ -6,7 +6,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import type { AssignmentResolution, ResolutionTarget } from "./state";
 import {
-  buildPredicateContext, evaluatePredicate, type Predicate,
+  buildPredicateContext, sumPredicateDms, type Predicate,
 } from "@/lib/traveller/engine/predicate";
 
 /** Parse a JSON cell value into a resolution target. The canonical forms
@@ -109,14 +109,10 @@ export function applyDmRules(
   rollType: "survival" | "promotion" | "decoration" | "skills" | "bonus",
 ): number {
   if (!dms) return 0;
-  const ctx = buildPredicateContext(ch);
-  let total = 0;
-  for (const rule of dms) {
-    // rollType is a caller-side filter (not a condition): an entry without
-    // one is general and applies to every roll type.
-    if (rule.rollType !== undefined && rule.rollType !== rollType) continue;
-    if (evaluatePredicate(rule, ctx)) total += rule.dm;
-  }
+  // rollType is a caller-side filter (not a condition): an entry without one
+  // is general and applies to every roll type.
+  const filtered = dms.filter((r) => r.rollType === undefined || r.rollType === rollType);
+  let total = sumPredicateDms(filtered, buildPredicateContext(ch));
   // PM p. 15: anagathics user takes a survival DM (a steeper one for the
   // noble service). Magnitudes live in JSON (rules.anagathics); mirror the
   // basic-chargen read in engine/serviceLoader.ts.
@@ -135,11 +131,10 @@ export function applyDmRules(
 /** A structured DM rule: a Predicate (the condition) plus the `dm` it
  *  contributes when the condition holds. `column` and `rollType` are
  *  caller-side filters, NOT conditions — the caller narrows by them before
- *  evaluating, so the interpreter ignores them. `note` is documentation. */
+ *  evaluating, so the interpreter ignores them. */
 export interface StructuredDm extends Predicate {
   column?: string;
   rollType?: "survival" | "promotion" | "decoration" | "skills" | "bonus";
-  note?: string;
   dm: number;
 }
 
@@ -149,10 +144,6 @@ export function applyStructuredDms(
   rules: StructuredDm[] | undefined,
   ch: Character,
 ): number {
-  if (!rules) return 0;
-  const ctx = buildPredicateContext(ch);
-  let total = 0;
-  for (const r of rules) if (evaluatePredicate(r, ctx)) total += r.dm;
-  return total;
+  return sumPredicateDms(rules, buildPredicateContext(ch));
 }
 

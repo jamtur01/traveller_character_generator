@@ -11,7 +11,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import {
-  buildPredicateContext, evaluatePredicate, type Predicate,
+  buildPredicateContext, sumPredicateDms, type Predicate,
 } from "@/lib/traveller/engine/predicate";
 
 type MusterDm = Predicate & { dm: number };
@@ -28,19 +28,13 @@ function rules(ch: Character): MusterRules | undefined {
 
 /** Cash-table DM for this character: sum every matching rule's dm. */
 export function cashDmFor(ch: Character): number {
-  const r = rules(ch);
-  if (!r?.cashTableDm) return 0;
-  const ctx = buildPredicateContext(ch);
-  let total = 0;
-  for (const rule of r.cashTableDm) if (evaluatePredicate(rule, ctx)) total += rule.dm;
-  return total;
+  return sumPredicateDms(rules(ch)?.cashTableDm, buildPredicateContext(ch));
 }
 
 /** Benefit-table DM for this character: the single rule's dm if it matches. */
 export function benefitDmFor(ch: Character): number {
   const b = rules(ch)?.benefitTableDm;
-  if (!b) return 0;
-  return evaluatePredicate(b, buildPredicateContext(ch)) ? b.dm : 0;
+  return b ? sumPredicateDms([b], buildPredicateContext(ch)) : 0;
 }
 
 /** Max cash rolls allowed per character (CT and MT: 3). Anagathics users

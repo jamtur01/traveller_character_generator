@@ -6,6 +6,9 @@ import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import {
+  buildPredicateContext, evaluatePredicate, type Predicate,
+} from "@/lib/traveller/engine/predicate";
+import {
   cacheMitigation, getCachedMitigation, type SubStepKey,
 } from "./subStepCache";
 
@@ -213,22 +216,23 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
 function resultDmWhenMatches(
   ch: Character, when: CourtMartialDmWhen, assignment?: string,
 ): boolean {
-  const rankCode = ch.acgState?.rankCode ?? "";
+  // rankBetween / rankAtLeast / currentlyInCommand map onto shared Predicate
+  // atoms (letter-band rank + inCommand) — build one Predicate and evaluate.
+  // rankBelow-style ranges become rankAtLeast+rankAtMost (same letter band,
+  // as rankBandOk enforces), matching the old ^letter(\d+)$ regex checks.
+  const pred: Predicate = {};
   if (when.rankBetween) {
     const { letter, min, max } = when.rankBetween;
-    const re = new RegExp(`^${letter}(\\d+)$`);
-    const m = rankCode.match(re);
-    if (!m) return false;
-    const n = parseInt(m[1]!, 10);
-    if (n < min || n > max) return false;
+    pred.rankAtLeast = `${letter}${min}`;
+    pred.rankAtMost = `${letter}${max}`;
   }
   if (when.rankAtLeast) {
-    const { letter, min } = when.rankAtLeast;
-    const re = new RegExp(`^${letter}(\\d+)$`);
-    const m = rankCode.match(re);
-    if (!m) return false;
-    if (parseInt(m[1]!, 10) < min) return false;
+    pred.rankAtLeast = `${when.rankAtLeast.letter}${when.rankAtLeast.min}`;
   }
+  if (when.currentlyInCommand === true) pred.inCommand = true;
+  if (!evaluatePredicate(pred, buildPredicateContext(ch))) return false;
+  // currentAssignmentIs tests the runtime `assignment` argument, not character
+  // state, so it has no Predicate atom — checked inline.
   if (when.currentAssignmentIs === "combat") {
     if (!assignment) return false;
     const pw = getAcgPathway(ch.editionId, ch.acgState?.pathway);
@@ -237,7 +241,6 @@ function resultDmWhenMatches(
   if (when.currentAssignmentIs === "training") {
     if (assignment !== "Training") return false;
   }
-  if (when.currentlyInCommand === true && !ch.acgState?.inCommand) return false;
   return true;
 }
 
@@ -534,21 +537,18 @@ function queueBpReview(
         // the resumed pathway will read — that's correct (no change).
         return;
       }
-      const actual = Math.min(extra, ch.requireAcgState().browniePoints);
-      ch.requireAcgState().browniePoints -= actual;
-      ch.requireAcgState().browniePointsSpent += actual;
-      ch.log(ev.browniePoint(
-        -actual,
-        `Additional spend post-${req.rollName}`,
-        ch.requireAcgState().browniePoints,
-      ));
+      // Spend + log + margin via spendBrowniePoints (the one BP-spend
+      // primitive). The base margin folds in the prior auto-mitigation spend
+      // so the return is the post-spend total; totalSpent is the delta.
+      const finalMargin = spendBrowniePoints(
+        ch, extra, req.margin + result.spent, `Additional spend post-${req.rollName}`,
+      );
       // Update the sub-step cache so the resumed pathway sees the
       // post-spend totals. Without this the cache returns the original
       // autoMitigate values and the pathway re-fires the failure branch
       // (e.g. endChargenRetired) even though the player just bought
       // their way out.
-      const totalSpent = result.spent + actual;
-      const finalMargin = req.margin + totalSpent;
+      const totalSpent = finalMargin - req.margin;
       if (phase) cacheMitigation(ch, phase, totalSpent, finalMargin);
       // F16: if the total spend pushed the margin to ≥ 0 and the
       // request carries an onMitigated callback, run it now to apply
@@ -561,21 +561,22 @@ function queueBpReview(
   });
 }
 
-/** Explicit player spending — used by the UI's PendingChoice resolver.
- *  Applies a chosen amount of BPs and returns the new margin. */
+/** Spend up to `amount` brownie points: decrement the pool, log the spend,
+ *  and return `originalMargin` shifted by the amount actually spent (clamped
+ *  to the available pool). The one BP-spend primitive — used by queueBpReview's
+ *  post-roll review prompt. `reason` labels the logged history event. */
 export function spendBrowniePoints(
   ch: Character,
   amount: number,
   originalMargin: number,
+  reason = "Post-roll spend",
 ): number {
   if (!ch.acgState) return originalMargin;
   const spend = Math.min(amount, ch.acgState.browniePoints);
   ch.acgState.browniePoints -= spend;
   ch.acgState.browniePointsSpent += spend;
   if (spend > 0) {
-    ch.log(ev.browniePoint(
-      -spend, "Post-roll spend", ch.acgState.browniePoints,
-    ));
+    ch.log(ev.browniePoint(-spend, reason, ch.acgState.browniePoints));
   }
   return originalMargin + spend;
 }
