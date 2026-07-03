@@ -103,7 +103,64 @@ export interface PreCareerOutcome {
   notes: string[];
 }
 
-export class Character {
+/** The pure data shape of a character — every stored (non-derived) field the
+ *  engine mutates during chargen. `Character` implements this and layers the
+ *  behavior (mutation kernel: log/addSkill/…; lifecycle facades that delegate
+ *  to the free functions in chargen/*) on top. Derived getters (activeDuty,
+ *  retired, apparentAge, isChargenEnded, …) are NOT part of the data — they
+ *  compute from these fields. Splitting the data out makes the state explicit
+ *  and serializable (cloneCharacter, and a seed+choice replay log). */
+export interface CharacterState {
+  rng: Rng;
+  age: number;
+  gender: Gender;
+  name: string;
+  showHistory: ShowHistory;
+  terms: number;
+  credits: number;
+  events: HistoryEvent[];
+  benefits: string[];
+  ship: boolean;
+  TAS: boolean;
+  mortgage: number;
+  mortgages: number;
+  bladeBenefit: string;
+  gunBenefit: string;
+  attributes: Attributes;
+  skillPoints: number;
+  skills: Skill[];
+  drafted: boolean;
+  service: ServiceKey;
+  commissioned: boolean;
+  rank: number;
+  retirementPay: number;
+  chargenStatus: ChargenStatus;
+  shortTermsCount: number;
+  endedAsRetired: boolean;
+  forceTable: boolean;
+  forceTableIndex: number;
+  musterCashUsed: number;
+  musterRolls: number;
+  pendingMusterRoll: boolean;
+  musterLog: string[];
+  onAnagathics: boolean;
+  anagathicsActiveThisTerm: boolean;
+  anagathicsWithdrawalThisTerm: boolean;
+  anagathicsEverTaken: boolean;
+  anagathicsBenefitForfeitedTerms: number;
+  anagathicsShortTermOverlap: number;
+  wantsAnagathicsThisTerm: boolean;
+  anagathicsStandingOrder: boolean;
+  editionId: string;
+  homeworld: Homeworld | null;
+  choiceMode: ChoiceMode;
+  pendingChoices: PendingChoice<string>[];
+  useAcg: boolean;
+  acgPathway: string | null;
+  acgState: AcgState | null;
+}
+
+export class Character implements CharacterState {
   /** Construct a fresh character. If `opts.attributes` is provided,
    *  skips the 12-dice initial roll — tests should prefer this over
    *  installing a Math.random mock pre-construction or overwriting
