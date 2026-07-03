@@ -28,8 +28,8 @@ import {
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
 import {
-  createPathwaySpecRegistry, resetCombatTermFlags,
-  combatFinalize, combatResolutionDms, advanceRankRow,
+  createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
+  combatResolutionDms, advanceRankRow, rollSpecialAssignment,
 } from "./shared";
 import { event as ev } from "../../../history";
 
@@ -506,37 +506,12 @@ export function navyRetention(ch: Character, assignment: string): void {
 }
 
 export function navySpecialAssignment(ch: Character): void {
-  // Roll on the Navy Special Assignments table (officer vs enlisted column),
-  // then apply that school's effects from JSON-driven specialAssignmentDetails.
-  // OCS over age 38 rerolls; if OCS comes up again, a waiver allows
-  // attendance (PM p. 54).
   const data = dataFor(ch);
   if (!data.specialAssignments) return;
-  const dm = applyStructuredDms(data.specialAssignments.dms, ch);
-  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
-  const rollOnce = (): string | null => {
-    const r = Math.max(1, Math.min(7, roll(1) + dm));
-    const row = data.specialAssignments!.rows.find((row) => row.die === r);
-    return row ? String(row[col]) : null;
-  };
-  let assignment = rollOnce();
-  if (!assignment) return;
-  // OCS age limit per JSON (navy.ocsAdvancement.ageLimit, PM p. 51/54).
-  const ocsAgeLimit = data.ocsAdvancement?.ageLimit;
-  if (assignment === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
-    const reroll = rollOnce();
-    if (reroll === "OCS") {
-      ch.log(ev.statusChange(
-        "ocsWaiver", `over age ${ocsAgeLimit}, waiver granted on reroll`,
-      ));
-    } else if (reroll) {
-      assignment = reroll;
-    } else {
-      return;
-    }
-  }
-  ch.requireAcgState().assignmentHistory.push(assignment);
-  applySpecialAssignment(ch, "navy", assignment);
+  const sa = rollSpecialAssignment(ch, data.specialAssignments, data.ocsAdvancement?.ageLimit);
+  if (!sa) return;
+  ch.requireAcgState().assignmentHistory.push(sa);
+  applySpecialAssignment(ch, "navy", sa);
 }
 
 export function navyReenlist(ch: Character): boolean {

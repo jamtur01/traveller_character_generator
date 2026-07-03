@@ -13,8 +13,9 @@ import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
   type ResolveAssignmentConfig,
 } from "../jsonPhases";
-import { applyDmRules, type StructuredDm } from "../tables";
+import { applyDmRules, applyStructuredDms, type StructuredDm } from "../tables";
 import { event as ev } from "../../../history";
+import { roll } from "../../../random";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
@@ -147,4 +148,40 @@ export function advanceRankRow(
   const targetIdx = cap !== undefined ? Math.min(idx + 1, cap - 1) : idx + 1;
   if (targetIdx <= idx || targetIdx >= ladder.length) return null;
   return ladder[targetIdx] ?? null;
+}
+
+export interface SpecialAssignmentTable {
+  dms?: StructuredDm[];
+  rows: Array<Record<string, unknown>>;
+}
+
+/** Roll on a pathway's Special Assignments table (officer/enlisted column),
+ *  applying the OCS over-age reroll + waiver rule (PM p. 51/54). Returns the
+ *  resolved assignment name, or null if a roll hit an empty cell (or an
+ *  over-age OCS reroll also failed to yield a school). */
+export function rollSpecialAssignment(
+  ch: Character, table: SpecialAssignmentTable, ocsAgeLimit: number | undefined,
+): string | null {
+  const dm = applyStructuredDms(table.dms, ch);
+  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
+  const rollOnce = (): string | null => {
+    const r = Math.max(1, Math.min(7, roll(1) + dm));
+    const v = table.rows.find((row) => row.die === r)?.[col];
+    return typeof v === "string" ? v : null;
+  };
+  let sa = rollOnce();
+  if (!sa) return null;
+  if (sa === "OCS" && ocsAgeLimit !== undefined && ch.age > ocsAgeLimit) {
+    const reroll = rollOnce();
+    if (reroll === "OCS") {
+      ch.log(ev.statusChange(
+        "ocsWaiver", `over age ${ocsAgeLimit}, waiver granted on reroll`,
+      ));
+    } else if (reroll) {
+      sa = reroll;
+    } else {
+      return null;
+    }
+  }
+  return sa;
 }
