@@ -1,4 +1,4 @@
-// Promotion step. Only commissioned characters with rank < 6 may attempt.
+// Promotion step. Only commissioned chars below their service's top rank promote.
 // config.doubleBonusOvershoot mirrors commission step's MT semantics — the
 // same roll's margin grants the second bonus, not a fresh roll.
 
