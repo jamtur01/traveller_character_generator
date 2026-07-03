@@ -35,7 +35,7 @@ describe("MT pathway resolveAssignment configs exist", () => {
 
   it("phase orderings match the PM checklists", () => {
     expect(configFor("mercenary").phases.map((p) => p.kind))
-      .toEqual(["survival", "promotion", "decoration", "skills"]);
+      .toEqual(["survival", "decoration", "promotion", "skills"]);
     expect(configFor("navy").phases.map((p) => p.kind))
       .toEqual(["survival", "decoration", "promotion", "skills"]);
     expect(configFor("scout").phases.map((p) => p.kind))

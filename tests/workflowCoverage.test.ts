@@ -50,21 +50,22 @@ describe("Pathway phase orderings match PM checklists", () => {
     return block.resolveAssignment.phases.map((p: { kind: string }) => p.kind);
   }
 
-  it("mercenary: Survival → Promotion → Decoration → Skills (PM p. 64)", () => {
-    expect(phasesOf("mercenary")).toEqual(["survival", "promotion", "decoration", "skills"]);
+  it("mercenary: Survival → Decoration → Promotion → Skills (PM p. 51)", () => {
+    // PM p.50 line 46 / p.51 line 10-11: decoration BEFORE promotion so a
+    // fail-by-6 court-martial resolves before the rank advances.
+    expect(phasesOf("mercenary")).toEqual(["survival", "decoration", "promotion", "skills"]);
   });
 
-  it("navy: Survival → Decoration → Promotion → Skills (PM p. 64)", () => {
+  it("navy: Survival → Decoration → Promotion → Skills (PM p. 55)", () => {
     // Navy puts decoration BEFORE promotion: court-martial-from-
     // decoration can pre-empt the promotion attempt this year.
     expect(phasesOf("navy")).toEqual(["survival", "decoration", "promotion", "skills"]);
   });
 
-  it("scout: Survival → Promotion → Skills (PM p. 65)", () => {
-    // PM p. 65 scout checklist mentions a decoration step but the
-    // actual scout resolution tables on p. 59 have no decoration
-    // column. The engine matches the data tables (no decoration);
-    // this is a documented PM checklist/data inconsistency.
+  it("scout: Survival → Promotion → Skills (PM p. 59)", () => {
+    // PM p. 59 line 23-24: the scout assignment resolution is survival,
+    // promotion, and skills — no decoration phase (promotion is Bureaucracy-
+    // administrator only). The engine matches this.
     expect(phasesOf("scout")).toEqual(["survival", "promotion", "skills"]);
   });
 

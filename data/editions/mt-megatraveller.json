@@ -4116,7 +4116,7 @@
     },
     "mercenary": {
       "resolveAssignment": {
-        "$rule": "PM p. 64 checklist: Survival → Promotion → Decoration → Skills.",
+        "$rule": "PM p. 50 line 46 / p. 51 line 10-11 checklist: Survival -> Decoration -> Promotion -> Skills (decoration before promotion so a fail-by-6 court-martial resolves before the rank advances).",
         "preRun": "decorationDmTradeoff",
         "phases": [
           {
@@ -4127,17 +4127,17 @@
             "purpleHeartOnExactCombat": true
           },
           {
+            "kind": "decoration",
+            "consequenceMild": "Earn MCUF",
+            "consequenceSevere": "Avoid court-martial referral",
+            "courtMartialMarginThreshold": -6
+          },
+          {
             "kind": "promotion",
             "consequence": "Earn promotion",
             "onPass": "promoteMercenary",
             "consumeNextPromotionPenalty": true,
             "logPenaltyInNote": true
-          },
-          {
-            "kind": "decoration",
-            "consequenceMild": "Earn MCUF",
-            "consequenceSevere": "Avoid court-martial referral",
-            "courtMartialMarginThreshold": -6
           },
           {
             "kind": "skills",
@@ -5107,7 +5107,7 @@
     },
     "navy": {
       "resolveAssignment": {
-        "$rule": "PM p. 64 navy checklist: Survival → Decoration → Promotion → Skills (decoration first so court-martial can pre-empt promotion).",
+        "$rule": "PM p. 55 line 20-22 navy checklist: Survival -> Decoration -> Promotion -> Skills (decoration first so court-martial can pre-empt promotion).",
         "preRun": "decorationDmTradeoff",
         "phases": [
           {
@@ -6260,7 +6260,7 @@
     },
     "scout": {
       "resolveAssignment": {
-        "$rule": "PM p. 65 scout checklist: Survival → Promotion (Bureaucracy only) → Skills. No decoration phase.",
+        "$rule": "PM p. 59 line 23-24 scout checklist: Survival -> Promotion (Bureaucracy only) -> Skills. No decoration phase.",
         "phases": [
           {
             "kind": "survival",
@@ -7243,7 +7243,7 @@
     },
     "merchantPrince": {
       "resolveAssignment": {
-        "$rule": "PM p. 65 merchant checklist: Survival → Skills → Bonus (no decoration / promotion; promotion is via the end-of-term exam).",
+        "$rule": "PM p. 63 line 29-30 merchant checklist: Survival -> Skills -> Bonus (no decoration/promotion; promotion is via the end-of-term exam).",
         "phases": [
           {
             "kind": "survival",

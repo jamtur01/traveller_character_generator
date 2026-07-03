@@ -370,7 +370,7 @@ describe("ACG awards", () => {
 
   it("Mercenary on Raid with mid-tier roll earns MCG and 2 BP", async () => {
     // Pin the rolls so decoration margin = +3 → MCG (minMargin 3).
-    // Raid resolution order: survival → promotion → decoration → skills.
+    // Raid resolution order: survival → decoration → promotion → skills.
     // Setup with max rolls first so beginAcg's enlistment passes, then
     // swap the mock to the controlled sequence right before invoking
     // resolveAssignment.
@@ -383,14 +383,14 @@ describe("ACG awards", () => {
     // Now control the rolls for the Raid resolution. Each rollVsTarget
     // uses roll(2) = 2 Math.random calls. Promotion DM is +1 (edu 9 ≥ 7).
     //   Survival:   2d6 = 12 (pass)
-    //   Promotion:  2d6 = 12 + 1 = 13 (pass)
     //   Decoration: 2d6 = 9, margin +3 → MCG
+    //   Promotion:  2d6 = 12 + 1 = 13 (pass)
     //   Skills:     2d6 = 12 (pass)
     let i = 0;
     const seq = [
       5 / 6 + 0.001, 5 / 6 + 0.001, // survival 12
-      5 / 6 + 0.001, 5 / 6 + 0.001, // promotion 12
-      4 / 6 + 0.001, 3 / 6 + 0.001, // decoration 5+4=9 → margin +3
+      4 / 6 + 0.001, 3 / 6 + 0.001, // decoration 5+4=9 → margin +3 → MCG
+      5 / 6 + 0.001, 5 / 6 + 0.001, // promotion 12 (+1 dm = 13)
       5 / 6 + 0.001, 5 / 6 + 0.001, // skills 12
     ];
     vi.restoreAllMocks();
