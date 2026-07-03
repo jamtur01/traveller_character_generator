@@ -3,10 +3,11 @@
 // pathway, so these helpers normalize the lookups.
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import type {
-  AssignmentResolution, ResolutionTarget,
-} from "./state";
+import { getEdition } from "@/lib/traveller/editions";
+import type { AssignmentResolution, ResolutionTarget } from "./state";
+import {
+  buildPredicateContext, evaluatePredicate, type Predicate,
+} from "@/lib/traveller/engine/predicate";
 
 /** Parse a JSON cell value into a resolution target. The canonical forms
  *  in the MT data are:
@@ -108,13 +109,13 @@ export function applyDmRules(
   rollType: "survival" | "promotion" | "decoration" | "skills" | "bonus",
 ): number {
   if (!dms) return 0;
+  const ctx = buildPredicateContext(ch);
   let total = 0;
   for (const rule of dms) {
-    // Structured DM: filter by rollType if the entry specifies one. Entries
-    // without rollType are general (apply to every roll type), matching the
-    // semantics already used by structured DMs on branchAssignment etc.
+    // rollType is a caller-side filter (not a condition): an entry without
+    // one is general and applies to every roll type.
     if (rule.rollType !== undefined && rule.rollType !== rollType) continue;
-    if (matchesStructuredDm(rule, ch)) total += rule.dm;
+    if (evaluatePredicate(rule, ctx)) total += rule.dm;
   }
   // PM p. 15: anagathics user takes a survival DM (a steeper one for the
   // noble service). Magnitudes live in JSON (rules.anagathics); mirror the
@@ -131,225 +132,27 @@ export function applyDmRules(
   return total;
 }
 
-function anyMosSkillAtLeast(ch: Character, level: number): boolean {
-  // Direct MOS field (from initial training).
-  const mos = ch.acgState?.mos;
-  if (mos) {
-    for (const [n, l] of ch.skills) if (n === mos && l >= level) return true;
-  }
-  // Cross-reference against the mercenary MOS column for the combat arm.
-  const skills = mercenaryArmSkillSet(ch);
-  for (const skill of skills) {
-    for (const [n, l] of ch.skills) if (n === skill && l >= level) return true;
-  }
-  return false;
-}
-
-function anyDepartmentSkillAtLeast(ch: Character, level: number): boolean {
-  const skills = merchantDepartmentSkillSet(ch);
-  for (const skill of skills) {
-    for (const [n, l] of ch.skills) if (n === skill && l >= level) return true;
-  }
-  return false;
-}
-
-function mercenaryArmSkillSet(ch: Character): Set<string> {
-  const out = new Set<string>();
-  const acg = ch.acgState;
-  if (!acg) return out;
-  const mercenary = getAcgPathway(ch.editionId, "mercenary");
-  const mos = mercenary?.mos as {
-    columns: string[]; rows: Array<Record<string, unknown>>;
-  } | undefined;
-  if (!mos) return out;
-  const arm = acg.combatArm ?? "";
-  const col = arm.charAt(0).toLowerCase() + arm.slice(1);
-  for (const row of mos.rows) {
-    const v = row[col];
-    if (typeof v === "string") out.add(v);
-  }
-  return out;
-}
-
-function merchantDepartmentSkillSet(ch: Character): Set<string> {
-  const out = new Set<string>();
-  const acg = ch.acgState;
-  if (!acg?.department) return out;
-  const merchant = getAcgPathway(ch.editionId, "merchantPrince");
-  const dept = (merchant?.skillTables as
-    { department?: { columns: string[]; rows: Array<Record<string, unknown>> } }
-    | undefined)?.department;
-  if (!dept) return out;
-  const col = acg.department.charAt(0).toLowerCase() + acg.department.slice(1);
-  for (const row of dept.rows) {
-    const v = row[col];
-    if (typeof v === "string") out.add(v);
-  }
-  return out;
-}
-
-function normalizeAttr(
-  s: string,
-): "strength" | "dexterity" | "endurance" | "intelligence" | "education" | "social" {
-  const lc = s.toLowerCase();
-  if (lc.startsWith("str")) return "strength";
-  if (lc.startsWith("dex")) return "dexterity";
-  if (lc.startsWith("end")) return "endurance";
-  if (lc.startsWith("int")) return "intelligence";
-  if (lc.startsWith("edu")) return "education";
-  return "social";
-}
-
-/** Structured DM rule shape used by branchAssignment, commandDuty,
- *  specialAssignments, and similar JSON blocks. Each entry contributes its
- *  `dm` if its condition holds. Conditions:
- *    - { attribute, min, dm }       — character's attribute ≥ min
- *    - { attribute, max, dm }       — character's attribute ≤ max
- *    - { rankAtLeast: "Ox"/"Ex", dm } — rank number ≥ N for that band
- *    - { rankAtMost:  "Ox"/"Ex", dm } — rank number ≤ N for that band
- *    - { officer: true, dm }
- *    - { enlisted: true, dm }
- *    - { inCommand: true, dm }
- *    - { service: "name", dm } / { service: ["a","b"], dm }
- *    - { fleet: "name", dm }
- *    - { skillAtLeast: { skill, level }, dm }                        */
-export interface StructuredDm {
-  attribute?: string;
-  min?: number;
-  max?: number;
-  rankAtLeast?: string;
-  rankAtMost?: string;
-  officer?: boolean;
-  enlisted?: boolean;
-  inCommand?: boolean;
-  service?: string | string[];
-  fleet?: string;
-  skillAtLeast?: { skill: string; level: number };
-  /** Specific skill names are matched against ch.skills directly. */
-  anyMosSkillAtLeast?: number;
-  anyDepartmentSkillAtLeast?: number;
-  /** Homeworld tech-code ≥ a named code in the tech-code-order. */
-  homeworldTechAtLeast?: string;
-  /** At least one of these combat arms is in acgState.crossTrainedArms. */
-  crossTrainedInAny?: string[];
-  /** Character's current combat arm is one of these. */
-  currentCombatArmIn?: string[];
-  /** Character's current branch is one of these. */
-  currentBranchIn?: string[];
-  /** Character's current department is one of these. */
-  currentDepartmentIn?: string[];
-  /** Character's current department is NOT one of these. */
-  currentDepartmentNotIn?: string[];
-  /** Character's number of terms is ≥ N. */
-  termsAtLeast?: number;
-  /** Optional column qualifier for tables whose DMs apply per-column
-   *  (mercenary/navy serviceSkills). Callers that don't filter by column
-   *  see every entry. */
+/** A structured DM rule: a Predicate (the condition) plus the `dm` it
+ *  contributes when the condition holds. `column` and `rollType` are
+ *  caller-side filters, NOT conditions — the caller narrows by them before
+ *  evaluating, so the interpreter ignores them. `note` is documentation. */
+export interface StructuredDm extends Predicate {
   column?: string;
-  /** True if the character has any of these schools/pre-careers recorded
-   *  in acgState.schoolsAttended (used for "College or Academy graduate"
-   *  conditions). */
-  attendedAnyOf?: string[];
-  /** When set, restricts this DM to one of survival/promotion/decoration/
-   *  skills/bonus. applyDmRules filters by this; applyStructuredDms ignores
-   *  it (callers without a rollType context see every entry). */
   rollType?: "survival" | "promotion" | "decoration" | "skills" | "bonus";
-  /** Optional human-readable note retained from manual prose. */
   note?: string;
   dm: number;
 }
 
+/** Sum the `dm` of every structured rule whose Predicate matches the
+ *  character. Column-filtering callers narrow `rules` before calling. */
 export function applyStructuredDms(
   rules: StructuredDm[] | undefined,
   ch: Character,
 ): number {
   if (!rules) return 0;
+  const ctx = buildPredicateContext(ch);
   let total = 0;
-  for (const r of rules) {
-    if (matchesStructuredDm(r, ch)) total += r.dm;
-  }
+  for (const r of rules) if (evaluatePredicate(r, ctx)) total += r.dm;
   return total;
-}
-
-function matchesStructuredDm(r: StructuredDm, ch: Character): boolean {
-  if (r.attribute) {
-    const k = normalizeAttr(r.attribute);
-    const v = ch.attributes[k];
-    if (r.min !== undefined && v < r.min) return false;
-    if (r.max !== undefined && v > r.max) return false;
-    if (r.min === undefined && r.max === undefined) return false;
-  }
-  const code = ch.acgState?.rankCode ?? "";
-  if (r.rankAtLeast) {
-    const want = parseRankLetter(r.rankAtLeast);
-    const have = parseRankLetter(code);
-    if (!want || !have || want.letter !== have.letter) return false;
-    if (have.n < want.n) return false;
-  }
-  if (r.rankAtMost) {
-    const want = parseRankLetter(r.rankAtMost);
-    const have = parseRankLetter(code);
-    if (!want || !have || want.letter !== have.letter) return false;
-    if (have.n > want.n) return false;
-  }
-  if (r.officer === true && !ch.acgState?.isOfficer) return false;
-  if (r.enlisted === true && ch.acgState?.isOfficer) return false;
-  if (r.inCommand === true && !ch.acgState?.inCommand) return false;
-  if (r.service !== undefined) {
-    const services = Array.isArray(r.service) ? r.service : [r.service];
-    if (!services.includes(ch.service)) return false;
-  }
-  if (r.fleet !== undefined) {
-    if (ch.acgState?.fleet !== r.fleet) return false;
-  }
-  if (r.skillAtLeast) {
-    let lvl = 0;
-    for (const [n, l] of ch.skills) if (n === r.skillAtLeast.skill) lvl = l;
-    if (lvl < r.skillAtLeast.level) return false;
-  }
-  if (r.anyMosSkillAtLeast !== undefined) {
-    if (!anyMosSkillAtLeast(ch, r.anyMosSkillAtLeast)) return false;
-  }
-  if (r.anyDepartmentSkillAtLeast !== undefined) {
-    if (!anyDepartmentSkillAtLeast(ch, r.anyDepartmentSkillAtLeast)) return false;
-  }
-  if (r.crossTrainedInAny) {
-    const xtrain = ch.acgState?.crossTrainedArms ?? [];
-    if (!r.crossTrainedInAny.some((a) => xtrain.includes(a))) return false;
-  }
-  if (r.currentCombatArmIn) {
-    if (!r.currentCombatArmIn.includes(ch.acgState?.combatArm ?? "")) return false;
-  }
-  if (r.currentBranchIn) {
-    if (!r.currentBranchIn.includes(ch.acgState?.branch ?? "")) return false;
-  }
-  if (r.currentDepartmentIn) {
-    if (!r.currentDepartmentIn.includes(ch.acgState?.department ?? "")) return false;
-  }
-  if (r.currentDepartmentNotIn) {
-    if (r.currentDepartmentNotIn.includes(ch.acgState?.department ?? "")) return false;
-  }
-  if (r.termsAtLeast !== undefined && ch.terms < r.termsAtLeast) return false;
-  if (r.attendedAnyOf) {
-    const schools = ch.acgState?.schoolsAttended ?? [];
-    if (!r.attendedAnyOf.some((s) => schools.includes(s))) return false;
-  }
-  if (r.homeworldTechAtLeast) {
-    const order = (getEdition(ch.editionId).data as {
-      homeworld?: { techCodeOrder?: string[] };
-    }).homeworld?.techCodeOrder;
-    const hwTech = ch.homeworld?.tech;
-    if (!order || !hwTech) return false;
-    const want = order.indexOf(r.homeworldTechAtLeast);
-    const have = order.indexOf(hwTech);
-    if (want < 0 || have < 0 || have < want) return false;
-  }
-  return true;
-}
-
-function parseRankLetter(code: string): { letter: string; n: number } | null {
-  const m = code.match(/^([A-Za-z]+-?)(\d+)$/);
-  if (!m) return null;
-  return { letter: m[1]!, n: parseInt(m[2]!, 10) };
 }
 
