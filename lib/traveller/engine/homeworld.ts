@@ -103,7 +103,9 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   const data = dataFor(ch.editionId);
   if (!data) return null;
 
-  const cols = ["starport", "size", "atmosphere", "hydrosphere", "population", "law", "tech"] as const;
+  // Column order comes from the roll table itself (minus the "die" header),
+  // so the DM-application order can't silently diverge from the table.
+  const cols = data.rollTable.columns.filter((c) => c !== "die");
   const result: Partial<Homeworld> = {};
 
   for (const col of cols) {

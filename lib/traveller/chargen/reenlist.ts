@@ -40,14 +40,14 @@ export function doReenlistmentStep(ch: Character): void {
   const def = ch.serviceDef();
   const reenlistRoll = roll(2);
   const target = def.reenlistThrow;
-  if (reenlistRoll === 12) {
+  const reenlistRules = getEdition(ch.editionId).rules.reenlistment;
+  if (reenlistRoll === (reenlistRules?.mandatoryOnExactRoll ?? 12)) {
     ch.enterMandatoryReenlist();
     ch.log(ev.reenlistment("mandatory", reenlistRoll, target));
     return;
   }
   // CT mandates retirement at end of term 7. MT does not (voluntary
   // any-term per PM p. 17). Read the cap from edition rules.
-  const reenlistRules = getEdition(ch.editionId).rules.reenlistment;
   const cap = reenlistRules?.mandatoryRetireAfterTerm ?? 7;
   const voluntaryAnyTerms = reenlistRules?.voluntaryAnyTerms === true;
   if (ch.terms >= cap && !voluntaryAnyTerms) {

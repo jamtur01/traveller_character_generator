@@ -23,15 +23,16 @@ export const survivalStep: StepFn = ({ character, service, edition }) => {
   if (service.checkSurvival(character)) return;
   const onFailure = edition.rules.survival?.onFailure ?? "death";
   if (onFailure === "shortTerm" || onFailure === "musterOut") {
-    // doServiceTermStep already added 4 years for the full term; rewind 2
-    // because only 2 years of the 4-year term were served.
+    const s = edition.rules.survival;
+    const short = s?.shortTermYears ?? 2;
+    const reason = `injured in service — only ${short} years of this term served`;
+    // doServiceTermStep already added the full term's years; rewind to the
+    // short-term length. "musterOut" is a legacy alias that keeps the age.
     if (onFailure === "shortTerm") {
-      character.age -= 2;
+      character.age -= (s?.fullTermYears ?? 4) - short;
     }
-    character.enterShortTerm("injured in service — only 2 years of this term served");
-    character.log(ev.statusChange(
-      "shortTerm", "injured in service — only 2 years of this term served",
-    ));
+    character.enterShortTerm(reason);
+    character.log(ev.statusChange("shortTerm", reason));
     return;
   }
   character.endChargenDeceased("killed in service");
