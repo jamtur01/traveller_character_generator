@@ -14,11 +14,6 @@ export type {
 export { rndInt, arnd, roll } from "./random";
 export { numCommaSep, intToOrdinal, extendedHex, attrShort } from "./formatting";
 export { generateName, generateGender } from "./names";
-export {
-  BLADES, BOWS, GUNS, VEHICLES, AIRCRAFTS, WATERCRAFTS,
-  cascadeBlade, cascadeBow, cascadeGun,
-  cascadeVehicle, cascadeAircraft, cascadeWatercraft,
-} from "./cascades";
 // Character and cloneCharacter are deliberately NOT re-exported here.
 // Importing them via the barrel created a TypeScript-server cache pathology
 // (the same class type reachable via two paths got mis-identified across

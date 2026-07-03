@@ -2,9 +2,14 @@
 // must include every option the rulebook lists as a valid sub-selection.
 
 import { describe, expect, it } from "vitest";
-import {
-  AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
-} from "../../lib/traveller";
+import { cascadePoolByKey } from "../../lib/traveller/engine/cascadeMap";
+
+const BLADES = cascadePoolByKey("bladeCombat", "ct-classic");
+const BOWS = cascadePoolByKey("bowCombat", "ct-classic");
+const GUNS = cascadePoolByKey("gunCombat", "ct-classic");
+const VEHICLES = cascadePoolByKey("vehicle", "ct-classic");
+const AIRCRAFTS = cascadePoolByKey("aircraft", "ct-classic");
+const WATERCRAFTS = cascadePoolByKey("watercraft", "ct-classic");
 
 describe("cascade pools (TTB p. 25)", () => {
   it("BLADES contains the 10 TTB blades & polearms", () => {

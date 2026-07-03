@@ -29,9 +29,14 @@ import {
   type AttributeKey, type ServiceDef, type ServiceKey,
 } from "../../lib/traveller";
 import { Character } from "../../lib/traveller/character";
-import {
-  AIRCRAFTS, BLADES, BOWS, GUNS, VEHICLES, WATERCRAFTS,
-} from "../../lib/traveller/cascades";
+import { cascadePoolByKey } from "../../lib/traveller/engine/cascadeMap";
+
+const BLADES = cascadePoolByKey("bladeCombat", "ct-classic");
+const BOWS = cascadePoolByKey("bowCombat", "ct-classic");
+const GUNS = cascadePoolByKey("gunCombat", "ct-classic");
+const VEHICLES = cascadePoolByKey("vehicle", "ct-classic");
+const AIRCRAFTS = cascadePoolByKey("aircraft", "ct-classic");
+const WATERCRAFTS = cascadePoolByKey("watercraft", "ct-classic");
 
 const s = getEditionServices("ct-classic") as Record<ServiceKey, ServiceDef>;
 
