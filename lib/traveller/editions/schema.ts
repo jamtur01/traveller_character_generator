@@ -361,6 +361,29 @@ const AcgDataSchema = z.looseObject({
   merchantPrince: PathwayDataSchema.optional(),
 });
 
+const BenefitDetailSchema = z.looseObject({
+  shipType: z.string().optional(),
+  firstReceiptMortgageYears: z.number().optional(),
+  repeatReducesMortgageYears: z.number().optional(),
+  repeat: z.string().optional(),
+  cashValueCredits: z.number().optional(),
+  resalePercent: z.number().optional(),
+  revivalSave: z.string().optional(),
+  description: z.string().optional(),
+  valueCredits: z.number().optional(),
+  typicalValueCredits: z.number().optional(),
+  valuableValueRoll: z.string().optional(),
+  choices: z.union([z.string(), z.array(z.string())]).optional(),
+  repeatMayBecomeSkill: z.boolean().optional(),
+  name: z.string().optional(),
+});
+
+const SkillTableMetaSchema = z.looseObject({
+  order: z.array(z.string()),
+  displayNames: z.record(z.string(), z.string()),
+  advancedEducationEduMin: z.number(),
+});
+
 const CanonDataSchema = z.looseObject({
   services: z.record(z.string(), ServiceDataSchema),
   cascadeSkills: CascadeSkillsSchema.optional(),
@@ -369,6 +392,9 @@ const CanonDataSchema = z.looseObject({
   includesSkills: IncludesSkillsSchema.optional(),
   aging: AgingSchema.optional(),
   advancedCharacterGeneration: AcgDataSchema.optional(),
+  benefitDetails: z.record(z.string(), BenefitDetailSchema).optional(),
+  skillTableMeta: SkillTableMetaSchema.optional(),
+  cascadeAliases: z.record(z.string(), z.string()).optional(),
 });
 
 export type CanonDataValidated = z.infer<typeof CanonDataSchema>;

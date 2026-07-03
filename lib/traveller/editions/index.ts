@@ -23,14 +23,13 @@ import { validateLifecycleSteps } from "@/lib/traveller/engine/runners/basic";
 function buildEdition(
   raw: unknown, hooks: Edition["hooks"], id: string,
 ): Edition {
-  const data = raw as CanonData;
-  // Validate the heavily-cast `rules` sub-object at edition load —
-  // catches structural drift / typos that previously survived into
-  // runtime via `as { ... }` casts at each call site.
-  const rules = parseRules((data as { rules?: unknown }).rules, id);
-  // Validate services / cascade / aging / includes etc. shapes too —
-  // same motivation, broader coverage.
-  parseCanonData(data, id);
+  // Validate + brand the canon data at load. The Zod schema (looseObject)
+  // preserves every key while checking the shapes it models, so getEdition
+  // returns the *parsed* instance, not the raw import. CanonDataValidated is
+  // structurally the raw canon shape; the engine's richer CanonData view is a
+  // superset the schema doesn't fully enumerate, so brand once here.
+  const data = parseCanonData(raw, id) as unknown as CanonData;
+  const rules = parseRules(data.rules, id);
   return { meta: data.edition, data, hooks, rules };
 }
 

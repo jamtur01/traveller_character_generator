@@ -159,6 +159,8 @@ export interface CanonData {
   /** Cascade-skill pools (Blade Combat → [Cutlass, ...], etc.). MT
    *  declares many; CT has none and omits the field. */
   cascadeSkills?: Record<string, readonly string[]>;
+  /** Printed cell-label → cascade key aliases (engine/cascadeMap). */
+  cascadeAliases?: Record<string, string>;
   /** Abbreviated → full attribute key map ("Intel" → "intelligence"). */
   attributeAbbreviations?: Record<string, string>;
   /** Printed cell-label → engine skill name aliases (typo / abbreviation

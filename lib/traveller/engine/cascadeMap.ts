@@ -14,9 +14,7 @@ import { getEdition } from "@/lib/traveller/editions";
 /** Printed cell label → cascade key in JSON cascadeSkills. */
 /** Aliases come from the active edition's `cascadeAliases` JSON block. */
 function aliasesFor(editionId: string): Record<string, string> {
-  return (getEdition(editionId).data as {
-    cascadeAliases?: Record<string, string>;
-  }).cascadeAliases ?? {};
+  return getEdition(editionId).data.cascadeAliases ?? {};
 }
 
 /** Resolve a cell label to the cascade pool defined by the edition.
