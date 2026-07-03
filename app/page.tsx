@@ -88,7 +88,6 @@ export default function Home() {
     );
     applySnap(result.snapshot);
     if (opt === "skip") {
-      setAcgPathway("");
       setAcgForm({ service: "army", fleet: "imperialNavy" });
     }
     if (result.hints) {
@@ -242,7 +241,6 @@ export default function Home() {
             <AcgEnlistPhase
               character={character}
               edition={edition}
-              acgPathway={acgPathway}
               form={acgForm}
               setForm={setAcgForm}
               onEnlist={enlist}

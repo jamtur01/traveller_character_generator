@@ -44,18 +44,20 @@ function mercenaryNonCommandoArms(editionId: string): string[] {
 export function AcgEnlistPhase({
   character,
   edition,
-  acgPathway,
   form,
   setForm,
   onEnlist,
 }: {
   character: Character;
   edition: string;
-  acgPathway: string;
   form: AcgFormState;
   setForm: (patch: Partial<AcgFormState>) => void;
   onEnlist: () => void;
 }) {
+  // Pathway is the source of truth on the character (set at startCareer);
+  // deriving it here keeps the form correct regardless of transient page
+  // state (a cleared page-level acgPathway used to blank this whole form).
+  const acgPathway = character.acgPathway ?? "";
   const preCareerBranch = character.acgState?.preCareerBranch ?? null;
   const preCareerCommissioned =
     character.acgState?.preCareerCommission === true;
