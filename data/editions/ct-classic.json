@@ -316,10 +316,10 @@
       "startAge": 18,
       "draft": 1,
       "checks": {
-        "enlistment": { "target": 8, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "education", "min": 9 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 7 }] },
-        "position": { "label": "Commission", "target": 10, "dm": [{ "dm": 1, "attribute": "social", "min": 9 }] },
-        "promotion": { "target": 8, "dm": [{ "dm": 1, "attribute": "education", "min": 8 }] },
+        "enlistment": { "target": 8, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "education", "min": 9 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 7 }] },
+        "position": { "label": "Commission", "target": 10, "dms": [{ "dm": 1, "attribute": "social", "min": 9 }] },
+        "promotion": { "target": 8, "dms": [{ "dm": 1, "attribute": "education", "min": 8 }] },
         "reenlistment": { "target": 6 }
       },
       "ranks": [null, "Ensign", "Lieutenant", "Lt Cmdr", "Commander", "Captain", "Admiral"],
@@ -342,10 +342,10 @@
       "startAge": 18,
       "draft": 2,
       "checks": {
-        "enlistment": { "target": 9, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
-        "survival": { "target": 6, "dm": [{ "dm": 2, "attribute": "endurance", "min": 8 }] },
-        "position": { "label": "Commission", "target": 9, "dm": [{ "dm": 1, "attribute": "education", "min": 7 }] },
-        "promotion": { "target": 9, "dm": [{ "dm": 1, "attribute": "social", "min": 8 }] },
+        "enlistment": { "target": 9, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 6, "dms": [{ "dm": 2, "attribute": "endurance", "min": 8 }] },
+        "position": { "label": "Commission", "target": 9, "dms": [{ "dm": 1, "attribute": "education", "min": 7 }] },
+        "promotion": { "target": 9, "dms": [{ "dm": 1, "attribute": "social", "min": 8 }] },
         "reenlistment": { "target": 6 }
       },
       "ranks": [null, "Lieutenant", "Captain", "Force Cmdr", "Lt Colonel", "Colonel", "Brigadier"],
@@ -368,10 +368,10 @@
       "startAge": 18,
       "draft": 3,
       "checks": {
-        "enlistment": { "target": 5, "dm": [{ "dm": 1, "attribute": "dexterity", "min": 6 }, { "dm": 2, "attribute": "endurance", "min": 5 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "education", "min": 6 }] },
-        "position": { "label": "Commission", "target": 5, "dm": [{ "dm": 1, "attribute": "endurance", "min": 7 }] },
-        "promotion": { "target": 6, "dm": [{ "dm": 1, "attribute": "education", "min": 7 }] },
+        "enlistment": { "target": 5, "dms": [{ "dm": 1, "attribute": "dexterity", "min": 6 }, { "dm": 2, "attribute": "endurance", "min": 5 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "education", "min": 6 }] },
+        "position": { "label": "Commission", "target": 5, "dms": [{ "dm": 1, "attribute": "endurance", "min": 7 }] },
+        "promotion": { "target": 6, "dms": [{ "dm": 1, "attribute": "education", "min": 7 }] },
         "reenlistment": { "target": 7 }
       },
       "ranks": [null, "Lieutenant", "Captain", "Major", "Lt Colonel", "Colonel", "General"],
@@ -394,8 +394,8 @@
       "startAge": 18,
       "draft": 4,
       "checks": {
-        "enlistment": { "target": 7, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 6 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
-        "survival": { "target": 7, "dm": [{ "dm": 2, "attribute": "endurance", "min": 9 }] },
+        "enlistment": { "target": 7, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 6 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 7, "dms": [{ "dm": 2, "attribute": "endurance", "min": 9 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 3 }
@@ -421,10 +421,10 @@
       "startAge": 18,
       "draft": 5,
       "checks": {
-        "enlistment": { "target": 7, "dm": [{ "dm": 1, "attribute": "strength", "min": 7 }, { "dm": 2, "attribute": "intelligence", "min": 6 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 7 }] },
-        "position": { "label": "Commission", "target": 4, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 6 }] },
-        "promotion": { "target": 10, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
+        "enlistment": { "target": 7, "dms": [{ "dm": 1, "attribute": "strength", "min": 7 }, { "dm": 2, "attribute": "intelligence", "min": 6 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 7 }] },
+        "position": { "label": "Commission", "target": 4, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 6 }] },
+        "promotion": { "target": 10, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
         "reenlistment": { "target": 4 }
       },
       "ranks": [null, "4th Officer", "3rd Officer", "2nd Officer", "1st Officer", "Captain", null],
@@ -447,8 +447,8 @@
       "startAge": 18,
       "draft": 6,
       "checks": {
-        "enlistment": { "target": 3, "dm": [] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 9 }] },
+        "enlistment": { "target": 3, "dms": [] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 9 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 5 }
@@ -474,10 +474,10 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 7, "dm": [{ "dm": 1, "attribute": "social", "max": 7 }, { "dm": 2, "attribute": "endurance", "min": 9 }] },
-        "survival": { "target": 6, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 8 }] },
-        "position": { "label": "Position", "target": 9, "dm": [{ "dm": 1, "attribute": "strength", "min": 10 }] },
-        "promotion": { "target": 8, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
+        "enlistment": { "target": 7, "dms": [{ "dm": 1, "attribute": "social", "max": 7 }, { "dm": 2, "attribute": "endurance", "min": 9 }] },
+        "survival": { "target": 6, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 8 }] },
+        "position": { "label": "Position", "target": 9, "dms": [{ "dm": 1, "attribute": "strength", "min": 10 }] },
+        "promotion": { "target": 8, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
         "reenlistment": { "target": 7 }
       },
       "ranks": [null, "Henchman", "Corporal", "Sergeant", "Lieutenant", "Leader", null],
@@ -500,8 +500,8 @@
       "startAge": 14,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 8, "dm": [{ "dm": 1, "attribute": "dexterity", "min": 9 }, { "dm": 2, "attribute": "intelligence", "min": 6 }] },
-        "survival": { "target": 9, "dm": [{ "dmPerTerm": 1, "description": "+1 in first term, +2 in second term, through +7 in seventh term" }] },
+        "enlistment": { "target": 8, "dms": [{ "dm": 1, "attribute": "dexterity", "min": 9 }, { "dm": 2, "attribute": "intelligence", "min": 6 }] },
+        "survival": { "target": 9, "dms": [{ "dmPerTerm": 1, "description": "+1 in first term, +2 in second term, through +7 in seventh term" }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 7 }
@@ -526,10 +526,10 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 6, "dm": [{ "dm": 1, "attribute": "endurance", "min": 10 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "endurance", "min": 8 }] },
-        "position": { "label": "Position", "target": 5, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
-        "promotion": { "target": 6, "dm": [{ "dm": 1, "attribute": "education", "min": 8 }] },
+        "enlistment": { "target": 6, "dms": [{ "dm": 1, "attribute": "endurance", "min": 10 }, { "dm": 2, "attribute": "strength", "min": 8 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "endurance", "min": 8 }] },
+        "position": { "label": "Position", "target": 5, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
+        "promotion": { "target": 6, "dms": [{ "dm": 1, "attribute": "education", "min": 8 }] },
         "reenlistment": { "target": 6 }
       },
       "ranks": [null, "Ensign", "Lieutenant", "Lt Cmdr", "Commander", "Captain", "Admiral"],
@@ -552,10 +552,10 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 8, "dm": [{ "dm": 1, "attribute": "education", "min": 8 }, { "dm": 2, "attribute": "social", "min": 9 }] },
-        "survival": { "target": 3, "dm": [{ "dm": 2, "attribute": "education", "min": 9 }] },
-        "position": { "label": "Position", "target": 5, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 8 }] },
-        "promotion": { "target": 10, "dm": [{ "dm": 1, "attribute": "social", "min": 10 }] },
+        "enlistment": { "target": 8, "dms": [{ "dm": 1, "attribute": "education", "min": 8 }, { "dm": 2, "attribute": "social", "min": 9 }] },
+        "survival": { "target": 3, "dms": [{ "dm": 2, "attribute": "education", "min": 9 }] },
+        "position": { "label": "Position", "target": 5, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 8 }] },
+        "promotion": { "target": 10, "dms": [{ "dm": 1, "attribute": "social", "min": 10 }] },
         "reenlistment": { "target": 5 }
       },
       "ranks": [null, "3d Secretary", "2d Secretary", "1st Secretary", "Counselor", "Minister", "Ambassador"],
@@ -578,8 +578,8 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 9, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "dexterity", "min": 9 }] },
-        "survival": { "target": 3, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 8 }] },
+        "enlistment": { "target": 9, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 8 }, { "dm": 2, "attribute": "dexterity", "min": 9 }] },
+        "survival": { "target": 3, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 8 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 4 }
@@ -604,10 +604,10 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 6, "dm": [{ "dm": 1, "attribute": "strength", "min": 7 }, { "dm": 2, "attribute": "dexterity", "min": 9 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "dexterity", "min": 8 }] },
-        "position": { "label": "Position", "target": 5, "dm": [{ "dm": 1, "attribute": "education", "min": 6 }] },
-        "promotion": { "target": 8, "dm": [{ "dm": 1, "attribute": "education", "min": 8 }] },
+        "enlistment": { "target": 6, "dms": [{ "dm": 1, "attribute": "strength", "min": 7 }, { "dm": 2, "attribute": "dexterity", "min": 9 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "dexterity", "min": 8 }] },
+        "position": { "label": "Position", "target": 5, "dms": [{ "dm": 1, "attribute": "education", "min": 6 }] },
+        "promotion": { "target": 8, "dms": [{ "dm": 1, "attribute": "education", "min": 8 }] },
         "reenlistment": { "target": 6 }
       },
       "ranks": [null, "Pilot", "Flight Leader", "Sqdrn Leader", "Staff Major", "Group Leader", "Air Marshal"],
@@ -630,10 +630,10 @@
       "startAge": 14,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 5, "dm": [{ "dm": 1, "attribute": "endurance", "min": 9 }, { "dm": 2, "attribute": "strength", "min": 10 }] },
-        "survival": { "target": 6, "dm": [{ "dm": 2, "attribute": "strength", "min": 8 }] },
-        "position": { "label": "Position", "target": 6, "dm": [{ "dm": 1, "attribute": "strength", "min": 10 }] },
-        "promotion": { "target": 9, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 6 }] },
+        "enlistment": { "target": 5, "dms": [{ "dm": 1, "attribute": "endurance", "min": 9 }, { "dm": 2, "attribute": "strength", "min": 10 }] },
+        "survival": { "target": 6, "dms": [{ "dm": 2, "attribute": "strength", "min": 8 }] },
+        "position": { "label": "Position", "target": 6, "dms": [{ "dm": 1, "attribute": "strength", "min": 10 }] },
+        "promotion": { "target": 9, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 6 }] },
         "reenlistment": { "target": 6 }
       },
       "ranks": [null, null, "Warrior", null, null, "Chief", null],
@@ -657,10 +657,10 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 5, "dm": [{ "dm": 1, "attribute": "education", "min": 8 }, { "dm": 2, "attribute": "strength", "max": 8 }] },
-        "survival": { "target": 4, "dm": [{ "dm": 2, "attribute": "education", "min": 10 }] },
-        "position": { "label": "Position", "target": 6, "dm": [{ "dm": 1, "attribute": "social", "min": 9 }] },
-        "promotion": { "target": 7, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
+        "enlistment": { "target": 5, "dms": [{ "dm": 1, "attribute": "education", "min": 8 }, { "dm": 2, "attribute": "strength", "max": 8 }] },
+        "survival": { "target": 4, "dms": [{ "dm": 2, "attribute": "education", "min": 10 }] },
+        "position": { "label": "Position", "target": 6, "dms": [{ "dm": 1, "attribute": "social", "min": 9 }] },
+        "promotion": { "target": 7, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 9 }] },
         "reenlistment": { "target": 3, "inverseToLeave": true }
       },
       "ranks": [null, "Clerk", "Supervisor", "Asst Manager", "Manager", "Executive", "Director"],
@@ -683,8 +683,8 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 6, "dm": [{ "dm": 1, "attribute": "social", "max": 8 }, { "dm": 2, "attribute": "endurance", "min": 7 }] },
-        "survival": { "target": 6, "dm": [{ "dm": 2, "attribute": "intelligence", "min": 9 }] },
+        "enlistment": { "target": 6, "dms": [{ "dm": 1, "attribute": "social", "max": 8 }, { "dm": 2, "attribute": "endurance", "min": 7 }] },
+        "survival": { "target": 6, "dms": [{ "dm": 2, "attribute": "intelligence", "min": 9 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 5 }
@@ -710,9 +710,9 @@
       "draft": null,
       "checks": {
         "enlistment": { "target": null, "automaticIf": { "attribute": "social", "min": 10 }, "special": "Automatic and only available with social standing 10+" },
-        "survival": { "target": 3, "dm": [] },
-        "position": { "label": "Position", "target": 5, "dm": [{ "dm": 1, "attribute": "education", "min": 9 }] },
-        "promotion": { "target": 12, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 10 }] },
+        "survival": { "target": 3, "dms": [] },
+        "position": { "label": "Position", "target": 5, "dms": [{ "dm": 1, "attribute": "education", "min": 9 }] },
+        "promotion": { "target": 12, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 10 }] },
         "reenlistment": { "target": 4 }
       },
       "rankBySocial": { "$rule": "CotI p. 8: noble starting rank = Social - 10 (Knight B/11 ... Duke F/15), capped at rank 5; Social floored at 10.", "socialFloor": 10, "rankOffset": -10, "maxRank": 5 },
@@ -746,8 +746,8 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 6, "dm": [{ "dm": 1, "attribute": "intelligence", "min": 9 }, { "dm": 2, "attribute": "education", "min": 10 }] },
-        "survival": { "target": 5, "dm": [{ "dm": 2, "attribute": "education", "min": 9 }] },
+        "enlistment": { "target": 6, "dms": [{ "dm": 1, "attribute": "intelligence", "min": 9 }, { "dm": 2, "attribute": "education", "min": 10 }] },
+        "survival": { "target": 5, "dms": [{ "dm": 2, "attribute": "education", "min": 9 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 5 }
@@ -772,8 +772,8 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": 9, "dm": [{ "dm": 1, "attribute": "dexterity", "min": 10 }, { "dm": 2, "attribute": "endurance", "min": 9 }] },
-        "survival": { "target": 6, "dm": [{ "dm": 2, "attribute": "strength", "min": 10 }] },
+        "enlistment": { "target": 9, "dms": [{ "dm": 1, "attribute": "dexterity", "min": 10 }, { "dm": 2, "attribute": "endurance", "min": 9 }] },
+        "survival": { "target": 6, "dms": [{ "dm": 2, "attribute": "strength", "min": 10 }] },
         "position": null,
         "promotion": null,
         "reenlistment": { "target": 5 }

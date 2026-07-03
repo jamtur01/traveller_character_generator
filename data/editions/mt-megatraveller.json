@@ -822,7 +822,7 @@
       }
     },
     "Travellers'": {
-      "name": "Travellers' Aid Society membership",
+      "displayName": "Travellers' Aid Society membership",
       "repeat": "no effect"
     },
     "Free Trader": {
@@ -915,7 +915,7 @@
       "checks": {
         "enlistment": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -930,7 +930,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -941,7 +941,7 @@
         "position": {
           "label": "Commission",
           "target": 10,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -951,7 +951,7 @@
         },
         "promotion": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1051,7 +1051,7 @@
       "checks": {
         "enlistment": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -1066,7 +1066,7 @@
         },
         "survival": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "endurance",
@@ -1077,7 +1077,7 @@
         "position": {
           "label": "Commission",
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1087,7 +1087,7 @@
         },
         "promotion": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -1187,7 +1187,7 @@
       "checks": {
         "enlistment": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "dexterity",
@@ -1202,7 +1202,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "education",
@@ -1213,7 +1213,7 @@
         "position": {
           "label": "Commission",
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "endurance",
@@ -1223,7 +1223,7 @@
         },
         "promotion": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1322,7 +1322,7 @@
       "checks": {
         "enlistment": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -1337,7 +1337,7 @@
         },
         "survival": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "endurance",
@@ -1453,7 +1453,7 @@
       "checks": {
         "enlistment": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "strength",
@@ -1468,7 +1468,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "dexterity",
@@ -1479,7 +1479,7 @@
         "position": {
           "label": "Commission",
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1489,7 +1489,7 @@
         },
         "promotion": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1600,7 +1600,7 @@
       "checks": {
         "enlistment": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "endurance",
@@ -1615,7 +1615,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "endurance",
@@ -1626,7 +1626,7 @@
         "position": {
           "label": "Commission",
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -1636,7 +1636,7 @@
         },
         "promotion": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1735,7 +1735,7 @@
       "checks": {
         "enlistment": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -1750,7 +1750,7 @@
         },
         "survival": {
           "target": 4,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -1761,7 +1761,7 @@
         "position": {
           "label": "Commission",
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1771,7 +1771,7 @@
         },
         "promotion": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -1872,7 +1872,7 @@
       "checks": {
         "enlistment": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -1887,7 +1887,7 @@
         },
         "survival": {
           "target": 4,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -1995,7 +1995,7 @@
       "checks": {
         "enlistment": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -2010,7 +2010,7 @@
         },
         "survival": {
           "target": 4,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "education",
@@ -2021,7 +2021,7 @@
         "position": {
           "label": "Commission",
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2031,7 +2031,7 @@
         },
         "promotion": {
           "target": 10,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -2137,7 +2137,7 @@
       "checks": {
         "enlistment": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -2152,7 +2152,7 @@
         },
         "survival": {
           "target": 4,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "education",
@@ -2163,7 +2163,7 @@
         "position": {
           "label": "Commission",
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -2173,7 +2173,7 @@
         },
         "promotion": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2274,7 +2274,7 @@
       "checks": {
         "enlistment": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2289,7 +2289,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "education",
@@ -2397,18 +2397,18 @@
       "checks": {
         "enlistment": {
           "target": null,
-          "dm": [],
+          "dms": [],
           "automaticIf": { "attribute": "social", "min": 10 },
           "special": "Characters with Social Standing 10+ are eligible for Noble service; enlistment is automatic. Initial rank derives from Social Standing once Position is achieved."
         },
         "survival": {
           "target": 4,
-          "dm": []
+          "dms": []
         },
         "position": {
           "label": "Commission",
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "education",
@@ -2418,7 +2418,7 @@
         },
         "promotion": {
           "target": 12,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2519,7 +2519,7 @@
       "checks": {
         "enlistment": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "strength",
@@ -2534,7 +2534,7 @@
         },
         "survival": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -2545,7 +2545,7 @@
         "position": {
           "label": "Commission",
           "target": 4,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2555,7 +2555,7 @@
         },
         "promotion": {
           "target": 10,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2654,7 +2654,7 @@
       "checks": {
         "enlistment": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "dexterity",
@@ -2669,7 +2669,7 @@
         },
         "survival": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dmPerTerm": 1,
               "description": "+1 per term served (Belter only)"
@@ -2782,7 +2782,7 @@
       "checks": {
         "enlistment": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -2797,7 +2797,7 @@
         },
         "survival": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -2808,7 +2808,7 @@
         "position": {
           "label": "Commission",
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "strength",
@@ -2818,7 +2818,7 @@
         },
         "promotion": {
           "target": 8,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",
@@ -2918,7 +2918,7 @@
       "checks": {
         "enlistment": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "social",
@@ -2933,7 +2933,7 @@
         },
         "survival": {
           "target": 7,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "intelligence",
@@ -3041,7 +3041,7 @@
       "checks": {
         "enlistment": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "dexterity",
@@ -3056,7 +3056,7 @@
         },
         "survival": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "strength",
@@ -3164,7 +3164,7 @@
       "checks": {
         "enlistment": {
           "target": 5,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "endurance",
@@ -3179,7 +3179,7 @@
         },
         "survival": {
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 2,
               "attribute": "strength",
@@ -3190,7 +3190,7 @@
         "position": {
           "label": "Commission",
           "target": 6,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "strength",
@@ -3200,7 +3200,7 @@
         },
         "promotion": {
           "target": 9,
-          "dm": [
+          "dms": [
             {
               "dm": 1,
               "attribute": "intelligence",

@@ -206,10 +206,16 @@ const DMRuleSchema = z.strictObject({
 
 const CheckSchema = z.looseObject({
   target: z.number().nullable(),
-  dm: z.array(DMRuleSchema).optional(),
+  dms: z.array(DMRuleSchema).optional(),
   label: z.string().optional(),
   inverseToLeave: z.boolean().optional(),
   special: z.string().optional(),
+  // CotI auto-enrolment gate (e.g. Nobles): enlistment succeeds automatically
+  // when the named attribute meets `min`.
+  automaticIf: z.looseObject({
+    attribute: z.string(),
+    min: z.number(),
+  }).optional(),
 });
 
 const AutoSkillEntrySchema = z.looseObject({
@@ -231,6 +237,8 @@ const ServiceDataSchema = z.looseObject({
   displayName: z.string(),
   startAge: z.number(),
   draft: z.number().nullable(),
+  // MT-only explicit skills-per-term (PM p. 60 service tables).
+  skillsPerTerm: z.number().optional(),
   checks: z.looseObject({
     enlistment: CheckSchema,
     survival: CheckSchema,
@@ -243,6 +251,12 @@ const ServiceDataSchema = z.looseObject({
   automaticSkills: z.array(AutoSkillEntrySchema),
   hooks: z.looseObject({
     doPromotion: z.string().optional(),
+  }).optional(),
+  // CotI nobles: starting rank derives from Social Standing each term.
+  rankBySocial: z.looseObject({
+    socialFloor: z.number(),
+    rankOffset: z.number(),
+    maxRank: z.number(),
   }).optional(),
   skillTables: z.looseObject({
     personalDevelopment: SkillTableSchema,
@@ -389,7 +403,6 @@ const BenefitDetailSchema = z.looseObject({
   valuableValueRoll: z.string().optional(),
   choices: z.union([z.string(), z.array(z.string())]).optional(),
   repeatMayBecomeSkill: z.boolean().optional(),
-  name: z.string().optional(),
 });
 
 const SkillTableMetaSchema = strictCitations({

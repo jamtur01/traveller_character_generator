@@ -4,6 +4,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import type { ServiceKey } from "@/lib/traveller/types";
+import type { Predicate } from "@/lib/traveller/engine/predicate";
 
 export interface EditionMeta {
   id: string;
@@ -28,20 +29,17 @@ export interface EditionMeta {
   supportsInteractive?: boolean;
 }
 
-export interface DMRule {
+export interface DMRule extends Predicate {
   /** DM added when the predicate matches (attribute band). */
   dm?: number;
   /** DM added once per completed term (×terms) — Belter survival, PM p. 16. */
   dmPerTerm?: number;
-  attribute?: string;
-  min?: number;
-  max?: number;
   description?: string;
 }
 
 export interface CheckData {
   target: number | null;
-  dm?: DMRule[];
+  dms?: DMRule[];
   label?: string;
   inverseToLeave?: boolean;
   special?: string;
@@ -70,6 +68,10 @@ export interface ServiceData {
   displayName: string;
   startAge: number;
   draft: number | null;
+  /** MT declares skills-per-term explicitly (PM p. 60 service tables). When
+   *  set, allocateSkills uses it directly instead of the CT initial/subsequent
+   *  fallback. Absent for CT (which rides rules.skillEligibility). */
+  skillsPerTerm?: number;
   checks: {
     enlistment: CheckData;
     survival: CheckData;
@@ -119,7 +121,6 @@ export interface BenefitDetail {
   valuableValueRoll?: string;
   choices?: string | string[];
   repeatMayBecomeSkill?: boolean;
-  name?: string;
   basis?: string;
 }
 

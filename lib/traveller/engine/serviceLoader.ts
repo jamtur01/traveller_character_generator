@@ -5,7 +5,7 @@
 
 import { type Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
-import type { Attributes, ServiceDef } from "@/lib/traveller/types";
+import type { Attributes, CheckResult, ServiceDef } from "@/lib/traveller/types";
 import { cascadePoolForLabel } from "./cascadeMap";
 import type {
   AutoSkillEntry,
@@ -47,7 +47,7 @@ export function buildServiceDef(
   const reenlistThrow = serviceData.checks.reenlistment.target ?? 0;
 
   const enlistmentDM = (a: Attributes): number => evaluateDM(
-    serviceData.checks.enlistment.dm,
+    serviceData.checks.enlistment.dms,
     // evaluateDM accepts a narrow DmContext ({attributes, terms}); no
     // cast needed. Enlistment is pre-term so terms=0.
     { attributes: a, terms: 0 },
@@ -74,7 +74,7 @@ export function buildServiceDef(
   const inverseReenlist = serviceData.checks.reenlistment.inverseToLeave;
 
   const checkSurvival = (ch: Character): boolean => {
-    let dm = evaluateDM(serviceData.checks.survival.dm, ch);
+    let dm = evaluateDM(serviceData.checks.survival.dms, ch);
     // PM p. 15: anagathics user takes a survival DM (a steeper one for
     // the noble service, since "society generally frowns on nobles who
     // take anagathics"). The DM applies for every term in which the
@@ -94,22 +94,28 @@ export function buildServiceDef(
     return succeeded;
   };
 
-  const checkCommission = (ch: Character): boolean => {
-    if (!serviceData.checks.position || commissionThrow === undefined) return false;
-    const dm = evaluateDM(serviceData.checks.position.dm, ch);
+  const checkCommission = (ch: Character): CheckResult => {
+    if (!serviceData.checks.position || commissionThrow === undefined) {
+      return { passed: false, margin: 0 };
+    }
+    const dm = evaluateDM(serviceData.checks.position.dms, ch);
     const sv = ch.rng.roll(2);
-    const succeeded = sv + dm >= commissionThrow;
+    const margin = sv + dm - commissionThrow;
+    const succeeded = margin >= 0;
     ch.log(ev.roll("Commission", sv, dm, commissionThrow, succeeded));
-    return succeeded;
+    return { passed: succeeded, margin };
   };
 
-  const checkPromotion = (ch: Character): boolean => {
-    if (!serviceData.checks.promotion || promotionThrow === undefined) return false;
-    const dm = evaluateDM(serviceData.checks.promotion.dm, ch);
+  const checkPromotion = (ch: Character): CheckResult => {
+    if (!serviceData.checks.promotion || promotionThrow === undefined) {
+      return { passed: false, margin: 0 };
+    }
+    const dm = evaluateDM(serviceData.checks.promotion.dms, ch);
     const sv = ch.rng.roll(2);
-    const succeeded = sv + dm >= promotionThrow;
+    const margin = sv + dm - promotionThrow;
+    const succeeded = margin >= 0;
     ch.log(ev.roll("Promotion", sv, dm, promotionThrow, succeeded));
-    return succeeded;
+    return { passed: succeeded, margin };
   };
 
   // --- doPromotion: walk automaticSkills + call edition hook ------------
@@ -221,6 +227,9 @@ export function buildServiceDef(
   if (commissionThrow !== undefined) def.commissionThrow = commissionThrow;
   if (promotionThrow !== undefined) def.promotionThrow = promotionThrow;
   if (inverseReenlist) def.inverseReenlist = inverseReenlist;
+  if (serviceData.skillsPerTerm !== undefined) {
+    def.skillsPerTerm = serviceData.skillsPerTerm;
+  }
   return def;
 }
 

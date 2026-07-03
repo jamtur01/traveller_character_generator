@@ -2,11 +2,10 @@
 // config.doubleBonusOvershoot mirrors commission step's MT semantics — the
 // same roll's margin grants the second bonus, not a fresh roll.
 
-import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
-export const promotionStep: StepFn = ({ ch, service, config, edition }) => {
+export const promotionStep: StepFn = ({ ch, service, config }) => {
   if (ch.deceased) return;
   if (ch.shortTermThisTerm) {
     ch.log(ev.statusChange(
@@ -19,21 +18,14 @@ export const promotionStep: StepFn = ({ ch, service, config, edition }) => {
   if (ch.rank >= maxRank) return;
   if (service.promotionThrow === undefined) return;
 
-  const data = edition.data.services[ch.service];
-  const dm = data?.checks.promotion
-    ? evaluateDM(data.checks.promotion.dm, ch)
-    : 0;
-  const r = ch.rng.roll(2);
-  const total = r + dm;
-  const succeeded = total >= service.promotionThrow;
-  ch.log(ev.roll("Promotion", r, dm, service.promotionThrow, succeeded));
-  if (!succeeded) return;
+  const { passed, margin } = service.checkPromotion(ch);
+  if (!passed) return;
 
   ch.rank += 1;
   ch.skillPoints += 1;
 
   const overshootN = config.doubleBonusOvershoot as number | undefined;
-  if (overshootN && total >= service.promotionThrow + overshootN) {
+  if (overshootN && margin >= overshootN) {
     ch.skillPoints += 1;
     ch.log(ev.bonusSkillPoint("Promotion", overshootN));
   }

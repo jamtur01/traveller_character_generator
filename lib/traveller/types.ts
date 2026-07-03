@@ -62,6 +62,17 @@ export type ChargenStatus =
   | { kind: "deceased"; reason?: string }
   | { kind: "mustered" };
 
+/**
+ * Result of a commission/promotion throw. `margin` = roll + DM - target, so
+ * a non-negative margin means the throw passed. Callers read `passed` for the
+ * outcome and `margin` for MT's "double skill on overshoot by N" bonus
+ * (PM p. 17), which keys off the same roll rather than a fresh one.
+ */
+export interface CheckResult {
+  passed: boolean;
+  margin: number;
+}
+
 export interface ServiceDef {
   serviceName: string;
   memberName: string;
@@ -80,8 +91,8 @@ export interface ServiceDef {
   ranks: Record<number, string>;
   getServiceSkills: (ch: Character) => string[];
   checkSurvival: (ch: Character) => boolean;
-  checkCommission: (ch: Character) => boolean;
-  checkPromotion: (ch: Character) => boolean;
+  checkCommission: (ch: Character) => CheckResult;
+  checkPromotion: (ch: Character) => CheckResult;
   doPromotion: (ch: Character) => void;
   musterCash: Record<number, number>;
   musterBenefits: (ch: Character, dm: number) => void;
