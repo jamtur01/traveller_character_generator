@@ -40,7 +40,8 @@ export function doReenlistmentStep(ch: Character): void {
   const reenlistRoll = ch.rng.roll(2);
   const target = def.reenlistThrow;
   const reenlistRules = getEdition(ch.editionId).rules.reenlistment;
-  if (reenlistRoll === (reenlistRules?.mandatoryOnExactRoll ?? 12)) {
+  const mandatory = reenlistRules?.mandatoryOnExactRoll;
+  if (mandatory !== undefined && reenlistRoll === mandatory) {
     ch.enterMandatoryReenlist();
     ch.log(ev.reenlistment("mandatory", reenlistRoll, target));
     return;

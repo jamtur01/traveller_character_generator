@@ -185,6 +185,13 @@ export function rollSpecialAssignment(
   return sa;
 }
 
+/** The reenlistment roll that forces a mandatory extra term, per the
+ *  edition's rules.reenlistment.mandatoryOnExactRoll (PM p. 17 / TTB p. 18).
+ *  Undefined when the edition declares no such rule. */
+export function mandatoryReenlistRoll(ch: Character): number | undefined {
+  return getEdition(ch.editionId).rules.reenlistment?.mandatoryOnExactRoll;
+}
+
 /** Shared reenlist skeleton: roll 2D + structured DMs vs `target`, log the
  *  outcome, and on a pass (or a mandatory natural 12) run `onContinue` — the
  *  pathway's role-change offer. Returns true if the character keeps serving. */
@@ -194,9 +201,11 @@ export function runReenlist(
 ): boolean {
   const dm = applyStructuredDms(opts.dms, ch);
   const r = ch.rng.roll(2);
-  const keep = r === 12 || r + dm >= opts.target;
+  const mandatory = mandatoryReenlistRoll(ch);
+  const isMandatory = mandatory !== undefined && r === mandatory;
+  const keep = isMandatory || r + dm >= opts.target;
   ch.log(ev.roll("Reenlistment", r, dm, opts.target, keep, opts.label));
-  if (r === 12) {
+  if (isMandatory) {
     ch.enterMandatoryReenlist();
     opts.onContinue();
     return true;

@@ -119,9 +119,7 @@ export function musterOutPay(ch: Character): void {
   const eligibleAfter = retirement?.eligibleAfterCompletedTerm ?? 5;
   const basePension = retirement?.basePensionCredits ?? 4000;
   const perTerm = retirement?.pensionCreditsPerTerm ?? 2000;
-  const excluded = new Set(
-    retirement?.excludedServices ?? ["scouts", "other"],
-  );
+  const excluded = new Set<string>(retirement?.excludedServices ?? []);
   const anagathicsExcluded = retirement?.anagathicTermsExcluded ?? false;
   const qualifyingTerms = anagathicsExcluded
     ? ch.terms - (ch.anagathicsBenefitForfeitedTerms ?? 0)

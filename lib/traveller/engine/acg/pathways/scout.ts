@@ -27,7 +27,7 @@ import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
-import { createPathwaySpecRegistry, advanceRankRow } from "./shared";
+import { createPathwaySpecRegistry, advanceRankRow, mandatoryReenlistRoll } from "./shared";
 import { recordTransfer } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 
@@ -483,9 +483,11 @@ export function scoutReenlist(ch: Character): boolean {
   }
   const r = ch.rng.roll(2);
   const target = data.reenlistment.target;
-  const succeeded = r === 12 || r >= target;
+  const mandatory = mandatoryReenlistRoll(ch);
+  const isMandatory = mandatory !== undefined && r === mandatory;
+  const succeeded = isMandatory || r >= target;
   ch.log(ev.roll("Reenlistment", r, 0, target, succeeded, "scout"));
-  if (r === 12) {
+  if (isMandatory) {
     ch.enterMandatoryReenlist();
     return true;
   }

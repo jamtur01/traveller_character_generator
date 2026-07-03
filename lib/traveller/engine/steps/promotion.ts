@@ -15,7 +15,8 @@ export const promotionStep: StepFn = ({ ch, service, config, edition }) => {
     return;
   }
   if (!ch.commissioned) return;
-  if (ch.rank >= 6) return;
+  const maxRank = Math.max(...Object.keys(service.ranks).map(Number));
+  if (ch.rank >= maxRank) return;
   if (service.promotionThrow === undefined) return;
 
   const data = edition.data.services[ch.service];
