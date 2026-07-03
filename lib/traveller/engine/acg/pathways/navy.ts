@@ -15,7 +15,7 @@ import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
-  applyDmRules, applyStructuredDms, labelToColumnKey, lookupResolution,
+  applyStructuredDms, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
@@ -27,7 +27,10 @@ import {
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
-import { createPathwaySpecRegistry, resetCombatTermFlags } from "./shared";
+import {
+  createPathwaySpecRegistry, resetCombatTermFlags,
+  combatFinalize, combatResolutionDms,
+} from "./shared";
 import { event as ev } from "../../../history";
 
 const PATHWAY = "navy";
@@ -406,20 +409,8 @@ export function navyRollAssignment(ch: Character): string {
 const NAVY_CALLBACKS: PathwayCallbacks = {
   promoteNavy: (ctx) => promoteNavy(ctx.ch),
   navyBranchSkillRoll: (ctx) => navyBranchSkillRoll(ctx.ch),
-  navyFinalize: (ctx) => {
-    const data = dataFor(ctx.ch);
-    const combat = (data.combatAssignments ?? []).includes(ctx.assignment);
-    if (combat) {
-      ctx.ch.requireAcgState().combatRibbons += 1;
-      ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
-      const acg = ctx.ch.requireAcgState();
-      if (acg.inCommand && acg.isOfficer) {
-        acg.commandClusters += 1;
-        ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
-      }
-    }
-    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
-  },
+  navyFinalize: (ctx) =>
+    combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };
 
 const REGISTRY = createPathwaySpecRegistry<NavyData & { combatAssignments?: readonly string[] }>({
@@ -476,20 +467,7 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   }
 
   const res = lookupResolution(resTable, assignment);
-  // decorationDmStrategy: negative = take -|N| on survival in exchange
-  // for +|N| on decoration; positive reverses. Symmetric handling
-  // matches mercenary (previously navy ignored the positive half and
-  // silently dropped the player's "+1/-1" or "+2/-2" choice).
-  const decStrategy = ch.requireAcgState().decorationDmStrategy;
-  const survivalDmFromStrategy =
-    -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
-  const dms = {
-    survival: applyDmRules(resTable.dms, ch, "survival") + survivalDmFromStrategy,
-    decoration: applyDmRules(resTable.dms, ch, "decoration")
-      + Math.abs(decStrategy) * (decStrategy < 0 ? 1 : -1),
-    promotion: applyDmRules(resTable.dms, ch, "promotion"),
-    skills: applyDmRules(resTable.dms, ch, "skills"),
-  };
+  const dms = combatResolutionDms(ch, resTable);
   runPhases(getNavySpec(ch), { ch, assignment, resTable, res, dms });
 }
 

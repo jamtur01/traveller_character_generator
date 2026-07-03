@@ -8,11 +8,13 @@
 
 import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
-import type { PathwaySpec } from "../phaseRunner";
+import type { PathwaySpec, ResolveContext } from "../phaseRunner";
 import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
   type ResolveAssignmentConfig,
 } from "../jsonPhases";
+import { applyDmRules, type StructuredDm } from "../tables";
+import { event as ev } from "../../../history";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
@@ -95,4 +97,38 @@ export function resetCombatTermFlags(ch: Character): void {
   if (!ch.acgState) return;
   ch.acgState.injuredThisYear = false;
   ch.acgState.decorationDmStrategy = 0;
+}
+
+/** Shared finalize for the two combat pathways (mercenary, navy): award a
+ *  Combat Ribbon for a combat assignment (+ a Command Cluster if the
+ *  officer was in command), then record the assignment in history. */
+export function combatFinalize(
+  ctx: ResolveContext, combatAssignments: readonly string[],
+): void {
+  const acg = ctx.ch.requireAcgState();
+  if (combatAssignments.includes(ctx.assignment)) {
+    acg.combatRibbons += 1;
+    ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
+    if (acg.inCommand && acg.isOfficer) {
+      acg.commandClusters += 1;
+      ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
+    }
+  }
+  acg.assignmentHistory.push(ctx.assignment);
+}
+
+/** Per-phase resolution DMs for the two combat pathways. decorationDmStrategy
+ *  is the player's survival↔decoration tradeoff (PM p. 49 poltroonery): a
+ *  positive value trades decoration DM for survival DM (cowardice), a
+ *  negative value the reverse (heroism). */
+export function combatResolutionDms(
+  ch: Character, resTable: { dms?: Array<string | StructuredDm> },
+): { survival: number; decoration: number; promotion: number; skills: number } {
+  const decStrategy = ch.requireAcgState().decorationDmStrategy;
+  return {
+    survival: applyDmRules(resTable.dms, ch, "survival") + decStrategy,
+    decoration: applyDmRules(resTable.dms, ch, "decoration") - decStrategy,
+    promotion: applyDmRules(resTable.dms, ch, "promotion"),
+    skills: applyDmRules(resTable.dms, ch, "skills"),
+  };
 }

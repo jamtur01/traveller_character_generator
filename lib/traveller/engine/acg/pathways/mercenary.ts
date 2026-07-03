@@ -37,7 +37,10 @@ import {
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
-import { createPathwaySpecRegistry, resetCombatTermFlags } from "./shared";
+import {
+  createPathwaySpecRegistry, resetCombatTermFlags,
+  combatFinalize, combatResolutionDms,
+} from "./shared";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../state";
 
@@ -281,20 +284,8 @@ export function mercenaryRollAssignment(ch: Character): string {
 const MERCENARY_CALLBACKS: PathwayCallbacks = {
   promoteMercenary: (ctx) => promoteMercenary(ctx.ch),
   rollMercenarySkill: (ctx) => rollMercenarySkill(ctx.ch),
-  mercenaryFinalize: (ctx) => {
-    const data = dataFor(ctx.ch);
-    const combat = (data.combatAssignments ?? []).includes(ctx.assignment);
-    if (combat) {
-      ctx.ch.requireAcgState().combatRibbons += 1;
-      ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
-      const acg = ctx.ch.requireAcgState();
-      if (acg.inCommand && acg.isOfficer) {
-        acg.commandClusters += 1;
-        ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
-      }
-    }
-    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
-  },
+  mercenaryFinalize: (ctx) =>
+    combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };
 
 const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
@@ -332,17 +323,7 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   }
   const res = lookupResolution(resTable, assignment);
 
-  // decorationDmStrategy maps to survival/decoration DM offsets. Negative
-  // strategy = take -N on survival, +N on decoration.
-  const decStrategy = ch.requireAcgState().decorationDmStrategy;
-  const survivalDmFromStrategy = -Math.abs(decStrategy) * Math.sign(decStrategy === 0 ? 0 : -decStrategy);
-  const dms = {
-    survival: applyDmRules(resTable.dms, ch, "survival") + survivalDmFromStrategy,
-    decoration: applyDmRules(resTable.dms, ch, "decoration")
-      + Math.abs(decStrategy) * (decStrategy < 0 ? 1 : -1),
-    promotion: applyDmRules(resTable.dms, ch, "promotion"),
-    skills: applyDmRules(resTable.dms, ch, "skills"),
-  };
+  const dms = combatResolutionDms(ch, resTable);
   runPhases(getSpec(ch), { ch, assignment, resTable, res, dms });
 }
 
