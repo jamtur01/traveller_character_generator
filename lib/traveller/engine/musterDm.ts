@@ -16,10 +16,7 @@ interface CashTableDmWhen {
 }
 
 interface CashTableDm {
-  /** Legacy: free-text condition. */
-  condition?: string;
-  /** Structured: discriminated by retired/skillAtLeast. */
-  when?: CashTableDmWhen;
+  when: CashTableDmWhen;
   dm: number;
   services?: string[];
 }
@@ -47,7 +44,7 @@ export function cashDmFor(ch: Character): number {
   let total = 0;
   for (const c of r.cashTableDm) {
     if (c.services && !c.services.includes(ch.service)) continue;
-    if (c.when ? whenMatches(c.when, ch) : conditionMatches(c.condition ?? "", ch)) {
+    if (whenMatches(c.when, ch)) {
       total += c.dm;
     }
   }
@@ -81,20 +78,4 @@ export function maxCashRolls(ch: Character): number {
   const cap =
     getEdition(ch.editionId).rules.anagathics?.cashRollCap ?? 2;
   return Math.min(cap, base);
-}
-
-/** Interpret a JSON condition string against the character. The conditions
- *  used in canonical data are: "Gambling-1 or better", "Prospecting-1 or
- *  better", "Retired". Adding new conditions = add a branch here. */
-function conditionMatches(condition: string, ch: Character): boolean {
-  const c = condition.trim();
-  if (c === "Retired") return ch.retired;
-  // "Skill-N or better"
-  const m = c.match(/^([A-Za-z' -]+)-(\d+)(?:\s+or better)?$/);
-  if (m) {
-    const skill = m[1]!.trim();
-    const level = parseInt(m[2]!, 10);
-    return ch.checkSkillLevel(skill, level);
-  }
-  return false;
 }

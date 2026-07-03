@@ -73,14 +73,13 @@ export const RulesSchema = z.looseObject({
     rankBands: z.array(RankBandSchema).optional(),
     rankExtraRolls: z.array(RankExtraRollSchema).optional(),
     cashTableDm: z.array(z.looseObject({
-      condition: z.string().optional(),
       when: z.looseObject({
         retired: z.boolean().optional(),
         skillAtLeast: z.looseObject({
           skill: z.string(),
           level: z.number(),
         }).optional(),
-      }).optional(),
+      }),
       dm: z.number(),
       services: z.array(z.string()).optional(),
     })).optional(),
