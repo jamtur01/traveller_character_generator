@@ -5,7 +5,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
 import {
-  spendBrowniePoints, tryMitigate,
+  spendBrowniePoints, tryMitigate, runCourtMartial,
 } from "../lib/traveller/engine/acg/awards";
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -177,5 +177,55 @@ describe("End-to-end: BP saves a character's life", () => {
     mercenaryResolveAssignment(c, "Raid");
     expect(c.acgState!.browniePoints).toBe(2); // BPs untouched
     expect(c.activeDuty).toBe(false);          // invalided
+  });
+});
+
+// H5 regression — court-martial BP mitigation could never reach the two
+// best outcomes.
+//
+// Bug: the mitigation loop was `while (r > 1)`, so spending BPs could push
+// the result down to roll 1 ("Reprimand; -3") at best — roll 0 ("Reprimand;
+// -1") and roll -1 ("Case dismissed") were unreachable no matter how many
+// BPs were available. The fix drives to `Math.min(dieResults.roll)` (= -1),
+// spending one BP per step within the pool.
+//
+// Determinism: enlisted characters skip the officer guilt-avoid step, so the
+// only die roll is the 1D result roll. Math.random pinned to d6 = 6 makes
+// that raw result 6 (no situational DMs at rank E4, no assignment passed).
+// "Case dismissed" / "Reprimand" apply no further rolls.
+//
+// Teeth: under the old cap the outcome stopped at roll 1 ("Reprimand; -3"),
+// spending 5 BP (test 1) or leaving 1 BP (test 2). Both the outcome string
+// and the exact BP accounting below fail against that behavior.
+describe("H5: court-martial BP mitigation reaches the lowest defined outcome", () => {
+  it("ample BP drives the result to 'Case dismissed' (roll -1)", () => {
+    const c = freshAcgChar(20);
+    c.acgState!.rankCode = "E4"; // enlisted → auto-guilty, no guilt-avoid roll
+    c.acgState!.bpAutoPolicy = "conservative";
+    vi.spyOn(Math, "random").mockReturnValue(5 / 6 + 0.001); // d6 = 6 → raw r = 6
+    runCourtMartial(c);
+    const cm = c.events.find((e) => e.kind === "courtMartial");
+    expect(cm).toMatchObject({ kind: "courtMartial", result: "Case dismissed" });
+    // 6 → -1 is 7 steps down: 7 BP spent from 20, leaving 13.
+    expect(c.acgState!.browniePoints).toBe(13);
+    expect(c.acgState!.browniePointsSpent).toBe(7);
+  });
+
+  it("exactly 6 BP reaches 'Reprimand; -1 to next promotion' (roll 0)", () => {
+    const c = freshAcgChar(6);
+    c.acgState!.rankCode = "E4";
+    c.acgState!.bpAutoPolicy = "aggressive";
+    vi.spyOn(Math, "random").mockReturnValue(5 / 6 + 0.001); // d6 = 6 → raw r = 6
+    runCourtMartial(c);
+    const cm = c.events.find((e) => e.kind === "courtMartial");
+    expect(cm).toMatchObject({
+      kind: "courtMartial",
+      result: "Reprimand; -1 to next promotion",
+    });
+    // 6 → 0 is 6 steps down: all 6 BP spent (loop stops when the pool empties).
+    expect(c.acgState!.browniePoints).toBe(0);
+    expect(c.acgState!.browniePointsSpent).toBe(6);
+    // Roll-0 reprimand applies a -1 penalty to the next promotion roll.
+    expect(c.acgState!.nextPromotionPenalty).toBe(-1);
   });
 });

@@ -195,9 +195,12 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   for (let i = 0; i < dieN; i++) dieTotal += roll(1);
   let r = dieTotal + dm;
   // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
-  // Auto modes drive the result toward Dismissed (r=1) within available BP.
+  // Auto modes drive the result toward the best outcome — the lowest
+  // defined die result (Case dismissed, r = -1 per PM p. 47) — spending
+  // one BP per step down within the available pool.
   if (ch.acgState && ch.acgState.bpAutoPolicy !== "manual") {
-    while (r > 1 && ch.acgState.browniePoints > 0) {
+    const bestRoll = Math.min(...cm.dieResults.map((o) => o.roll));
+    while (r > bestRoll && ch.acgState.browniePoints > 0) {
       ch.acgState.browniePoints -= 1;
       ch.acgState.browniePointsSpent += 1;
       r -= 1;
