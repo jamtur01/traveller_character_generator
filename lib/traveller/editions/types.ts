@@ -10,6 +10,8 @@ export interface EditionMeta {
   id: string;
   name: string;
   displayName: string;
+  /** Player-facing edition summary shown on the Start screen. */
+  description?: string;
   rulebooks: string[];
   year?: number;
   /**

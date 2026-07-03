@@ -9,6 +9,7 @@
     ],
     "year": 1987,
     "status": "active",
+    "description": "MegaTraveller adds homeworld generation, eighteen services (incl. Belters, Doctors, Pirates, Nobles), and an Advanced Character Generation system with brownie points, decorations, court martial, and per-year assignment cycles across four pathways.",
     "supportsInteractive": true,
     "source": "Extracted from MT_MegaTraveller_Players_Manual.pdf, primarily Basic Character Creation printed pages 20-25, with lifecycle rules cross-checked against printed pages 14-17 and aging rules on printed page 47. Cross-validated against https://traveller.chromeblack.com/files/mtpcgen.html — all 18 services agree on every cell."
   },

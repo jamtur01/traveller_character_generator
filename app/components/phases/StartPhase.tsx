@@ -7,14 +7,9 @@ import {
   CARD, SECTION_LABEL, FormField, FormSelect, PrimaryButton,
 } from "@/app/components/ui";
 
-function editionSummary(id: string): string {
-  if (id === "ct-classic") {
-    return "Classic Traveller: six services (Navy/Marines/Army/Scouts/Merchants/Other) plus Citizens of the Imperium expansions. Roll, enlist, run four-year terms, muster out. The original 1981 chargen.";
-  }
-  if (id === "mt-megatraveller") {
-    return "MegaTraveller adds homeworld generation, eighteen services (incl. Belters, Doctors, Pirates, Nobles), and an Advanced Character Generation system with brownie points, decorations, court martial, and per-year assignment cycles across four pathways.";
-  }
-  return "Edition data extracted from its rulebook. See data/editions for details.";
+function editionSummary(meta: EditionMeta): string {
+  return meta.description
+    ?? "Edition data extracted from its rulebook. See data/editions for details.";
 }
 
 function workflowStepsFor(editionId: string, useAcg: boolean): string[] {
@@ -77,7 +72,7 @@ function EditionCard({
   onSelect: () => void;
 }) {
   const dataOnly = meta.status === "data-only";
-  const summary = editionSummary(meta.id);
+  const summary = editionSummary(meta);
   return (
     <button
       type="button"

@@ -6,7 +6,8 @@
     "displayName": "Classic Traveller (TTB + CotI)",
     "rulebooks": ["The Traveller Book", "Citizens of the Imperium"],
     "year": 1981,
-    "status": "active"
+    "status": "active",
+    "description": "Classic Traveller: six services (Navy/Marines/Army/Scouts/Merchants/Other) plus Citizens of the Imperium expansions. Roll, enlist, run four-year terms, muster out. The original 1981 chargen."
   },
   "title": "Classic Traveller character generation data",
   "extractionNotes": [
