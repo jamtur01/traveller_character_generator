@@ -122,7 +122,7 @@ export function combatFinalize(
  *  positive value trades decoration DM for survival DM (cowardice), a
  *  negative value the reverse (heroism). */
 export function combatResolutionDms(
-  ch: Character, resTable: { dms?: Array<string | StructuredDm> },
+  ch: Character, resTable: { dms?: StructuredDm[] },
 ): { survival: number; decoration: number; promotion: number; skills: number } {
   const decStrategy = ch.requireAcgState().decorationDmStrategy;
   return {

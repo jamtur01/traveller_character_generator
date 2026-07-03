@@ -74,12 +74,12 @@ export interface MercenaryData {
     marines: { target: number; dms: Array<{ attribute: string; min: number; dm: number }>; startingRank: string };
     draft: { die: string; results: Record<string, string> };
   };
-  commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: string[] };
+  commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   assignment: { columns: string[]; rows: Array<Record<string, number | string>> };
   assignmentResolution: Record<string, {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: string[];
+    dms?: StructuredDm[];
     notes?: string[];
   }>;
   specialAssignments: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };

@@ -97,7 +97,7 @@ export interface MerchantData {
   assignmentResolution: Record<string, {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: Array<string | StructuredDm>;
+    dms?: StructuredDm[];
   }>;
   ranksAndPromotions: Record<string, MerchantRankRow[]>;
   skillTables: Record<string, { columns: string[]; rows: Array<Record<string, unknown>> }>;

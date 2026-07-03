@@ -47,7 +47,7 @@ export function lookupResolution(
   resolution: {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: Array<string | StructuredDm>;
+    dms?: StructuredDm[];
     notes?: string[];
   },
   assignment: string,
@@ -99,23 +99,17 @@ export function labelToColumnKey(label: string): string {
   }).join("");
 }
 
-/** Apply pathway-specific DM rules (parsed from `dms` arrays in the
- *  JSON) for a given roll type. These are free-form strings in the
- *  manual; the parser handles a handful of canonical forms. */
+/** Sum the structured DM rules (from `dms` arrays in the JSON) that match
+ *  the character, for a given roll type. Entries without `rollType` are
+ *  general and apply to every roll type. */
 export function applyDmRules(
-  dms: Array<string | StructuredDm> | undefined,
+  dms: StructuredDm[] | undefined,
   ch: Character,
   rollType: "survival" | "promotion" | "decoration" | "skills" | "bonus",
 ): number {
   if (!dms) return 0;
   let total = 0;
   for (const rule of dms) {
-    if (typeof rule === "string") {
-      const lc = rule.toLowerCase();
-      if (!lc.includes(rollType.toLowerCase())) continue;
-      total += parseDmRule(rule, ch);
-      continue;
-    }
     // Structured DM: filter by rollType if the entry specifies one. Entries
     // without rollType are general (apply to every roll type), matching the
     // semantics already used by structured DMs on branchAssignment etc.
@@ -135,73 +129,6 @@ export function applyDmRules(
     total += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
   }
   return total;
-}
-
-/** Parse one DM rule string like "DM +1 if Edu 7+" or
- *  "DM + 1 if any MOS skill 2 +". Returns the DM if condition met else 0. */
-export function parseDmRule(rule: string, ch: Character): number {
-  // Extract the magnitude. The manual has "+1", "+ 1", "DM+1", etc.
-  const magMatch = rule.match(/DM\s*([+-])\s*(\d+)/i);
-  if (!magMatch) return 0;
-  const sign = magMatch[1] === "-" ? -1 : 1;
-  const mag = parseInt(magMatch[2]!, 10) * sign;
-
-  // Attribute condition? "if Edu 7+" / "if Int 8+" / "if Strength 8 +"
-  const attrMatch = rule.match(
-    /if\s+(strength|str|dex(?:terity)?|end(?:urance)?|int(?:elligence)?|edu(?:cation)?|soc(?:ial)?)\s+(\d+)\s*\+/i,
-  );
-  if (attrMatch) {
-    const attr = normalizeAttr(attrMatch[1]!);
-    const threshold = parseInt(attrMatch[2]!, 10);
-    if (ch.attributes[attr] >= threshold) return mag;
-    return 0;
-  }
-
-  // "if any MOS skill 2+": evaluate against the character's recorded
-  // MOS plus the per-arm MOS column for their combat arm (read from the
-  // pathway's mos table). Returns DM if any of those skills is at least
-  // the listed level.
-  const anyMosMatch = rule.match(/if\s+any\s+MOS\s+skill\s+(\d+)\s*\+/i);
-  if (anyMosMatch) {
-    const level = parseInt(anyMosMatch[1]!, 10);
-    if (anyMosSkillAtLeast(ch, level)) return mag;
-    return 0;
-  }
-
-  // "if any department skill 2+": evaluate against the Merchant Prince
-  // department skill column for the character's department.
-  const anyDeptMatch = rule.match(/if\s+any\s+department\s+skill\s+(\d+)\s*\+/i);
-  if (anyDeptMatch) {
-    const level = parseInt(anyDeptMatch[1]!, 10);
-    if (anyDepartmentSkillAtLeast(ch, level)) return mag;
-    return 0;
-  }
-
-  // Specific skill condition: "if Steward-2+" / "if Pilot 2+" etc.
-  const skillMatch = rule.match(
-    /if\s+([A-Z][\w' -]*?)(?:-|\s+)(\d+)\s*\+/i,
-  );
-  if (skillMatch) {
-    const skill = skillMatch[1]!.trim();
-    const level = parseInt(skillMatch[2]!, 10);
-    if (ch.checkSkillLevel(skill, level)) return mag;
-    return 0;
-  }
-
-  // Rank-based condition? "if rank E4+ or rank O1+"
-  const rankMatch = rule.match(/if\s+rank\s+([A-Za-z-]+)(\d+)\s*\+/i);
-  if (rankMatch) {
-    const letter = rankMatch[1]!.toUpperCase().replace(/-$/, "");
-    const want = parseInt(rankMatch[2]!, 10);
-    const code = ch.acgState?.rankCode ?? "";
-    const codeMatch = code.match(/^([A-Z-]+?)(\d+)$/);
-    if (codeMatch && codeMatch[1]!.toUpperCase().replace(/-$/, "") === letter) {
-      if (parseInt(codeMatch[2]!, 10) >= want) return mag;
-    }
-    return 0;
-  }
-
-  return 0;
 }
 
 function anyMosSkillAtLeast(ch: Character, level: number): boolean {

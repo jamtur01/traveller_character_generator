@@ -387,19 +387,6 @@ export interface AssignmentResolution {
   promotionOfficersBarred?: boolean;
 }
 
-/** A single row of an `assignment` table — keyed by die result. */
-export interface AssignmentRow {
-  die: number;
-  [columnKey: string]: number | string;
-}
-
-export interface AssignmentTable {
-  columns: string[];
-  rows: AssignmentRow[];
-  dms?: string[];
-  notes?: string[];
-}
-
 export interface DecorationOutcome {
   /** Award earned, or null on no award. */
   award: "MCUF" | "MCG" | "SEH" | null;

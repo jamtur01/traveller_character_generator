@@ -52,7 +52,7 @@ export interface ScoutData {
   assignmentResolution: Record<string, {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: Array<string | StructuredDm>;
+    dms?: StructuredDm[];
   }>;
   schoolAssignment?: {
     columns: string[];

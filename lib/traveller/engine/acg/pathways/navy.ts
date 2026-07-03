@@ -67,7 +67,7 @@ export interface NavyData {
   assignmentResolution: Record<string, {
     columns: string[];
     rows: Array<Record<string, unknown>>;
-    dms?: string[];
+    dms?: StructuredDm[];
     notes?: string[];
   }>;
   retention?: unknown;
