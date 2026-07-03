@@ -5,7 +5,6 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { ChoicePendingError } from "../lib/traveller/engine/choices";
 import { applyCell } from "../lib/traveller/engine/cellResolver";
-import * as random from "../lib/traveller/random";
 import { evaluateDM } from "../lib/traveller/engine/dmEvaluator";
 import { getEdition } from "../lib/traveller/editions";
 
@@ -55,7 +54,7 @@ describe("Bug #1: anagathics retry clears withdrawal flag on success", () => {
     // Sequence: availability roll fails → withdrawal set; retry survival
     // passes; retry availability succeeds → onAnagathics restored and
     // withdrawalThisTerm should be cleared.
-    const r = vi.spyOn(random, "roll");
+    const r = vi.spyOn(c.rng, "roll");
     r.mockReturnValueOnce(2)  // availability roll 1: fail (2 < target with high DMs)
      .mockReturnValueOnce(8)  // retry survival: pass (army 5+)
      .mockReturnValueOnce(12); // retry availability: pass
@@ -71,7 +70,7 @@ describe("Bug #1: anagathics retry clears withdrawal flag on success", () => {
     c.service = "army";
     c.onAnagathics = true;
     c.homeworld = { ...c.homeworld!, starport: "E", tech: "Industrial" }; // no DMs
-    const r = vi.spyOn(random, "roll");
+    const r = vi.spyOn(c.rng, "roll");
     r.mockReturnValueOnce(2)  // availability 1: fail
      .mockReturnValueOnce(8)  // retry survival: pass
      .mockReturnValueOnce(2); // retry availability: fail
@@ -156,7 +155,7 @@ describe("Bug #4: aging crisis loop early-breaks on death", () => {
     c.age = 34;
     c.apparentAge = 34;
     // Force every save to fail (low rolls → 2 vs 8 save target).
-    vi.spyOn(random, "roll").mockReturnValue(2);
+    vi.spyOn(c.rng, "roll").mockReturnValue(2);
     // Two attributes already at 0 (the MT crisis threshold).
     c.attributes.strength = 0;
     c.attributes.dexterity = 0;
@@ -178,7 +177,7 @@ describe("Bug #4: aging crisis loop early-breaks on death", () => {
     c.apparentAge = 34;
     // First many calls (regular aging rolls) pass with 12; the crisis
     // roll also passes with 12.
-    vi.spyOn(random, "roll").mockReturnValue(12);
+    vi.spyOn(c.rng, "roll").mockReturnValue(12);
     c.attributes.strength = 0;
     c.doAging();
     expect(c.deceased).toBe(false);
@@ -187,21 +186,44 @@ describe("Bug #4: aging crisis loop early-breaks on death", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Bug #5 — bare Math.random in doEnlistment / preCareer auto-pick.
-// Fix: replaced with arnd() from lib/traveller/random.ts.
-// We verify the call path uses the wrapper (arnd throws on empty arrays).
+// Bug #5 — random service selection used bare Math.random in doEnlistment.
+// Fix: the pick now flows through the character's owned RNG (character.rng),
+// so a seeded run is reproducible instead of relying on hidden global state.
 // ---------------------------------------------------------------------------
 
-describe("Bug #5: doEnlistment uses the random wrapper, not bare Math.random", () => {
-  it("doEnlistment random method routes through arnd (verified by intercepting arnd)", () => {
-    const c = makeMt();
-    c.attributes.social = 6; // avoid auto-noble path
-    // Spy on arnd; track invocation. Force return one of the elements.
-    const spy = vi.spyOn(random, "arnd");
-    spy.mockImplementation((arr) => arr[0] as never);
-    vi.spyOn(random, "roll").mockReturnValue(8); // pass enlistment
-    c.doEnlistment("");
-    expect(spy).toHaveBeenCalled();
+describe("Bug #5: random enlistment flows through the character's owned RNG", () => {
+  it("two identically-seeded characters make the same random enlistment", () => {
+    const build = (): Character => {
+      const c = new Character({ seed: 0x5eed });
+      c.editionId = "mt-megatraveller";
+      c.showHistory = "none";
+      c.choiceMode = "auto";
+      c.attributes = {
+        strength: 9, dexterity: 9, endurance: 9,
+        intelligence: 9, education: 9, social: 6, // Soc 6 avoids auto-noble
+      };
+      c.homeworld = {
+        starport: "A", size: "Medium", atmosphere: "Standard",
+        hydrosphere: "Wet World", population: "High Pop", law: "Mod Law",
+        tech: "High Stellar",
+      };
+      return c;
+    };
+    const a = build();
+    const b = build();
+    // Prove the random selection actually exercises the owned RNG boundary,
+    // not bare Math.random: doEnlistment("") always makes a random service
+    // pick, and if that pick escaped to Math.random the run could not be
+    // reproduced and c.rng.pick would never be called.
+    const pickA = vi.spyOn(a.rng, "pick");
+    const svcA = a.doEnlistment("");
+    const svcB = b.doEnlistment("");
+    expect(pickA).toHaveBeenCalled();
+    // Same seed + same owned stream → identical enlistment outcome.
+    expect(svcA).toBe(svcB);
+    expect(a.service).toBe(b.service);
+    expect(a.drafted).toBe(b.drafted);
+    expect(a.skills).toEqual(b.skills);
   });
 });
 

@@ -4,7 +4,6 @@
 // compatibility; engine call sites should prefer the free functions.
 
 import type { Character } from "@/lib/traveller/character";
-import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import { getEdition } from "@/lib/traveller/editions";
 
@@ -58,7 +57,7 @@ function rollAnagathicsAvailability(ch: Character): boolean {
   if (sp && starportDms[sp] !== undefined) dm += starportDms[sp]!;
   const t = ch.homeworld?.tech;
   if (t && techDms[t] !== undefined) dm += techDms[t]!;
-  const r = roll(2) + dm;
+  const r = ch.rng.roll(2) + dm;
   const success = r >= target;
   if (success) {
     if (!ch.onAnagathics) ch.apparentAge = ch.age;

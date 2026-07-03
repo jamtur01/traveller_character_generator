@@ -9,7 +9,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import { roll, arnd } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { recordTransfer } from "./state";
@@ -108,7 +107,7 @@ function runEffect(
         !excl.includes(a) && a !== currentArm && !alreadyTrained.includes(a),
       );
       if (arms.length === 0) return;
-      const newArm = arnd(arms);
+      const newArm = ch.rng.pick(arms);
       const fromArm = currentArm ?? "";
       recordTransfer(ch.acgState, "combatArm", fromArm, newArm,
         ch.acgState.yearsServed ?? 0);
@@ -129,7 +128,7 @@ function runEffect(
       const current = ch.acgState.branch ?? branches[0]!;
       const opts = branches.filter((b) => b !== current);
       if (opts.length === 0) return;
-      const newBranch = arnd(opts);
+      const newBranch = ch.rng.pick(opts);
       ch.acgState.crossTrainedBranches = ch.acgState.crossTrainedBranches ?? [];
       if (!ch.acgState.crossTrainedBranches.includes(newBranch)) {
         ch.acgState.crossTrainedBranches.push(newBranch);
@@ -230,7 +229,7 @@ function runSkillBatch(
   skills: string[],
 ): void {
   for (const skill of skills) {
-    if (roll(1) >= target) {
+    if (ch.rng.roll(1) >= target) {
       ch.addSkill(skill, 1, schoolName);
     }
   }
@@ -241,7 +240,7 @@ function runSkillBatch(
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.mos.rows.find((row) => row.die === r);
   const skill = row?.[armKey];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (MOS)`);
@@ -250,7 +249,7 @@ function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
 function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
   const branchKey = (ch.acgState.branch ?? "Line").toLowerCase();
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.branchSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const candidates = [branchKey, branchKey === "line" ? "lineCrew" : branchKey,
@@ -268,7 +267,7 @@ function rollOnSpecialistSchool(
   ch: Character, data: PathwayData, schoolName: string,
 ): void {
   if (!ch.acgState || !data.specialistSchool) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.specialistSchool.rows.find((row) => row.die === r);
   if (!row) return;
   const threshold = data.specialistSchool.schoolingThreshold ?? 16;
@@ -283,7 +282,7 @@ function rollOnSpecialistSchool(
 
 function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.serviceSkills) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   let col: string;
@@ -365,7 +364,7 @@ function attacheOrAide(
   effect: Effect,
 ): void {
   if (!ch.acgState) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const label = pathway === "navy" ? "Naval Attache" : "Military Attache";
   // Promotion target comes from the assignment effect (PM p. 55/59:
   // attache/aide promotes on 1D <= 4).
@@ -467,7 +466,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   if (!col) return;
   const rolls = meta?.rollsPerAttendance ?? 1;
   for (let i = 0; i < rolls; i++) {
-    const r = roll(1);
+    const r = ch.rng.roll(1);
     const row = schools.rows.find((row) => row.die === r);
     if (!row) continue;
     const skill = row[col];

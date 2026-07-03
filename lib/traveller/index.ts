@@ -17,7 +17,7 @@ export { generateName, generateGender } from "./names";
 export {
   BLADES, BOWS, GUNS, VEHICLES, AIRCRAFTS, WATERCRAFTS,
   cascadeBlade, cascadeBow, cascadeGun,
-  cascadeVehicle, cascadeAircraft, cascadeServiceAircraft, cascadeWatercraft,
+  cascadeVehicle, cascadeAircraft, cascadeWatercraft,
 } from "./cascades";
 // Character and cloneCharacter are deliberately NOT re-exported here.
 // Importing them via the barrel created a TypeScript-server cache pathology

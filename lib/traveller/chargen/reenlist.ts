@@ -4,7 +4,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import { runAcgReenlist } from "@/lib/traveller/engine/runners/acg";
 
@@ -38,7 +37,7 @@ export function doReenlistmentStep(ch: Character): void {
     return;
   }
   const def = ch.serviceDef();
-  const reenlistRoll = roll(2);
+  const reenlistRoll = ch.rng.roll(2);
   const target = def.reenlistThrow;
   const reenlistRules = getEdition(ch.editionId).rules.reenlistment;
   if (reenlistRoll === (reenlistRules?.mandatoryOnExactRoll ?? 12)) {

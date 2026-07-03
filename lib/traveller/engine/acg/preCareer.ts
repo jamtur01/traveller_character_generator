@@ -26,7 +26,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { extendedHex } from "@/lib/traveller/formatting";
-import { arnd, roll } from "@/lib/traveller/random";
+import type { Rng } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
@@ -273,7 +273,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Admission.
   if (spec.admission && !flightAutoAdmit) {
     const dm = applyDms(spec.admission.dms, ch);
-    const r = roll(2);
+    const r = ch.rng.roll(2);
     const succeeded = r + dm >= spec.admission.target;
     ch.log(ev.roll(
       `${preCareerLabel(opt, ch.editionId)} admission`,
@@ -299,7 +299,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Success.
   if (spec.success) {
     const dm = applyDms(spec.success.dms, ch);
-    const r = roll(2);
+    const r = ch.rng.roll(2);
     const succeeded = r + dm >= spec.success.target;
     ch.log(ev.roll(
       `${preCareerLabel(opt, ch.editionId)} success`,
@@ -339,7 +339,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   if (opt === "college") {
     if (spec.otc) {
       const dm = applyDms(spec.otc.dms, ch);
-      const r = roll(2);
+      const r = ch.rng.roll(2);
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
         out.autoEnlistPathway = "mercenary";
@@ -373,7 +373,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     }
     if (!out.commissioned && spec.notc) {
       const dm = applyDms(spec.notc.dms, ch);
-      const r = roll(2);
+      const r = ch.rng.roll(2);
       if (r + dm >= spec.notc.target) {
         out.commissioned = true;
         const auto = spec.notc.autoEnlist;
@@ -391,7 +391,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     // Parse "1D-2" / "1D-3" — the constant offset.
     const m = spec.education.roll.match(/^1D([-+]\d+)$/);
     const offset = m ? parseInt(m[1]!, 10) : 0;
-    const gain = Math.max(1, roll(1) + offset + dm);
+    const gain = Math.max(1, ch.rng.roll(1) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
     // Applied by applyPreCareerResult via improveAttribute → ev.attributeChange.
   }
@@ -399,7 +399,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Honors throw.
   if (spec.honors) {
     const dm = applyDms(spec.honors.dms, ch);
-    const r = roll(2);
+    const r = ch.rng.roll(2);
     if (r + dm >= spec.honors.target) {
       out.honors = true;
       out.notes.push("Graduated with honors.");
@@ -508,8 +508,8 @@ function applyOptionSpecifics(
     for (const skill of sk.skills) {
       if (hasDieExpression(skill)) {
         // Dynamic skill spec (e.g. "1D-3 levels of Pilot, minimum 1").
-        out.skills.push(parseDynamicSkill(skill));
-      } else if (roll(1) >= target) {
+        out.skills.push(parseDynamicSkill(skill, ch.rng));
+      } else if (ch.rng.roll(1) >= target) {
         out.skills.push([skill, 1]);
       }
     }
@@ -520,7 +520,7 @@ function applyOptionSpecifics(
   if (sk && !Array.isArray(sk) && Array.isArray(sk.skills) && !sk.throw) {
     for (const skill of sk.skills) {
       if (hasDieExpression(skill)) {
-        out.skills.push(parseDynamicSkill(skill));
+        out.skills.push(parseDynamicSkill(skill, ch.rng));
       } else {
         out.skills.push([skill, 1]);
       }
@@ -529,7 +529,7 @@ function applyOptionSpecifics(
   if (Array.isArray(sk)) {
     for (const skill of sk) {
       if (hasDieExpression(skill)) {
-        out.skills.push(parseDynamicSkill(skill));
+        out.skills.push(parseDynamicSkill(skill, ch.rng));
       } else {
         out.skills.push([skill, 1]);
       }
@@ -589,16 +589,16 @@ function hasDieExpression(s: string): boolean {
  *  rolling the die and returning the resulting numeric value. Side
  *  effect: consumes one roll(1). Returns null when no die expression is
  *  present. */
-function parseDieExpression(s: string): number | null {
+function parseDieExpression(s: string, rng: Rng): number | null {
   const m = s.match(/(\d+)D([-+]\d+)?/);
   if (!m) return null;
   const offset = m[2] ? parseInt(m[2], 10) : 0;
-  return roll(1) + offset;
+  return rng.roll(1) + offset;
 }
 
 /** Parse a dynamic skill spec like "1D-3 levels of Pilot, minimum 1". */
-function parseDynamicSkill(s: string): [string, number] {
-  const die = parseDieExpression(s) ?? 1;
+function parseDynamicSkill(s: string, rng: Rng): [string, number] {
+  const die = parseDieExpression(s, rng) ?? 1;
   const minMatch = s.match(/minimum\s+(\d+)/i);
   const min = minMatch ? parseInt(minMatch[1]!, 10) : 1;
   const value = Math.max(min, die);
@@ -636,8 +636,8 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     // re-roll department assignment.
     if (ch.acgState) ch.acgState.department = choice;
     for (let i = 0; i < skillsCount; i++) {
-      if (roll(1) >= skillsTarget) {
-        const r = roll(1);
+      if (ch.rng.roll(1) >= skillsTarget) {
+        const r = ch.rng.roll(1);
         const row = dept.rows.find((row) => row.die === r);
         const skill = row?.[choice];
         if (typeof skill === "string") out.skills.push([skill, 1]);
@@ -653,7 +653,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     });
     return;
   }
-  apply(arnd(departments));
+  apply(ch.rng.pick(departments));
 }
 
 /** Apply a pre-career result to the character. Mutates state.

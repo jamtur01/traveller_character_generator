@@ -24,7 +24,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
@@ -160,7 +159,7 @@ export function mercenaryEnlist(
     const attr = d.attribute as keyof typeof ch.attributes;
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const succeeded = r + dm >= enlistSpec.target;
   ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
   if (succeeded) {
@@ -170,7 +169,7 @@ export function mercenaryEnlist(
   }
 
   // Failed enlistment → attempt draft.
-  const draftRoll = roll(1);
+  const draftRoll = ch.rng.roll(1);
   const drafted = data.enlistment.draft.results[String(draftRoll)];
   if (!drafted) {
     ch.log(ev.enlistmentAttempt(
@@ -205,7 +204,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   // PM p. 51: homeworld tech DM (+1 at Avg Stellar+) lives in data.mos.dms
   // as a StructuredDm (homeworldTechAtLeast); evaluate it here.
   const dm = applyDmRules(data.mos.dms, ch, "skills");
-  const r = Math.max(1, Math.min(7, roll(1) + dm));
+  const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
   const row = data.mos.rows.find((row) => row.die === r);
   if (!row) throw new Error(`MOS table missing row for die=${r}`);
   const mosSkill = row[armKey] as string | undefined;
@@ -243,7 +242,7 @@ export function mercenaryCommandDuty(ch: Character): void {
     return;
   }
   const dm = applyDmRules(data.commandDuty.dms, ch, "promotion"); // DMs apply by rule strings
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const success = r + dm >= parsed.target;
   ch.log(ev.commandDuty(success, r, dm, parsed.target));
   ch.requireAcgState().inCommand = success;
@@ -262,7 +261,7 @@ export function mercenaryRollAssignment(ch: Character): string {
     return retained;
   }
   const armKey = labelToColumnKey(acg.combatArm!);
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Mercenary assignment table missing row for die=${r}`);
   let assignment = row[armKey] as string | undefined;
@@ -400,7 +399,7 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
 
 function rollMercenarySkillFromColumn(ch: Character, col: string): void {
   const data = dataFor(ch);
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const skill = row[col] as string | undefined;

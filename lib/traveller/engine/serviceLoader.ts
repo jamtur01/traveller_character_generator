@@ -3,7 +3,6 @@
 // (enlistmentThrow, checkSurvival, acquireSkill, musterBenefits, etc.) so
 // existing callers in character.ts and the test suite continue to work.
 
-import { arnd, roll } from "@/lib/traveller/random";
 import { type Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import type { Attributes, ServiceDef } from "@/lib/traveller/types";
@@ -89,7 +88,7 @@ export function buildServiceDef(
       const isNoble = nobleService !== undefined && ch.service === nobleService;
       dm += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
     }
-    const sv = roll(2);
+    const sv = ch.rng.roll(2);
     const succeeded = sv + dm >= survivalThrow;
     ch.log(ev.roll("Survival", sv, dm, survivalThrow, succeeded));
     return succeeded;
@@ -98,7 +97,7 @@ export function buildServiceDef(
   const checkCommission = (ch: Character): boolean => {
     if (!serviceData.checks.position || commissionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.position.dm, ch);
-    const sv = roll(2);
+    const sv = ch.rng.roll(2);
     const succeeded = sv + dm >= commissionThrow;
     ch.log(ev.roll("Commission", sv, dm, commissionThrow, succeeded));
     return succeeded;
@@ -107,7 +106,7 @@ export function buildServiceDef(
   const checkPromotion = (ch: Character): boolean => {
     if (!serviceData.checks.promotion || promotionThrow === undefined) return false;
     const dm = evaluateDM(serviceData.checks.promotion.dm, ch);
-    const sv = roll(2);
+    const sv = ch.rng.roll(2);
     const succeeded = sv + dm >= promotionThrow;
     ch.log(ev.roll("Promotion", sv, dm, promotionThrow, succeeded));
     return succeeded;
@@ -146,7 +145,7 @@ export function buildServiceDef(
 
   // --- muster benefits ---------------------------------------------------
   const musterBenefits = (ch: Character, dm: number): void => {
-    const rawRoll = roll(1);
+    const rawRoll = ch.rng.roll(1);
     const r = rawRoll + dm;
     if (r < 1 || r > 7) {
       ch.log(ev.musterBenefit(undefined, rawRoll, dm, "outOfRange"));
@@ -192,7 +191,7 @@ export function buildServiceDef(
     if (!tableKey) return;
     const table = (serviceData.skillTables as Record<string, (string | null)[]>)[tableKey];
     if (!table) return;
-    const r = roll(1);
+    const r = ch.rng.roll(1);
     const cell = table[r];
     if (cell == null) return;
     const source = skillTableDisplayNameForKey(edition.data, tableKey);
@@ -254,7 +253,7 @@ function applyAutoCascade(label: string, ch: Character): string | undefined {
   for (const [name] of ch.skills) {
     if (pool.includes(name)) known.push(name);
   }
-  return arnd(known.length > 0 ? known : pool);
+  return ch.rng.pick(known.length > 0 ? known : pool);
 }
 
 /** "Marines" → "Marine", "Doctors" → "Doctor", etc. */

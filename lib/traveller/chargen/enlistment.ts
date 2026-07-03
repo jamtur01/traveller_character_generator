@@ -5,7 +5,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { arnd, roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import type { ServiceKey, AttributeKey } from "@/lib/traveller/types";
 import type { ServiceData } from "@/lib/traveller/editions/types";
@@ -185,10 +184,10 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
         preferredService, 0, 0, 0, false,
         `homeworld tech ${ch.homeworld.tech} forbids`,
       ));
-      preferredService = arnd(gated);
+      preferredService = ch.rng.pick(gated);
     }
   } else {
-    preferredService = arnd(gated);
+    preferredService = ch.rng.pick(gated);
   }
 
   // CotI: characters whose social standing (or other attribute) meets the
@@ -216,7 +215,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
 
   const pref = ch.editionService(preferredService);
   const dm = pref.enlistmentDM(ch.attributes);
-  const en = roll(2);
+  const en = ch.rng.roll(2);
   const succeeded = en + dm >= pref.enlistmentThrow;
   ch.log(ev.enlistmentAttempt(
     pref.serviceName, en, dm, pref.enlistmentThrow, succeeded,
@@ -234,7 +233,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
   // back to the gated enlistable list so the draft doesn't crash on
   // arnd of an empty array.
   const effDraftPool = draftPool.length > 0 ? draftPool : gated;
-  const draftService = arnd(effDraftPool);
+  const draftService = ch.rng.pick(effDraftPool);
   ch.log(ev.drafted(draftService));
   applyServiceStartAge(ch, draftService);
   ch.service = draftService;

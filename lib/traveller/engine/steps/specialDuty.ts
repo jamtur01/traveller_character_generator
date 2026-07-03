@@ -5,7 +5,6 @@
 // Editions without specialDuty in their lifecycle simply never reach this
 // step. CT has no specialDuty target field on services and would no-op.
 
-import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
@@ -15,7 +14,7 @@ export const specialDutyStep: StepFn = ({ ch, edition, config }) => {
   const target = data?.checks.specialDuty?.target;
   if (target === undefined) return;
 
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const succeeded = r >= target;
   ch.log(ev.roll("Special Duty", r, 0, target, succeeded));
   if (!succeeded) return;

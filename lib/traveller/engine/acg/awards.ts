@@ -2,7 +2,6 @@
 // running court-martial, and the spend-side mitigation that lets players
 // burn BPs to rescue failed rolls. Per MT Players' Manual pp. 46-47.
 
-import { roll } from "@/lib/traveller/random";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
@@ -154,7 +153,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
     }
     const dieN = o.die === "1D" ? 1 : 2;
     let gr = 0;
-    for (let i = 0; i < dieN; i++) gr += roll(1);
+    for (let i = 0; i < dieN; i++) gr += ch.rng.roll(1);
     const baseTotal = gr + dm;
     let total = baseTotal;
     // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
@@ -186,7 +185,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   }
   const dieN = cm.resultRoll?.die === "2D" ? 2 : 1;
   let dieTotal = 0;
-  for (let i = 0; i < dieN; i++) dieTotal += roll(1);
+  for (let i = 0; i < dieN; i++) dieTotal += ch.rng.roll(1);
   let r = dieTotal + dm;
   // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
   // Auto modes drive the result toward the best outcome — the lowest
@@ -289,7 +288,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
       // "jail-served" so it counts toward terms but provides no skills or
       // promotion (commission/promotion already short-circuit on
       // shortTermThisTerm / equivalent jail flag).
-      const months = roll(1) + roll(1);
+      const months = ch.rng.roll(1) + ch.rng.roll(1);
       ch.acgState.jailMonthsThisYear = months;
       ch.log(ev.statusChange(
         "jailed",
@@ -306,7 +305,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     if (yearsMatch) {
       const dice = parseInt(yearsMatch[1]!, 10);
       let years = 0;
-      for (let i = 0; i < dice; i++) years += roll(1);
+      for (let i = 0; i < dice; i++) years += ch.rng.roll(1);
       ch.age += years;
       ch.endChargenRetired(`imprisoned ${years} years (${dice}D rolled)`, false);
     } else {
@@ -334,7 +333,7 @@ function applyCourtMartialResult(ch: Character, result: string): void {
     if (guardsMatch) {
       const dice = parseInt(guardsMatch[1]!, 10);
       let killed = 0;
-      for (let i = 0; i < dice; i++) killed += roll(1);
+      for (let i = 0; i < dice; i++) killed += ch.rng.roll(1);
       ch.acgState.guardsKilledInEscape = killed;
     }
     if (lc.includes("escape")) {

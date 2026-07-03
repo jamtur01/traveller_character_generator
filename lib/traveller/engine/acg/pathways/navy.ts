@@ -13,7 +13,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import {
   applyStructuredDms, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
@@ -191,7 +190,7 @@ export function navyEnlist(
     const attr = d.attribute as keyof typeof ch.attributes;
     if (ch.attributes[attr] >= d.min) dm += d.dm;
   }
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const succeeded = r + dm >= spec.target;
   ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
   if (succeeded) {
@@ -199,7 +198,7 @@ export function navyEnlist(
     ch.requireAcgState().isOfficer = data.enlistment.startingRank.startsWith("O");
   } else {
     // Try draft.
-    const dr = roll(1);
+    const dr = ch.rng.roll(1);
     const drafted = data.enlistment.draft.results[String(dr)];
     if (!drafted) {
       throw new Error("Navy draft rejection — choose another path");
@@ -248,7 +247,7 @@ function navyAssignBranch(ch: Character): void {
   // doesn't have it (cap at 8 attempts as a safety net — the table has
   // multiple non-Tech-Services rows so re-roll converges quickly).
   for (let attempt = 0; attempt < 8; attempt++) {
-    const r = Math.max(0, Math.min(7, roll(1) + dm));
+    const r = Math.max(0, Math.min(7, ch.rng.roll(1) + dm));
     const row = data.branchAssignment.rows.find((row) => row.die === r);
     const candidate = String(row?.[col] ?? "Line");
     if (isBranchAllowedForFleet(ch, candidate)) {
@@ -317,7 +316,7 @@ function navyOfficerSkillChoice(ch: Character): void {
 function navyServiceSkillRoll(ch: Character, column: string): void {
   const data = dataFor(ch);
   if (!data.serviceSkills) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const skill = row[column];
@@ -327,7 +326,7 @@ function navyServiceSkillRoll(ch: Character, column: string): void {
 function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.branchSkills.rows.find((row) => row.die === r);
   if (!row) return;
   // Convert branch to column key.
@@ -384,7 +383,7 @@ function navyRollCommandDuty(ch: Character): void {
   if (parsed.target === "auto") { ch.requireAcgState().inCommand = true; return; }
   if (typeof parsed.target !== "number") { ch.requireAcgState().inCommand = false; return; }
   const dm = applyStructuredDms(data.commandDuty.dms, ch);
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const success = r + dm >= parsed.target;
   ch.log(ev.commandDuty(success, r, dm, parsed.target));
   ch.requireAcgState().inCommand = success;
@@ -401,7 +400,7 @@ export function navyRollAssignment(ch: Character): string {
     return retained;
   }
   const dm = applyStructuredDms(data.assignment.dms, ch);
-  const r = Math.max(2, Math.min(12, roll(2) + dm));
+  const r = Math.max(2, Math.min(12, ch.rng.roll(2) + dm));
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Navy assignment table missing row for die=${r}`);
   return String(row.assignment);
@@ -503,7 +502,7 @@ export function navyRetention(ch: Character, assignment: string): void {
   const data = dataFor(ch);
   const specials = (data.specialAssignmentRules ?? {}) as
     Record<string, { noRetention?: boolean }>;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   if (r === 6 && !specials[assignment]?.noRetention) {
     ch.requireAcgState().retainedAssignment = assignment;
     ch.requireAcgState().justRetained = true;

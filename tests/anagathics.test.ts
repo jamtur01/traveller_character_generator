@@ -2,7 +2,6 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Character } from "../lib/traveller/character";
 import { getEditionServices } from "../lib/traveller/services";
 import type { Homeworld } from "../lib/traveller/engine/homeworld";
-import * as random from "../lib/traveller/random";
 
 function makeMtChar(): Character {
   const c = new Character();
@@ -56,7 +55,7 @@ describe("anagathics integration (B5)", () => {
       c.anagathicsStandingOrder = true;
       // Force availability success (homeworld has +3 starport + +3 tech, so
       // any 2d6 ≥ 6 succeeds with the +6 DM — fix to a known value).
-      vi.spyOn(random, "roll").mockReturnValueOnce(6);
+      vi.spyOn(c.rng, "roll").mockReturnValueOnce(6);
       c.preSurvivalAnagathicsHook();
       expect(c.wantsAnagathicsThisTerm).toBe(true);
       expect(c.anagathicsActiveThisTerm).toBe(true);
@@ -74,7 +73,7 @@ describe("anagathics integration (B5)", () => {
       // fails, (3) no second availability roll fires. Without pinning all
       // three calls, real random fills in and the retry path can flip
       // anagathicsActiveThisTerm to true (CI flake).
-      vi.spyOn(random, "roll").mockReturnValue(2);
+      vi.spyOn(c.rng, "roll").mockReturnValue(2);
       c.preSurvivalAnagathicsHook();
       expect(c.wantsAnagathicsThisTerm).toBe(true);
       expect(c.anagathicsActiveThisTerm).toBe(false);
@@ -91,7 +90,7 @@ describe("anagathics integration (B5)", () => {
       c.showHistory = "verbose";
       c.wantsAnagathicsThisTerm = true;
       const svc = getEditionServices(c.editionId)["army"]!;
-      const rollSpy = vi.spyOn(random, "roll").mockReturnValue(6);
+      const rollSpy = vi.spyOn(c.rng, "roll").mockReturnValue(6);
       svc.checkSurvival(c);
       expect(c.history.some((h) => /Survival.*[−-]\s*1/.test(h))).toBe(true);
       rollSpy.mockRestore();
@@ -104,7 +103,7 @@ describe("anagathics integration (B5)", () => {
       c.attributes.social = 11;
       c.wantsAnagathicsThisTerm = true;
       const svc = getEditionServices(c.editionId)["nobles"]!;
-      const rollSpy = vi.spyOn(random, "roll").mockReturnValue(8);
+      const rollSpy = vi.spyOn(c.rng, "roll").mockReturnValue(8);
       svc.checkSurvival(c);
       expect(c.history.some((h) => /Survival.*[−-]\s*2/.test(h))).toBe(true);
       rollSpy.mockRestore();
@@ -114,7 +113,7 @@ describe("anagathics integration (B5)", () => {
       const c = makeMtChar();
       c.showHistory = "verbose";
       const svc = getEditionServices(c.editionId)["army"]!;
-      vi.spyOn(random, "roll").mockReturnValue(8);
+      vi.spyOn(c.rng, "roll").mockReturnValue(8);
       svc.checkSurvival(c);
       expect(c.history.some((h) => /Anagathics survival DM/.test(h))).toBe(false);
     });
@@ -140,7 +139,7 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.terms = 3;
       c.service = "army";
-      const r = vi.spyOn(random, "roll");
+      const r = vi.spyOn(c.rng, "roll");
       // 2D availability fails (low roll), 2D survival pass, 2D availability pass
       r.mockReturnValueOnce(2)  // availability roll 1: fail
        .mockReturnValueOnce(8)  // retry survival roll: pass (army survival is 5+)
@@ -155,7 +154,7 @@ describe("anagathics integration (B5)", () => {
       c.terms = 3;
       c.service = "army";
       c.resumeActive();
-      const r = vi.spyOn(random, "roll");
+      const r = vi.spyOn(c.rng, "roll");
       r.mockReturnValueOnce(2)  // availability roll 1: fail
        .mockReturnValueOnce(2); // retry survival roll: fail → force muster-out
       expect(c.tryAnagathics()).toBe(false);
@@ -172,7 +171,7 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.terms = 3;
       c.service = "army";
-      vi.spyOn(random, "roll").mockReturnValueOnce(2); // fail, no retry
+      vi.spyOn(c.rng, "roll").mockReturnValueOnce(2); // fail, no retry
       expect(c.tryAnagathics(false)).toBe(false);
       expect(c.onAnagathics).toBe(false);
     });
@@ -191,7 +190,7 @@ describe("anagathics integration (B5)", () => {
       c.anagathicsBenefitForfeitedTerms = 1;
       // Aging table for term 4-7 has Str/Dex/End each needing a save. With
       // auto-saves on 2, only the third one rolls. Force that to fail.
-      vi.spyOn(random, "roll").mockReturnValue(2);
+      vi.spyOn(c.rng, "roll").mockReturnValue(2);
       c.doAging();
       // Exactly one attribute should have been reduced by aging.
       const reductions =
@@ -210,7 +209,7 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.apparentAge = 34;
       c.onAnagathics = false;
-      vi.spyOn(random, "roll").mockReturnValue(2);
+      vi.spyOn(c.rng, "roll").mockReturnValue(2);
       c.doAging();
       const reductions =
         (10 - c.attributes.strength) +
@@ -229,7 +228,7 @@ describe("anagathics integration (B5)", () => {
       c.service = "army";
       c.terms = 0;
       c.resumeActive();
-      vi.spyOn(random, "roll").mockReturnValue(8);
+      vi.spyOn(c.rng, "roll").mockReturnValue(8);
       c.doServiceTermStep();
       expect(c.anagathicsActiveThisTerm).toBe(false);
       expect(c.anagathicsWithdrawalThisTerm).toBe(false);

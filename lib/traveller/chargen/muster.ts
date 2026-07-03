@@ -6,7 +6,6 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { numCommaSep, attrShort } from "@/lib/traveller/formatting";
-import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { merchantFinalizeMuster, applyReducedPassageBenefit }
@@ -68,7 +67,7 @@ export function musterOutRolls(ch: Character): number {
 
 /** Roll once on the service's muster-out cash table. */
 export function musterOutCash(ch: Character, cashDM: number): void {
-  const rawRoll = roll(1);
+  const rawRoll = ch.rng.roll(1);
   const idx = Math.min(7, Math.max(1, rawRoll + cashDM));
   const cash = ch.serviceDef().musterCash[idx] ?? 0;
   ch.credits += cash;

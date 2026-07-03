@@ -2,11 +2,10 @@
 // every ACG pathway declares in JSON. The shapes vary slightly per
 // pathway, so these helpers normalize the lookups.
 
-import { roll } from "@/lib/traveller/random";
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import type {
-  AssignmentResolution, AssignmentTable, ResolutionTarget,
+  AssignmentResolution, ResolutionTarget,
 } from "./state";
 
 /** Parse a JSON cell value into a resolution target. The canonical forms
@@ -39,32 +38,6 @@ export function parseResolutionTarget(raw: unknown): {
     throw new Error(`Cannot parse resolution target ${JSON.stringify(raw)}`);
   }
   return { target: n, officersBarred };
-}
-
-/** Roll 1d6 (modified) on an assignment table, picking the cell from the
- *  appropriate column. Returns the assignment label. */
-export function rollAssignmentTable(
-  table: AssignmentTable,
-  columnKey: string,
-  dm: number,
-  rolledDie?: number,
-): string {
-  const die = rolledDie ?? roll(1);
-  const total = Math.min(12, Math.max(1, die + dm));
-  // Some tables (mercenary, navy) use 2..12 (2D). The 1D table for things
-  // like scout office picks uses 1..6. The actual die count is encoded by
-  // whether the rows go up to 12 or 6.
-  const max = Math.max(...table.rows.map((r) => r.die));
-  const clamped = Math.min(max, total);
-  const row = table.rows.find((r) => r.die === clamped);
-  if (!row) throw new Error(`No row in assignment table for die ${clamped}`);
-  const cell = row[columnKey];
-  if (typeof cell !== "string") {
-    throw new Error(
-      `Assignment table column "${columnKey}" row die=${clamped} is not a string: ${JSON.stringify(cell)}`,
-    );
-  }
-  return cell;
 }
 
 /** Look up the resolution row for a specific assignment. The
@@ -453,15 +426,3 @@ function parseRankLetter(code: string): { letter: string; n: number } | null {
   return { letter: m[1]!, n: parseInt(m[2]!, 10) };
 }
 
-/** Resolve a roll target into a 2d6 outcome: returns {success, margin, roll}.
- *  "auto" targets always succeed with margin=0. "none" targets never succeed. */
-export function rollVsTarget(
-  target: ResolutionTarget,
-  dm: number,
-): { success: boolean; margin: number; roll: number } {
-  if (target === "auto") return { success: true, margin: 0, roll: 0 };
-  if (target === "none") return { success: false, margin: -99, roll: 0 };
-  const r = roll(2);
-  const margin = r + dm - target;
-  return { success: margin >= 0, margin, roll: r };
-}

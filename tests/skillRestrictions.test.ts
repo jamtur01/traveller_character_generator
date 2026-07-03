@@ -6,7 +6,6 @@ import {
   rollSkillOverride,
   acquireSkillWithRestrictionCheck,
 } from "../lib/traveller/engine/skillRestrictions";
-import * as random from "../lib/traveller/random";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -73,7 +72,7 @@ describe("homeworld skill restrictions (B7)", () => {
 
   it("rollSkillOverride returns true on 7+, false below 7", () => {
     const c = makeMtChar();
-    const spy = vi.spyOn(random, "roll").mockReturnValueOnce(7);
+    const spy = vi.spyOn(c.rng, "roll").mockReturnValueOnce(7);
     expect(rollSkillOverride(c, "Grav Vehicle", 7)).toBe(true);
     spy.mockReturnValueOnce(6);
     expect(rollSkillOverride(c, "Grav Vehicle", 7)).toBe(false);
@@ -82,7 +81,7 @@ describe("homeworld skill restrictions (B7)", () => {
 
   it("acquireSkillWithRestrictionCheck forfeits on override failure", () => {
     const c = makeMtChar();
-    const spy = vi.spyOn(random, "roll").mockReturnValueOnce(5);
+    const spy = vi.spyOn(c.rng, "roll").mockReturnValueOnce(5);
     expect(acquireSkillWithRestrictionCheck(c, "Grav Vehicle")).toBe(false);
     spy.mockRestore();
   });

@@ -2,7 +2,6 @@
 // basic chargen AND ACG (per the manual the homeworld step is shared).
 // Per MT Players' Manual pp. 12-13.
 
-import { roll } from "@/lib/traveller/random";
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { event as ev } from "@/lib/traveller/history";
@@ -109,7 +108,7 @@ export function rollHomeworld(ch: Character): Homeworld | null {
   const result: Partial<Homeworld> = {};
 
   for (const col of cols) {
-    let r = roll(2);
+    let r = ch.rng.roll(2);
     // Apply DMs based on previously-rolled values.
     const dms = data.dmsByColumn[col] ?? [];
     for (const rule of dms) {
@@ -136,7 +135,7 @@ export function rollHomeworld(ch: Character): Homeworld | null {
     let value = String(cellRaw);
     // Starport 12 (D-X) requires a follow-up 1D.
     if (col === "starport" && value === "D-X") {
-      const dr = roll(1);
+      const dr = ch.rng.roll(1);
       value = data.starportXRoll.results[String(dr)] ?? "X";
     }
     (result as Record<string, string>)[col] = value;

@@ -4,7 +4,6 @@
 // on any characteristic reduced to the configured threshold.
 
 import type { Character } from "@/lib/traveller/character";
-import { roll } from "@/lib/traveller/random";
 import { event as ev } from "@/lib/traveller/history";
 import { getEdition } from "@/lib/traveller/editions";
 import { attrShort } from "@/lib/traveller/formatting";
@@ -25,7 +24,7 @@ interface AgingCrisis {
 export function ageAttribute(
   ch: Character, attrib: AttributeKey, req: number, reduction: number,
 ): void {
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const passed = r >= req;
   ch.log(ev.roll(`Aging ${attrShort(attrib)}`, r, 0, req, passed));
   if (!passed) ch.improveAttribute(attrib, reduction);
@@ -82,8 +81,8 @@ export function doAging(ch: Character): void {
   for (const [attr, eff] of effects) {
     if (autoSaves.has(attr)) continue;
     if (withdrawal) {
-      const r1 = roll(2);
-      const r2 = roll(2);
+      const r1 = ch.rng.roll(2);
+      const r2 = ch.rng.roll(2);
       const failed = r1 < eff.save || r2 < eff.save;
       ch.log(ev.agingSave(
         attr, failed ? "failed" : "passed",
@@ -106,7 +105,7 @@ export function doAging(ch: Character): void {
   for (const a of Object.keys(ch.attributes) as AttributeKey[]) {
     if (ch.deceased) break;
     if (ch.attributes[a] <= crisisThreshold) {
-      const cr = roll(2);
+      const cr = ch.rng.roll(2);
       ch.log(ev.roll(
         `Aging crisis (${attrShort(a)})`, cr, 0, crisisSave, cr >= crisisSave,
       ));

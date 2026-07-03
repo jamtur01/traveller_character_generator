@@ -23,7 +23,6 @@ import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import type { BenefitDetail } from "@/lib/traveller/editions/types";
 import { getEdition } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 import { event as ev } from "@/lib/traveller/history";
@@ -109,7 +108,7 @@ function tryMarineTradition(
   // Roll 2D; if it passes, the player escapes the tradition and the
   // normal cascade flow runs.
   const dieCount = rule.savingThrow?.die === "1D" ? 1 : 2;
-  const r = roll(dieCount);
+  const r = ch.rng.roll(dieCount);
   if (r + dm >= target) {
     ch.log(ev.marineTradition("saved", { roll: r, dm, target }));
     return false;

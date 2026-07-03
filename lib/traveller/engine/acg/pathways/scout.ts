@@ -18,7 +18,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
@@ -109,14 +108,14 @@ export function scoutEnlist(ch: Character): void {
       const attr = d.attribute as keyof typeof ch.attributes;
       if (ch.attributes[attr] >= d.min) dm += d.dm;
     }
-    const r = roll(2);
+    const r = ch.rng.roll(2);
     const succeeded = r + dm >= data.enlistment.target;
     ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
     if (succeeded) {
       ch.requireAcgState().rankCode = data.enlistment.startingRank;
       ch.requireAcgState().isOfficer = false;
     } else {
-      const dr = roll(1);
+      const dr = ch.rng.roll(1);
       if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
         throw new Error("Scout draft rejection — choose another path");
       }
@@ -133,7 +132,7 @@ function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
   const division: "field" | "bureaucracy" = ch.requireAcgState().division ?? "field";
   ch.requireAcgState().division = division;
-  const r = Math.max(2, Math.min(12, roll(2)));
+  const r = Math.max(2, Math.min(12, ch.rng.roll(2)));
   const row = data.officeAssignment.rows.find((row) => row.die === r);
   if (!row) { ch.requireAcgState().office = "Survey"; return; }
   const off = row[division];
@@ -163,7 +162,7 @@ function scoutRollSkill(ch: Character): void {
   const data = dataFor(ch);
   const division = ch.requireAcgState().division ?? "field";
   const table = data.skillTables[division];
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   // The skill table columns vary; just take the first column that has a value.
@@ -232,7 +231,7 @@ export function scoutRollAssignment(ch: Character): string {
     }
   }
   const dm = useAdminDm ? adminDm : 0;
-  const baseRoll = roll(2);
+  const baseRoll = ch.rng.roll(2);
   // Natural 2 always means war mission regardless of any DM.
   const dieKey = baseRoll === 2 ? 2 : Math.max(2, Math.min(12, baseRoll + dm));
   const row = data.dutyAssignment.rows.find((row) => row.die === dieKey);
@@ -333,7 +332,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
     scoutRollSkill(ch);
     return;
   }
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   const v = row[column];
@@ -344,7 +343,7 @@ function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
   const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.schoolAssignment.rows.find((row) => row.die === r);
   if (!row) return;
   const school = row[officeKey];
@@ -393,7 +392,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     const fromOffice = acg.office ?? "";
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
-    const r = Math.max(2, Math.min(12, roll(2)));
+    const r = Math.max(2, Math.min(12, ch.rng.roll(2)));
     const row = data.officeAssignment.rows.find((row) => row.die === r);
     const off = row?.bureaucracy;
     const newOffice = typeof off === "string" ? off : "Technical";
@@ -449,7 +448,7 @@ export function scoutFinalizeMuster(ch: Character): void {
   if (!ch.acgState) return;
   if (ch.acgState.office !== "Detached Duty") return;
   const { musterTarget, stipendPerYear } = dataFor(ch).detachedDuty;
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const dm = ch.terms;
   const succeeded = r + dm >= musterTarget;
   ch.log(ev.roll("Detached Duty", r, dm, musterTarget, succeeded));
@@ -482,7 +481,7 @@ export function scoutReenlist(ch: Character): boolean {
     ch.requireAcgState().reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const target = data.reenlistment.target;
   const succeeded = r === 12 || r >= target;
   ch.log(ev.roll("Reenlistment", r, 0, target, succeeded, "scout"));

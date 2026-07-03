@@ -7,7 +7,6 @@
 // margin (not a re-roll), per MT PM p. 17.
 
 import { intToOrdinal } from "@/lib/traveller/formatting";
-import { roll } from "@/lib/traveller/random";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
@@ -33,7 +32,7 @@ export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
   const dm = data?.checks.position
     ? evaluateDM(data.checks.position.dm, ch)
     : 0;
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const total = r + dm;
   const succeeded = total >= service.commissionThrow;
   ch.log(ev.roll("Commission", r, dm, service.commissionThrow, succeeded));

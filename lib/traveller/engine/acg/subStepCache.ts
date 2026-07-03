@@ -16,7 +16,6 @@
 // gated by `applied[key]` flags so they fire exactly once per year.
 
 import type { Character } from "@/lib/traveller/character";
-import { roll } from "@/lib/traveller/random";
 import type {
   ResolutionTarget, SubStepOutcome, ThisYearOutcomes,
 } from "./state";
@@ -111,7 +110,7 @@ export function rollPhaseDice(
       dm: cache.dm ?? dm,
     };
   }
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const margin = r + dm - target;
   cache.roll = r;
   cache.dm = dm;

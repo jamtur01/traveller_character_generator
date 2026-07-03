@@ -15,7 +15,6 @@ import {
 } from "@/lib/traveller/engine/acg/jsonPhases";
 import { applyDmRules, applyStructuredDms, type StructuredDm } from "@/lib/traveller/engine/acg/tables";
 import { event as ev } from "@/lib/traveller/history";
-import { roll } from "@/lib/traveller/random";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
@@ -165,7 +164,7 @@ export function rollSpecialAssignment(
   const dm = applyStructuredDms(table.dms, ch);
   const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const rollOnce = (): string | null => {
-    const r = Math.max(1, Math.min(7, roll(1) + dm));
+    const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
     const v = table.rows.find((row) => row.die === r)?.[col];
     return typeof v === "string" ? v : null;
   };
@@ -194,7 +193,7 @@ export function runReenlist(
   opts: { target: number; dms?: StructuredDm[]; label: string; onContinue: () => void },
 ): boolean {
   const dm = applyStructuredDms(opts.dms, ch);
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const keep = r === 12 || r + dm >= opts.target;
   ch.log(ev.roll("Reenlistment", r, dm, opts.target, keep, opts.label));
   if (r === 12) {

@@ -25,7 +25,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import { roll } from "@/lib/traveller/random";
 import {
   applyDmRules, applyStructuredDms, labelToColumnKey,
   parseResolutionTarget,
@@ -194,7 +193,7 @@ export function merchantEnlist(
     ch.log(ev.enlistmentAttempt(`Merchant ${lineType} (automatic)`, 0, 0, 0, true));
   } else if (typeof parsed.target === "number") {
     const dm = applyStructuredDms(data.enlistment.dms, ch);
-    const r = roll(2);
+    const r = ch.rng.roll(2);
     const succeeded = r + dm >= parsed.target;
     ch.log(ev.enlistmentAttempt(`Merchant ${lineType}`, r, dm, parsed.target, succeeded));
     if (!succeeded) {
@@ -269,7 +268,7 @@ function merchantAssignDepartment(ch: Character): void {
     return;
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = data.departmentAssignment.rows.find((row) => row.die === r);
   if (!row) { ch.requireAcgState().department = "Purser"; return; }
   ch.requireAcgState().department = String(row[lineCol] ?? "Purser");
@@ -297,7 +296,7 @@ export function merchantRollAssignment(ch: Character): string {
     }, 0);
   // Row 13 is reachable: a natural 12 plus a +1 DM hits 13. The
   // specificAssignment table includes rows for die ∈ [2,13]; do not truncate.
-  const r = Math.max(2, Math.min(13, roll(2) + dm));
+  const r = Math.max(2, Math.min(13, ch.rng.roll(2) + dm));
   const row = data.specificAssignment.rows.find((row) => row.die === r);
   if (!row) return "Route";
   return String(row[lineCol] ?? "Route");
@@ -456,7 +455,7 @@ function merchantCheckAvailablePosition(ch: Character): void {
   if (!row) return;
   const target = parseResolutionTarget(row[col]).target;
   const dm = applyStructuredDms(data.availablePositions.dms, ch);
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   // Reset any prior temporary effective rank before evaluating this year.
   ch.requireAcgState().effectiveRankCode = null;
   if (typeof target === "number" && r + dm < target) {
@@ -500,7 +499,7 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
   const data = dataFor(ch);
   const table = data.skillTables[tableKey];
   if (!table) return;
-  const r = roll(1);
+  const r = ch.rng.roll(1);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   // Use the effective rank (temporary demotion) for column selection where
@@ -522,7 +521,7 @@ function merchantAwardBonus(ch: Character): void {
   // musterCash[] which is already the source-of-truth cash table.
   const merchants = ch.editionService("merchants" as never);
   if (!merchants) return;
-  const rawRoll = Math.min(7, Math.max(1, roll(1)));
+  const rawRoll = Math.min(7, Math.max(1, ch.rng.roll(1)));
   const fullAmount = merchants.musterCash[rawRoll] ?? 0;
   const cash = Math.floor(fullAmount / 2);
   if (cash <= 0) return;
@@ -562,7 +561,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialDuty) return;
   const dm = applyStructuredDms(data.specialDuty.dms, ch);
-  const r = Math.max(1, Math.min(7, roll(1) + dm));
+  const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
   const row = data.specialDuty.rows.find((row) => row.die === r);
   if (!row) return;
   const col = ch.requireAcgState().isOfficer ? "officers" : "deckHands";
@@ -610,7 +609,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     const tgt = parseInt(res.throw, 10);
     const awarded: string[] = [];
     for (const skill of res.skills) {
-      if (roll(1) >= tgt) {
+      if (ch.rng.roll(1) >= tgt) {
         ch.addSkill(skill, 1, sa);
         awarded.push(skill);
       }
@@ -811,7 +810,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
   const dm = acg.examDm ?? 0;
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const succeeded = r + dm >= target;
   ch.log(ev.roll("Commission", r, dm, target, succeeded, "Merchant enlisted-route exam"));
   if (succeeded) {
@@ -839,7 +838,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const penalty = acg.nextPromotionPenalty ?? 0;
   const dm = (acg.examDm ?? 0) + penalty;
   if (penalty < 0) acg.nextPromotionPenalty = 0;
-  const r = roll(2);
+  const r = ch.rng.roll(2);
   const succeeded = r + dm >= target;
   ch.log(ev.roll(
     "Promotion", r, dm, target, succeeded,

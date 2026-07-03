@@ -4,7 +4,7 @@
 // preferring one the character already has so subsequent occurrences
 // stack into a single skill.
 
-import { arnd } from "./random";
+import type { Rng } from "./random";
 import type { Character } from "./character";
 import { cascadePoolByKey } from "./engine/cascadeMap";
 
@@ -20,8 +20,8 @@ export const VEHICLES = cascadePoolByKey("vehicle", CT);
 export const AIRCRAFTS = cascadePoolByKey("aircraft", CT);
 export const WATERCRAFTS = cascadePoolByKey("watercraft", CT);
 
-function pickKnownOrRandom(known: string[], pool: readonly string[]): string {
-  return known.length > 0 ? arnd(known) : arnd(pool);
+function pickKnownOrRandom(rng: Rng, known: string[], pool: readonly string[]): string {
+  return known.length > 0 ? rng.pick(known) : rng.pick(pool);
 }
 
 function knownFrom(ch: Character, pool: readonly string[]): string[] {
@@ -34,7 +34,7 @@ function knownFrom(ch: Character, pool: readonly string[]): string[] {
 
 function cascadeBy(ch: Character, key: string): string {
   const pool = cascadePoolByKey(key, ch.editionId);
-  return pickKnownOrRandom(knownFrom(ch, pool), pool);
+  return pickKnownOrRandom(ch.rng, knownFrom(ch, pool), pool);
 }
 
 export function cascadeBlade(ch: Character): string {
@@ -51,12 +51,6 @@ export function cascadeVehicle(ch: Character): string {
 }
 export function cascadeAircraft(ch: Character): string {
   return cascadeBy(ch, "aircraft");
-}
-/** Pick a service aircraft at enlistment time — no character history to
- *  consult. Reads the requested edition's pool. */
-export function cascadeServiceAircraft(editionId: string): string {
-  const pool = cascadePoolByKey("aircraft", editionId);
-  return arnd(pool);
 }
 export function cascadeWatercraft(ch: Character): string {
   return cascadeBy(ch, "watercraft");
