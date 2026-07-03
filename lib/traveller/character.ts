@@ -2,7 +2,7 @@
 // tables live in `./services/*` and are looked up via the `s` registry inside
 // method bodies (avoids module-load cycles).
 
-import { arnd, rndInt, roll } from "./random";
+import { Rng } from "./random";
 import type { ChoiceMode, ChoiceRequest, PendingChoice } from "./engine/choices";
 import { genChoiceId, ChoicePendingError } from "./engine/choices";
 import type { HistoryEvent } from "./history";
@@ -70,14 +70,14 @@ import { formatCharacterSheet } from "./sheet";
 /** Roll the six initial 2d6 attributes. Consumes 12 Math.random calls
  *  — kept as a free helper so tests can inspect/replace it independent
  *  of the Character constructor. */
-function rollInitialAttributes(): Attributes {
+function rollInitialAttributes(rng: Rng): Attributes {
   return {
-    strength: roll(2),
-    dexterity: roll(2),
-    endurance: roll(2),
-    intelligence: roll(2),
-    education: roll(2),
-    social: roll(2),
+    strength: rng.roll(2),
+    dexterity: rng.roll(2),
+    endurance: rng.roll(2),
+    intelligence: rng.roll(2),
+    education: rng.roll(2),
+    social: rng.roll(2),
   };
 }
 
@@ -86,6 +86,9 @@ function rollInitialAttributes(): Attributes {
  *  default field initializer and overriding afterward. */
 export interface CharacterOptions {
   attributes?: Attributes;
+  /** Seed the character's owned RNG stream for a reproducible run. Omit
+   *  for a non-deterministic (Math.random-backed) stream. */
+  seed?: number;
 }
 
 export class Character {
@@ -96,12 +99,20 @@ export class Character {
    *  (gender / name) still consume randomness — they're a 2-call
    *  footprint vs. attributes' 12. */
   constructor(opts: CharacterOptions = {}) {
-    this.attributes = opts.attributes ?? rollInitialAttributes();
+    this.rng = opts.seed !== undefined ? new Rng(opts.seed) : new Rng();
+    this.gender = generateGender(this.rng);
+    this.name = generateName(this.gender, this.rng);
+    this.attributes = opts.attributes ?? rollInitialAttributes(this.rng);
   }
 
+  /** RNG stream owned by this run. Every draw the engine makes flows
+   *  through here, so a seeded run (opts.seed) is fully reproducible —
+   *  attributes, gender, and name are all assigned from it in the
+   *  constructor — and the replay log can snapshot/restore the stream. */
+  rng: Rng;
   age = 18;
-  gender: Gender = generateGender();
-  name: string = generateName(this.gender);
+  gender: Gender;
+  name: string;
   showHistory: ShowHistory = "simple";
   terms = 0;
   credits = 0;
@@ -470,7 +481,7 @@ export class Character {
       const pool = req.preferred && req.preferred.length > 0
         ? req.preferred
         : req.options;
-      req.onResolve(this, arnd(pool));
+      req.onResolve(this, this.rng.pick(pool));
       return;
     }
     // Interactive mode: queue the choice and signal the runner to pause.
@@ -640,7 +651,7 @@ export class Character {
   whichSkillTable(): number {
     const table = this.forceTable
       ? this.forceTableIndex
-      : rndInt(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
+      : this.rng.int(1, 3) + (this.attributes.education >= 8 ? 1 : 0);
     return table;
   }
 

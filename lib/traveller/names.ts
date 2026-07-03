@@ -2,7 +2,7 @@
 // names is a data edit, not a code change.
 
 import namesJson from "@/data/names.json";
-import { arnd, roll } from "./random";
+import { Rng } from "./random";
 import type { Gender } from "./types";
 
 interface NameData {
@@ -13,11 +13,11 @@ interface NameData {
 
 const POOL = namesJson as NameData;
 
-export function generateName(gender: Gender): string {
+export function generateName(gender: Gender, rng: Rng): string {
   const given = gender === "female" ? POOL.femaleNames : POOL.maleNames;
-  return `${arnd(given)} ${arnd(POOL.familyNames)}`;
+  return `${rng.pick(given)} ${rng.pick(POOL.familyNames)}`;
 }
 
-export function generateGender(): Gender {
-  return roll(1) <= 2 ? "female" : "male";
+export function generateGender(rng: Rng): Gender {
+  return rng.roll(1) <= 2 ? "female" : "male";
 }
