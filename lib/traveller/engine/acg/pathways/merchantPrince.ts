@@ -42,7 +42,6 @@ import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange,
 } from "./shared";
 import type { AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
-import { recordTransfer } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
 import { event as ev } from "@/lib/traveller/history";
 
@@ -546,10 +545,6 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   }
   const from = order[idx]!;
   const to = order[newIdx]!;
-  recordTransfer(
-    ch.requireAcgState(), "lineType", from, to,
-    ch.requireAcgState().yearsServed ?? 0,
-  );
   ch.requireAcgState().lineType = to;
   ch.log(ev.transferred(to, "line", from));
 }
@@ -620,8 +615,6 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     if (transfer) {
       const from = ch.requireAcgState().department ?? "";
       const to = transfer[1]!;
-      recordTransfer(ch.requireAcgState(), "department", from, to,
-        ch.requireAcgState().yearsServed ?? 0);
       ch.requireAcgState().department = to;
       ch.log(ev.transferred(to, "department", from));
     }
@@ -747,8 +740,6 @@ function applyDeckAutoTransferIfDue(ch: Character): void {
   // PM says "after one full term in rank O4" — we trigger at startOfTerm
   // when the rank was reached in the previous term.
   const from = ch.acgState.department ?? "";
-  recordTransfer(ch.acgState, "department", from, rule.destinationDepartment,
-    ch.acgState.yearsServed ?? 0);
   ch.acgState.department = rule.destinationDepartment;
   ch.log(ev.transferred(rule.destinationDepartment, "department", from));
 }

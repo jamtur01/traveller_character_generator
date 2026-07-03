@@ -28,7 +28,6 @@ import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import { createPathwaySpecRegistry, advanceRankRow, mandatoryReenlistRoll } from "./shared";
-import { recordTransfer } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 
 const PATHWAY = "scout";
@@ -382,21 +381,16 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // pauses on an interactive choice, the runner re-invokes the outer
   // resolveAssignment with assignment="Transfer" on resume. Without this
   // marker the transfer side effects (rank change, division change,
-  // recordTransfer, office reroll) would re-apply on every resume.
+  // office reroll) would re-apply on every resume.
   if (!acg.transferAppliedThisYear) {
     acg.transferAppliedThisYear = true;
     const fromDivision = acg.division ?? "field";
-    recordTransfer(acg, "division", fromDivision, "bureaucracy",
-      acg.yearsServed ?? 0);
-    const fromOffice = acg.office ?? "";
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
     const r = Math.max(2, Math.min(12, ch.rng.roll(2)));
     const row = data.officeAssignment.rows.find((row) => row.die === r);
     const off = row?.bureaucracy;
     const newOffice = typeof off === "string" ? off : "Technical";
-    recordTransfer(acg, "office", fromOffice, newOffice,
-      acg.yearsServed ?? 0);
     acg.office = newOffice;
     // Bureaucracy has rank; ordinary rank becomes terms served, capped at
     // the top ordinary rank defined in JSON (PM p. 57: IS-9).

@@ -11,7 +11,6 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
-import { recordTransfer } from "./state";
 import { event as ev } from "@/lib/traveller/history";
 
 type Effect = Record<string, unknown> & { type: string };
@@ -100,17 +99,13 @@ function runEffect(
       const alreadyTrained = ch.acgState.crossTrainedArms ?? [];
       const currentArm = ch.acgState.combatArm;
       // Exclude both the JSON exclude list AND the character's current
-      // arm + any previously-cross-trained arms. Otherwise arnd could
-      // pick a same-arm "transfer" (no-op skill grant, log spam, stale
-      // recordTransfer with from===to filtered out by recordTransfer).
+      // arm + any previously-cross-trained arms, so the pick can't be a
+      // same-arm no-op cross-train (log spam, wasted skill roll).
       const arms = (data.combatArms ?? []).filter((a) =>
         !excl.includes(a) && a !== currentArm && !alreadyTrained.includes(a),
       );
       if (arms.length === 0) return;
       const newArm = ch.rng.pick(arms);
-      const fromArm = currentArm ?? "";
-      recordTransfer(ch.acgState, "combatArm", fromArm, newArm,
-        ch.acgState.yearsServed ?? 0);
       ch.acgState.combatArm = newArm;
       ch.acgState.crossTrainedArms = alreadyTrained;
       if (!ch.acgState.crossTrainedArms.includes(newArm)) {

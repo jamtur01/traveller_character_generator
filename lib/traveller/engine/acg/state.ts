@@ -54,19 +54,6 @@ export function isMerchantAcg(acg: AcgState): acg is MerchantAcgState {
   return acg.pathway === "merchantPrince" && typeof acg.lineType === "string";
 }
 
-/** Helper for pathway code to log a transfer event into acgState. */
-export function recordTransfer(
-  state: AcgState,
-  kind: "branch" | "department" | "lineType" | "combatArm" | "division" | "office",
-  from: string,
-  to: string,
-  yearOfService: number,
-): void {
-  if (from === to) return;
-  if (!state.transferHistory) state.transferHistory = [];
-  state.transferHistory.push({ yearOfService, from, to, kind });
-}
-
 /** All the per-character ACG state. Lives on Character.acgState. */
 export interface AcgState {
   pathway: AcgPathwayId;
@@ -206,14 +193,6 @@ export interface AcgState {
   commissionO0DeadlineYear?: number;
 
   // Resume/sheet fields (PM "Resumes" p. 47).
-  /** Per-event log of branch / department / line / arm transfers, each
-   *  stamped with the year-of-service at which it occurred. */
-  transferHistory?: Array<{
-    yearOfService: number;
-    from: string;
-    to: string;
-    kind: "branch" | "department" | "lineType" | "combatArm" | "division" | "office";
-  }>;
   /** Subsector tech code recorded at character generation start (PM
    *  requires this for Naval characters and is harmless for others). */
   subsectorTechCode?: string;
