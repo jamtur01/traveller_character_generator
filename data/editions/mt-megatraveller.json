@@ -6232,21 +6232,21 @@
           "imperialNavy": {
             "target": 6,
             "dms": [
-              { "when": { "enlistedRankAtLeast": 4 }, "dm": 1 },
-              { "when": { "officer": true }, "dm": 1 }
+              { "rankAtLeast": "E4", "dm": 1, "note": "enlisted rank E4+ (PM p. 53)" },
+              { "officer": true, "dm": 1, "note": "officer (PM p. 53)" }
             ]
           },
           "reserveFleet": {
             "target": 6,
             "dms": [
-              { "when": { "enlistedRankAtLeast": 4 }, "dm": 2 },
-              { "when": { "officer": true }, "dm": 2 }
+              { "rankAtLeast": "E4", "dm": 2, "note": "enlisted rank E4+ (PM p. 53)" },
+              { "officer": true, "dm": 2, "note": "officer (PM p. 53)" }
             ]
           },
           "systemSquadron": {
             "target": 5,
             "dms": [
-              { "when": { "officer": true }, "dm": 2 }
+              { "officer": true, "dm": 2, "note": "officer (PM p. 53)" }
             ]
           }
         },

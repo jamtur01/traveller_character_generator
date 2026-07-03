@@ -95,8 +95,8 @@ describe("Navy PM audit — reenlistment (PM p. 55)", () => {
     const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
     const inFleet = navy?.reenlistment?.perFleet?.imperialNavy;
     expect(inFleet?.target).toBe(6);
-    const e4 = inFleet?.dms?.find((d) => d.when?.enlistedRankAtLeast === 4);
-    const off = inFleet?.dms?.find((d) => d.when?.officer === true);
+    const e4 = inFleet?.dms?.find((d) => d.rankAtLeast === "E4");
+    const off = inFleet?.dms?.find((d) => d.officer === true);
     expect(e4?.dm).toBe(1);
     expect(off?.dm).toBe(1);
   });
@@ -105,8 +105,8 @@ describe("Navy PM audit — reenlistment (PM p. 55)", () => {
     const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
     const rfFleet = navy?.reenlistment?.perFleet?.reserveFleet;
     expect(rfFleet?.target).toBe(6);
-    const e4 = rfFleet?.dms?.find((d) => d.when?.enlistedRankAtLeast === 4);
-    const off = rfFleet?.dms?.find((d) => d.when?.officer === true);
+    const e4 = rfFleet?.dms?.find((d) => d.rankAtLeast === "E4");
+    const off = rfFleet?.dms?.find((d) => d.officer === true);
     expect(e4?.dm).toBe(2);
     expect(off?.dm).toBe(2);
   });
@@ -115,11 +115,11 @@ describe("Navy PM audit — reenlistment (PM p. 55)", () => {
     const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
     const ssFleet = navy?.reenlistment?.perFleet?.systemSquadron;
     expect(ssFleet?.target).toBe(5);
-    const off = ssFleet?.dms?.find((d) => d.when?.officer === true);
+    const off = ssFleet?.dms?.find((d) => d.officer === true);
     expect(off?.dm).toBe(2);
     // PM p. 55: "Commissioned officers (rank 01+) receive DM +2" —
     // no E4+ bonus for System Squadron.
-    const e4 = ssFleet?.dms?.find((d) => d.when?.enlistedRankAtLeast === 4);
+    const e4 = ssFleet?.dms?.find((d) => d.rankAtLeast === "E4");
     expect(e4).toBeUndefined();
   });
 });

@@ -91,16 +91,7 @@ export interface NavyData {
   };
   ranks: { enlisted: Array<[string, string]>; officer: Array<[string, string, number]> };
   reenlistment: {
-    perFleet?: Record<string, {
-      target: number;
-      dms: Array<{
-        condition?: string;
-        when?: { enlistedRankAtLeast?: number; officer?: boolean };
-        dm: number;
-      }>;
-    }>;
-    target?: number;
-    dms?: string[];
+    perFleet: Record<string, { target: number; dms: StructuredDm[] }>;
     branchChange?: string;
     fleetChange?: string;
   };
@@ -585,40 +576,21 @@ export function navySpecialAssignment(ch: Character): void {
 export function navyReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   const fleet = ch.requireAcgState().fleet ?? "imperialNavy";
-  const spec = data.reenlistment.perFleet?.[fleet];
+  const spec = data.reenlistment.perFleet[fleet];
   if (!spec) {
-    // Legacy single-target form (kept for back-compat).
-    const r = roll(2);
-    if (r === 12) { ch.enterMandatoryReenlist(); return true; }
-    return r >= (data.reenlistment.target ?? 6);
+    throw new Error(`Navy reenlistment missing perFleet config for "${fleet}"`);
   }
-  let dm = 0;
-  const rankNum = parseInt(ch.requireAcgState().rankCode.replace(/[^\d]/g, ""), 10) || 0;
-  const isOfficer = ch.requireAcgState().isOfficer;
-  for (const d of spec.dms) {
-    // Structured form preferred.
-    if (d.when) {
-      const w = d.when;
-      if (w.enlistedRankAtLeast !== undefined &&
-          !isOfficer && rankNum >= w.enlistedRankAtLeast) {
-        dm += d.dm;
-      } else if (w.officer === true && isOfficer) {
-        dm += d.dm;
-      }
-      continue;
-    }
-    // Legacy string form.
-    if (d.condition === "rankE4orAbove" && !isOfficer && rankNum >= 4) dm += d.dm;
-    else if (d.condition === "officer" && isOfficer) dm += d.dm;
-  }
+  // Reenlist DMs use the same structured shape + evaluator as the other
+  // pathways (PM p. 53: DM +1/+2 for enlisted E4+ or officer, per fleet).
+  const dm = applyStructuredDms(spec.dms, ch);
   const r = roll(2);
-  ch.log(ev.roll("Reenlistment", r, dm, spec.target, r + dm >= spec.target, `navy ${fleet}`));
+  const keep = r + dm >= spec.target;
+  ch.log(ev.roll("Reenlistment", r, dm, spec.target, keep, `navy ${fleet}`));
   if (r === 12) {
     ch.enterMandatoryReenlist();
     offerNavyBranchChange(ch);
     return true;
   }
-  const keep = r + dm >= spec.target;
   if (keep) offerNavyBranchChange(ch);
   return keep;
 }
