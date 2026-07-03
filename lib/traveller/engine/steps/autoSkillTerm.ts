@@ -3,7 +3,7 @@
 // term value matches the character's current term. MT Belter Zero-G
 // Environ-1 at term 3 is the canonical case.
 
-import { applyCell } from "../cellResolver";
+import { applyCell } from "@/lib/traveller/engine/cellResolver";
 import type { StepFn } from "./types";
 
 export const autoSkillTermStep: StepFn = ({ character, edition }) => {

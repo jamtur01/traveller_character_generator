@@ -6,9 +6,9 @@
 // it in index.ts, and reference its id from the edition's JSON. The Character
 // and ServiceDef stay the same.
 
-import type { Character } from "../../character";
-import type { ServiceDef } from "../../types";
-import type { Edition } from "../../editions/types";
+import type { Character } from "@/lib/traveller/character";
+import type { ServiceDef } from "@/lib/traveller/types";
+import type { Edition } from "@/lib/traveller/editions/types";
 
 export interface StepContext {
   character: Character;

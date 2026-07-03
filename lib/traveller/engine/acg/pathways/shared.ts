@@ -6,16 +6,16 @@
 // module factors the boilerplate into createPathwaySpecRegistry; each
 // pathway then wires its specifics in ~5 lines instead of ~30.
 
-import type { Character } from "../../../character";
-import { getEdition } from "../../../editions";
-import type { PathwaySpec, ResolveContext } from "../phaseRunner";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import type { PathwaySpec, ResolveContext } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
   type ResolveAssignmentConfig,
-} from "../jsonPhases";
-import { applyDmRules, applyStructuredDms, type StructuredDm } from "../tables";
-import { event as ev } from "../../../history";
-import { roll } from "../../../random";
+} from "@/lib/traveller/engine/acg/jsonPhases";
+import { applyDmRules, applyStructuredDms, type StructuredDm } from "@/lib/traveller/engine/acg/tables";
+import { event as ev } from "@/lib/traveller/history";
+import { roll } from "@/lib/traveller/random";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON

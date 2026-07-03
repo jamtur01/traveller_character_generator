@@ -19,14 +19,14 @@
 // distinguishing the two so we know whether to treat unknown labels as
 // skills or benefits.
 
-import type { Character } from "../character";
-import type { AttributeKey } from "../types";
-import type { BenefitDetail } from "../editions/types";
-import { getEdition } from "../editions";
-import { roll } from "../random";
+import type { Character } from "@/lib/traveller/character";
+import type { AttributeKey } from "@/lib/traveller/types";
+import type { BenefitDetail } from "@/lib/traveller/editions/types";
+import { getEdition } from "@/lib/traveller/editions";
+import { roll } from "@/lib/traveller/random";
 import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
-import { event as ev } from "../history";
+import { event as ev } from "@/lib/traveller/history";
 
 /** Map an abbreviated attribute label ("Intel", "Soc") to the engine
  *  attribute key, using the edition's `attributeAbbreviations` JSON. */

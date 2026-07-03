@@ -6,9 +6,9 @@
 // steps no-op via their own guards rather than the runner short-circuiting,
 // which makes step composition predictable.
 
-import type { Character } from "../../character";
-import { getEdition } from "../../editions";
-import { STEP_REGISTRY } from "../steps";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { STEP_REGISTRY } from "@/lib/traveller/engine/steps";
 
 /** Validate that every lifecycle.terms[i].id in this edition resolves
  *  against STEP_REGISTRY. Throws on any unknown id so JSON↔code drift

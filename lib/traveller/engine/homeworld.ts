@@ -2,11 +2,11 @@
 // basic chargen AND ACG (per the manual the homeworld step is shared).
 // Per MT Players' Manual pp. 12-13.
 
-import { roll } from "../random";
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { event as ev } from "../history";
-import type { ServiceKey } from "../types";
+import { roll } from "@/lib/traveller/random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { event as ev } from "@/lib/traveller/history";
+import type { ServiceKey } from "@/lib/traveller/types";
 
 /** A rolled homeworld profile (UPP-style coding). The valid values for
  *  each field are sourced from the active edition JSON's `homeworld`

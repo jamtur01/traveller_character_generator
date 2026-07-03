@@ -5,7 +5,7 @@
 // rollPhaseDice/applyOnce/tryMitigate boilerplate that each pathway's
 // resolveAssignment was duplicating.
 
-import type { Character } from "../../character";
+import type { Character } from "@/lib/traveller/character";
 import { tryMitigate, type MitigationRequest } from "./awards";
 import {
   applyOnce, markComplete, resetIfComplete, rollPhaseDice,

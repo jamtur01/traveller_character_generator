@@ -5,7 +5,7 @@ import { getEdition } from "@/lib/traveller/editions";
 import { getEditionServices } from "@/lib/traveller/services";
 import {
   PhaseCard, PrimaryButton, SecondaryButton, Stat,
-} from "../ui";
+} from "@/app/components/ui";
 
 export function TermPhase({
   character,

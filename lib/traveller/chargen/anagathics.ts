@@ -3,10 +3,10 @@
 // helpers. The Character methods remain as thin shims for backward
 // compatibility; engine call sites should prefer the free functions.
 
-import type { Character } from "../character";
-import { roll } from "../random";
-import { event as ev } from "../history";
-import { getEdition } from "../editions";
+import type { Character } from "@/lib/traveller/character";
+import { roll } from "@/lib/traveller/random";
+import { event as ev } from "@/lib/traveller/history";
+import { getEdition } from "@/lib/traveller/editions";
 
 interface AnagathicsRules {
   eligibility?: { minAge?: number; minTerms?: number };

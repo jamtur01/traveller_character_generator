@@ -4,7 +4,7 @@
 // Lives in its own module so all four pathways and schools.ts can import
 // without forming a pathway → pathway cross-dependency.
 
-import type { Character } from "../../character";
+import type { Character } from "@/lib/traveller/character";
 
 const ATTR_PREFIX_MAP: ReadonlyArray<[string, "strength" | "dexterity" | "endurance" | "intelligence" | "education" | "social"]> = [
   ["str", "strength"],

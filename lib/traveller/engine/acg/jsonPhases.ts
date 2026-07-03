@@ -10,7 +10,7 @@
 // specific side effects (skill roll, promotion, finalize) are dispatched
 // through a per-pathway callback registry.
 
-import type { Character } from "../../character";
+import type { Character } from "@/lib/traveller/character";
 import {
   awardDecoration, resolveDecorationTier, runCourtMartial,
 } from "./awards";
@@ -376,7 +376,7 @@ function targetOrZero(t: import("./state").ResolutionTarget): number {
 // Avoid circular import at type-check time by deferring the history
 // module reference. The pathway code is the entry point for event
 // construction; this loader is downstream.
-import * as eventModule from "../../history";
+import * as eventModule from "@/lib/traveller/history";
 
 // Register the built-in decoration-DM tradeoff preRun hook. The prompt
 // fires before any phase rolls in interactive mode; both mercenary and

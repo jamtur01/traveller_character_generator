@@ -7,13 +7,13 @@
 // edition JSON under `advancedCharacterGeneration.<pathway>.specialAssignmentDetails`.
 // This module dispatches the effect objects against the character.
 
-import type { Character } from "../../character";
-import { getEdition, getAcgPathway } from "../../editions";
-import { roll, arnd } from "../../random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { roll, arnd } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { recordTransfer } from "./state";
-import { event as ev } from "../../history";
+import { event as ev } from "@/lib/traveller/history";
 
 type Effect = Record<string, unknown> & { type: string };
 

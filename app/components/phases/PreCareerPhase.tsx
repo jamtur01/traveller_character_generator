@@ -4,7 +4,7 @@ import type { Character } from "@/lib/traveller/character";
 import {
   isPreCareerEligible, preCareerLabel, preCareerUiSummary,
 } from "@/lib/traveller/engine/acg/preCareer";
-import { PhaseCard, PrimaryButton } from "../ui";
+import { PhaseCard, PrimaryButton } from "@/app/components/ui";
 
 export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"

@@ -3,12 +3,12 @@
 // matching row's per-attribute saves, then runs the aging-crisis sweep
 // on any characteristic reduced to the configured threshold.
 
-import type { Character } from "../character";
-import { roll } from "../random";
-import { event as ev } from "../history";
-import { getEdition } from "../editions";
-import { attrShort } from "../formatting";
-import type { AttributeKey } from "../types";
+import type { Character } from "@/lib/traveller/character";
+import { roll } from "@/lib/traveller/random";
+import { event as ev } from "@/lib/traveller/history";
+import { getEdition } from "@/lib/traveller/editions";
+import { attrShort } from "@/lib/traveller/formatting";
+import type { AttributeKey } from "@/lib/traveller/types";
 
 interface AgingRow {
   age: number | string;

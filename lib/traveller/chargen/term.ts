@@ -2,10 +2,10 @@
 // boundary + anagathics hook, and dispatches to the engine runner
 // (basic chargen) or runAcgTerm (ACG).
 
-import type { Character } from "../character";
-import { event as ev } from "../history";
-import { runAcgTerm } from "../engine/runners/acg";
-import { runTermSteps } from "../engine/runners/basic";
+import type { Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
+import { runAcgTerm } from "@/lib/traveller/engine/runners/acg";
+import { runTermSteps } from "@/lib/traveller/engine/runners/basic";
 
 /** Run one service term. Increments terms/age (basic chargen only —
  *  ACG does its own per-year accounting). */

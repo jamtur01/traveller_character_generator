@@ -15,8 +15,8 @@
 // side effects (decoration push, rank changes, skill additions) are
 // gated by `applied[key]` flags so they fire exactly once per year.
 
-import type { Character } from "../../character";
-import { roll } from "../../random";
+import type { Character } from "@/lib/traveller/character";
+import { roll } from "@/lib/traveller/random";
 import type {
   ResolutionTarget, SubStepOutcome, ThisYearOutcomes,
 } from "./state";

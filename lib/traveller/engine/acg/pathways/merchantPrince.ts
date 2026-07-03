@@ -23,29 +23,29 @@
 //     "Enlisted personnel are promoted every four years").
 //   - Reenlistment: 4+ (DM +1 if officer).
 
-import type { Character } from "../../../character";
-import { getEdition, getAcgPathway } from "../../../editions";
-import { roll } from "../../../random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { roll } from "@/lib/traveller/random";
 import {
   applyDmRules, applyStructuredDms, labelToColumnKey,
   parseResolutionTarget,
   type StructuredDm,
-} from "../tables";
-import { awardBrownie, bpAwardFor } from "../awards";
-import { applyAcgSkillCell } from "../skills";
+} from "@/lib/traveller/engine/acg/tables";
+import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
+import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import {
   applyOnce, markComplete, resetIfComplete,
   alreadyApplied, markApplied,
-} from "../subStepCache";
-import { runPhases, type PathwaySpec } from "../phaseRunner";
-import { type PathwayCallbacks } from "../jsonPhases";
+} from "@/lib/traveller/engine/acg/subStepCache";
+import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
+import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange,
 } from "./shared";
-import type { AssignmentResolution, ResolutionTarget } from "../state";
-import { recordTransfer } from "../state";
-import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
-import { event as ev } from "../../../history";
+import type { AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
+import { recordTransfer } from "@/lib/traveller/engine/acg/state";
+import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
+import { event as ev } from "@/lib/traveller/history";
 
 const PATHWAY = "merchantPrince";
 

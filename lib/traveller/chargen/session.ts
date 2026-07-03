@@ -14,16 +14,16 @@
 // caller (React component) cloneCharacters as it sees fit; this module
 // doesn't mutate the inputs.
 
-import { Character, cloneCharacter } from "../character";
-import { ChoicePendingError } from "../engine/choices";
-import { runAcgYear } from "../engine/runners/acg";
-import { getEditionServices } from "../services";
-import { getEdition } from "../editions";
-import { editionHasAcg } from "../engine/acg";
-import { freshAcgState } from "../engine/acg/state";
-import { event as ev } from "../history";
-import { cashDmFor, benefitDmFor, maxCashRolls } from "../engine/musterDm";
-import { intToOrdinal } from "../formatting";
+import { Character, cloneCharacter } from "@/lib/traveller/character";
+import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { runAcgYear } from "@/lib/traveller/engine/runners/acg";
+import { getEditionServices } from "@/lib/traveller/services";
+import { getEdition } from "@/lib/traveller/editions";
+import { editionHasAcg } from "@/lib/traveller/engine/acg";
+import { freshAcgState } from "@/lib/traveller/engine/acg/state";
+import { event as ev } from "@/lib/traveller/history";
+import { cashDmFor, benefitDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
+import { intToOrdinal } from "@/lib/traveller/formatting";
 
 export type ChargenPhase =
   | "start"

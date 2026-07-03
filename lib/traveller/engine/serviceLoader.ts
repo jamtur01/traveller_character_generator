@@ -3,17 +3,17 @@
 // (enlistmentThrow, checkSurvival, acquireSkill, musterBenefits, etc.) so
 // existing callers in character.ts and the test suite continue to work.
 
-import { arnd, roll } from "../random";
-import { type Character } from "../character";
-import { event as ev } from "../history";
-import type { Attributes, ServiceDef } from "../types";
+import { arnd, roll } from "@/lib/traveller/random";
+import { type Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
+import type { Attributes, ServiceDef } from "@/lib/traveller/types";
 import { cascadePoolForLabel } from "./cascadeMap";
 import type {
   AutoSkillEntry,
   CanonData,
   Edition,
   ServiceData,
-} from "../editions/types";
+} from "@/lib/traveller/editions/types";
 import { applyCell } from "./cellResolver";
 import { evaluateDM } from "./dmEvaluator";
 

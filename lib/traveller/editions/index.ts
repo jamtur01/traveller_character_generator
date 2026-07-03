@@ -7,18 +7,18 @@
 //   3. Add a registry entry below
 //   4. The Character constructor / UI picker pick up the new id automatically
 
-import ctClassicData from "../../../data/editions/ct-classic.json" with {
+import ctClassicData from "@/data/editions/ct-classic.json" with {
   type: "json",
 };
-import mtMegatravellerData from "../../../data/editions/mt-megatraveller.json" with {
+import mtMegatravellerData from "@/data/editions/mt-megatraveller.json" with {
   type: "json",
 };
 import { ctClassicHooks } from "./ct-classic/hooks";
 import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
 import { parseRules, parseCanonData } from "./schema";
-import { validateEditionAcgConfigs } from "../engine/acg";
-import { validateLifecycleSteps } from "../engine/runners/basic";
+import { validateEditionAcgConfigs } from "@/lib/traveller/engine/acg";
+import { validateLifecycleSteps } from "@/lib/traveller/engine/runners/basic";
 
 function buildEdition(
   raw: unknown, hooks: Edition["hooks"], id: string,

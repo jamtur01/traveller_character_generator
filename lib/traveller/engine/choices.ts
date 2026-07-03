@@ -8,7 +8,7 @@
 // Closures hold the apply-on-resolve logic, which means PendingChoice is
 // not serializable — it's an in-memory React-state object only.
 
-import type { Character } from "../character";
+import type { Character } from "@/lib/traveller/character";
 
 export type ChoiceMode = "auto" | "interactive";
 

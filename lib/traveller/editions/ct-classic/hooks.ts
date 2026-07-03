@@ -3,8 +3,8 @@
 // data/editions/ct-classic.json. Adding a hook = add a function and
 // reference it in the JSON; that's the whole extension surface.
 
-import type { Character } from "../../character";
-import type { EditionHooks } from "../types";
+import type { Character } from "@/lib/traveller/character";
+import type { EditionHooks } from "@/lib/traveller/editions/types";
 
 /**
  * Nobles: after promotion, social standing is at least rank + 10

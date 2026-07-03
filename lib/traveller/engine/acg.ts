@@ -4,8 +4,8 @@
 // so callers (UI, tests, renderer) can ask edition-agnostic questions
 // instead of poking into JSON.
 
-import { getEdition } from "../editions";
-import type { AcgPathway } from "../editions/types";
+import { getEdition } from "@/lib/traveller/editions";
+import type { AcgPathway } from "@/lib/traveller/editions/types";
 import type { MercenaryData } from "./acg/pathways/mercenary";
 import type { NavyData } from "./acg/pathways/navy";
 import type { ScoutData } from "./acg/pathways/scout";

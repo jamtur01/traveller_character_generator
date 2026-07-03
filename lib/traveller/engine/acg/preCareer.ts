@@ -23,12 +23,12 @@
 //   Admission 9+ DM+1 if Dex 9+. Success 7+ DM+1 if Int 8+. All grads:
 //   Ship's Boat, Navigation, plus 1D-3 (min 1) Pilot.
 
-import type { Character } from "../../character";
-import { getEdition } from "../../editions";
-import { extendedHex } from "../../formatting";
-import { arnd, roll } from "../../random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { extendedHex } from "@/lib/traveller/formatting";
+import { arnd, roll } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
-import { event as ev } from "../../history";
+import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
 
 export type PreCareerOption =

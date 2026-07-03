@@ -22,28 +22,28 @@
 //   - Negative survival DM can be converted to positive decoration DM
 //     (acgState.decorationDmStrategy, player choice, default 0)
 
-import type { Character } from "../../../character";
-import { getEdition } from "../../../editions";
-import { roll } from "../../../random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { roll } from "@/lib/traveller/random";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
-} from "../tables";
-import { applyMercenarySchool } from "../schools";
-import { applyAcgSkillCell } from "../skills";
+} from "@/lib/traveller/engine/acg/tables";
+import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
+import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import {
   applyOnce, markComplete, resetIfComplete,
-} from "../subStepCache";
-import { runPhases, type PathwaySpec } from "../phaseRunner";
-import { type PathwayCallbacks } from "../jsonPhases";
+} from "@/lib/traveller/engine/acg/subStepCache";
+import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
+import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, advanceRankRow, rollSpecialAssignment,
   runReenlist, offerRoleChange,
 } from "./shared";
-import { event as ev } from "../../../history";
-import type { AcgState, ResolutionTarget } from "../state";
+import { event as ev } from "@/lib/traveller/history";
+import type { AcgState, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 
 const PATHWAY = "mercenary";
 

@@ -17,10 +17,10 @@
 // Override roll on failure forfeits the skill roll (no skill added,
 // no consolation). On success the skill is added normally.
 
-import { roll } from "../random";
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { event as ev } from "../history";
+import { roll } from "@/lib/traveller/random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { event as ev } from "@/lib/traveller/history";
 
 interface RestrictionsData {
   rule?: string;

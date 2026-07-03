@@ -16,7 +16,7 @@
 //                  rewind age (preserved for any callers relying on the
 //                  old behavior; not used by current MT JSON).
 
-import { event as ev } from "../../history";
+import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
 export const survivalStep: StepFn = ({ character, service, edition }) => {

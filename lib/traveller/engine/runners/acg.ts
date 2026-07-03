@@ -7,12 +7,12 @@
 // pathway module, declare its JSON block, register the factory in hooks.
 // No edits to this file are required.
 
-import type { Character } from "../../character";
-import { getEdition } from "../../editions";
-import { ChoicePendingError } from "../choices";
-import { awardBrownie } from "../acg/awards";
-import { event as ev } from "../../history";
-import type { AcgPathwayImpl } from "../../editions/types";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { awardBrownie } from "@/lib/traveller/engine/acg/awards";
+import { event as ev } from "@/lib/traveller/history";
+import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
 
 /** Names for the sub-steps inside a single one-year assignment cycle.
  *  The runner walks these in order; the index is recorded in acgState.yearStep

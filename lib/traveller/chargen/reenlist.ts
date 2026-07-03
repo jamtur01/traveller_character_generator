@@ -2,11 +2,11 @@
 // (mandatory at 12, mandatory retire after term 7 in CT, inverse-leave
 // for bureaucrats, etc.).
 
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { roll } from "../random";
-import { event as ev } from "../history";
-import { runAcgReenlist } from "../engine/runners/acg";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { roll } from "@/lib/traveller/random";
+import { event as ev } from "@/lib/traveller/history";
+import { runAcgReenlist } from "@/lib/traveller/engine/runners/acg";
 
 /** Run the end-of-term reenlistment check. Mutates ch.chargenStatus
  *  via the endChargen* helpers when the character is forced out. */

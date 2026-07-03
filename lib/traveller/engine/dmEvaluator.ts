@@ -5,8 +5,8 @@
 //
 // Multiple rules sum.
 
-import type { Attributes, AttributeKey } from "../types";
-import type { DMRule } from "../editions/types";
+import type { Attributes, AttributeKey } from "@/lib/traveller/types";
+import type { DMRule } from "@/lib/traveller/editions/types";
 
 /** Narrow context that evaluateDM actually needs. Accepting this instead
  *  of the full Character lets serviceLoader's enlistment-DM helper pass

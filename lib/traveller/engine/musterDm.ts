@@ -7,8 +7,8 @@
 //   (Prospecting only for specific services: merchants/belters/pirates/
 //   rogues/hunters/barbarians).
 
-import type { Character } from "../character";
-import { getEdition } from "../editions";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
 
 interface CashTableDmWhen {
   retired?: boolean;

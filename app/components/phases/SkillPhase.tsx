@@ -1,7 +1,7 @@
 "use client";
 
 import type { Character } from "@/lib/traveller/character";
-import { PhaseCard, SecondaryButton } from "../ui";
+import { PhaseCard, SecondaryButton } from "@/app/components/ui";
 
 export function SkillPhase({
   character,

@@ -2,9 +2,9 @@
 // config.doubleBonusOvershoot mirrors commission step's MT semantics — the
 // same roll's margin grants the second bonus, not a fresh roll.
 
-import { roll } from "../../random";
-import { evaluateDM } from "../dmEvaluator";
-import { event as ev } from "../../history";
+import { roll } from "@/lib/traveller/random";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
+import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
 export const promotionStep: StepFn = ({ character, service, config, edition }) => {

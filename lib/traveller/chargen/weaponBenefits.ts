@@ -1,9 +1,9 @@
 // Muster-out weapon benefits — Blade / Gun / generic Weapon cascades.
 // Extracted from character.ts; the Character methods are thin shims.
 
-import type { Character } from "../character";
-import { event as ev } from "../history";
-import { cascadePoolByKey } from "../engine/cascadeMap";
+import type { Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
+import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
 
 /** Names from `pool` that the character already has skills in (for
  *  cascade preference: a subsequent blade cascade stacks onto an

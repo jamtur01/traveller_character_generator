@@ -1,7 +1,7 @@
 // Procedural name generation. Pools live in data/names.json so adding new
 // names is a data edit, not a code change.
 
-import namesJson from "../../data/names.json";
+import namesJson from "@/data/names.json";
 import { arnd, roll } from "./random";
 import type { Gender } from "./types";
 

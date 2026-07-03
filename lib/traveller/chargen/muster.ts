@@ -3,15 +3,15 @@
 // Each function takes Character as its first arg so Character can stay
 // focused on state + low-level mutators.
 
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { numCommaSep, attrShort } from "../formatting";
-import { roll } from "../random";
-import { event as ev } from "../history";
-import type { AttributeKey } from "../types";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { numCommaSep, attrShort } from "@/lib/traveller/formatting";
+import { roll } from "@/lib/traveller/random";
+import { event as ev } from "@/lib/traveller/history";
+import type { AttributeKey } from "@/lib/traveller/types";
 import { merchantFinalizeMuster, applyReducedPassageBenefit }
-  from "../engine/acg/pathways/merchantPrince";
-import { scoutFinalizeMuster } from "../engine/acg/pathways/scout";
+  from "@/lib/traveller/engine/acg/pathways/merchantPrince";
+import { scoutFinalizeMuster } from "@/lib/traveller/engine/acg/pathways/scout";
 
 /** Project the ACG officer rankCode onto basic-chargen `rank` (1-6) for
  *  muster-out DMs and rank-band extra rolls. Also consumes any pending

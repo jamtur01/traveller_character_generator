@@ -3,7 +3,7 @@
 import type { Character } from "@/lib/traveller/character";
 import {
   PhaseCard, PrimaryButton, SecondaryButton,
-} from "../ui";
+} from "@/app/components/ui";
 import { MusterLog } from "./MusterPhase";
 
 export function EndPhase({

@@ -2,9 +2,9 @@
 // every ACG pathway declares in JSON. The shapes vary slightly per
 // pathway, so these helpers normalize the lookups.
 
-import { roll } from "../../random";
-import type { Character } from "../../character";
-import { getEdition, getAcgPathway } from "../../editions";
+import { roll } from "@/lib/traveller/random";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import type {
   AssignmentResolution, AssignmentTable, ResolutionTarget,
 } from "./state";

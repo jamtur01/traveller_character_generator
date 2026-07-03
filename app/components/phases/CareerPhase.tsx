@@ -5,7 +5,7 @@ import {
   getEditionServices, getEnlistableServices, serviceLabel,
 } from "@/lib/traveller/services";
 import type { ServiceKey } from "@/lib/traveller/types";
-import { PhaseCard, PrimaryButton, SECTION_LABEL } from "../ui";
+import { PhaseCard, PrimaryButton, SECTION_LABEL } from "@/app/components/ui";
 
 export function CareerPhase({
   character,

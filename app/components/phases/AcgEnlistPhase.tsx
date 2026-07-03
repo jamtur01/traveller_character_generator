@@ -4,7 +4,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import {
   PhaseCard, FormField, FormSelect, PrimaryButton,
-} from "../ui";
+} from "@/app/components/ui";
 
 export interface AcgFormState {
   service: "army" | "marines";

@@ -4,7 +4,7 @@ import { listEditions } from "@/lib/traveller/editions";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import {
   CARD, SECTION_LABEL, FormField, FormSelect, PrimaryButton,
-} from "../ui";
+} from "@/app/components/ui";
 
 function editionSummary(id: string): string {
   if (id === "ct-classic") {

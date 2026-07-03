@@ -6,10 +6,10 @@
 // target by N+, grant a second bonus skill point. Uses the same roll's
 // margin (not a re-roll), per MT PM p. 17.
 
-import { intToOrdinal } from "../../formatting";
-import { roll } from "../../random";
-import { evaluateDM } from "../dmEvaluator";
-import { event as ev } from "../../history";
+import { intToOrdinal } from "@/lib/traveller/formatting";
+import { roll } from "@/lib/traveller/random";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
+import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
 export const commissionStep: StepFn = ({ character, service, config, edition }) => {

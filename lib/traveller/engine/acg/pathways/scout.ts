@@ -16,21 +16,21 @@
 //   - Reenlistment: 3+, with up-or-out rule (ordinary rank must be ≥
 //     terms served or no reenlistment).
 
-import type { Character } from "../../../character";
-import { getEdition } from "../../../editions";
-import { roll } from "../../../random";
-import { numCommaSep } from "../../../formatting";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { roll } from "@/lib/traveller/random";
+import { numCommaSep } from "@/lib/traveller/formatting";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
-} from "../tables";
-import { applyAcgSkillCell } from "../skills";
-import { applyScoutSchool } from "../schools";
-import { runPhases, type PathwaySpec } from "../phaseRunner";
-import { type PathwayCallbacks } from "../jsonPhases";
+} from "@/lib/traveller/engine/acg/tables";
+import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
+import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
+import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
+import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import { createPathwaySpecRegistry, advanceRankRow } from "./shared";
-import { recordTransfer } from "../state";
-import { event as ev } from "../../../history";
+import { recordTransfer } from "@/lib/traveller/engine/acg/state";
+import { event as ev } from "@/lib/traveller/history";
 
 const PATHWAY = "scout";
 

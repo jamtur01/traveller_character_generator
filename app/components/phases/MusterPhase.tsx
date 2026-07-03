@@ -6,7 +6,7 @@ import {
 } from "@/lib/traveller/engine/musterDm";
 import {
   PhaseCard, SecondaryButton, Stat, SECTION_LABEL,
-} from "../ui";
+} from "@/app/components/ui";
 
 export function MusterLog({ log }: { log: string[] }) {
   if (log.length === 0) return null;

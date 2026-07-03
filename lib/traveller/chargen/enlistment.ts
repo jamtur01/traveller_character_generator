@@ -3,23 +3,23 @@
 // skills. Also ACG enlistment entry (beginAcg) — initializes acgState
 // and runs pathway-specific enlistment.
 
-import type { Character } from "../character";
-import { getEdition } from "../editions";
-import { arnd, roll } from "../random";
-import { event as ev } from "../history";
-import type { ServiceKey, AttributeKey } from "../types";
-import type { ServiceData } from "../editions/types";
+import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { arnd, roll } from "@/lib/traveller/random";
+import { event as ev } from "@/lib/traveller/history";
+import type { ServiceKey, AttributeKey } from "@/lib/traveller/types";
+import type { ServiceData } from "@/lib/traveller/editions/types";
 import {
   getDraftServices, getEnlistableServices,
-} from "../services";
+} from "@/lib/traveller/services";
 import {
   applyHomeworldSkills, availableServicesForHomeworld,
-} from "../engine/homeworld";
-import { ChoicePendingError } from "../engine/choices";
-import { mercenaryEnlist } from "../engine/acg/pathways/mercenary";
-import { navyEnlist } from "../engine/acg/pathways/navy";
-import { scoutEnlist } from "../engine/acg/pathways/scout";
-import { merchantEnlist } from "../engine/acg/pathways/merchantPrince";
+} from "@/lib/traveller/engine/homeworld";
+import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
+import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
+import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
+import { merchantEnlist } from "@/lib/traveller/engine/acg/pathways/merchantPrince";
 
 /** Options for beginAcg — pathway-specific enlistment parameters. */
 export interface BeginAcgOptions {

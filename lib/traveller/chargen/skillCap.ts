@@ -1,9 +1,9 @@
 // PM p. 39 Int+Edu skill cap. Extracted from character.ts. The
 // Character method is a thin shim; this module owns the logic.
 
-import type { Character } from "../character";
-import { event as ev } from "../history";
-import { getEdition } from "../editions";
+import type { Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
+import { getEdition } from "@/lib/traveller/editions";
 
 /** Enforce the Int+Edu skill cap. Called after each term's skill rolls.
  *  In auto mode, reduces the most-recently-acquired skill level

@@ -2,10 +2,10 @@
 // running court-martial, and the spend-side mitigation that lets players
 // burn BPs to rescue failed rolls. Per MT Players' Manual pp. 46-47.
 
-import { roll } from "../../random";
-import { getEdition, getAcgPathway } from "../../editions";
-import type { Character } from "../../character";
-import { event as ev } from "../../history";
+import { roll } from "@/lib/traveller/random";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import type { Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
 import {
   cacheMitigation, getCachedMitigation, type SubStepKey,
 } from "./subStepCache";

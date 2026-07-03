@@ -2,8 +2,8 @@
 // object the engine consumes. One JSON file per edition lives under
 // data/editions/; this module models that shape.
 
-import type { Character } from "../character";
-import type { ServiceKey } from "../types";
+import type { Character } from "@/lib/traveller/character";
+import type { ServiceKey } from "@/lib/traveller/types";
 
 export interface EditionMeta {
   id: string;

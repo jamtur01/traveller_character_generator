@@ -9,7 +9,7 @@
 // match any label — the caller treats the cell as a literal skill in that
 // case (which fails fast if the cell is actually a cascade-only label).
 
-import { getEdition } from "../editions";
+import { getEdition } from "@/lib/traveller/editions";
 
 /** Printed cell label → cascade key in JSON cascadeSkills. */
 /** Aliases come from the active edition's `cascadeAliases` JSON block. */
