@@ -25,11 +25,6 @@
 
 import { z } from "zod";
 
-const RankBandSchema = z.object({
-  ranks: z.array(z.number()),
-  additionalRolls: z.number(),
-});
-
 const RankExtraRollSchema = z.object({
   rankMin: z.number(),
   rankMax: z.number(),
@@ -70,7 +65,6 @@ export const RulesSchema = z.looseObject({
   // and silently apply DM=0 for Gambling/rank 5+.
   musterOutRolls: z.looseObject({
     perTerm: z.number().optional(),
-    rankBands: z.array(RankBandSchema).optional(),
     rankExtraRolls: z.array(RankExtraRollSchema).optional(),
     cashTableDm: z.array(z.looseObject({
       when: z.looseObject({

@@ -35,10 +35,10 @@ describe("parseRules (#4)", () => {
     );
   });
 
-  it("rejects musterOutRolls.rankBands with malformed entry", () => {
+  it("rejects musterOutRolls.rankExtraRolls with malformed entry", () => {
     const rules = {
       musterOutRolls: {
-        rankBands: [{ ranks: [1, 2], additionalRolls: "three" }],
+        rankExtraRolls: [{ rankMin: 1, rankMax: 2, additionalRolls: "three" }],
       },
     };
     expect(() => parseRules(rules, "test")).toThrow(

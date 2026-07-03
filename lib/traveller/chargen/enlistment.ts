@@ -7,7 +7,8 @@ import type { Character } from "../character";
 import { getEdition } from "../editions";
 import { arnd, roll } from "../random";
 import { event as ev } from "../history";
-import type { ServiceKey } from "../types";
+import type { ServiceKey, AttributeKey } from "../types";
+import type { ServiceData } from "../editions/types";
 import {
   getDraftServices, getEnlistableServices,
 } from "../services";
@@ -190,18 +191,27 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     preferredService = arnd(gated);
   }
 
-  // CotI: Soc 10+ characters are automatically enrolled in the Nobility.
-  if (ch.attributes.social >= 10 && (!method || method === "random")) {
-    ch.log(ev.enlistmentAttempt(
-      "Nobility", 0, 0, 0, true,
-      "distinguished by social standing (Soc 10+, auto-enrolled)",
-    ));
-    applyServiceStartAge(ch, "nobles");
-    ch.service = "nobles";
-    if (ch.homeworld) applyHomeworldSkills(ch, ch.homeworld);
-    const skills = ch.editionService("nobles").getServiceSkills(ch);
-    for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
-    return "nobles";
+  // CotI: characters whose social standing (or other attribute) meets the
+  // nobles service's enlistment.automaticIf threshold are automatically
+  // enrolled in the Nobility. Editions without a nobles service, or whose
+  // nobles service has no automaticIf rule, skip this branch entirely.
+  const noblesData: ServiceData | undefined =
+    getEdition(ch.editionId).data.services.nobles;
+  const autoIf = noblesData?.checks.enlistment.automaticIf;
+  if (autoIf && (!method || method === "random")) {
+    const attrVal = ch.attributes[autoIf.attribute as AttributeKey] ?? 0;
+    if (attrVal >= autoIf.min) {
+      ch.log(ev.enlistmentAttempt(
+        "Nobility", 0, 0, 0, true,
+        "distinguished by social standing (Soc 10+, auto-enrolled)",
+      ));
+      applyServiceStartAge(ch, "nobles");
+      ch.service = "nobles";
+      if (ch.homeworld) applyHomeworldSkills(ch, ch.homeworld);
+      const skills = ch.editionService("nobles").getServiceSkills(ch);
+      for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
+      return "nobles";
+    }
   }
 
   const pref = ch.editionService(preferredService);

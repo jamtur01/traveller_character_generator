@@ -43,6 +43,9 @@ export interface CheckData {
   label?: string;
   inverseToLeave?: boolean;
   special?: string;
+  /** CotI auto-enrolment (e.g. Nobles): enlistment succeeds automatically
+   *  when the named attribute meets `min`. Absent = no auto-enrolment. */
+  automaticIf?: { attribute: string; min: number };
 }
 
 export interface AutoSkillEntry {

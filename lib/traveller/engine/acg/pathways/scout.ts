@@ -62,7 +62,7 @@ export interface ScoutData {
   schools?: { columns: string[]; rows: Array<Record<string, unknown>> };
   skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>> }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>> } };
   ranks: { ordinary: Array<[string, string]>; administrator: Array<[string, string, number]> };
-  reenlistment: { target: number; upOrOut: string };
+  reenlistment: { target: number };
   detachedDuty: { musterTarget: number; stipendPerYear: number };
 }
 

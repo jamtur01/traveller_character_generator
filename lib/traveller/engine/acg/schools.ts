@@ -28,8 +28,19 @@ interface PathwayData {
   combatArms?: string[];
   branches?: string[];
   mos?: { rows: Array<Record<string, unknown>> };
-  specialistSchool?: { rows: Array<Record<string, unknown>>; notes?: string[] };
+  specialistSchool?: {
+    rows: Array<Record<string, unknown>>;
+    notes?: string[];
+    schoolingThreshold?: number;
+  };
   serviceSkills?: { rows: Array<Record<string, unknown>> };
+  skillColumnPolicy?: {
+    officerInCommand: string;
+    officerStaff: string;
+    enlistedNcoMinRank: string;
+    enlistedNcoColumn: string;
+    enlistedLowRankColumns: Record<string, string>;
+  };
   branchSkills?: { rows: Array<Record<string, unknown>> };
   ranks?: { officer: Array<unknown[]> };
 }
@@ -164,7 +175,7 @@ function runEffect(
       ocsCommission(ch);
       return;
     case "attacheOrAide":
-      attacheOrAide(ch, pathway, data);
+      attacheOrAide(ch, pathway, data, effect);
       return;
     default:
       throw new Error(
@@ -260,8 +271,9 @@ function rollOnSpecialistSchool(
   const r = roll(1);
   const row = data.specialistSchool.rows.find((row) => row.die === r);
   if (!row) return;
+  const threshold = data.specialistSchool.schoolingThreshold ?? 16;
   const useSchooling =
-    (ch.attributes.intelligence + ch.attributes.education) > 16;
+    (ch.attributes.intelligence + ch.attributes.education) > threshold;
   const col = useSchooling ? "schooling" : "training";
   const skill = row[col];
   if (typeof skill === "string") {
@@ -278,10 +290,21 @@ function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: strin
   const rankNum = parseInt(ch.acgState.rankCode.replace(/[^\d]/g, ""), 10) || 0;
   if (ch.acgState.isOfficer) {
     col = ch.acgState.inCommand ? "commandSkills" : "staffSkills";
-  } else if (rankNum >= 3) {
-    col = "ncoSkills";
   } else {
-    col = ch.acgState.branch === "Marines" ? "marineLife" : "armyLife";
+    // NCO threshold + branch-life columns are driven by the pathway's
+    // skillColumnPolicy (PM p. 51 line 3194-3196); mercenary defines it.
+    const pol = data.skillColumnPolicy;
+    const ncoMin = pol
+      ? parseInt(pol.enlistedNcoMinRank.replace(/[^\d]/g, ""), 10) || 3
+      : 3;
+    if (rankNum >= ncoMin) {
+      col = pol?.enlistedNcoColumn ?? "ncoSkills";
+    } else {
+      const branch = ch.acgState.branch ?? "";
+      col = pol?.enlistedLowRankColumns[branch]
+        ?? pol?.enlistedLowRankColumns["army"]
+        ?? (branch === "Marines" ? "marineLife" : "armyLife");
+    }
   }
   const skill = row[col];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
@@ -339,11 +362,15 @@ function attacheOrAide(
   ch: Character,
   pathway: "mercenary" | "navy",
   data: PathwayData,
+  effect: Effect,
 ): void {
   if (!ch.acgState) return;
   const r = roll(1);
   const label = pathway === "navy" ? "Naval Attache" : "Military Attache";
-  if (r <= 4) {
+  // Promotion target comes from the assignment effect (PM p. 55/59:
+  // attache/aide promotes on 1D <= 4).
+  const promoteAtMost = (effect.promoteOnRollAtMost as number | undefined) ?? 4;
+  if (r <= promoteAtMost) {
     promoteOfficer(ch, data, label);
     ch.improveAttribute("social", 1);
   } else {

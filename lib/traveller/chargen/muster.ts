@@ -56,15 +56,10 @@ export function musterOutRolls(ch: Character): number {
     ch.terms - ch.shortTermsCount - acgPartial - anagathicsTerms + overlap,
   );
   let r = perTerm * qualifyingTerms;
-  if (rules?.rankExtraRolls?.length) {
-    const band = rules.rankExtraRolls.find(
-      (b) => ch.rank >= b.rankMin && ch.rank <= b.rankMax,
-    );
-    if (band) r += band.additionalRolls;
-  } else {
-    const band = rules?.rankBands?.find((b) => b.ranks.includes(ch.rank));
-    if (band) r += band.additionalRolls;
-  }
+  const band = rules?.rankExtraRolls?.find(
+    (b) => ch.rank >= b.rankMin && ch.rank <= b.rankMax,
+  );
+  if (band) r += band.additionalRolls;
   if (ch.useAcg && ch.acgState?.musterRollPenalty) {
     r = Math.max(0, r + ch.acgState.musterRollPenalty);
   }

@@ -3664,6 +3664,8 @@
         "college": {
           "displayName": "College",
           "uiSummary": "2D6 admit 9+ (Edu 9+: +2 DM); 4 years; honors gates Medical.",
+          "$rulePreCareer": "PM p. 47: course length and (for academies) auto-commission rank.",
+          "courseYears": 4,
           "admission": {
             "target": 9,
             "dms": [
@@ -3729,6 +3731,9 @@
         "navalAcademy": {
           "displayName": "Naval Academy",
           "uiSummary": "Soc 8+ to apply. Graduates auto-enlist as O1 Imperial Navy.",
+          "$rulePreCareer": "PM p. 47: Naval Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "courseYears": 4,
+          "commissionRank": "O1",
           "eligibility": { "attribute": "social", "min": 8 },
           "admission": {
             "target": 10,
@@ -3782,6 +3787,9 @@
         "militaryAcademy": {
           "displayName": "Military Academy",
           "uiSummary": "Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines.",
+          "$rulePreCareer": "PM p. 47: Military Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "courseYears": 4,
+          "commissionRank": "O1",
           "eligibility": { "attribute": "social", "min": 6 },
           "admission": {
             "target": 10,
@@ -3841,6 +3849,9 @@
         "merchantAcademy": {
           "displayName": "Merchant Academy",
           "uiSummary": "Post-enlistment only — available after joining a Megacorp or Sector-wide line.",
+          "$rulePreCareer": "PM p. 47: Merchant Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "courseYears": 4,
+          "commissionRank": "O1",
           "admission": {
             "target": 9,
             "dms": [
@@ -3891,6 +3902,9 @@
         "medicalSchool": {
           "displayName": "Medical School",
           "uiSummary": "Honors of college / academy gates entry. Graduates receive Medical-3, Admin, +1 Edu.",
+          "$rulePreCareer": "PM p. 47: Medical School is a 4-year course; graduates may take an automatic O3 direct commission.",
+          "courseYears": 4,
+          "commissionRank": "O3",
           "admission": {
             "target": 9,
             "dms": [
@@ -3934,6 +3948,9 @@
         "flightSchool": {
           "displayName": "Flight School",
           "uiSummary": "Naval Academy honors or commissioned college honors. Ship's Boat, Navigation, 1D-3 (min 1) Pilot.",
+          "$rulePreCareer": "PM p. 47: Flight School is a short (1-year) specialty course; graduates serve a short first term.",
+          "courseYears": 1,
+          "firstTermShort": true,
           "admission": {
             "target": 9,
             "dms": [
@@ -4719,7 +4736,7 @@
         "Attache/Aide": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide" }
+            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "note": "PM p. 55: attache promotes on 1D <= 4." }
           ]
         }
       },
@@ -4739,6 +4756,8 @@
         }
       },
       "specialistSchool": {
+        "$ruleSchoolingThreshold": "PM p. 57: the schooling column is used when Int + Edu is greater than 16.",
+        "schoolingThreshold": 16,
         "columns": [
           "die",
           "training",
@@ -5843,7 +5862,7 @@
         "Naval Attache": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Naval Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide" }
+            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "note": "PM p. 59: aide promotes on 1D <= 4." }
           ]
         },
         "Command College": {
@@ -5891,6 +5910,8 @@
         "systemSquadron": 7
       },
       "specialistSchool": {
+        "$ruleSchoolingThreshold": "PM p. 57: the schooling column is used when Int + Edu is greater than 16.",
+        "schoolingThreshold": 16,
         "columns": [
           "die",
           "training",
@@ -7232,8 +7253,8 @@
         ]
       },
       "reenlistment": {
-        "target": 3,
-        "upOrOut": "Ordinary rank must be at least equal to number of terms served or reenlistment is not permitted."
+        "$rule": "PM p. 59: up-or-out — a character's ordinary rank must be at least equal to the number of terms served or reenlistment is not permitted (enforced in code as rankNum < terms).",
+        "target": 3
       },
       "detachedDuty": {
         "$rule": "PM p. 57: Detached Duty scouts get permanent detached duty on a roll of 9+ (DM + terms served), with a Cr4000/yr stipend.",
@@ -7284,6 +7305,10 @@
           "passage": "Mid Psg",
           "pricePercent": 50,
           "conditions": "stand-by; ship has empty staterooms"
+        },
+        "freeTraderShip": {
+          "$rule": "PM p. 61: a Free Trader Owner/Captain (rank O5+) musters out with a free trader ship as an automatic benefit.",
+          "minOfficerRank": "O5"
         }
       },
       "assignmentColumnMap": {
@@ -7297,10 +7322,10 @@
         "Piracy": "speculative"
       },
       "freeTraderAssignmentFlags": {
-        "$comment": "Per-assignment mechanical overrides for Free Trader columns. PM p. 60-61 describes the narrative meaning; the mechanical effect captured here is the bonus skip for No Business (no available merchant activity = no income).",
-        "No Business": { "skipBonus": true, "narrative": "no available merchant activity; character remains on-planet looking for work" },
-        "Smuggling":   { "narrative": "transports goods illegally for large profits" },
-        "Piracy":      { "narrative": "actively attacks and raids other shipping" }
+        "$comment": "Per-assignment mechanical overrides for Free Trader columns. PM p. 61 'Free Trader Other' row groups No Business / Smuggling / Piracy under a distinct resolution table (`other: true`); the remaining assignments use the Free Trader Trade table.",
+        "No Business": { "other": true, "skipBonus": true, "narrative": "no available merchant activity; character remains on-planet looking for work" },
+        "Smuggling":   { "other": true, "narrative": "transports goods illegally for large profits" },
+        "Piracy":      { "other": true, "narrative": "actively attacks and raids other shipping" }
       },
       "sourcePrintedPages": [
         60,

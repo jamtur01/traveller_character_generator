@@ -324,22 +324,14 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     out.graduated = true;
   }
 
-  // Successful graduates age according to course length (PM p. 47):
-  //   college / academies: 4 years (entered at 18, graduates at 22)
-  //   medical school: 4 years (graduates at 26 — entered post-honors at 22)
-  //   flight school: 1 year (no explicit duration in PM; treated as a
-  //     short specialty course)
-  if (opt === "college" || opt === "navalAcademy" ||
-      opt === "militaryAcademy" || opt === "merchantAcademy" ||
-      opt === "medicalSchool") {
-    out.ageGainedYears += 4;
-  } else if (opt === "flightSchool") {
-    out.ageGainedYears += 1;
-    // PM p. 47: "when the character reports for duty, he or she begins
-    // serving a short term and enters basic officer training." Flight
-    // school graduates always serve a short first term in their pathway.
-    out.firstTermShort = true;
-  }
+  // Successful graduates age by the option's course length and may serve a
+  // short first term (PM p. 47) — both read from the edition JSON
+  // (common.preCareerOptions.<opt>): 4y for college/academies/medical
+  // school, 1y + short first term for flight school.
+  const pco = getEdition(ch.editionId).data.advancedCharacterGeneration
+    ?.common?.preCareerOptions?.[opt] as Record<string, unknown> | undefined;
+  out.ageGainedYears += (pco?.courseYears as number | undefined) ?? 0;
+  if (pco?.firstTermShort === true) out.firstTermShort = true;
 
   // OTC / NOTC (college only, voluntary).
   if (opt === "college") {
@@ -434,17 +426,17 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   if (opt === "militaryAcademy") {
     out.commissioned = true;
     out.branch = "army";
-    out.commissionRank = "O1";
+    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
     out.autoEnlistPathway = "mercenary";
   } else if (opt === "navalAcademy") {
     out.commissioned = true;
     out.branch = "navy";
-    out.commissionRank = "O1";
+    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
     out.autoEnlistPathway = "navy";
   } else if (opt === "merchantAcademy") {
     out.commissioned = true;
     out.branch = "merchants";
-    out.commissionRank = "O1";
+    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
     out.autoEnlistPathway = "merchantPrince";
   } else if (opt === "medicalSchool" && out.graduated) {
     // PM p. 47: "He may apply for a direct commission (which is granted
@@ -454,7 +446,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     // a player choice; in interactive mode we queue a pendingChoice,
     // in auto mode we default to Navy (Medical Branch).
     out.commissioned = true;
-    out.commissionRank = "O3";
+    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O3";
     out.medicalDirectCommission = true;
     if (ch.choiceMode === "interactive") {
       ch.pickOrDefer({

@@ -69,6 +69,7 @@ export interface MerchantData {
       destinationDepartment: string;
     };
     reducedPassage?: unknown;
+    freeTraderShip?: { minOfficerRank?: string };
     [k: string]: unknown;
   };
   enlistment: {
@@ -120,6 +121,9 @@ function assignmentColumnMap(ch: Character): Record<string, string> {
 }
 
 interface FreeTraderFlags {
+  /** PM p. 61: assignment belongs to the 'Free Trader Other' resolution
+   *  table (No Business / Smuggling / Piracy) rather than Trade. */
+  other?: boolean;
   skipBonus?: boolean;
   narrative?: string;
 }
@@ -354,9 +358,12 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // with column "speculative" (assignmentColumnMap remap), which yielded
   // the wrong survival/bonus targets vs. the PM.
   const isFreeTrader = acg.lineType === "Free Trader";
-  const FREE_TRADER_OTHER = new Set(["Smuggling", "Piracy", "No Business"]);
+  // PM p. 61 'Free Trader Other' row: assignments flagged `other: true`
+  // in freeTraderAssignmentFlags resolve on the freeTraderOther table.
+  const isFreeTraderOther =
+    isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
   const resTable = isFreeTrader
-    ? (FREE_TRADER_OTHER.has(assignment)
+    ? (isFreeTraderOther
         ? data.assignmentResolution.freeTraderOther
         : data.assignmentResolution.freeTraderTrade)
     : data.assignmentResolution[deptKey];
@@ -372,7 +379,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // camel form of the assignment ("smuggling", "piracy", "noBusiness").
   // The general assignmentColumnMap is used for Free Trader Trade
   // assignments (which need the Route/Charter etc. remap).
-  const colKey = isFreeTrader && FREE_TRADER_OTHER.has(assignment)
+  const colKey = isFreeTraderOther
     ? labelToColumnKey(assignment)
     : (assignmentColumnMap(ch)[assignment] ?? labelToColumnKey(assignment));
   if (!resolutionTable.columns.includes(colKey)) {
@@ -858,7 +865,9 @@ export function merchantFinalizeMuster(ch: Character): void {
   const m = ch.acgState.rankCode.match(/^O(\d+)$/);
   if (!m) return;
   const n = parseInt(m[1]!, 10);
-  if (n < 5) return;
+  const minRankCode = dataFor(ch).specialRules?.freeTraderShip?.minOfficerRank ?? "O5";
+  const minRank = parseInt(minRankCode.replace(/[^\d]/g, ""), 10) || 5;
+  if (n < minRank) return;
   if (ch.acgState.freeTraderShipEarned) return;
   ch.acgState.freeTraderShipEarned = true;
   ch.log(ev.raw("Free Trader ship (Owner/Captain)", "simple"));

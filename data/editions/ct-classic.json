@@ -125,10 +125,10 @@
     },
     "musterOutRolls": {
       "perTerm": 1,
-      "rankBands": [
-        { "ranks": [1, 2], "additionalRolls": 1 },
-        { "ranks": [3, 4], "additionalRolls": 2 },
-        { "ranks": [5, 6], "additionalRolls": 3 }
+      "rankExtraRolls": [
+        { "rankMin": 1, "rankMax": 2, "additionalRolls": 1 },
+        { "rankMin": 3, "rankMax": 4, "additionalRolls": 2 },
+        { "rankMin": 5, "rankMax": 6, "additionalRolls": 3 }
       ],
       "benefitTableDm": { "rankAtLeast": 5, "dm": 1 },
       "cashTableDm": [
@@ -708,7 +708,7 @@
       "startAge": 18,
       "draft": null,
       "checks": {
-        "enlistment": { "target": null, "special": "Automatic and only available with social standing 10+" },
+        "enlistment": { "target": null, "automaticIf": { "attribute": "social", "min": 10 }, "special": "Automatic and only available with social standing 10+" },
         "survival": { "target": 3, "dm": [] },
         "position": { "label": "Position", "target": 5, "dm": [{ "modifier": 1, "attribute": "education", "min": 9 }] },
         "promotion": { "target": 12, "dm": [{ "modifier": 1, "attribute": "intelligence", "min": 10 }] },

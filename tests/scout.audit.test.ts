@@ -55,7 +55,8 @@ describe("Scout PM audit — reenlistment (PM p. 59)", () => {
     // PM p. 59 "If a character's ordinary rank is not equal to or
     // greater than his or her number of terms of service, then he or
     // she will not be permitted to reenlist."
-    expect(scout?.reenlistment.upOrOut).toBeDefined();
+    const reenl = scout?.reenlistment as { $rule?: string } | undefined;
+    expect(reenl?.$rule).toBeDefined();
   });
 });
 
