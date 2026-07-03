@@ -47,3 +47,7 @@ next-env.d.ts
 
 # Local agent state (Claude Code scheduled tasks, etc.)
 /.claude/
+
+# Agent harness memory/state store (accidentally committed once; never track)
+/data/state_store.db/
+/stream_store/
