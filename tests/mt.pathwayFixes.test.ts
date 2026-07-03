@@ -11,7 +11,9 @@ import { Character } from "../lib/traveller/character";
 import { runAcgTerm } from "../lib/traveller/engine/runners/acg";
 import {
   merchantRollAssignment,
+  merchantEndOfTerm,
 } from "../lib/traveller/engine/acg/pathways/merchantPrince";
+import { freshAcgState } from "../lib/traveller/engine/acg/state";
 import {
   mercenaryReenlist,
 } from "../lib/traveller/engine/acg/pathways/mercenary";
@@ -225,5 +227,89 @@ describe("Mercenary: combat-arm entry restrictions (PM p. 50)", () => {
     expect(c.acgPathway).toBe("mercenary");
     expect(c.service).toBe("marines");
     expect(c.requireMercenaryAcg().combatArm).toBe("Infantry");
+  });
+});
+
+// H1 regression — Merchant promotion was completely dead.
+//
+// Bug: the exam code indexed `ranksAndPromotions` by line-SIZE keys and
+// expected an `.officer` sub-array, but the JSON is DEPARTMENT-keyed bare
+// ladder arrays. The lookup returned nothing, so officers never promoted
+// and enlisted route-servers never earned a commission. The fix reads the
+// department ladder (Free Trader lines use the `freeTrader` ladder) and
+// advances by rank number.
+//
+// Determinism: `roll(2)` consumes exactly two Math.random calls. d6(v) =
+// (v-1)/6 + 0.001 so Math.floor(rand*6+1) === v. A constant mock is used
+// because merchantEndOfTerm makes no other random calls on these paths.
+//
+// Teeth: on the pre-fix code the ladder lookup found nothing and both exam
+// helpers early-returned, so rankCode never changed. Each "promotes" /
+// "commissions" assertion below fails against that behavior.
+function d6(v: number): number {
+  return (v - 1) / 6 + 0.001;
+}
+
+describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
+  function makeDeckOfficer(rankCode: string): Character {
+    const c = makeMt();
+    c.acgPathway = "merchantPrince";
+    c.acgState = freshAcgState("merchantPrince");
+    c.acgState.isOfficer = true;
+    c.acgState.rankCode = rankCode;
+    c.acgState.department = "Deck";
+    c.acgState.lineType = "Megacorp"; // Large line → deck ladder
+    return c;
+  }
+
+  it("officer O1→O2 on a passing deck exam (target 6+)", () => {
+    // deck ladder O2 row exam target is 6+; roll(2) = 6 clears it exactly.
+    vi.spyOn(Math, "random").mockReturnValue(d6(3)); // roll(2) = 3+3 = 6
+    const c = makeDeckOfficer("O1");
+    merchantEndOfTerm(c);
+    expect(c.acgState!.rankCode).toBe("O2");
+  });
+
+  it("officer stays O1 on a failing deck exam (roll 5 < 6)", () => {
+    // roll(2) = 5 (2 + 3) falls one under the 6+ target → no promotion.
+    const seq = [d6(2), d6(3)];
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => seq[i++ % seq.length]!);
+    const c = makeDeckOfficer("O1");
+    merchantEndOfTerm(c);
+    expect(c.acgState!.rankCode).toBe("O1");
+  });
+
+  it("enlisted route-server earns a commission (E4 → officer O1) on a passing exam", () => {
+    // Enlisted deck route-server tests the O1 entry exam (target 6+).
+    vi.spyOn(Math, "random").mockReturnValue(d6(3)); // roll(2) = 6 → pass
+    const c = makeMt();
+    c.acgPathway = "merchantPrince";
+    c.acgState = freshAcgState("merchantPrince");
+    c.acgState.isOfficer = false;
+    c.acgState.rankCode = "E4";
+    c.acgState.department = "Deck";
+    c.acgState.lineType = "Megacorp";
+    c.acgState.routeAssignmentThisTerm = true;
+    merchantEndOfTerm(c);
+    expect(c.acgState!.isOfficer).toBe(true);
+    expect(c.acgState!.rankCode).toBe("O1");
+  });
+
+  it("enlisted route-server stays enlisted on a failing exam (roll 5 < 6)", () => {
+    const seq = [d6(2), d6(3)]; // roll(2) = 5 → fail
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => seq[i++ % seq.length]!);
+    const c = makeMt();
+    c.acgPathway = "merchantPrince";
+    c.acgState = freshAcgState("merchantPrince");
+    c.acgState.isOfficer = false;
+    c.acgState.rankCode = "E4";
+    c.acgState.department = "Deck";
+    c.acgState.lineType = "Megacorp";
+    c.acgState.routeAssignmentThisTerm = true;
+    merchantEndOfTerm(c);
+    expect(c.acgState!.isOfficer).toBe(false);
+    expect(c.acgState!.rankCode).toBe("E4");
   });
 });

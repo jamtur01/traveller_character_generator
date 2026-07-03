@@ -47,6 +47,9 @@ import { event as ev } from "../../../history";
 
 const PATHWAY = "merchantPrince";
 
+/** One row of a department rank ladder: [rankCode, title, examTarget, skillOrNote]. */
+type MerchantRankRow = [string, string, string, string | null];
+
 export interface MerchantData {
   /** PM p. 63 special-duty rules: Commission grants O0 (or rank-by-
    *  line-type), with a deadline to make O1 before reverting. Deck
@@ -92,7 +95,7 @@ export interface MerchantData {
     rows: Array<Record<string, unknown>>;
     dms?: Array<string | StructuredDm>;
   }>;
-  ranksAndPromotions: Record<string, { enlisted?: unknown[]; officer?: unknown[]; promotion?: Record<string, unknown> }>;
+  ranksAndPromotions: Record<string, MerchantRankRow[]>;
   skillTables: Record<string, { columns: string[]; rows: Array<Record<string, unknown>> }>;
   specialDuty: {
     columns: string[];
@@ -772,69 +775,78 @@ function servedOnRouteThisTerm(ch: Character): boolean {
   return ch.acgState?.routeAssignmentThisTerm === true;
 }
 
+function merchantRankNum(code: string): number {
+  const m = code.match(/(\d+)/);
+  return m ? parseInt(m[1]!, 10) : -1;
+}
+
+/** Officer rank ladder for the character's current department, read from
+ *  `ranksAndPromotions` (keyed by department; Free Trader lines use the
+ *  `freeTrader` ladder). Rows are [rankCode, title, examTarget, skill]. */
+function merchantRankLadder(
+  ch: Character, data: MerchantData,
+): MerchantRankRow[] | null {
+  const acg = ch.requireAcgState();
+  const deptKey = lineSizeFor(data, acg.lineType ?? "") === "FreeTrader"
+    ? "freeTrader"
+    : labelToColumnKey(acg.department ?? "deck");
+  const ladder = data.ranksAndPromotions[deptKey];
+  return Array.isArray(ladder) ? ladder : null;
+}
+
+/** PM p. 61: enlisted characters serving a Route assignment may test for
+ *  a commission. Passing the department's entry-officer exam grants O1. */
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
-  const officerLadder = data.ranksAndPromotions as Record<string, {
-    officer?: Array<[string, string, string, string | null]>;
-  }>;
-  const sizeKey = size === "Large" ? "large" : size === "Small" ? "small" : "freeTrader";
-  const o1 = officerLadder[sizeKey]?.officer?.[0];
-  if (!o1) return;
-  // Officer ladder row format: [rankCode, title, examTarget, note?].
-  const target = parseInt(String(o1[2]), 10);
+  const acg = ch.requireAcgState();
+  const ladder = merchantRankLadder(ch, data);
+  if (!ladder || ladder.length === 0) return;
+  const entry = ladder.find((r) => merchantRankNum(r[0]) === 1) ?? ladder[0]!;
+  const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
-  const dm = ch.requireAcgState().examDm ?? 0;
+  const dm = acg.examDm ?? 0;
   const r = roll(2);
-  ch.log(ev.roll(
-    "Commission", r, dm, target, r + dm >= target, "Merchant enlisted-route exam",
-  ));
-  if (r + dm >= target) {
-    ch.requireAcgState().isOfficer = true;
-    ch.requireAcgState().rankCode = "O1";
+  const succeeded = r + dm >= target;
+  ch.log(ev.roll("Commission", r, dm, target, succeeded, "Merchant enlisted-route exam"));
+  if (succeeded) {
+    acg.isOfficer = true;
+    acg.rankCode = "O1";
     ch.commissioned = true;
     ch.log(ev.promoted("O1", "Route-assignment promotion exam"));
   }
 }
 
+/** PM p. 61: officers advance one rank by passing the next rank's exam
+ *  target from the department ladder (position-consistent-with-rank is
+ *  gated upstream via the Available Position check). */
 function attemptMerchantPromotionExam(ch: Character): void {
   const data = dataFor(ch);
-  if (!ch.requireAcgState().isOfficer) return;
-  // Need data for the officer rank ladder + targets.
-  const officerLadder = data.ranksAndPromotions as Record<string, {
-    officer?: Array<[string, string, string, string | null]>;
-  }>;
-  // ranksAndPromotions has per-line-type blocks; pick the line.
-  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
-  const key = size === "Large" ? "largeMerchantLine"
-    : size === "Small" ? "smallMerchantLine" : "freeTraders";
-  const ladder = officerLadder[key]?.officer;
-  if (!Array.isArray(ladder)) return;
-  const codes = ladder.map((r) => r[0]);
-  const idx = codes.indexOf(ch.requireAcgState().rankCode);
-  if (idx < 0 || idx >= codes.length - 1) return;
-  const nextRow = ladder[idx + 1]!;
-  const targetStr = nextRow[2];
-  const target = parseInt(String(targetStr).replace(/[^\d]/g, ""), 10);
-  if (!Number.isFinite(target)) return;
-  const penalty = ch.requireAcgState().nextPromotionPenalty ?? 0;
-  const dm = (ch.requireAcgState().examDm ?? 0) + penalty;
-  if (penalty < 0) ch.requireAcgState().nextPromotionPenalty = 0;
+  const acg = ch.requireAcgState();
+  if (!acg.isOfficer) return;
+  const ladder = merchantRankLadder(ch, data);
+  if (!ladder) return;
+  const cur = merchantRankNum(acg.rankCode);
+  const nextRow = ladder.find((r) => merchantRankNum(r[0]) === cur + 1);
+  if (!nextRow) return;
+  const target = parseInt(String(nextRow[2]).replace(/[^\d]/g, ""), 10);
+  if (Number.isNaN(target)) return;
+  const penalty = acg.nextPromotionPenalty ?? 0;
+  const dm = (acg.examDm ?? 0) + penalty;
+  if (penalty < 0) acg.nextPromotionPenalty = 0;
   const r = roll(2);
+  const succeeded = r + dm >= target;
   ch.log(ev.roll(
-    "Promotion", r, dm, target, r + dm >= target,
-    `Merchant exam (${codes[idx]}→${codes[idx + 1]})`
+    "Promotion", r, dm, target, succeeded,
+    `Merchant exam (${acg.rankCode}→${nextRow[0]})`
     + (penalty ? `, reprimand penalty ${penalty}` : ""),
   ));
-  if (r + dm >= target) {
-    ch.requireAcgState().rankCode = nextRow[0] as string;
-    ch.log(ev.promoted(nextRow[1]));
-    // Skill granted on promotion (column 3 in the ladder rows, when set).
-    const skillGrant = nextRow[3];
-    if (typeof skillGrant === "string") {
-      const m = skillGrant.match(/^(.+?)-(\d+)$/);
-      if (m) ch.addSkill(m[1]!, parseInt(m[2]!, 10));
-    }
+  if (!succeeded) return;
+  acg.rankCode = nextRow[0];
+  ch.log(ev.promoted(nextRow[1]));
+  const skillGrant = nextRow[3];
+  if (typeof skillGrant === "string") {
+    const m = skillGrant.match(/^(.+?)-(\d+)$/);
+    if (m) ch.addSkill(m[1]!, parseInt(m[2]!, 10));
   }
 }
 
