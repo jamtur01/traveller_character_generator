@@ -7,7 +7,7 @@
 // force failures.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { getAcgPathway } from "../lib/traveller";
+import { requireAcgPathway } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
 import { runAcgYear, runAcgTerm } from "../lib/traveller/engine/runners/acg";
 import { freshAcgState } from "../lib/traveller/engine/acg/state";
@@ -34,7 +34,7 @@ function freshAcgChar(): Character {
 
 describe("MT ACG data shape", () => {
   it("mercenary enlistment exposes army/marines and assignment tables are non-empty", () => {
-    const m = getAcgPathway("mt-megatraveller", "mercenary");
+    const m = requireAcgPathway("mt-megatraveller", "mercenary");
     const en = m.enlistment as { army?: object; marines?: object };
     expect(Object.keys(en.army ?? {}).length).toBeGreaterThan(0);
     expect(Object.keys(en.marines ?? {}).length).toBeGreaterThan(0);
@@ -43,7 +43,7 @@ describe("MT ACG data shape", () => {
   });
 
   it("navy enlistment has all three fleets with content + branchAssignment block", () => {
-    const n = getAcgPathway("mt-megatraveller", "navy");
+    const n = requireAcgPathway("mt-megatraveller", "navy");
     const en = n.enlistment as unknown as Record<string, object>;
     for (const fleet of ["imperialNavy", "reserveFleet", "systemSquadron"]) {
       expect(Object.keys(en[fleet] ?? {}).length, `${fleet} should be non-empty`)
@@ -53,14 +53,14 @@ describe("MT ACG data shape", () => {
   });
 
   it("scout exposes both Field and Bureaucracy skill tables with row data", () => {
-    const s = getAcgPathway("mt-megatraveller", "scout");
+    const s = requireAcgPathway("mt-megatraveller", "scout");
     const tables = s.skillTables as Record<string, { rows?: unknown[] }>;
     expect(tables.field?.rows?.length).toBeGreaterThan(0);
     expect(tables.bureaucracy?.rows?.length).toBeGreaterThan(0);
   });
 
   it("merchantPrince exposes departmentAssignment / availablePositions / specificAssignment", () => {
-    const m = getAcgPathway("mt-megatraveller", "merchantPrince");
+    const m = requireAcgPathway("mt-megatraveller", "merchantPrince");
     expect(Object.keys(m.departmentAssignment ?? {}).length).toBeGreaterThan(0);
     expect(Object.keys(m.availablePositions ?? {}).length).toBeGreaterThan(0);
     expect(Object.keys(m.specificAssignment ?? {}).length).toBeGreaterThan(0);

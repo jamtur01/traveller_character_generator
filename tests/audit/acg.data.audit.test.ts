@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  getAcgCommon, getAcgPathway, listAcgPathways,
+  getAcgCommon, requireAcgPathway, listAcgPathways,
 } from "../../lib/traveller";
 
 describe("MT ACG: listAcgPathways content", () => {
@@ -26,10 +26,10 @@ describe("MT ACG: listAcgPathways content", () => {
   });
 });
 
-describe("MT ACG: getAcgPathway content", () => {
+describe("MT ACG: requireAcgPathway content", () => {
   it("each MT pathway has a non-empty ranks block", () => {
     for (const name of listAcgPathways("mt-megatraveller")) {
-      const p = getAcgPathway("mt-megatraveller", name);
+      const p = requireAcgPathway("mt-megatraveller", name);
       // Pathways use varying schemas: mercenary/navy have enlisted+officer,
       // scout uses ordinary, merchantPrince uses ranksAndPromotions. The
       // common contract: the pathway exposes SOME non-empty ranks group.
@@ -46,7 +46,7 @@ describe("MT ACG: getAcgPathway content", () => {
   });
 
   it("mercenary has the canonical E1–E9 enlisted ladder", () => {
-    const m = getAcgPathway("mt-megatraveller", "mercenary");
+    const m = requireAcgPathway("mt-megatraveller", "mercenary");
     const enlisted = (m.ranks?.enlisted ?? []) as [string, string][];
     expect(enlisted).toHaveLength(9);
     expect(enlisted[0]?.[0]).toBe("E1");

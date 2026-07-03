@@ -28,7 +28,7 @@ export {
   type Edition, type EditionMeta,
 } from "./editions";
 export {
-  editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways,
+  editionHasAcg, getAcgCommon, requireAcgPathway, listAcgPathways,
 } from "./engine/acg";
 export {
   runAcgTerm, runAcgYear, runAcgReenlist,

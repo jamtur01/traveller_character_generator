@@ -4,7 +4,7 @@
 // characters can't accidentally access MT's ACG data.
 
 import { describe, expect, it } from "vitest";
-import { editionHasAcg, getAcgCommon, getAcgPathway, listAcgPathways } from "../lib/traveller";
+import { editionHasAcg, getAcgCommon, requireAcgPathway, listAcgPathways } from "../lib/traveller";
 import { Character } from "../lib/traveller/character";
 import { freshAcgState } from "../lib/traveller/engine/acg/state";
 import { buildCharacterSheetPdf } from "../lib/pdfSheet";
@@ -36,25 +36,25 @@ describe("listAcgPathways", () => {
 });
 
 // ---------------------------------------------------------------------------
-// API: getAcgPathway / getAcgCommon
+// API: requireAcgPathway / getAcgCommon
 // ---------------------------------------------------------------------------
 
-describe("getAcgPathway API", () => {
+describe("requireAcgPathway API", () => {
   it("returns a non-empty pathway block with army/marines enlistment for mercenary", () => {
-    const m = getAcgPathway("mt-megatraveller", "mercenary");
+    const m = requireAcgPathway("mt-megatraveller", "mercenary");
     const en = m.enlistment as { army?: object; marines?: object };
     expect(Object.keys(en.army ?? {}).length).toBeGreaterThan(0);
     expect(Object.keys(en.marines ?? {}).length).toBeGreaterThan(0);
   });
 
   it("throws if the pathway doesn't exist in this edition", () => {
-    expect(() => getAcgPathway("mt-megatraveller", "psionicist")).toThrow(
+    expect(() => requireAcgPathway("mt-megatraveller", "psionicist")).toThrow(
       /no ACG pathway/,
     );
   });
 
   it("throws if the edition has no ACG at all", () => {
-    expect(() => getAcgPathway("ct-classic", "mercenary")).toThrow(
+    expect(() => requireAcgPathway("ct-classic", "mercenary")).toThrow(
       /has no Advanced Character Generation/,
     );
   });

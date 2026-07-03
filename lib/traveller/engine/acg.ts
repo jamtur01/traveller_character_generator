@@ -4,7 +4,7 @@
 // so callers (UI, tests, renderer) can ask edition-agnostic questions
 // instead of poking into JSON.
 
-import { getEdition } from "@/lib/traveller/editions";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import type { AcgPathway } from "@/lib/traveller/editions/types";
 import type { MercenaryData } from "./acg/pathways/mercenary";
 import type { NavyData } from "./acg/pathways/navy";
@@ -47,20 +47,20 @@ export function listAcgPathways(editionId: string): string[] {
  *  string-literal overloads narrow the return type to the pathway's typed
  *  data shape; the generic overload preserves back-compat for callers that
  *  pass a runtime string. */
-export function getAcgPathway(editionId: string, pathway: "mercenary"): MercenaryData & AcgPathway;
-export function getAcgPathway(editionId: string, pathway: "navy"): NavyData & AcgPathway;
-export function getAcgPathway(editionId: string, pathway: "scout"): ScoutData & AcgPathway;
-export function getAcgPathway(editionId: string, pathway: "merchantPrince"): MerchantData & AcgPathway;
-export function getAcgPathway(editionId: string, pathway: string): AcgPathway;
-export function getAcgPathway(editionId: string, pathway: string): AcgPathway {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration;
-  if (!acg) {
+export function requireAcgPathway(editionId: string, pathway: "mercenary"): MercenaryData & AcgPathway;
+export function requireAcgPathway(editionId: string, pathway: "navy"): NavyData & AcgPathway;
+export function requireAcgPathway(editionId: string, pathway: "scout"): ScoutData & AcgPathway;
+export function requireAcgPathway(editionId: string, pathway: "merchantPrince"): MerchantData & AcgPathway;
+export function requireAcgPathway(editionId: string, pathway: string): AcgPathway;
+export function requireAcgPathway(editionId: string, pathway: string): AcgPathway {
+  if (!getEdition(editionId).data.advancedCharacterGeneration) {
     throw new Error(`Edition "${editionId}" has no Advanced Character Generation data`);
   }
-  const p = acg[pathway];
-  if (!p || typeof p !== "object") {
+  const p = getAcgPathway(editionId, pathway);
+  if (!p) {
     throw new Error(
-      `Edition "${editionId}" has no ACG pathway "${pathway}". Available: ${listAcgPathways(editionId).join(", ") || "(none)"}`,
+      `Edition "${editionId}" has no ACG pathway "${pathway}". Available: ` +
+      `${listAcgPathways(editionId).join(", ") || "(none)"}`,
     );
   }
   return p as AcgPathway;
