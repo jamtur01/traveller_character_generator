@@ -11,7 +11,7 @@
     "status": "active",
     "description": "MegaTraveller adds homeworld generation, eighteen services (incl. Belters, Doctors, Pirates, Nobles), and an Advanced Character Generation system with brownie points, decorations, court martial, and per-year assignment cycles across four pathways.",
     "supportsInteractive": true,
-    "source": "Extracted from MT_MegaTraveller_Players_Manual.pdf, primarily Basic Character Creation printed pages 20-25, with lifecycle rules cross-checked against printed pages 14-17 and aging rules on printed page 47. Cross-validated against https://traveller.chromeblack.com/files/mtpcgen.html — all 18 services agree on every cell."
+    "source": "Extracted from MT_MegaTraveller_Players_Manual.pdf, primarily Basic Character Creation printed pages 20-25, with lifecycle rules cross-checked against printed pages 14-17 and aging rules on printed page 47. Basic-service table cells were re-verified cell-by-cell against high-resolution renders of the printed pages; see extractionNotes for the corrections applied."
   },
   "title": "MegaTraveller Players Manual Character Creation Data",
   "extractionNotes": [
@@ -20,7 +20,8 @@
     "Lifecycle prose for enlistment, draft, survival, position/commission, promotion, special duty, reenlistment, and mustering-out was cross-checked against printed pages 14-17.",
     "Aging effects were added from the enhanced character generation aging table on printed page 47.",
     "Service table values were visually verified from rendered page images and text conversion output; terminology is retained in the same normalized app-facing schema as the existing MT data where values are semantically identical.",
-    "Advanced character generation common tables and the Mercenary, Navy, Scout, and Merchant Prince table pages were added from printed pages 47, 50-51, 54-55, 58-59, and 62-65."
+    "Advanced character generation common tables and the Mercenary, Navy, Scout, and Merchant Prince table pages were added from printed pages 47, 50-51, 54-55, 58-59, and 62-65.",
+    "2026-07-03 image re-verification of printed pages 20-25 corrected 12 basic-service cells that diverged from the printed tables: Law Enforcer survival 6+, Bureaucrat enlistment 5+, Rogue enlistment 6+; muster benefits Flyer die2 +1 Education, Bureaucrat die5 none, Rogue die7 none, Barbarian die5 none; muster cash Doctor die7 100000, Bureaucrat die7 80000, Merchant die5 10000, Pirate die3 1000, Rogue die6 100000."
   ],
   "sources": {
     "mt": {
@@ -1573,7 +1574,7 @@
         "benefits": [
           null,
           "Low Psg",
-          "+1 Intelligence",
+          "+1 Education",
           "Weapon",
           "Weapon",
           "High Psg",
@@ -1750,7 +1751,7 @@
           ]
         },
         "survival": {
-          "target": 4,
+          "target": 6,
           "dms": [
             {
               "dm": 2,
@@ -1983,7 +1984,7 @@
           30000,
           40000,
           60000,
-          80000
+          100000
         ]
       }
     },
@@ -2137,7 +2138,7 @@
       "skillsPerTerm": 1,
       "checks": {
         "enlistment": {
-          "target": 8,
+          "target": 5,
           "dms": [
             {
               "dm": 1,
@@ -2250,7 +2251,7 @@
           "Mid Psg",
           "Watch",
           "Watch",
-          "+1 Social",
+          null,
           "High Psg",
           "+1 Social"
         ],
@@ -2262,7 +2263,7 @@
           10000,
           40000,
           40000,
-          40000
+          80000
         ]
       }
     },
@@ -2640,7 +2641,7 @@
           5000,
           10000,
           10000,
-          20000,
+          10000,
           20000,
           50000
         ]
@@ -2902,7 +2903,7 @@
           null,
           null,
           null,
-          10000,
+          1000,
           10000,
           50000,
           50000,
@@ -2918,7 +2919,7 @@
       "skillsPerTerm": 2,
       "checks": {
         "enlistment": {
-          "target": 5,
+          "target": 6,
           "dms": [
             {
               "dm": 1,
@@ -3019,7 +3020,7 @@
           "Weapon",
           "High Psg",
           "Travellers'",
-          "+1 Social"
+          null
         ],
         "cash": [
           null,
@@ -3028,7 +3029,7 @@
           10000,
           10000,
           50000,
-          50000,
+          100000,
           100000
         ]
       }
@@ -3275,7 +3276,7 @@
           "Weapon",
           "Weapon",
           "Weapon",
-          "Weapon",
+          null,
           "High Psg",
           "High Psg"
         ],
