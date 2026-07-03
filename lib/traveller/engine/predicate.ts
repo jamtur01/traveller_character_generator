@@ -117,6 +117,13 @@ export function parseRankLetter(code: string): { letter: string; n: number } | n
   return { letter: m[1]!, n: parseInt(m[2]!, 10) };
 }
 
+/** Numeric part of a rank code ("O3"->3, "IS-10"->10, "E-5"->5); 0 when the
+ *  code carries no number. The one rank-number extractor for every pathway —
+ *  wraps parseRankLetter so band-aware codes parse consistently. */
+export function rankNum(code: string): number {
+  return parseRankLetter(code)?.n ?? 0;
+}
+
 function rankBandOk(want: string, code: string, cmp: (have: number, want: number) => boolean): boolean {
   const w = parseRankLetter(want);
   const h = parseRankLetter(code);
@@ -175,6 +182,20 @@ export function evaluatePredicate(p: Predicate, ctx: PredicateContext): boolean 
   }
   if (p.homeworldField && !homeworldFieldOk(p.homeworldField, ctx)) return false;
   return true;
+}
+
+/** Sum the `dm` of every rule whose Predicate matches `ctx`. The one
+ *  primitive behind applyStructuredDms / applyDmRules / the muster cash and
+ *  benefit DMs — each is this loop, some with a caller-side pre-filter
+ *  (rollType / column). evaluateDM extends it for the dmPerTerm case. */
+export function sumPredicateDms(
+  rules: ReadonlyArray<Predicate & { dm: number }> | undefined,
+  ctx: PredicateContext,
+): number {
+  if (!rules) return 0;
+  let total = 0;
+  for (const r of rules) if (evaluatePredicate(r, ctx)) total += r.dm;
+  return total;
 }
 
 function skillLevel(ctx: PredicateContext, skill: string): number {

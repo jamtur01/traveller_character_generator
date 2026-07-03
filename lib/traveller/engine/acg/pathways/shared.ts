@@ -15,6 +15,8 @@ import {
 } from "@/lib/traveller/engine/acg/jsonPhases";
 import { applyDmRules, applyStructuredDms, type StructuredDm } from "@/lib/traveller/engine/acg/tables";
 import { event as ev } from "@/lib/traveller/history";
+import { rankNum } from "@/lib/traveller/engine/predicate";
+import type { AcgState } from "@/lib/traveller/engine/acg/state";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
@@ -234,4 +236,80 @@ export function offerRoleChange(
       if (chosen !== opts.current) opts.apply(ch, chosen);
     },
   });
+}
+
+/** Roll `dice`d6, add `dm`, and clamp to a table's die-row range [lo, hi].
+ *  The one dice-clamp helper for assignment / skill / muster rolls. */
+export function clampedRoll(
+  ch: Character, dice: number, dm: number, lo: number, hi: number,
+): number {
+  return Math.max(lo, Math.min(hi, ch.rng.roll(dice) + dm));
+}
+
+/** Clear the one-shot retained-assignment flags. Only navy sets them (its
+ *  Retention rule); the other pathways' per-year "retention" is this no-op. */
+export function clearRetention(ch: Character): void {
+  if (!ch.acgState) return;
+  ch.acgState.justRetained = false;
+  ch.acgState.retainedAssignment = null;
+}
+
+/** Consume an assignment retained last year (navy Retention): return it and
+ *  clear the one-shot flags, else null. Shared prologue for rollAssignment. */
+export function consumeRetainedAssignment(acg: AcgState): string | null {
+  if (!acg.justRetained || !acg.retainedAssignment) return null;
+  const retained = acg.retainedAssignment;
+  acg.justRetained = false;
+  acg.retainedAssignment = null;
+  return retained;
+}
+
+/** Advance one step up a rank ladder and record it: set rankCode, flag
+ *  promotedThisTerm for officers, log it, then run `onPromote` (e.g. scout's
+ *  per-promotion skill grant). Returns false at the top of the ladder (or
+ *  capped). Wraps advanceRankRow — the shared apply-promotion for pathways. */
+export function applyPromotion(
+  ch: Character,
+  ladder: readonly RankRow[],
+  opts?: { cap?: number; onPromote?: (ch: Character) => void },
+): boolean {
+  const acg = ch.requireAcgState();
+  const next = advanceRankRow(ladder, acg.rankCode, opts?.cap);
+  if (!next) return false;
+  acg.rankCode = next[0];
+  if (acg.isOfficer) acg.promotedThisTerm = true;
+  ch.log(ev.promoted(next[1]));
+  opts?.onPromote?.(ch);
+  return true;
+}
+
+/** A pathway's officer/enlisted skill-table column policy (PM p. 51). */
+export interface SkillColumnPolicy {
+  officerInCommand: string;
+  officerStaff: string;
+  enlistedNcoColumn: string;
+  enlistedNcoMinRank: string;
+  enlistedLowRankColumns: Record<string, string>;
+}
+
+/** The skill-table column for the character under a pathway's
+ *  skillColumnPolicy (PM p. 51): officers -> command/staff by inCommand;
+ *  enlisted -> the NCO column at/above the policy's NCO min rank, else the
+ *  branch's low-rank Life column. One implementation for the mercenary
+ *  default column and the special-assignment service-skill roll. */
+export function serviceSkillColumnFor(
+  ch: Character, pol: SkillColumnPolicy | undefined,
+): string {
+  const acg = ch.requireAcgState();
+  if (acg.isOfficer) {
+    return acg.inCommand
+      ? pol?.officerInCommand ?? "commandSkills"
+      : pol?.officerStaff ?? "staffSkills";
+  }
+  const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 3;
+  if (rankNum(acg.rankCode) >= ncoMin) return pol?.enlistedNcoColumn ?? "ncoSkills";
+  const branch = acg.branch ?? "";
+  return pol?.enlistedLowRankColumns[branch]
+    ?? pol?.enlistedLowRankColumns["army"]
+    ?? (branch === "Marines" ? "marineLife" : "armyLife");
 }
