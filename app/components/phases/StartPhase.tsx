@@ -1,6 +1,7 @@
 "use client";
 
 import { listEditions } from "@/lib/traveller/editions";
+import type { EditionMeta } from "@/lib/traveller/editions/types";
 import { editionHasAcg, listAcgPathways } from "@/lib/traveller/engine/acg";
 import {
   CARD, SECTION_LABEL, FormField, FormSelect, PrimaryButton,
@@ -71,7 +72,7 @@ function EditionCard({
   selected,
   onSelect,
 }: {
-  meta: ReturnType<typeof listEditions>[number];
+  meta: EditionMeta;
   selected: boolean;
   onSelect: () => void;
 }) {

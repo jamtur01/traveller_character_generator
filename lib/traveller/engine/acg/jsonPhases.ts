@@ -20,6 +20,7 @@ import {
 } from "./phaseRunner";
 import { alreadyApplied, markApplied } from "./subStepCache";
 import type { MitigationRequest } from "./awards";
+import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 
 // --- JSON config shape -----------------------------------------------
 
@@ -352,8 +353,8 @@ function rollEv(
   resolutionTarget: import("./state").ResolutionTarget,
   context: string,
   marginIsSuccess = false,
-): ReturnType<typeof eventModule.event.roll> {
-  return eventModule.event.roll(
+): HistoryEvent {
+  return ev.roll(
     name, r.roll, r.dm,
     typeof resolutionTarget === "number" ? resolutionTarget : 0,
     marginIsSuccess ? r.margin >= 0 : r.success,
@@ -362,21 +363,16 @@ function rollEv(
 }
 
 function decorationEv(award: "MCUF" | "MCG" | "SEH" | "Purple Heart", reason?: string) {
-  return eventModule.event.decoration(award, reason);
+  return ev.decoration(award, reason);
 }
 
 function reviveStatusChange(note: string) {
-  return eventModule.event.statusChange("revived", note);
+  return ev.statusChange("revived", note);
 }
 
 function targetOrZero(t: import("./state").ResolutionTarget): number {
   return typeof t === "number" ? t : 0;
 }
-
-// Avoid circular import at type-check time by deferring the history
-// module reference. The pathway code is the entry point for event
-// construction; this loader is downstream.
-import * as eventModule from "@/lib/traveller/history";
 
 // Register the built-in decoration-DM tradeoff preRun hook. The prompt
 // fires before any phase rolls in interactive mode; both mercenary and

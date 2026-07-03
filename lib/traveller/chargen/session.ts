@@ -14,7 +14,7 @@
 // caller (React component) cloneCharacters as it sees fit; this module
 // doesn't mutate the inputs.
 
-import { Character, cloneCharacter } from "@/lib/traveller/character";
+import { Character, cloneCharacter, type PreCareerOutcome } from "@/lib/traveller/character";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import { runAcgYear } from "@/lib/traveller/engine/runners/acg";
 import { getEditionServices } from "@/lib/traveller/services";
@@ -111,7 +111,7 @@ export function applyPreCareer(
   if (opt === "skip") {
     return { snapshot: { character: ch, phase: ch.useAcg ? "acg_enlist" : "career" } };
   }
-  let r: ReturnType<typeof ch.doPreCareer>;
+  let r: PreCareerOutcome;
   try {
     r = ch.doPreCareer(opt);
   } catch (err) {

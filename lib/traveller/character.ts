@@ -91,6 +91,18 @@ export interface CharacterOptions {
   seed?: number;
 }
 
+/** Structured result of a pre-career step (college / academy / school).
+ *  `autoEnlistPathway` routes the caller to beginAcg; the flags report
+ *  admission, graduation, and any direct commission earned. */
+export interface PreCareerOutcome {
+  autoEnlistPathway: "mercenary" | "navy" | "scout" | "merchantPrince" | null;
+  admitted: boolean;
+  honors: boolean;
+  graduated: boolean;
+  commissioned: boolean;
+  notes: string[];
+}
+
 export class Character {
   /** Construct a fresh character. If `opts.attributes` is provided,
    *  skips the 12-dice initial roll — tests should prefer this over
@@ -535,14 +547,7 @@ export class Character {
    * with the appropriate options, OR call this multiple times for
    * Medical/Flight school after honors.
    */
-  doPreCareer(option: PreCareerOption): {
-    autoEnlistPathway: "mercenary" | "navy" | "scout" | "merchantPrince" | null;
-    admitted: boolean;
-    honors: boolean;
-    graduated: boolean;
-    commissioned: boolean;
-    notes: string[];
-  } {
+  doPreCareer(option: PreCareerOption): PreCareerOutcome {
     if (!this.useAcg) {
       throw new Error("doPreCareer is only valid in ACG mode");
     }
