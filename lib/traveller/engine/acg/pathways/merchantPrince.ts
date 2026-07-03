@@ -39,7 +39,9 @@ import {
 } from "../subStepCache";
 import { runPhases, type PathwaySpec } from "../phaseRunner";
 import { type PathwayCallbacks } from "../jsonPhases";
-import { createPathwaySpecRegistry } from "./shared";
+import {
+  createPathwaySpecRegistry, runReenlist, offerRoleChange,
+} from "./shared";
 import type { AssignmentResolution, ResolutionTarget } from "../state";
 import { recordTransfer } from "../state";
 import { attemptPreCareer, applyPreCareerResult } from "../preCareer";
@@ -634,19 +636,13 @@ export function merchantRetention(ch: Character, _assignment: string): void {
 
 export function merchantReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const dm = applyStructuredDms(data.reenlistment.dms, ch);
-  const r = roll(2);
-  const target = data.reenlistment.target;
-  const keep = r === 12 || r + dm >= target;
   const dept = ch.requireAcgState().department ?? "";
-  ch.log(ev.roll("Reenlistment", r, dm, target, keep, `merchant ${dept}`));
-  if (r === 12) {
-    ch.enterMandatoryReenlist();
-    offerMerchantDepartmentChange(ch, data);
-    return true;
-  }
-  if (keep) offerMerchantDepartmentChange(ch, data);
-  return keep;
+  return runReenlist(ch, {
+    target: data.reenlistment.target,
+    dms: data.reenlistment.dms,
+    label: `merchant ${dept}`,
+    onContinue: () => offerMerchantDepartmentChange(ch, data),
+  });
 }
 
 /** PM p. 65 Merchant checklist: at reenlistment the character may reenlist
@@ -673,7 +669,7 @@ export function applyReducedPassageBenefit(ch: Character): void {
 }
 
 function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
-  if (!ch.acgState || ch.choiceMode === "auto") return;
+  if (!ch.acgState) return;
   const size = lineSizeFor(data, ch.acgState.lineType ?? "");
   if (size === "FreeTrader") return; // Free Traders don't change department
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
@@ -683,19 +679,15 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     if (typeof v === "string") all.add(v);
   }
   const current = ch.acgState.department ?? "";
-  const options = [current, ...[...all].filter((d) => d !== current)];
-  if (options.length <= 1) return;
-  ch.pickOrDefer({
-    kind: "cascade",
+  offerRoleChange(ch, {
+    current,
+    options: [current, ...[...all].filter((d) => d !== current)],
     label: `Reenlist in different department (current: ${current})`,
-    options,
-    preferred: [current],
     context: { source: "reenlist", reenlistChangeDepartment: true },
-    onResolve: (c, chosen) => {
-      if (chosen !== current && c.acgState) {
-        c.acgState.department = chosen;
-        c.log(ev.transferred(chosen, "department", current, "reenlist"));
-      }
+    apply: (c, chosen) => {
+      if (!c.acgState) return;
+      c.acgState.department = chosen;
+      c.log(ev.transferred(chosen, "department", current, "reenlist"));
     },
   });
 }

@@ -26,7 +26,7 @@ import type { Character } from "../../../character";
 import { getEdition } from "../../../editions";
 import { roll } from "../../../random";
 import {
-  applyDmRules, applyStructuredDms, labelToColumnKey, lookupResolution,
+  applyDmRules, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "../tables";
@@ -40,6 +40,7 @@ import { type PathwayCallbacks } from "../jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, advanceRankRow, rollSpecialAssignment,
+  runReenlist, offerRoleChange,
 } from "./shared";
 import { event as ev } from "../../../history";
 import type { AcgState, ResolutionTarget } from "../state";
@@ -445,17 +446,12 @@ export function mercenaryReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   const svc = ch.requireAcgState().branch === "Marines" ? "marines" : "army";
   const spec = data.reenlistment[svc];
-  const dm = applyStructuredDms(spec.dms, ch);
-  const r = roll(2);
-  const keep = r + dm >= spec.target;
-  ch.log(ev.roll("Reenlistment", r, dm, spec.target, keep, `mercenary ${svc}`));
-  if (r === 12) {
-    ch.enterMandatoryReenlist();
-    offerArmChange(ch, data);
-    return true;
-  }
-  if (keep) offerArmChange(ch, data);
-  return keep;
+  return runReenlist(ch, {
+    target: spec.target,
+    dms: spec.dms,
+    label: `mercenary ${svc}`,
+    onContinue: () => offerArmChange(ch, data),
+  });
 }
 
 /** PM p. 49: combat arm change at reenlist.
@@ -467,32 +463,26 @@ export function mercenaryReenlist(ch: Character): boolean {
 function offerArmChange(ch: Character, data: MercenaryData): void {
   if (!ch.acgState) return;
   const current = ch.acgState.combatArm ?? "Infantry";
-  const arms = data.combatArms;
   const isOfficer = ch.acgState.isOfficer === true;
   const crossTrained = ch.acgState.crossTrainedArms ?? [];
   const commandoEligible =
     (ch.acgState.honorsGraduations ?? []).includes("militaryAcademy") ||
     crossTrained.includes("Commando");
-  const eligibleArms = arms.filter((arm) => {
+  const eligibleArms = data.combatArms.filter((arm) => {
     if (arm === current) return true;
     if (arm === "Commando") return commandoEligible;
     if (isOfficer) return true;
     return crossTrained.includes(arm);
   });
-  if (eligibleArms.length <= 1 || ch.choiceMode === "auto") return;
-  ch.pickOrDefer({
-    kind: "cascade",
-    label: `Change combat arm for next term (current: ${current})`,
+  offerRoleChange(ch, {
+    current,
     options: eligibleArms,
-    preferred: [current],
+    label: `Change combat arm for next term (current: ${current})`,
     context: { source: "reenlist", reenlistChangeArm: true },
-    onResolve: (c, chosen) => {
-      if (chosen !== current && c.acgState) {
-        c.acgState.combatArm = chosen;
-        c.log(ev.transferred(
-          chosen, "combatArm", current, "reenlist (via cross-training)",
-        ));
-      }
+    apply: (c, chosen) => {
+      if (!c.acgState) return;
+      c.acgState.combatArm = chosen;
+      c.log(ev.transferred(chosen, "combatArm", current, "reenlist (via cross-training)"));
     },
   });
 }

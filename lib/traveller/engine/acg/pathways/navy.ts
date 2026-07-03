@@ -30,6 +30,7 @@ import { type PathwayCallbacks } from "../jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, advanceRankRow, rollSpecialAssignment,
+  runReenlist, offerRoleChange,
 } from "./shared";
 import { event as ev } from "../../../history";
 
@@ -521,19 +522,14 @@ export function navyReenlist(ch: Character): boolean {
   if (!spec) {
     throw new Error(`Navy reenlistment missing perFleet config for "${fleet}"`);
   }
-  // Reenlist DMs use the same structured shape + evaluator as the other
-  // pathways (PM p. 53: DM +1/+2 for enlisted E4+ or officer, per fleet).
-  const dm = applyStructuredDms(spec.dms, ch);
-  const r = roll(2);
-  const keep = r + dm >= spec.target;
-  ch.log(ev.roll("Reenlistment", r, dm, spec.target, keep, `navy ${fleet}`));
-  if (r === 12) {
-    ch.enterMandatoryReenlist();
-    offerNavyBranchChange(ch);
-    return true;
-  }
-  if (keep) offerNavyBranchChange(ch);
-  return keep;
+  // Reenlist DMs use the shared structured shape + evaluator (PM p. 53:
+  // DM +1/+2 for enlisted E4+ or officer, per fleet).
+  return runReenlist(ch, {
+    target: spec.target,
+    dms: spec.dms,
+    label: `navy ${fleet}`,
+    onContinue: () => offerNavyBranchChange(ch),
+  });
 }
 
 /** PM p. 53: at reenlistment a character may transfer to a branch they
@@ -542,30 +538,25 @@ export function navyReenlist(ch: Character): boolean {
  *  branch. A character with no cross-training has only their current
  *  branch as an option and no prompt is shown. */
 function offerNavyBranchChange(ch: Character): void {
-  if (!ch.acgState || ch.choiceMode === "auto") return;
-  if (!ch.acgState.isOfficer) return;
+  if (!ch.acgState || !ch.acgState.isOfficer) return;
   const current = ch.acgState.branch ?? "";
   const crossTrained = ch.acgState.crossTrainedBranches ?? [];
   // F7: filter cross-trained branches by fleet eligibility too.
-  const filteredCrossTrained = crossTrained.filter(
-    (b) => b !== current && isBranchAllowedForFleet(ch, b),
-  );
-  const eligible = [current, ...filteredCrossTrained];
-  if (eligible.length <= 1) return;
-  ch.pickOrDefer({
-    kind: "cascade",
-    label:
-      `Change navy branch for next term (current: ${current}; eligible via cross-training: ${crossTrained.join(", ")})`,
+  const eligible = [
+    current,
+    ...crossTrained.filter((b) => b !== current && isBranchAllowedForFleet(ch, b)),
+  ];
+  const label = `Change navy branch for next term (current: ${current}; `
+    + `eligible via cross-training: ${crossTrained.join(", ")})`;
+  offerRoleChange(ch, {
+    current,
     options: eligible,
-    preferred: [current],
+    label,
     context: { source: "reenlist", reenlistChangeBranch: true },
-    onResolve: (c, chosen) => {
-      if (chosen !== current && c.acgState) {
-        c.acgState.branch = chosen;
-        c.log(ev.transferred(
-          chosen, "branch", current, "reenlist (via cross-training)",
-        ));
-      }
+    apply: (c, chosen) => {
+      if (!c.acgState) return;
+      c.acgState.branch = chosen;
+      c.log(ev.transferred(chosen, "branch", current, "reenlist (via cross-training)"));
     },
   });
 }

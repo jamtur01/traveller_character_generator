@@ -185,3 +185,50 @@ export function rollSpecialAssignment(
   }
   return sa;
 }
+
+/** Shared reenlist skeleton: roll 2D + structured DMs vs `target`, log the
+ *  outcome, and on a pass (or a mandatory natural 12) run `onContinue` — the
+ *  pathway's role-change offer. Returns true if the character keeps serving. */
+export function runReenlist(
+  ch: Character,
+  opts: { target: number; dms?: StructuredDm[]; label: string; onContinue: () => void },
+): boolean {
+  const dm = applyStructuredDms(opts.dms, ch);
+  const r = roll(2);
+  const keep = r === 12 || r + dm >= opts.target;
+  ch.log(ev.roll("Reenlistment", r, dm, opts.target, keep, opts.label));
+  if (r === 12) {
+    ch.enterMandatoryReenlist();
+    opts.onContinue();
+    return true;
+  }
+  if (keep) opts.onContinue();
+  return keep;
+}
+
+/** Shared reenlist-time role-change prompt (combat arm / branch / department).
+ *  Skips in auto mode or when only the current role is eligible; otherwise
+ *  queues a cascade choice and applies a non-current pick via `apply`. The
+ *  caller supplies the pathway-specific eligible-options list. */
+export function offerRoleChange(
+  ch: Character,
+  opts: {
+    current: string;
+    options: readonly string[];
+    label: string;
+    context: Record<string, unknown>;
+    apply: (c: Character, chosen: string) => void;
+  },
+): void {
+  if (ch.choiceMode === "auto" || opts.options.length <= 1) return;
+  ch.pickOrDefer({
+    kind: "cascade",
+    label: opts.label,
+    options: opts.options,
+    preferred: [opts.current],
+    context: opts.context,
+    onResolve: (c, chosen) => {
+      if (chosen !== opts.current) opts.apply(c, chosen);
+    },
+  });
+}
