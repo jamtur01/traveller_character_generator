@@ -176,9 +176,23 @@ export function parseRules(rulesRaw: unknown, editionId: string): RulesData {
   return runSchema(RulesSchema, rulesRaw ?? {}, editionId, "rules block");
 }
 
+/** Reject unknown keys except `$rule` / `$comment` citation annotations.
+ *  For closed blocks whose full field set is modeled, so a typo'd key fails
+ *  at load while the JSON's rulebook citations stay legal. */
+function strictCitations<T extends z.ZodRawShape>(shape: T) {
+  const allowed = new Set(Object.keys(shape));
+  return z.object(shape).catchall(z.unknown()).superRefine((val, ctx) => {
+    for (const key of Object.keys(val)) {
+      if (!allowed.has(key) && !key.startsWith("$")) {
+        ctx.addIssue({ code: "custom", message: `Unknown key "${key}"`, path: [key] });
+      }
+    }
+  });
+}
+
 // --- Canon data (non-rules) schemas ----------------------------------
 
-const DMRuleSchema = z.looseObject({
+const DMRuleSchema = z.strictObject({
   dm: z.number().optional(),
   dmPerTerm: z.number().optional(),
   attribute: z.string().optional(),
@@ -379,7 +393,7 @@ const BenefitDetailSchema = z.looseObject({
   name: z.string().optional(),
 });
 
-const SkillTableMetaSchema = z.looseObject({
+const SkillTableMetaSchema = strictCitations({
   order: z.array(z.string()),
   displayNames: z.record(z.string(), z.string()),
   advancedEducationEduMin: z.number(),
