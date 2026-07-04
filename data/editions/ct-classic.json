@@ -66,6 +66,10 @@
       "CotI bureaucrats invert re-enlistment: they must roll the target or higher to leave before retirement."
     ]
   },
+  "sheet": {
+    "$comment": "Presentation metadata (TAS Form 2 box 17 'Equipment Qualified On'), not a game rule: equipment-operation skills listed individually; lib/pdfSheet.ts unions in the vehicle cascade (+Includes expansion).",
+    "equipmentSkills": ["ATV", "Air/Raft", "Vacc Suit", "Battle Dress", "Ship's Boat", "Pilot", "Gunnery"]
+  },
   "skillTableMeta": {
     "$comment": "TTB Acquired Skills tables (Book 1 / CotI). Same four-table layout as MT.",
     "order": [

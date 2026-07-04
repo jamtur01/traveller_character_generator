@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { Character } from "./traveller/character";
 import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
+import { requireRule } from "./traveller/editions/strict";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
 import {
@@ -10,13 +11,16 @@ import {
 
 /** Skills that populate the sheet's "Equipment Qualified On" box: the
  *  edition's vehicle cascade (its umbrella of vehicle / aircraft /
- *  watercraft skills) plus fixed individual equipment-operation skills.
- *  Edition-aware, so CT "Prop-driven Fixed Wing" and MT "Lighter-Than-Air
- *  Craft" are kept rather than dropped by a hardcoded substring filter. */
+ *  watercraft skills) plus the edition's declared individual
+ *  equipment-operation skills (`sheet.equipmentSkills` — presentation
+ *  metadata, not a game rule). Edition-aware, so CT "Prop-driven Fixed
+ *  Wing" and MT "Lighter-Than-Air Craft" are kept rather than dropped by
+ *  a hardcoded substring filter. */
 export function equipmentQualifiedOn(c: Character): string[] {
-  const equipSkills = new Set<string>([
-    "ATV", "Air/Raft", "Vacc Suit", "Battle Dress", "Ship's Boat", "Pilot", "Gunnery",
-  ]);
+  const equipSkills = new Set<string>(requireRule(
+    getEdition(c.editionId).data.sheet?.equipmentSkills,
+    "sheet.equipmentSkills", "TAS Form 2 box 17 (presentation metadata)",
+  ));
   for (const name of cascadePoolByKey("vehicle", c.editionId)) {
     equipSkills.add(name);
     for (const inner of expandIncludes(c.editionId, name)) equipSkills.add(inner);

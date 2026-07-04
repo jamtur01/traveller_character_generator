@@ -283,6 +283,18 @@
       "belterTerm3ZeroG": "Belter automatically gains Zero-G Environ-1 at start of term 3."
     }
   },
+  "sheet": {
+    "$comment": "Presentation metadata (TAS Form 2 box 17 'Equipment Qualified On'), not a game rule: equipment-operation skills listed individually; lib/pdfSheet.ts unions in the vehicle cascade (+Includes expansion).",
+    "equipmentSkills": [
+      "ATV",
+      "Air/Raft",
+      "Vacc Suit",
+      "Battle Dress",
+      "Ship's Boat",
+      "Pilot",
+      "Gunnery"
+    ]
+  },
   "skillTableMeta": {
     "$comment": "Declarative ordering and display labels for the four MT acquired-skills tables (PM p. 22-26). The `order` array drives the index → tableKey lookup; `displayNames` give the player-facing labels for the skill-table choice picker.",
     "order": [

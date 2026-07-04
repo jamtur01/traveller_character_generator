@@ -186,6 +186,10 @@ export interface CanonData {
   /** Declarative skill-table ordering / labels / Edu gate for basic-chargen
    *  skill rolls (engine/serviceLoader acquireSkill). */
   skillTableMeta?: SkillTableMeta;
+  /** Presentation metadata for the printed sheet (lib/pdfSheet): the
+   *  equipment-operation skills listed individually in "Equipment
+   *  Qualified On" (the vehicle cascade is unioned in by the renderer). */
+  sheet?: { equipmentSkills: string[] };
 }
 
 export interface AcgData {

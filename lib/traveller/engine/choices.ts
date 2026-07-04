@@ -1,12 +1,15 @@
 // Interactive choice infrastructure. A character generation step that needs
 // a user decision (which weapon? which skill table? blade or gun?) calls
-// `pickOrDefer` on the Character. In auto mode the resolver picks randomly
-// and applies immediately; in interactive mode the choice is queued on
-// `character.pendingChoices` and applied later when the UI calls
-// `character.resolveChoice(id, idx)`.
+// `pickOrDefer` on the Character. In auto mode the resolver picks
+// immediately (preferred pool or random). In interactive mode it first
+// consults `character.decisionCursor` — recorded picks resolve synchronously
+// and execution continues; only the frontier choice (cursor exhausted) is
+// queued on `character.pendingChoices` and throws ChoicePendingError.
 //
-// Closures hold the apply-on-resolve logic, which means PendingChoice is
-// not serializable — it's an in-memory React-state object only.
+// Resolution is re-execution: session.resolvePending appends the pick to the
+// paused action's resolutions and re-runs the action from its pre-action
+// base. The onResolve closure therefore only ever runs synchronously inside
+// pickOrDefer; PendingChoice is render data for the UI while paused.
 
 import type { Character } from "@/lib/traveller/character";
 
@@ -57,11 +60,10 @@ export function genChoiceId(): string {
   return `c${nextChoiceId++}`;
 }
 
-/** Thrown by pickOrDefer in interactive mode after queueing a choice.
- *  The ACG runner catches this, preserves yearStep, and bails out so the
- *  current year does not proceed past the choice point with stale state.
- *  After the UI calls resolveChoice and runs the queued closure, the runner
- *  is re-invoked to continue from the recorded yearStep. */
+/** Thrown by pickOrDefer in interactive mode after queueing the frontier
+ *  choice. Unwinds the whole action to the session boundary; the snapshot
+ *  keeps `frontier` (action + base + resolutions) so resolvePending can
+ *  re-run the action from its base with the new pick appended. */
 export class ChoicePendingError extends Error {
   constructor(public choiceId: string) {
     super(`ACG choice pending (${choiceId})`);

@@ -6,11 +6,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project conventions
 
-A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI) and MegaTraveller. ~15k lines of TypeScript across `lib/`, `app/`, with ~3400 tests in `tests/`.
+A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI) and MegaTraveller. ~15k lines of TypeScript across `lib/`, `app/`, with ~3480 tests in `tests/`.
 
 ## JSON is the source of truth
 
-Every game rule, table, DM, threshold, rank, skill, cascade, or numeric constant lives in `data/editions/<id>.json`. The engine reads these at runtime via `getEdition(id)`. **Do not hardcode game rules in TypeScript.** If you find yourself writing `if (target >= 6)` for a survival check, the `6` belongs in JSON.
+Every game rule, table, DM, threshold, rank, skill, cascade, or numeric constant lives in `data/editions/<id>.json`. The engine reads these at runtime via `getEdition(id)` and **strict reads**: `requireRule(value, "json.path", "PM p. N")` (`editions/strict.ts`) throws a citation-bearing error instead of shadowing missing data with a code default. **Do not hardcode game rules in TypeScript, and never write `?? <game-value>` fallbacks** — `tests/audit/rulesLock.audit.test.ts` scans the engine for fallback shadows and fails the suite on any new one (its allowlist requires a written reason per entry and rejects stale entries).
 
 When adding or moving data into JSON, include a `$rule` or `$comment` field with the PM/TTB page and line reference. Example:
 
@@ -46,7 +46,7 @@ The legacy `s` global (`lib/traveller/services`) binds to `DEFAULT_EDITION_ID` o
 
 Flat accessors on `Character` (e.g. `ch.musterRolls`, `ch.apparentAge`) remain as a stable projection over the sub-objects for the UI/pdfSheet — not dual storage; the sub-object is the source of truth.
 
-`AcgState` (`engine/acg/state.ts`) is a **pathway-discriminated union** (`MercenaryAcgState | NavyAcgState | ScoutAcgState | MerchantAcgState`, keyed on `pathway`) plus `perYear`/`perTerm` scope sub-records. Read a pathway's role fields only after narrowing — `ch.requireMercenaryAcg()` / `assertPathway(acg, "navy")`; `clearYearScopedState` is `acg.perYear = freshPerYear()`.
+`AcgState` (`engine/acg/state.ts`) is a **pathway-discriminated union** (`MercenaryAcgState | NavyAcgState | ScoutAcgState | MerchantAcgState`, keyed on `pathway`) plus a `perTerm` scope sub-record. Read a pathway's role fields only after narrowing — `ch.requireMercenaryAcg()` / `assertPathway(acg, "navy")`.
 
 ## Shared roll/DM helpers
 
@@ -58,7 +58,7 @@ Don't hand-roll the "roll a die, find the row, read a column" ritual — reuse:
 
 ## UI boundary
 
-`app/**` reads rules only through the edition view-model (`editions/view.ts`: `termLengthYears`, `anagathicsEligible`, `pistolSkills`, …) and `EditionMeta` capability flags (`hasSkillCap`, `hasAnagathics`). Never re-derive a rule from raw JSON in a component.
+`app/**` reads rules only through the view-model (`lib/traveller/view.ts`: `termLengthYears`, `anagathicsEligible`, `pistolSkills`, … — surfaced via the `@/lib/traveller` barrel) and `EditionMeta` capability flags (`hasSkillCap`, `hasAnagathics`). Never re-derive a rule from raw JSON in a component; an eslint rule blocks `app/**` imports of `@/lib/traveller/engine/**` and the view layer's deep path.
 
 ## Test discipline
 
@@ -124,9 +124,16 @@ vi.spyOn(Math, "random").mockImplementation(() => seq[i++] ?? d6(6));
 
 Never `Math.random()` directly in production code — use the wrappers. The bug-fix commit `435b7b1` replaced four such sites with `arnd()`.
 
-## Catching `ChoicePendingError`
+## Interactive choices: cursor + re-execution
 
-Interactive ACG flow throws `ChoicePendingError` to pause the runner and surface a player choice. Always catch this *specifically*:
+The resume model is event-sourced re-execution — there is no mid-flight resume and no idempotence caching:
+
+- `ch.pickOrDefer(req)`: in auto mode resolves inline (preferred pool or random). In interactive mode it first consults `ch.decisionCursor` — previously recorded option indices are consumed **synchronously** (the `onResolve` runs immediately and execution continues). Only the frontier choice (cursor exhausted) queues `pendingChoices` and throws `ChoicePendingError` once, unwinding to the session boundary.
+- Every session action (`chargen/session.ts`) captures a pre-action base (`cloneCharacter`, rng position included) and runs straight through. The returned snapshot carries `frontier: { action, base, resolutions }` while paused. `session.resolvePending` appends the pick and **re-runs the whole action from the base** — the prefix re-executes identically (same seeded stream), so double-apply is structurally impossible.
+- Determinism of re-execution requires a **seeded run** (the UI seeds every run; the harness always seeds) or fully pinned `Math.random` (walker tests). Never rely on unseeded interactive runs.
+- Always thread the **whole** `ChargenSnapshot` between actions — reconstructing `{character, phase}` drops the frontier and breaks `resolvePending`.
+
+When catching the pause, catch *specifically* — a bare `catch {}` swallows real engine errors (missing JSON rows, draft rejections, structural bugs):
 
 ```ts
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
@@ -135,11 +142,10 @@ try {
   runAcgYear(c);
 } catch (err) {
   if (!(err instanceof ChoicePendingError)) throw err;
-  // …handle the pending choice
+  // …the character now carries pendingChoices; resolution happens via
+  // session.resolvePending (re-execution), never by re-entering the runner.
 }
 ```
-
-A bare `catch {}` here will swallow real engine errors (missing JSON rows, draft rejections, structural bugs).
 
 ## Structured DMs
 
@@ -153,6 +159,20 @@ DM rules in JSON are objects, not free-text strings:
 ```
 
 Evaluated via `applyStructuredDms` / `evaluateDM`. The latter accepts a narrow `DmContext` interface (`{attributes, terms}`), not a full `Character` — widening the evaluator to read other state is now a compile error.
+
+## Documented conventions (deliberately NOT rules-in-JSON)
+
+Four audit rounds converged on these as OK-structural — they are conventions, not shadows. Do not "migrate" them, and do not use them as precedent for new literals:
+
+- **Uniform die counts.** Plain 2D checks / 1D table rolls are the system's single resolution mechanic; JSON declares dice **only where they vary** (`courtMartial.*.die`, `navy.retention.throw.die`, `marineTradition.savingThrow.die`, jail/education dice strings — parsed via `parseDieCount`, which throws on unknown formats).
+- **`skillPoints += 1` / `rank += 1`** step semantics — definitional to the steps; variable magnitudes (overshoot thresholds) are JSON.
+- **BP mechanics**: 1 BP = +1 die step is the definition of a brownie point; the auto-play spend caps (1/2, picker cap 12) are engine auto-mode policy, commented as such.
+- **`-99` muster sentinel** for "no benefits" (death penalty) — documented arithmetic encoding.
+- **Pre-enlistment placeholders**: `rankCode: "E1"`, constructor `age = 18` — always overwritten from JSON at enlist/start (`acg.common.startAge`, `services.*.startAge`).
+- **`beginAcg` API defaults** — pickerless auto flows take the first printed option; UI and RunLog always pass explicit values.
+- **Rank-code format strings** (`O${n}`, `E${n}`, `IS-${n}`) — notation; ladder values are JSON.
+- **Natural 2..12 clamps** on 2D arithmetic; table-shape loop bounds that double as validators (missing rows throw).
+- **Display-layer heuristics** with citations (pistol `endsWith` classification, "Middle Passage" alias, presentation ordering).
 
 ## Hard limits & style
 
@@ -200,13 +220,13 @@ lib/traveller/
   characterState.ts       — AnagathicsState / MusterState sub-objects
   random.ts               — Rng: roll, arnd, rndInt
   history.ts              — typed HistoryEvent log + render-time verbosity
-  cascades.ts             — CT-bound cascade exports (legacy; prefer cascadePoolByKey)
+  view.ts                 — UI view-model (termLengthYears, anagathicsEligible, …)
   index.ts                — public barrel (Character NOT re-exported — see comment)
   editions/
     index.ts              — DEFAULT_EDITION_ID, getEdition, listEditions
     schema.ts             — Zod validation of the JSON blocks (parseRules/parseCanonData)
     types.ts              — Edition / EditionMeta / CanonData / hook types
-    view.ts               — UI view-model (termLengthYears, anagathicsEligible, …)
+    strict.ts             — requireRule / parseDieCount (fail-loud JSON reads)
     ct-classic/hooks.ts   — CT-only doPromotion overrides (e.g., nobles social-by-rank)
     mt-megatraveller/hooks.ts
   engine/
@@ -223,11 +243,10 @@ lib/traveller/
     steps/                — basic lifecycle steps: survival, commission, promotion, …
     runners/              — basic.ts + acg.ts step walkers
     acg/                  — Advanced Character Generation (MT)
-      runner.ts, phaseRunner.ts, jsonPhases.ts — per-year/term step drivers
+      phaseRunner.ts, jsonPhases.ts — per-year assignment-resolution drivers
       tables.ts           — structured/column DM evaluation, resolution lookup
-      state.ts            — AcgState discriminated union + perYear/perTerm
-      subStepCache.ts     — per-year sub-step memoization for resume
-      browniePoints.ts    — tryMitigate, spendBrowniePoints
+      state.ts            — AcgState discriminated union + perTerm scope
+      skills.ts           — applyAcgSkillCell
       awards.ts           — decorations, court-martial, brownie awards
       preCareer.ts        — college, naval/military/merchant academy, med/flight school
       schools.ts          — special-assignment school application

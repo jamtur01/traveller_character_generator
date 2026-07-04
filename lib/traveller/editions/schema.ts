@@ -456,6 +456,10 @@ const CanonDataSchema = z.looseObject({
   benefitDetails: z.record(z.string(), BenefitDetailSchema).optional(),
   skillTableMeta: SkillTableMetaSchema.optional(),
   cascadeAliases: z.record(z.string(), z.string()).optional(),
+  // Presentation metadata for the printed sheet (lib/pdfSheet).
+  sheet: strictCitations({
+    equipmentSkills: z.array(z.string()),
+  }).optional(),
 });
 
 export type CanonDataValidated = z.infer<typeof CanonDataSchema>;

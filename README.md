@@ -46,9 +46,9 @@ npm run dev   # http://localhost:3000
 - **Edition registry** (`lib/traveller/editions/index.ts`) pairs each edition's JSON with its named-hook implementations (`<edition>/hooks.ts`). A Zod schema (`editions/schema.ts`) validates the load-bearing blocks at load; the UI/engine read the typed `edition.rules` view rather than raw JSON.
 - **Engine** (`lib/traveller/engine/`): `serviceLoader.buildServiceDef` builds a runtime service from one JSON service entry; `cellResolver.applyCell` interprets printed cell labels (`"+1 Intel"`, `"Blade Cbt"`, `"Free Trader"`, …) into character mutations; `predicate.ts` is the one condition/DM interpreter (`evaluatePredicate`); `cascadeMap.ts` resolves edition-aware cascade pools; `dmEvaluator`/`musterDm` sum DMs; `skillRestrictions`/`homeworld` handle MT homeworld generation and its skill limits.
 - **Basic chargen** (both editions) runs as ordered lifecycle steps (`engine/steps/`, `engine/runners/basic.ts`, `chargen/*`). **Advanced Character Generation** (MegaTraveller only, `engine/acg/`) runs four pathways (`pathways/{mercenary,navy,scout,merchantPrince}.ts`) through a data-driven phase runner with per-year assignment resolution, decorations, brownie points, court martial, and pre-career options.
-- **State**: the `Character` class holds core state plus cohesive sub-objects (`characterState.ts`: `AnagathicsState`, `MusterState`, each with its own reset). `AcgState` (`engine/acg/state.ts`) is a **pathway-discriminated union** with `perYear`/`perTerm` scope sub-records.
-- **Interactive vs auto**: `pickOrDefer` + `ChoicePendingError` pause the runner for player choices; `chargen/replay.ts` re-applies recorded choices deterministically.
-- **UI boundary**: `app/**` reads rules only through the edition view-model (`editions/view.ts`) and `EditionMeta` capability flags — it never re-derives rules from raw JSON.
+- **State**: the `Character` class holds core state plus cohesive sub-objects (`characterState.ts`: `AnagathicsState`, `MusterState`, each with its own reset). `AcgState` (`engine/acg/state.ts`) is a **pathway-discriminated union** with a `perTerm` scope sub-record.
+- **Interactive vs auto**: `pickOrDefer` resolves recorded picks synchronously via `decisionCursor`; the frontier choice throws `ChoicePendingError`, and `session.resolvePending` re-runs the paused action from its pre-action base with the pick appended (event-sourced re-execution — no mid-flight resume state). `chargen/replay.ts` folds a recorded action log into a snapshot deterministically.
+- **UI boundary**: `app/**` reads rules only through the view-model (`lib/traveller/view.ts`, via the barrel) and `EditionMeta` capability flags — it never re-derives rules from raw JSON.
 
 ## Project layout
 
@@ -71,13 +71,14 @@ lib/
     characterState.ts    AnagathicsState / MusterState sub-objects
     random.ts            Rng (roll, arnd, rndInt)
     history.ts           Typed HistoryEvent log + render-time verbosity
+    view.ts              UI-facing view-model (term length, capability queries)
     sheet.ts             formatCharacterSheet / benefit aggregation
     formatting.ts        numCommaSep, intToOrdinal, extendedHex
     editions/
       index.ts           Registry: getEdition, DEFAULT_EDITION_ID, listEditions
       schema.ts          Zod validation of the JSON blocks
       types.ts           Edition / EditionMeta / CanonData / hook types
-      view.ts            UI-facing view-model (term length, capability queries)
+      strict.ts          requireRule / parseDieCount (fail-loud JSON reads)
       ct-classic/hooks.ts, mt-megatraveller/hooks.ts
     engine/
       serviceLoader.ts   buildServiceDef (JSON -> runtime ServiceDef)
@@ -93,9 +94,8 @@ lib/
       steps/             basic lifecycle steps (survival, commission, …)
       runners/           basic.ts + acg.ts step walkers
       acg/               Advanced Character Generation (MT)
-        runner.ts, phaseRunner.ts, jsonPhases.ts, tables.ts,
-        awards.ts, browniePoints.ts, preCareer.ts, schools.ts,
-        subStepCache.ts, state.ts
+        phaseRunner.ts, jsonPhases.ts, tables.ts, skills.ts,
+        awards.ts, preCareer.ts, schools.ts, state.ts
         pathways/        mercenary, navy, scout, merchantPrince, shared
     chargen/             session, enlistment, term, muster, reenlist,
                          aging, anagathics, weaponBenefits, skillCap, replay
