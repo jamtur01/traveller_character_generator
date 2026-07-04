@@ -15,6 +15,7 @@ import type {
 } from "@/lib/traveller/editions/types";
 import { applyCell } from "./cellResolver";
 import { evaluateDM } from "./dmEvaluator";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { anagathicsSurvivalDm } from "@/lib/traveller/chargen/anagathics";
 
 /** Skill-table key for the given table index (1-based). Order declared
@@ -49,11 +50,36 @@ export function buildServiceDef(
   const benefitDetails = data.benefitDetails;
 
   // --- numeric throws ----------------------------------------------------
-  const enlistmentThrow = serviceData.checks.enlistment.target ?? 0;
-  const survivalThrow = serviceData.checks.survival.target ?? 0;
+  // Enlistment is either a numeric throw or a declared automatic gate
+  // (nobles: target null + automaticIf social 10+, CotI/PM) — exactly one.
+  // Declaring both is contradictory data and fails loudly. The 0 below is
+  // not a game value — it is the ServiceDef "2D >= 0 always passes" encoding
+  // of an enlistment the JSON declares automatic; the automaticIf gate
+  // itself is enforced by the nobility enlistment path.
+  const enlistBlk = serviceData.checks.enlistment;
+  if (enlistBlk.automaticIf && typeof enlistBlk.target === "number") {
+    throw new Error(
+      `services.${serviceData.displayName}.checks.enlistment declares both a ` +
+      "numeric target and automaticIf — contradictory; declare exactly one.",
+    );
+  }
+  const enlistmentThrow = enlistBlk.automaticIf
+    ? 0
+    : requireRule(
+        enlistBlk.target,
+        `services.${serviceData.displayName}.checks.enlistment.target`,
+        "TTB/PM service tables",
+      );
+  const survivalThrow = requireRule(
+    serviceData.checks.survival.target,
+    `services.${serviceData.displayName}.checks.survival.target`, "TTB/PM service tables",
+  );
   const commissionThrow = serviceData.checks.position?.target ?? undefined;
   const promotionThrow = serviceData.checks.promotion?.target ?? undefined;
-  const reenlistThrow = serviceData.checks.reenlistment.target ?? 0;
+  const reenlistThrow = requireRule(
+    serviceData.checks.reenlistment.target,
+    `services.${serviceData.displayName}.checks.reenlistment.target`, "TTB/PM service tables",
+  );
 
   const enlistmentDM = (a: Attributes): number => evaluateDM(
     serviceData.checks.enlistment.dms,

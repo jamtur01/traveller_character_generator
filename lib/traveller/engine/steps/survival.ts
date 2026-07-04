@@ -13,6 +13,7 @@
 //                  flags activeDuty=false so reenlistment forces muster.
 
 import { event as ev } from "@/lib/traveller/history";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import type { StepFn } from "./types";
 
 export const survivalStep: StepFn = ({ ch, service, edition }) => {
@@ -20,7 +21,9 @@ export const survivalStep: StepFn = ({ ch, service, edition }) => {
   const onFailure = edition.rules.survival?.onFailure ?? "death";
   if (onFailure === "shortTerm") {
     const s = edition.rules.survival;
-    const short = s?.shortTermYears ?? 2;
+    const short = requireRule(
+      s?.shortTermYears, "rules.survival.shortTermYears", "PM p. 16",
+    );
     const reason = `injured in service — only ${short} years of this term served`;
     // doServiceTermStep already added the full term's years; rewind to the
     // short-term length.

@@ -9,6 +9,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 // ---------- term lifecycle -------------------------------------------------
 
@@ -17,7 +18,10 @@ import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
  *  Mirrors Character.fullTermYears() so the UI's term-age display can't
  *  drift from the value the engine advances chronological age by. */
 export function termLengthYears(editionId: string): number {
-  return getEdition(editionId).rules.survival?.fullTermYears ?? 4;
+  return requireRule(
+    getEdition(editionId).rules.survival?.fullTermYears,
+    "rules.survival.fullTermYears", "TTB p. 18 / PM p. 45",
+  );
 }
 
 /** Whether `character` may attempt anagathics for the upcoming term. The
@@ -30,8 +34,12 @@ export function anagathicsEligible(character: Character): boolean {
   const ed = getEdition(character.editionId);
   if (!ed.meta.hasAnagathics) return false;
   const elig = ed.rules.anagathics?.eligibility;
-  const minAge = elig?.minAge ?? 30;
-  const minTerms = elig?.minTerms ?? 3;
+  const minAge = requireRule(
+    elig?.minAge, "rules.anagathics.eligibility.minAge", "PM p. 16",
+  );
+  const minTerms = requireRule(
+    elig?.minTerms, "rules.anagathics.eligibility.minTerms", "PM p. 16",
+  );
   const ageAfterTerm = character.age + termLengthYears(character.editionId);
   return ageAfterTerm >= minAge && character.terms >= minTerms;
 }

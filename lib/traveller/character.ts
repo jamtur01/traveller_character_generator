@@ -65,6 +65,7 @@ import type {
 import type { ChargenStatus } from "./types";
 import { getEditionServices } from "./services";
 import { DEFAULT_EDITION_ID, getEdition } from "./editions";
+import { requireRule } from "./editions/strict";
 import { formatCharacterSheet } from "./sheet";
 import { AnagathicsState, MusterState } from "./characterState";
 
@@ -693,13 +694,15 @@ export class Character implements CharacterState {
     // PM/TTB p. 17 caps + per-edition socialMin override — sourced from
     // rules.attributeCaps in the edition JSON.
     const caps = getEdition(this.editionId).rules.attributeCaps;
-    const max = caps?.max ?? 15;
+    const max = requireRule(caps?.max, "rules.attributeCaps.max", "PM/TTB p. 17");
     if (this.attributes[attrib] > max) {
       // Post-state in the ev.attributeChange below shows the capped value.
       this.attributes[attrib] = max;
     }
-    const socialMin = caps?.socialMin ?? 1;
-    const min = caps?.min ?? 0;
+    const socialMin = requireRule(
+      caps?.socialMin, "rules.attributeCaps.socialMin", "PM/TTB p. 17",
+    );
+    const min = requireRule(caps?.min, "rules.attributeCaps.min", "PM/TTB p. 17");
     if (attrib === "social" && this.attributes[attrib] < socialMin) {
       this.attributes[attrib] = socialMin;
     } else if (this.attributes[attrib] < min) {
@@ -776,8 +779,14 @@ export class Character implements CharacterState {
    *  list (MT excludes Barbarians, Pirates, Rogues, Scouts per PM p. 17). */
   isRetirementEligible(): boolean {
     const retirement = getEdition(this.editionId).rules.retirement;
-    const minTerms = retirement?.eligibleAfterCompletedTerm ?? 5;
-    const excluded = retirement?.excludedServices ?? ["scouts", "other"];
+    const minTerms = requireRule(
+      retirement?.eligibleAfterCompletedTerm,
+      "rules.retirement.eligibleAfterCompletedTerm", "TTB p. 18 / PM p. 17",
+    );
+    const excluded = requireRule(
+      retirement?.excludedServices,
+      "rules.retirement.excludedServices", "TTB p. 18 / PM p. 17",
+    );
     if (this.qualifyingRetirementTerms() < minTerms) return false;
     if (excluded.includes(String(this.service))) return false;
     return true;
@@ -799,7 +808,10 @@ export class Character implements CharacterState {
    *  editions declare it). The term-begin age bump, aging breakpoints, and
    *  the survival short-term rewind must all use this same value. */
   fullTermYears(): number {
-    return getEdition(this.editionId).rules.survival?.fullTermYears ?? 4;
+    return requireRule(
+      getEdition(this.editionId).rules.survival?.fullTermYears,
+      "rules.survival.fullTermYears", "TTB p. 18 / PM p. 45",
+    );
   }
 
   /** PM p. 16 (lines 939-943): a character is disabled — and must muster

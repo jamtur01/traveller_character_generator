@@ -23,6 +23,7 @@ import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import type { BenefitDetail } from "@/lib/traveller/editions/types";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./cascadeMap";
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 import { event as ev } from "@/lib/traveller/history";
@@ -84,7 +85,10 @@ function tryMarineTradition(
   // umbrella (e.g., "Large Blade"); check both the literal entry and the
   // expanded constituents (Broadsword/Cutlass/Sword) so a Marine who
   // received the umbrella expansion in a prior term still triggers the DM.
-  const target = rule.savingThrow?.target ?? 9;
+  const target = requireRule(
+    rule.savingThrow?.target,
+    "rules.skillRestrictions savingThrow.target", "PM p. 15 homeworld override",
+  );
   let dm = 0;
   const tiers = (rule.dmIfAlreadySkillAtLeast ?? []).slice().sort(
     (a, b) => b.level - a.level,

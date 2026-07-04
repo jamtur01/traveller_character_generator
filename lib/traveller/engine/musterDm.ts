@@ -10,6 +10,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import {
   buildPredicateContext, sumPredicateDms, type Predicate,
 } from "@/lib/traveller/engine/predicate";
@@ -42,8 +43,13 @@ export function benefitDmFor(ch: Character): number {
  *  (MT PM p. 15). */
 export function maxCashRolls(ch: Character): number {
   const r = rules(ch);
-  const base = r?.maxCashTableRolls ?? 3;
+  const base = requireRule(
+    r?.maxCashTableRolls, "rules.musterOutRolls.maxCashTableRolls", "TTB p. 18 / PM p. 17",
+  );
   if (!ch.anagathics.anagathicsEverTaken) return base;
-  const cap = getEdition(ch.editionId).rules.anagathics?.cashRollCap ?? 2;
+  const cap = requireRule(
+    getEdition(ch.editionId).rules.anagathics?.cashRollCap,
+    "rules.anagathics.cashRollCap", "PM p. 16",
+  );
   return Math.min(cap, base);
 }

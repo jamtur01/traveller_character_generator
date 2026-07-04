@@ -46,11 +46,12 @@ export function doReenlistmentStep(ch: Character): void {
     ch.log(ev.reenlistment("mandatory", reenlistRoll, target));
     return;
   }
-  // CT mandates retirement at end of term 7. MT does not (voluntary
-  // any-term per PM p. 17). Read the cap from edition rules.
-  const cap = reenlistRules?.mandatoryRetireAfterTerm ?? 7;
+  // CT declares mandatoryRetireAfterTerm (TTB p. 18: retire after 7th term);
+  // MT deliberately omits it (PM p. 17: voluntary reenlistment any term).
+  // No code default — absence of the key IS the MT rule.
+  const cap = reenlistRules?.mandatoryRetireAfterTerm;
   const voluntaryAnyTerms = reenlistRules?.voluntaryAnyTerms === true;
-  if (ch.terms >= cap && !voluntaryAnyTerms) {
+  if (cap !== undefined && ch.terms >= cap && !voluntaryAnyTerms) {
     ch.log(ev.reenlistment("retired", reenlistRoll, target));
     ch.endChargenRetired("mandatory retirement", true);
     return;

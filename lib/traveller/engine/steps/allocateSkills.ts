@@ -12,6 +12,7 @@
 //      default + 1 first-term bonus.
 
 import type { StepFn } from "./types";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 interface SkillEligibility {
   initialTerm?: number;
@@ -25,8 +26,12 @@ export const allocateSkillsStep: StepFn = ({
   const elig = edition.rules.skillEligibility as
     SkillEligibility | undefined;
   const exceptions = elig?.perTermExceptions ?? {};
-  const subsequent = elig?.subsequentTerm ?? 1;
-  const initial = elig?.initialTerm ?? subsequent;
+  const subsequent = requireRule(
+    elig?.subsequentTerm, "rules.skillEligibility.subsequentTerm", "TTB p. 18 / PM p. 15",
+  );
+  const initial = requireRule(
+    elig?.initialTerm, "rules.skillEligibility.initialTerm", "TTB p. 18 / PM p. 15",
+  );
 
   // 1. Explicit per-service skillsPerTerm from ServiceData wins.
   if (typeof service.skillsPerTerm === "number") {
