@@ -4,48 +4,9 @@ import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
-
-/** Edition-aware pistol / blade sets for the "Equipment Qualified On"
- *  rows. Pistols are the subset of the edition's gun pool ending in
- *  "Pistol" (plus Revolver — TTB lists it alongside the pistols).
- *
- *  PM Includes-skill umbrellas (e.g. MT "Handgun" → Body Pistol /
- *  Pistol / Revolver / Snub Pistol; "Large Blade" → Broadsword /
- *  Cutlass / Sword) expand to constituent skills at chargen-grant time.
- *  After expansion the character holds the constituents, NOT the
- *  umbrella name. Fold each umbrella's includesSkills entry into the
- *  set so the filter still recognises a Marine's Cutlass-1 as a blade. */
-function pistolsFor(editionId: string): Set<string> {
-  const out = new Set<string>();
-  const guns = cascadePoolByKey("gunCombat", editionId);
-  for (const g of guns) {
-    if (g.endsWith("Pistol") || g === "Revolver") out.add(g);
-    for (const inner of expandIncludes(editionId, g)) {
-      if (inner.endsWith("Pistol") || inner === "Revolver") out.add(inner);
-    }
-  }
-  return out;
-}
-function bladesFor(editionId: string): Set<string> {
-  const out = new Set<string>(cascadePoolByKey("bladeCombat", editionId));
-  for (const name of cascadePoolByKey("bladeCombat", editionId)) {
-    for (const inner of expandIncludes(editionId, name)) out.add(inner);
-  }
-  return out;
-}
-
-/** Read the edition's includesSkills entry for `name` and return its
- *  constituent skill names (level info stripped). Empty array if not an
- *  Includes-skill umbrella. */
-function expandIncludes(editionId: string, name: string): string[] {
-  const data = getEdition(editionId).data.includesSkills;
-  if (!data) return [];
-  const entry = data[name];
-  if (!Array.isArray(entry)) return [];
-  return entry
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.replace(/-\d+$/, "").trim());
-}
+import {
+  acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
+} from "./traveller/editions/view";
 
 /** Skills that populate the sheet's "Equipment Qualified On" box: the
  *  edition's vehicle cascade (its umbrella of vehicle / aircraft /
@@ -61,53 +22,6 @@ export function equipmentQualifiedOn(c: Character): string[] {
     for (const inner of expandIncludes(c.editionId, name)) equipSkills.add(inner);
   }
   return c.skills.filter(([n]) => equipSkills.has(n)).map(([n]) => n);
-}
-
-/** Ship/passage display names sourced from the edition's benefitDetails:
- *  every key with a `shipType` is a ship; passage names come from the
- *  `passages` block's displayName fields. */
-/** Look up the printed rank title for an ACG character. ACG pathway
- *  ranks are declared in JSON per pathway (mercenary/navy ranks array;
- *  merchant ranksAndPromotions per line size; scout has ordinary +
- *  administrator ladders). Returns null if no title can be derived;
- *  callers fall back to the raw rank code. */
-function acgRankTitle(c: Character): string | null {
-  const code = c.acgState?.rankCode;
-  if (!code) return null;
-  // Numeric officer ranks O1-O6 align with the basic service ladder
-  // (service.ranks[1..6]). This covers most non-flag-officer cases for
-  // mercenary/navy/merchant without needing per-pathway lookup. Flag
-  // officers (O7+) and scout IS-* fall through to the raw code.
-  const officerMatch = code.match(/^O(\d+)$/);
-  if (officerMatch) {
-    const n = parseInt(officerMatch[1]!, 10);
-    const title = c.serviceDef().ranks[n];
-    if (title) return title;
-  }
-  return null;
-}
-
-function shipNamesFor(editionId: string): Set<string> {
-  const out = new Set<string>();
-  const details = getEdition(editionId).data.benefitDetails;
-  if (!details) return out;
-  for (const [k, v] of Object.entries(details)) {
-    if (v?.shipType !== undefined) out.add(k);
-  }
-  return out;
-}
-function passageNamesFor(editionId: string): string[] {
-  const passages = (getEdition(editionId).data as {
-    benefitDetails?: { passages?: Record<string, { displayName?: string }> };
-  }).benefitDetails?.passages ?? {};
-  const out = new Set<string>();
-  for (const v of Object.values(passages)) {
-    if (v.displayName) out.add(v.displayName);
-  }
-  // PM uses "Mid Passage" but TTB and some tables print "Middle Passage";
-  // accept both as the same kind for display purposes.
-  if (out.has("Mid Passage")) out.add("Middle Passage");
-  return [...out];
 }
 
 // Letter, in points.
@@ -417,11 +331,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 135, y, 135, r19H);
   fieldLabel(doc, X0 + 139, y + 10, "19b. Preferred Pistol");
-  fieldValue(doc, X0 + 141, y + 28, highestSkillIn(c.skills, pistolsFor(c.editionId)), 127);
+  fieldValue(doc, X0 + 141, y + 28, highestSkillIn(c.skills, pistolSkills(c.editionId)), 127);
 
   doc.rect(X0 + 270, y, 135, r19H);
   fieldLabel(doc, X0 + 274, y + 10, "19c. Preferred Blade");
-  fieldValue(doc, X0 + 276, y + 28, c.bladeBenefit || highestSkillIn(c.skills, bladesFor(c.editionId)), 127);
+  fieldValue(doc, X0 + 276, y + 28, c.bladeBenefit || highestSkillIn(c.skills, bladeSkills(c.editionId)), 127);
 
   doc.rect(X0 + 405, y, 135, r19H);
   fieldLabel(doc, X0 + 409, y + 10, "20. Travellers' Member?");
@@ -503,7 +417,7 @@ function drawSupplement(doc: jsPDF, c: Character) {
 
   doc.rect(X0 + 200, y, 340, 32);
   fieldLabel(doc, X0 + 204, y + 10, "Mustering-Out Passages");
-  const PASSAGE_KINDS = passageNamesFor(c.editionId);
+  const PASSAGE_KINDS = passageNames(c.editionId);
   const passageCounts = new Map<string, number>();
   for (const b of c.benefits) {
     if (PASSAGE_KINDS.includes(b)) {
@@ -517,11 +431,11 @@ function drawSupplement(doc: jsPDF, c: Character) {
   // Ships
   doc.rect(X0, y, W, 40);
   fieldLabel(doc, X0 + 4, y + 10, "Starships and Major Possessions");
-  const shipNames = shipNamesFor(c.editionId);
+  const shipBenefitNames = shipNames(c.editionId);
   const seenShips = new Set<string>();
   const ships: string[] = [];
   for (const b of c.benefits) {
-    if (shipNames.has(b) && !seenShips.has(b)) {
+    if (shipBenefitNames.has(b) && !seenShips.has(b)) {
       seenShips.add(b);
       ships.push(formatBenefit(b, c));
     }
@@ -536,7 +450,7 @@ function drawSupplement(doc: jsPDF, c: Character) {
   const otherCounts = new Map<string, number>();
   for (const b of c.benefits) {
     if (PASSAGE_KINDS.includes(b)) continue;
-    if (shipNames.has(b)) continue;
+    if (shipBenefitNames.has(b)) continue;
     if (b.endsWith("/yr Retirement Pay")) continue;
     otherCounts.set(b, (otherCounts.get(b) ?? 0) + 1);
   }

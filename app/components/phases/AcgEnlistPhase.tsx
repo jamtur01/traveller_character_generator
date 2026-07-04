@@ -1,7 +1,7 @@
 "use client";
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { getAcgPathway } from "@/lib/traveller/editions";
 import {
   PhaseCard, FormField, FormSelect, PrimaryButton,
 } from "@/app/components/ui";
@@ -31,11 +31,7 @@ export const initialAcgFormState: AcgFormState = {
  *  gate is enforced by mercenaryEnlist) so the dropdown only lists arms
  *  the player can actually choose at first enlistment. */
 function mercenaryNonCommandoArms(editionId: string): string[] {
-  const acg = getEdition(editionId).data.advancedCharacterGeneration as
-    Record<string, unknown> | undefined;
-  const merc = acg?.mercenary as { combatArms?: string[]; combatArmEligibility?: {
-    armGates?: Record<string, unknown>;
-  } } | undefined;
+  const merc = getAcgPathway(editionId, "mercenary");
   const arms = merc?.combatArms ?? [];
   const gated = new Set(Object.keys(merc?.combatArmEligibility?.armGates ?? {}));
   return arms.filter((a) => !gated.has(a));

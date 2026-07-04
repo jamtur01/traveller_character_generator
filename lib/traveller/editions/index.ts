@@ -30,7 +30,15 @@ function buildEdition(
   // superset the schema doesn't fully enumerate, so brand once here.
   const data = parseCanonData(raw, id) as unknown as CanonData;
   const rules = parseRules(data.rules, id);
-  return { meta: data.edition, data, hooks, rules };
+  // Derive UI-facing capability flags once, from the validated rules, so
+  // the presentation layer reads a typed flag instead of probing raw
+  // `data.rules` shape (e.g. the old skillCap-presence MT proxy).
+  const meta: EditionMeta = {
+    ...data.edition,
+    hasSkillCap: rules.skillCap != null,
+    hasAnagathics: rules.anagathics != null,
+  };
+  return { meta, data, hooks, rules };
 }
 
 const REGISTRY: Record<string, Edition> = {

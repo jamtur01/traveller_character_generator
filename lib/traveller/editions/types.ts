@@ -29,6 +29,16 @@ export interface EditionMeta {
    * Editions like MT that add more decision points opt in by setting true.
    */
   supportsInteractive?: boolean;
+  /**
+   * Capability flags derived once at edition load (buildEdition) from the
+   * validated rules, so the UI reads a typed flag instead of probing raw
+   * `data.rules` shape. `hasSkillCap` marks the MT Int+Edu skill-cap ruleset
+   * (PM p. 39); `hasAnagathics` marks editions that declare the anagathics
+   * rule (PM p. 15). Homeworld and ACG capabilities already have their own
+   * accessors — editionHasHomeworld() / editionHasAcg().
+   */
+  hasSkillCap: boolean;
+  hasAnagathics: boolean;
 }
 
 export interface DMRule extends Predicate {
