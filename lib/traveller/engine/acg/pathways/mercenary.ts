@@ -30,7 +30,7 @@ import {
 } from "@/lib/traveller/engine/acg/tables";
 import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
 import {
-  applyOnce, markComplete, resetIfComplete,
+  applyOnce, markComplete, resetIfComplete, alreadyApplied, markApplied,
 } from "@/lib/traveller/engine/acg/subStepCache";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
@@ -321,6 +321,12 @@ function rollMercenarySkill(ch: Character): void {
   if (ch.choiceMode === "interactive") {
     const options = mercenaryAvailableSkillColumns(ch);
     if (options.length > 1) {
+      // Re-entry guard: pickOrDefer throws ChoicePendingError, so the
+      // enclosing applyOnce("skills-applied") only marks after this fn
+      // returns cleanly. Without the gate, the resumed pass re-enters here
+      // and re-queues the identical prompt forever (one skill per resolve).
+      if (alreadyApplied(ch, "mercSkillColumn-prompted")) return;
+      markApplied(ch, "mercSkillColumn-prompted");
       ch.pickOrDefer({
         kind: "skillTable",
         label: "Choose a service-skills column to roll on",

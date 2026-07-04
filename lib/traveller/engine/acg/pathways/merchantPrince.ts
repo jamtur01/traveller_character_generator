@@ -605,6 +605,16 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const to = order[newIdx]!;
   ch.requireMerchantAcg().lineType = to;
   ch.log(ev.transferred(to, "line", from));
+  // Joining a new line class changes department membership (PM p. 60-61):
+  // Free Trader crews are the single "Free Trader" department, while large/
+  // small lines assign a real department (departmentAssignment table).
+  // Reconcile so the department-keyed resolution routing can't strand a
+  // department with no sub-table (e.g. "Free Trader" inside a Fledgling line).
+  const dept = ch.requireMerchantAcg().department;
+  const deptValid = lineSizeFor(data, to) === "FreeTrader"
+    ? dept === "Free Trader"
+    : dept !== null && dept !== "Free Trader";
+  if (!deptValid) merchantAssignDepartment(ch);
 }
 
 export function merchantSpecialAssignment(ch: Character): void {
@@ -679,13 +689,13 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // target department.
       const minBlockRank =
         data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank ?? 5;
-      const from = acg.department!;
+      const from = acg.department;
       const to = transfer[1]!;
       const blockedByRank = officerRank >= minBlockRank;
-      const alreadyThere = to.toLowerCase() === from.toLowerCase();
+      const alreadyThere = from !== null && to.toLowerCase() === from.toLowerCase();
       if (!blockedByRank && !alreadyThere) {
         acg.department = to;
-        ch.log(ev.transferred(to, "department", from));
+        ch.log(ev.transferred(to, "department", from ?? undefined));
       }
     }
     // PM p. 65: the exam DM applies only at/above the rank named in the

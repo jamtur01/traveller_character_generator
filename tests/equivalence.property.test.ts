@@ -71,8 +71,6 @@ const INTERACTIVE = {
   acgPathway: "",
 } as const;
 
-const ACG_PATHWAYS = ["mercenary", "navy", "scout", "merchantPrince"] as const;
-
 const CONFIGS: readonly DriveConfig[] = [
   {
     name: "CT basic",
@@ -85,8 +83,9 @@ const CONFIGS: readonly DriveConfig[] = [
     minPendingSeeds: 20, // measured 20/20
   },
   ...([
-    // mercenary: 6 of the 11 non-ledgered seeds pause (see ledger below —
-    // 9 seeds hit the interactive skill-column infinite re-prompt).
+    // Floors measured at harness creation. The mercenary floor predates the
+    // skill-column re-prompt fix (all 20 seeds now drive to completion), so
+    // it is a conservative lower bound.
     ["mercenary", 6],
     ["navy", 14],  // measured 14/20; the rest fail ACG enlistment at step ~3
     ["scout", 13], // measured 13/20; ditto, plus one prompt-free 1-term run
@@ -123,40 +122,14 @@ interface KnownDivergence {
   readonly field: string;
 }
 
-// Engine bug 1 — interactive mercenary infinite skill-column re-prompt.
-// applyOnce(ch, "skills-applied", fn) marks `applied` only AFTER fn returns
-// (subStepCache.ts), but rollMercenarySkill (pathways/mercenary.ts) calls
-// pickOrDefer inside fn, which THROWS ChoicePendingError. The resolve closure
-// rolls a skill, resolvePending resumes runAcgYear, runPhases re-enters the
-// skills phase (never marked applied) and re-queues the identical
-// "Choose a service-skills column to roll on" choice — forever, awarding a
-// skill per resolve. Reachable in the UI by any interactive-mode mercenary
-// with >1 eligible column (Marines, NCOs, officers).
-const MERC_SKILL_LOOP =
-  'non-termination: skillTable "Choose a service-skills column to roll on" re-queued ' +
-  'forever (applyOnce("skills-applied") never marked — pickOrDefer throws first)';
-
-// Engine bug 2 — merchantPrince special-duty transfer with null target:
-// applyMerchantSpecialDutyResult does to.toLowerCase() on transfer[1] = null
-// (pathways/merchantPrince.ts:685).
-// Engine bug 3 — merchantPrince "Fledgling" line with department "Free
-// Trader" has no resolution sub-table (key "freeTrader"), so
-// merchantResolveAssignment throws mid-year.
-const KNOWN_DIVERGENCES: readonly KnownDivergence[] = [
-  ...[1, 3, 4, 5, 7, 11, 13, 15, 17].map((seed): KnownDivergence => ({
-    config: "MT ACG mercenary", seed, property: "drive", field: MERC_SKILL_LOOP,
-  })),
-  {
-    config: "MT ACG merchantPrince", seed: 7, property: "drive",
-    field: "crash: applyMerchantSpecialDutyResult — transfer target null, " +
-      "to.toLowerCase() TypeError (merchantPrince.ts:685)",
-  },
-  {
-    config: "MT ACG merchantPrince", seed: 11, property: "drive",
-    field: 'crash: no resolution sub-table for department "Free Trader" ' +
-      '(key "freeTrader", lineType "Fledgling")',
-  },
-];
+// The ledger is currently EMPTY. The three bugs found at harness creation —
+// the interactive mercenary skill-column re-prompt loop (applyOnce marked
+// only after fn returned, but pickOrDefer threw first), the merchantPrince
+// special-duty transfer crash on a null department, and the stranded
+// department="Free Trader" after a line transfer out of the Free Trader
+// class — were fixed in the engine (see git history for the ledger entries
+// that documented them).
+const KNOWN_DIVERGENCES: readonly KnownDivergence[] = [];
 
 // ---------------------------------------------------------------------------
 // Seed-derived action driver. Mirrors exactly the actions the UI can issue in
