@@ -30,8 +30,8 @@ function navyOfficerAt(
   c.beginAcg("navy", { fleet });
   c.acgState!.isOfficer = true;
   c.acgState!.rankCode = rankCode;
-  c.acgState!.branch = "Line";
-  c.acgState!.fleet = fleet;
+  c.requireNavyAcg().branch = "Line";
+  c.requireNavyAcg().fleet = fleet;
   c.acgState!.perTerm.promotedThisTerm = false;
   return c;
 }

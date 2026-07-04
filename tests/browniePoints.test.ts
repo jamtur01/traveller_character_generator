@@ -20,6 +20,9 @@ function freshAcgChar(bp = 5): Character {
   };
   c.acgState = {
     pathway: "mercenary",
+    combatArm: "",
+    branch: "",
+    mos: "",
     rankCode: "E1",
     isOfficer: false,
     year: 1,
@@ -152,8 +155,8 @@ describe("End-to-end: BP saves a character's life", () => {
     );
     const c = freshAcgChar(0);
     c.acgState!.browniePoints = 10;
-    c.acgState!.combatArm = "Infantry";
-    c.acgState!.branch = "Army";
+    c.requireMercenaryAcg().combatArm = "Infantry";
+    c.requireMercenaryAcg().branch = "Army";
     c.resumeActive();
     mercenaryResolveAssignment(c, "Raid");
     // BP spent: margin was -4, auto-mitigate brings it to 0.
@@ -172,8 +175,8 @@ describe("End-to-end: BP saves a character's life", () => {
       "../lib/traveller/engine/acg/pathways/mercenary"
     );
     const c = freshAcgChar(2);
-    c.acgState!.combatArm = "Infantry";
-    c.acgState!.branch = "Army";
+    c.requireMercenaryAcg().combatArm = "Infantry";
+    c.requireMercenaryAcg().branch = "Army";
     c.resumeActive();
     mercenaryResolveAssignment(c, "Raid");
     expect(c.acgState!.browniePoints).toBe(2); // BPs untouched

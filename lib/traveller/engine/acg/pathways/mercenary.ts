@@ -137,8 +137,8 @@ export function mercenaryEnlist(
       }
     }
   }
-  ch.requireAcgState().combatArm = combatArm;
-  ch.requireAcgState().branch = service === "army" ? "Army" : "Marines";
+  ch.requireMercenaryAcg().combatArm = combatArm;
+  ch.requireMercenaryAcg().branch = service === "army" ? "Army" : "Marines";
 
   const svcLabel = `${service === "army" ? "Army" : "Marines"} (${combatArm})`;
   // Academy/OTC graduates skip the enlistment roll — they are automatically
@@ -177,7 +177,7 @@ export function mercenaryEnlist(
   const draftedService = drafted.toLowerCase() as "army" | "marines";
   const draftSpec = data.enlistment[draftedService];
   ch.log(ev.drafted(drafted));
-  ch.requireAcgState().branch = drafted;
+  ch.requireMercenaryAcg().branch = drafted;
   ch.requireAcgState().rankCode = draftSpec.startingRank;
   ch.requireAcgState().isOfficer = false; // drafted = enlisted; no OCS first term
 }
@@ -245,11 +245,11 @@ export function mercenaryCommandDuty(ch: Character): void {
 
 /** Roll the year's assignment. Returns the assignment label (e.g., "Raid"). */
 export function mercenaryRollAssignment(ch: Character): string {
-  const acg = ch.requireAcgState();
+  const acg = ch.requireMercenaryAcg();
   const data = dataFor(ch);
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
-  const armKey = labelToColumnKey(acg.combatArm!);
+  const armKey = labelToColumnKey(acg.combatArm);
   const r = ch.rng.roll(2);
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Mercenary assignment table missing row for die=${r}`);
@@ -259,7 +259,7 @@ export function mercenaryRollAssignment(ch: Character): string {
   }
   // Apply per-service reroutes from JSON (Marines: counterinsurgency/internal
   // security become Ship's Troops, per manual p. 48).
-  const branchKey = ch.requireAcgState().branch === "Marines" ? "marines" : null;
+  const branchKey = acg.branch === "Marines" ? "marines" : null;
   const reroute = branchKey ? data.assignmentReroutes?.[branchKey] : undefined;
   if (reroute && reroute.fromAssignments.includes(assignment)) {
     assignment = reroute.toAssignment;
@@ -331,7 +331,7 @@ function rollMercenarySkill(ch: Character): void {
   // toAssignment so the string lives in one place.
   const data = dataFor(ch);
   const shipsTroopsLabel = data.assignmentReroutes?.marines?.toAssignment ?? "Ship's Troops";
-  if (ch.requireAcgState().branch === "Marines" &&
+  if (ch.requireMercenaryAcg().branch === "Marines" &&
       ch.requireAcgState().currentAssignment === shipsTroopsLabel) {
     rollMercenarySkillFromColumn(ch, "shipboard");
     return;
@@ -354,7 +354,7 @@ function rollMercenarySkill(ch: Character): void {
 
 function mercenaryAvailableSkillColumns(ch: Character): string[] {
   const cols: string[] = [];
-  const lifeCol = ch.requireAcgState().branch === "Marines" ? "marineLife" : "armyLife";
+  const lifeCol = ch.requireMercenaryAcg().branch === "Marines" ? "marineLife" : "armyLife";
   cols.push(lifeCol);
   const rank = rankNum(ch.requireAcgState().rankCode);
   const pol = dataFor(ch).skillColumnPolicy;
@@ -364,7 +364,7 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
     if (ch.requireAcgState().inCommand) cols.push("commandSkills");
     else cols.push("staffSkills");
   }
-  if (ch.requireAcgState().branch === "Marines") cols.push("shipboard");
+  if (ch.requireMercenaryAcg().branch === "Marines") cols.push("shipboard");
   return cols;
 }
 
@@ -395,7 +395,7 @@ export function mercenarySpecialAssignment(ch: Character): void {
  *  and evaluated via the shared structured-DM evaluator. */
 export function mercenaryReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const svc = ch.requireAcgState().branch === "Marines" ? "marines" : "army";
+  const svc = ch.requireMercenaryAcg().branch === "Marines" ? "marines" : "army";
   const spec = data.reenlistment[svc];
   return runReenlist(ch, {
     target: spec.target,
@@ -412,11 +412,12 @@ export function mercenaryReenlist(ch: Character): boolean {
  *    may specify an arm they have been cross-trained into.
  *  Auto mode: keep the current arm. Interactive mode: queue a choice. */
 function offerArmChange(ch: Character, data: MercenaryData): void {
-  if (!ch.acgState) return;
-  const current = ch.acgState.combatArm ?? "Infantry";
-  const isOfficer = ch.acgState.isOfficer === true;
-  const crossTrained = ch.acgState.crossTrainedArms ?? [];
-  const honors = ch.acgState.honorsGraduations ?? [];
+  const acg = ch.acgState;
+  if (acg?.pathway !== "mercenary") return;
+  const current = acg.combatArm || "Infantry";
+  const isOfficer = acg.isOfficer === true;
+  const crossTrained = acg.crossTrainedArms ?? [];
+  const honors = acg.honorsGraduations ?? [];
   // PM p. 50: some arms (Commando) are gated behind an honors graduation;
   // the gate lives in JSON (combatArmEligibility.armGates.<arm>.honorsGraduateOf).
   const armGates = data.combatArmEligibility?.armGates ?? {};
@@ -433,8 +434,9 @@ function offerArmChange(ch: Character, data: MercenaryData): void {
     label: `Change combat arm for next term (current: ${current})`,
     context: { source: "reenlist", reenlistChangeArm: true },
     apply: (ch, chosen) => {
-      if (!ch.acgState) return;
-      ch.acgState.combatArm = chosen;
+      const acg = ch.acgState;
+      if (acg?.pathway !== "mercenary") return;
+      acg.combatArm = chosen;
       ch.log(ev.transferred(chosen, "combatArm", current, "reenlist (via cross-training)"));
     },
   });

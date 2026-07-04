@@ -78,8 +78,8 @@ describe("Mercenary ACG runtime", () => {
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
     expect(c.acgState).not.toBeNull();
     expect(c.acgState!.pathway).toBe("mercenary");
-    expect(c.acgState!.combatArm).toBe("Infantry");
-    expect(c.acgState!.branch).toBe("Army");
+    expect(c.requireMercenaryAcg().combatArm).toBe("Infantry");
+    expect(c.requireMercenaryAcg().branch).toBe("Army");
     expect(c.acgState!.rankCode).toBe("E1");
     expect(c.acgState!.isOfficer).toBe(false);
   });
@@ -90,8 +90,8 @@ describe("Mercenary ACG runtime", () => {
     c.attributes.intelligence = 12;
     c.attributes.strength = 12;
     c.beginAcg("mercenary", { service: "marines", combatArm: "Support" });
-    expect(c.acgState!.branch).toBe("Marines");
-    expect(c.acgState!.combatArm).toBe("Support");
+    expect(c.requireMercenaryAcg().branch).toBe("Marines");
+    expect(c.requireMercenaryAcg().combatArm).toBe("Support");
   });
 
   it("Initial training (max rolls): Gun Combat-1 + MOS=Environ", () => {
@@ -99,7 +99,7 @@ describe("Mercenary ACG runtime", () => {
     const c = freshAcgChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
     runAcgYear(c);
-    expect(c.acgState!.mos).toBe("Environ");
+    expect(c.requireMercenaryAcg().mos).toBe("Environ");
     const lvl = (skill: string) =>
       c.skills.find(([n]) => n === skill)?.[1] ?? -1;
     expect(lvl("Gun Combat")).toBe(1);
@@ -144,15 +144,15 @@ describe("Navy ACG runtime", () => {
     c.attributes.intelligence = 10;
     c.attributes.education = 10;
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    expect(c.acgState!.fleet).toBe("imperialNavy");
-    expect(c.acgState!.branch).toBe("Medical");
+    expect(c.requireNavyAcg().fleet).toBe("imperialNavy");
+    expect(c.requireNavyAcg().branch).toBe("Medical");
   });
 
   it("Reserve Fleet enlistment", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("navy", { fleet: "reserveFleet" });
-    expect(c.acgState!.fleet).toBe("reserveFleet");
+    expect(c.requireNavyAcg().fleet).toBe("reserveFleet");
   });
 
   // System Squadron rank-cap enforcement is covered exhaustively in
@@ -173,8 +173,8 @@ describe("Scout ACG runtime", () => {
     c.attributes.intelligence = 8;
     c.attributes.strength = 10;
     c.beginAcg("scout", { division: "field" });
-    expect(c.acgState!.division).toBe("field");
-    expect(c.acgState!.office).toBe("Exploration");
+    expect(c.requireScoutAcg().division).toBe("field");
+    expect(c.requireScoutAcg().office).toBe("Exploration");
   });
 
   it("Scout ranks start at IS-1", () => {
@@ -188,7 +188,7 @@ describe("Scout ACG runtime", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const c = freshAcgChar();
     c.acgState = {
-      pathway: "scout", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "scout", office: "", division: "field", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -198,7 +198,7 @@ describe("Scout ACG runtime", () => {
       honorsGraduations: [],
     };
     c.beginAcg("scout");
-    expect(c.acgState!.division).toBe("bureaucracy");
+    expect(c.requireScoutAcg().division).toBe("bureaucracy");
     expect(c.acgState!.rankCode).toBe("IS-1");
     expect(c.drafted).toBe(false);
   });
@@ -207,7 +207,7 @@ describe("Scout ACG runtime", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const c = freshAcgChar();
     c.acgState = {
-      pathway: "scout", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "scout", office: "", division: "field", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -218,14 +218,14 @@ describe("Scout ACG runtime", () => {
     };
     c.beginAcg("scout");
     expect(c.acgState!.rankCode).toBe("IS-10");
-    expect(c.acgState!.division).toBe("bureaucracy");
+    expect(c.requireScoutAcg().division).toBe("bureaucracy");
   });
 
   it("R12: non-college scout enlists into Field as before", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("scout");
-    expect(c.acgState!.division).toBe("field");
+    expect(c.requireScoutAcg().division).toBe("field");
     expect(c.acgState!.rankCode).toBe("IS-1");
   });
 
@@ -253,8 +253,8 @@ describe("Merchant Prince ACG runtime", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = freshAcgChar();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
-    expect(c.acgState!.lineType).toBe("Free Trader");
-    expect(c.acgState!.department).toBe("Free Trader");
+    expect(c.requireMerchantAcg().lineType).toBe("Free Trader");
+    expect(c.requireMerchantAcg().department).toBe("Free Trader");
   });
 
   it("Megacorp enlistment with high attrs picks a non-FreeTrader department", () => {
@@ -269,8 +269,8 @@ describe("Merchant Prince ACG runtime", () => {
       tech: "Avg Stellar",
     };
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
-    expect(c.acgState!.lineType).toBe("Megacorp");
-    expect(c.acgState!.department).toBe("Engineering");
+    expect(c.requireMerchantAcg().lineType).toBe("Megacorp");
+    expect(c.requireMerchantAcg().department).toBe("Engineering");
   });
 
   it("R6: Megacorp enlistment runs Merchant Academy attempt when opted in (Rrev5)", () => {
@@ -331,8 +331,8 @@ describe("Merchant Prince ACG runtime", () => {
     c.acgState = freshAcgState("merchantPrince");
     c.acgState.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
-    expect(typeof c.acgState!.department).toBe("string");
-    expect(c.acgState!.department!.length).toBeGreaterThan(0);
+    expect(typeof c.requireMerchantAcg().department).toBe("string");
+    expect(c.requireMerchantAcg().department.length).toBeGreaterThan(0);
   });
 
   it("Enlisted ranks advance on each new term via startOfTerm hook", () => {

@@ -194,7 +194,7 @@ export function merchantEnlist(
   lineType: string,
 ): void {
   const data = dataFor(ch);
-  ch.requireAcgState().lineType = lineType;
+  ch.requireMerchantAcg().lineType = lineType;
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
   if (!row) {
     throw new Error(`Unknown merchant line type "${lineType}"`);
@@ -229,7 +229,7 @@ export function merchantEnlist(
     ch.requireAcgState().rankCode = data.enlistment.startingRank;
     ch.requireAcgState().isOfficer = false;
   } else if (ch.requireAcgState().schoolsAttended.includes("medicalSchool")) {
-    ch.requireAcgState().department = "Purser";
+    ch.requireMerchantAcg().department = "Purser";
     ch.log(ev.enlistmentAttempt(
       `Merchants Purser Department Medic (medical school direct commission, ${ch.requireAcgState().rankCode})`,
       0, 0, 0, true,
@@ -251,7 +251,7 @@ export function merchantEnlist(
   // honors — the Academy's applyMerchantDepartmentSkills records the
   // pick in acgState.department, and honors graduates "may select the
   // department to which he will be assigned" per the PM).
-  if (!ch.requireAcgState().department) {
+  if (!ch.requireMerchantAcg().department) {
     merchantAssignDepartment(ch);
   }
 }
@@ -286,24 +286,24 @@ function offerMerchantAcademy(ch: Character): void {
 
 function merchantAssignDepartment(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.requireAcgState().lineType ?? "");
+  const size = lineSizeFor(data, ch.requireMerchantAcg().lineType);
   if (size === "FreeTrader") {
-    ch.requireAcgState().department = "Free Trader";
+    ch.requireMerchantAcg().department = "Free Trader";
     return;
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
   const row = rollDieRow(ch, data.departmentAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
-  if (!row) { ch.requireAcgState().department = "Purser"; return; }
-  ch.requireAcgState().department = String(row[lineCol] ?? "Purser");
+  if (!row) { ch.requireMerchantAcg().department = "Purser"; return; }
+  ch.requireMerchantAcg().department = String(row[lineCol] ?? "Purser");
   // acgState.department is read by subsequent assignment / skill rolls.
 }
 
 export function merchantRollAssignment(ch: Character): string {
-  const acg = ch.requireAcgState();
+  const acg = ch.requireMerchantAcg();
   const data = dataFor(ch);
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
-  const size = lineSizeFor(data, acg.lineType ?? "");
+  const size = lineSizeFor(data, acg.lineType);
   const lineCol = assignmentColumnFor(size);
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
   const dm = (data.specificAssignment.dms ?? [])
@@ -382,7 +382,7 @@ function selectMerchantResolutionTable(
 ): { table: MerchantResolutionTable; colKey: string } {
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
-  const deptKey = labelToColumnKey(acg.department ?? "Deck");
+  const deptKey = labelToColumnKey(acg.department || "Deck");
   const isFreeTrader = acg.lineType === "Free Trader";
   const isFreeTraderOther =
     isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
@@ -457,12 +457,12 @@ export const validateMerchantConfig = REGISTRY.validate;
 function getMerchantSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 function merchantCheckAvailablePosition(ch: Character): void {
-  const acg = ch.requireAcgState();
+  const acg = ch.requireMerchantAcg();
   // Reset the prior year's temporary demotion before re-evaluating.
   acg.effectiveRankCode = null;
   const data = dataFor(ch);
   const ap = data.availablePositions;
-  const size = lineSizeFor(data, acg.lineType ?? "");
+  const size = lineSizeFor(data, acg.lineType);
   let target: ResolutionTarget;
   let dm: number;
   if (size === "FreeTrader") {
@@ -526,7 +526,7 @@ function availableSkillColumns(ch: Character, table: MerchantSkillTable): string
   const cols = table.columns.filter((c) => c !== "die");
   const avail = table.columnAvailability;
   if (!avail) return cols.slice(0, 1);
-  const dept = ch.requireAcgState().department ?? "";
+  const dept = ch.requireMerchantAcg().department;
   const pctx = buildPredicateContext(ch);
   return cols.filter((c) => columnAvailableForCharacter(avail[c], dept, pctx));
 }
@@ -597,7 +597,7 @@ function merchantAwardBonus(ch: Character): void {
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const data = dataFor(ch);
   const order = data.enlistment.rows.map((r) => r.typeOfLine);
-  const idx = order.indexOf(ch.requireAcgState().lineType ?? "");
+  const idx = order.indexOf(ch.requireMerchantAcg().lineType);
   if (idx < 0) return;
   // PM p. 60: "It is not possible to transfer up to a megacorporation."
   // The enlistment table is ordered Megacorp → ... → Free Trader (index 0
@@ -613,7 +613,7 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   }
   const from = order[idx]!;
   const to = order[newIdx]!;
-  ch.requireAcgState().lineType = to;
+  ch.requireMerchantAcg().lineType = to;
   ch.log(ev.transferred(to, "line", from));
 }
 
@@ -642,7 +642,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
       const rule = data.specialRules?.specialDutyCommission;
-      const lineType = ch.requireAcgState().lineType ?? "";
+      const lineType = ch.requireMerchantAcg().lineType;
       const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
       ch.requireAcgState().isOfficer = true;
       ch.requireAcgState().rankCode = rank;
@@ -678,7 +678,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   }
   // Department transfer effects (manual p. 60-61).
   if (res.effect) {
-    const acg = ch.requireAcgState();
+    const acg = ch.requireMerchantAcg();
     const officerRank = acg.isOfficer ? rankNum(acg.rankCode) : 0;
     const transfer = res.effect.match(/Transfer to (\w+)/i);
     if (transfer) {
@@ -687,7 +687,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // target department.
       const minBlockRank =
         data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank ?? 5;
-      const from = acg.department ?? "";
+      const from = acg.department;
       const to = transfer[1]!;
       const blockedByRank = officerRank >= minBlockRank;
       const alreadyThere = to.toLowerCase() === from.toLowerCase();
@@ -710,7 +710,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
 
 export function merchantReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const dept = ch.requireAcgState().department ?? "";
+  const dept = ch.requireMerchantAcg().department;
   return runReenlist(ch, {
     target: data.reenlistment.target,
     dms: data.reenlistment.dms,
@@ -743,8 +743,9 @@ export function applyReducedPassageBenefit(ch: Character): void {
 }
 
 function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
-  if (!ch.acgState) return;
-  const size = lineSizeFor(data, ch.acgState.lineType ?? "");
+  const acg = ch.acgState;
+  if (acg?.pathway !== "merchantPrince") return;
+  const size = lineSizeFor(data, acg.lineType);
   if (size === "FreeTrader") return; // Free Traders don't change department
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
   const all = new Set<string>();
@@ -752,15 +753,16 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     const v = row[lineCol];
     if (typeof v === "string") all.add(v);
   }
-  const current = ch.acgState.department ?? "";
+  const current = acg.department;
   offerRoleChange(ch, {
     current,
     options: [current, ...[...all].filter((d) => d !== current)],
     label: `Reenlist in different department (current: ${current})`,
     context: { source: "reenlist", reenlistChangeDepartment: true },
     apply: (ch, chosen) => {
-      if (!ch.acgState) return;
-      ch.acgState.department = chosen;
+      const acg = ch.acgState;
+      if (acg?.pathway !== "merchantPrince") return;
+      acg.department = chosen;
       ch.log(ev.transferred(chosen, "department", current, "reenlist"));
     },
   });
@@ -805,16 +807,17 @@ export function merchantStartOfTerm(ch: Character): void {
 }
 
 function applyDeckAutoTransferIfDue(ch: Character): void {
-  if (!ch.acgState?.isOfficer) return;
+  const acg = ch.acgState;
+  if (acg?.pathway !== "merchantPrince" || !acg.isOfficer) return;
   const data = dataFor(ch);
   const rule = data.specialRules?.deckAutoTransferAtRank;
   if (!rule) return;
-  if (ch.acgState.rankCode !== rule.rankCode) return;
-  if (ch.acgState.department === rule.destinationDepartment) return;
+  if (acg.rankCode !== rule.rankCode) return;
+  if (acg.department === rule.destinationDepartment) return;
   // PM says "after one full term in rank O4" — we trigger at startOfTerm
   // when the rank was reached in the previous term.
-  const from = ch.acgState.department ?? "";
-  ch.acgState.department = rule.destinationDepartment;
+  const from = acg.department;
+  acg.department = rule.destinationDepartment;
   ch.log(ev.transferred(rule.destinationDepartment, "department", from));
 }
 
@@ -846,10 +849,10 @@ function servedOnRouteThisTerm(ch: Character): boolean {
 function merchantRankLadder(
   ch: Character, data: MerchantData,
 ): MerchantRankRow[] | null {
-  const acg = ch.requireAcgState();
-  const deptKey = lineSizeFor(data, acg.lineType ?? "") === "FreeTrader"
+  const acg = ch.requireMerchantAcg();
+  const deptKey = lineSizeFor(data, acg.lineType) === "FreeTrader"
     ? "freeTrader"
-    : labelToColumnKey(acg.department ?? "deck");
+    : labelToColumnKey(acg.department || "deck");
   const ladder = data.ranksAndPromotions[deptKey];
   return Array.isArray(ladder) ? ladder : null;
 }
@@ -927,16 +930,16 @@ function attemptMerchantPromotionExam(ch: Character): void {
  *  Owner/Captains (rank O5+ in the Free Trader ladder) leave with a
  *  free trader ship as an automatic benefit (manual p. 61). */
 export function merchantFinalizeMuster(ch: Character): void {
-  if (!ch.acgState) return;
-  if (ch.acgState.lineType !== "Free Trader") return;
-  const m = ch.acgState.rankCode.match(/^O(\d+)$/);
+  const acg = ch.acgState;
+  if (acg?.pathway !== "merchantPrince" || acg.lineType !== "Free Trader") return;
+  const m = acg.rankCode.match(/^O(\d+)$/);
   if (!m) return;
   const n = parseInt(m[1]!, 10);
   const minRankCode = dataFor(ch).specialRules?.freeTraderShip?.minOfficerRank ?? "O5";
   const minRank = parseInt(minRankCode.replace(/[^\d]/g, ""), 10) || 5;
   if (n < minRank) return;
-  if (ch.acgState.freeTraderShipEarned) return;
-  ch.acgState.freeTraderShipEarned = true;
+  if (acg.freeTraderShipEarned) return;
+  acg.freeTraderShipEarned = true;
   ch.log(ev.raw("Free Trader ship (Owner/Captain)", "simple"));
   ch.addBenefit("Free Trader");
   ch.muster.musterLog.push("Free Trader ship (Owner/Captain)");

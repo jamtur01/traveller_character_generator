@@ -65,14 +65,14 @@ describe("Merchant: Free Trader assignment column maps correctly", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
-    expect(c.acgState!.department).toBe("Free Trader");
+    expect(c.requireMerchantAcg().department).toBe("Free Trader");
     const startAge = c.age;
     runAcgTerm(c);
     // 4-year term advances age by 4 (or fewer if invalided early).
     expect(c.age - startAge).toBeGreaterThan(0);
     expect(c.age - startAge).toBeLessThanOrEqual(4);
     // Department doesn't change mid-career for Free Traders.
-    expect(c.acgState!.department).toBe("Free Trader");
+    expect(c.requireMerchantAcg().department).toBe("Free Trader");
     // A successful term should have produced at least one history entry
     // referencing an assignment outcome.
     expect(c.history.length).toBeGreaterThan(0);
@@ -86,7 +86,7 @@ describe("Merchant: Free Trader Owner gets ship benefit at muster", () => {
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
     c.acgState!.isOfficer = true;
     c.acgState!.rankCode = "O5";
-    c.acgState!.lineType = "Free Trader";
+    c.requireMerchantAcg().lineType = "Free Trader";
     c.terms = 4;
     c.musterOutPay();
     const hasShip = c.benefits.some((b) => /free trader/i.test(b));
@@ -99,7 +99,7 @@ describe("Merchant: Free Trader Owner gets ship benefit at muster", () => {
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
     c.acgState!.isOfficer = true;
     c.acgState!.rankCode = "O3";
-    c.acgState!.lineType = "Free Trader";
+    c.requireMerchantAcg().lineType = "Free Trader";
     c.musterOutPay();
     const hasShip = c.benefits.some((b) => /free trader/i.test(b));
     expect(hasShip).toBe(false);
@@ -131,7 +131,7 @@ describe("Navy: medical/flight school graduates get auto-branch", () => {
     expect(c.acgState!.preCareerCommission).toBe(true);
     c.doPreCareer("medicalSchool");
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    expect(c.acgState!.branch).toBe("Medical");
+    expect(c.requireNavyAcg().branch).toBe("Medical");
   });
 
   it("Naval Academy + Flight School → Flight branch", () => {
@@ -140,7 +140,7 @@ describe("Navy: medical/flight school graduates get auto-branch", () => {
     c.doPreCareer("navalAcademy");
     c.doPreCareer("flightSchool");
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    expect(c.acgState!.branch).toBe("Flight");
+    expect(c.requireNavyAcg().branch).toBe("Flight");
   });
 });
 
@@ -162,14 +162,14 @@ describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
 
   it("Cross-trained Cavalry Marine on Cavalry: +1 DM → roll 5+1=6 ≥ 6 reenlists", () => {
     const c = setupMarineAtRoll5();
-    c.acgState!.combatArm = "Cavalry";
+    c.requireMercenaryAcg().combatArm = "Cavalry";
     c.acgState!.crossTrainedArms = ["Artillery"];
     expect(mercenaryReenlist(c)).toBe(true);
   });
 
   it("Same roll 5, no cross-training: no DM → 5 < 6 reenlist denied", () => {
     const c = setupMarineAtRoll5();
-    c.acgState!.combatArm = "Cavalry";
+    c.requireMercenaryAcg().combatArm = "Cavalry";
     c.acgState!.crossTrainedArms = []; // no cross-training
     expect(mercenaryReenlist(c)).toBe(false);
   });
@@ -178,7 +178,7 @@ describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
     // The DM rule requires currentCombatArmIn = [Artillery, Cavalry].
     // Infantry doesn't qualify even with cross-training.
     const c = setupMarineAtRoll5();
-    c.acgState!.combatArm = "Infantry";
+    c.requireMercenaryAcg().combatArm = "Infantry";
     c.acgState!.crossTrainedArms = ["Cavalry"];
     expect(mercenaryReenlist(c)).toBe(false);
   });
@@ -196,11 +196,11 @@ describe("F4: interactive ACG choices pause the year via ChoicePendingError", ()
     const choice = c.pendingChoices[0]!;
     expect(choice.kind).toBe("navyBranch");
     expect(choice.options).toContain("Flight");
-    expect(c.acgState!.branch).toBeFalsy(); // not set until choice resolves
+    expect(c.requireNavyAcg().branch).toBeFalsy(); // not set until choice resolves
     // Resolve to Flight → branch stamps onto state, choice clears.
     const flightIdx = choice.options.indexOf("Flight");
     c.resolveChoice(choice.id, flightIdx);
-    expect(c.acgState!.branch).toBe("Flight");
+    expect(c.requireNavyAcg().branch).toBe("Flight");
     expect(c.pendingChoices.find((p) => p.id === choice.id)).toBeUndefined();
   });
 });
@@ -257,8 +257,8 @@ describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
     c.acgState = freshAcgState("merchantPrince");
     c.acgState.isOfficer = true;
     c.acgState.rankCode = rankCode;
-    c.acgState.department = "Deck";
-    c.acgState.lineType = "Megacorp"; // Large line → deck ladder
+    c.requireMerchantAcg().department = "Deck";
+    c.requireMerchantAcg().lineType = "Megacorp"; // Large line → deck ladder
     return c;
   }
 
@@ -288,8 +288,8 @@ describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
     c.acgState = freshAcgState("merchantPrince");
     c.acgState.isOfficer = false;
     c.acgState.rankCode = "E4";
-    c.acgState.department = "Deck";
-    c.acgState.lineType = "Megacorp";
+    c.requireMerchantAcg().department = "Deck";
+    c.requireMerchantAcg().lineType = "Megacorp";
     c.acgState.perTerm.routeAssignmentThisTerm = true;
     merchantEndOfTerm(c);
     expect(c.acgState!.isOfficer).toBe(true);
@@ -305,8 +305,8 @@ describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
     c.acgState = freshAcgState("merchantPrince");
     c.acgState.isOfficer = false;
     c.acgState.rankCode = "E4";
-    c.acgState.department = "Deck";
-    c.acgState.lineType = "Megacorp";
+    c.requireMerchantAcg().department = "Deck";
+    c.requireMerchantAcg().lineType = "Megacorp";
     c.acgState.perTerm.routeAssignmentThisTerm = true;
     merchantEndOfTerm(c);
     expect(c.acgState!.isOfficer).toBe(false);

@@ -534,10 +534,11 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
     c.acgPathway === "merchantPrince" ? "3. Line Type" :
     "3. Combat Arm";
   const subValue =
-    c.acgPathway === "navy" ? (st?.fleet ?? "—") :
-    c.acgPathway === "scout" ? (st?.division ?? "—") :
-    c.acgPathway === "merchantPrince" ? (st?.lineType ?? "—") :
-    (st?.combatArm ?? "—");
+    st?.pathway === "navy" ? (st.fleet || "—") :
+    st?.pathway === "scout" ? (st.division || "—") :
+    st?.pathway === "merchantPrince" ? (st.lineType || "—") :
+    st?.pathway === "mercenary" ? (st.combatArm || "—") :
+    "—";
   fieldLabel(doc, X0 + 2 * colW + 4, y + 10, subLabel);
   fieldValue(doc, X0 + 2 * colW + 6, y + 28, subValue, colW - 8);
   y += r1H;

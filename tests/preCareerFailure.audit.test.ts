@@ -35,7 +35,8 @@ describe("beginAcg consumes draft flag (PM p. 47 Rrev2)", () => {
     c.useAcg = true;
     c.choiceMode = "auto";
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -88,7 +89,8 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
     c.choiceMode = "auto";
     c.showHistory = "none";
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -116,7 +118,8 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
     c.choiceMode = "auto";
     c.showHistory = "none";
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -142,7 +145,8 @@ describe("Flight School washout drafts navy short-term (PM p. 47)", () => {
     // Build a Naval Academy honors graduate (auto-admits Flight School).
     const c = freshAcgCandidate(12);
     c.acgState = {
-      pathway: "navy", rankCode: "O1", isOfficer: true, year: 1,
+      pathway: "navy", fleet: "imperialNavy", branch: "",
+      rankCode: "O1", isOfficer: true, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },

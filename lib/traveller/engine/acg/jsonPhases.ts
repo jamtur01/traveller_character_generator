@@ -204,7 +204,9 @@ function buildPromotion(p: PhasePromotion, callbacks: PathwayCallbacks): PhaseDe
     skip: (ctx) => {
       const acg = ctx.ch.requireAcgState();
       if (ctx.res.promotion === "none") return true;
-      if (p.skipIfNotBureaucracy && acg.division !== "bureaucracy") return true;
+      if (p.skipIfNotBureaucracy && (acg.pathway !== "scout" || acg.division !== "bureaucracy")) {
+        return true;
+      }
       if (acg.isOfficer && ctx.res.promotionOfficersBarred === true) return true;
       if (acg.isOfficer && acg.perTerm.promotedThisTerm) return true;
       return false;

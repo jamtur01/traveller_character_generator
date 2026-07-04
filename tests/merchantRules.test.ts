@@ -19,7 +19,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
-import { freshAcgState } from "../lib/traveller/engine/acg/state";
+import { assertPathway, freshAcgState } from "../lib/traveller/engine/acg/state";
 import {
   merchantResolveAssignment,
   merchantEndOfTerm,
@@ -56,6 +56,7 @@ function merchantOfficer(opts: {
   c.useAcg = true;
   c.acgPathway = "merchantPrince";
   const acg = freshAcgState("merchantPrince");
+  assertPathway(acg, "merchantPrince");
   acg.lineType = opts.lineType;
   acg.department = opts.department;
   acg.rankCode = opts.rankCode;

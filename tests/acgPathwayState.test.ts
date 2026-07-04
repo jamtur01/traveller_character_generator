@@ -9,9 +9,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { Character } from "../lib/traveller/character";
-import {
-  isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg,
-} from "../lib/traveller/engine/acg/state";
+import { assertPathway } from "../lib/traveller/engine/acg/state";
 
 function mtChar(): Character {
   const c = new Character();
@@ -29,38 +27,38 @@ function mtChar(): Character {
   return c;
 }
 
-describe("AcgState pathway type guards", () => {
-  it("isMercenaryAcg recognises a mercenary character with combatArm", () => {
+describe("assertPathway narrows to the pathway variant", () => {
+  it("passes for a mercenary character and rejects other pathways", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
-    expect(isMercenaryAcg(c.requireAcgState())).toBe(true);
-    expect(isNavyAcg(c.requireAcgState())).toBe(false);
+    expect(() => assertPathway(c.requireAcgState(), "mercenary")).not.toThrow();
+    expect(() => assertPathway(c.requireAcgState(), "navy")).toThrow();
     vi.restoreAllMocks();
   });
 
-  it("isNavyAcg recognises a navy character with fleet", () => {
+  it("passes for a navy character and rejects mercenary", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("navy", { fleet: "imperialNavy" });
-    expect(isNavyAcg(c.requireAcgState())).toBe(true);
-    expect(isMercenaryAcg(c.requireAcgState())).toBe(false);
+    expect(() => assertPathway(c.requireAcgState(), "navy")).not.toThrow();
+    expect(() => assertPathway(c.requireAcgState(), "mercenary")).toThrow();
     vi.restoreAllMocks();
   });
 
-  it("isScoutAcg recognises a scout character with division", () => {
+  it("passes for a scout character", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("scout", { division: "field" });
-    expect(isScoutAcg(c.requireAcgState())).toBe(true);
+    expect(() => assertPathway(c.requireAcgState(), "scout")).not.toThrow();
     vi.restoreAllMocks();
   });
 
-  it("isMerchantAcg recognises a merchant character with lineType", () => {
+  it("passes for a merchant character", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = mtChar();
     c.beginAcg("merchantPrince", { lineType: "Free Trader" });
-    expect(isMerchantAcg(c.requireAcgState())).toBe(true);
+    expect(() => assertPathway(c.requireAcgState(), "merchantPrince")).not.toThrow();
     vi.restoreAllMocks();
   });
 });

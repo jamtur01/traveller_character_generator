@@ -95,12 +95,14 @@ function runEffect(
   if (!ch.acgState) return;
   switch (effect.type) {
     case "setCombatArm":
-      ch.acgState.combatArm = String(effect.value);
+      if (ch.acgState.pathway === "mercenary") ch.acgState.combatArm = String(effect.value);
       return;
     case "crossTrainCombatArm": {
+      const acg = ch.acgState;
+      if (acg.pathway !== "mercenary") return;
       const excl = Array.isArray(effect.exclude) ? (effect.exclude as string[]) : [];
-      const alreadyTrained = ch.acgState.crossTrainedArms ?? [];
-      const currentArm = ch.acgState.combatArm;
+      const alreadyTrained = acg.crossTrainedArms ?? [];
+      const currentArm = acg.combatArm;
       // Exclude both the JSON exclude list AND the character's current
       // arm + any previously-cross-trained arms, so the pick can't be a
       // same-arm no-op cross-train (log spam, wasted skill roll).
@@ -109,10 +111,10 @@ function runEffect(
       );
       if (arms.length === 0) return;
       const newArm = ch.rng.pick(arms);
-      ch.acgState.combatArm = newArm;
-      ch.acgState.crossTrainedArms = alreadyTrained;
-      if (!ch.acgState.crossTrainedArms.includes(newArm)) {
-        ch.acgState.crossTrainedArms.push(newArm);
+      acg.combatArm = newArm;
+      acg.crossTrainedArms = alreadyTrained;
+      if (!acg.crossTrainedArms.includes(newArm)) {
+        acg.crossTrainedArms.push(newArm);
       }
       ch.log(ev.crossTrained(newArm, "combatArm"));
       return;
@@ -121,15 +123,17 @@ function runEffect(
       // Rrev7: cross-training records ELIGIBILITY for branch change at the
       // next reenlistment (PM p. 53). It does not immediately transfer the
       // character to the new branch — that's the player's reenlist choice.
+      const acg = ch.acgState;
+      if (acg.pathway !== "mercenary" && acg.pathway !== "navy") return;
       const branches = data.branches ?? [];
       if (branches.length === 0) return;
-      const current = ch.acgState.branch ?? branches[0]!;
+      const current = acg.branch || branches[0]!;
       const opts = branches.filter((b) => b !== current);
       if (opts.length === 0) return;
       const newBranch = ch.rng.pick(opts);
-      ch.acgState.crossTrainedBranches = ch.acgState.crossTrainedBranches ?? [];
-      if (!ch.acgState.crossTrainedBranches.includes(newBranch)) {
-        ch.acgState.crossTrainedBranches.push(newBranch);
+      acg.crossTrainedBranches = acg.crossTrainedBranches ?? [];
+      if (!acg.crossTrainedBranches.includes(newBranch)) {
+        acg.crossTrainedBranches.push(newBranch);
       }
       ch.log(ev.crossTrained(newBranch, "branch"));
       return;
@@ -228,13 +232,17 @@ function runSkillBatch(
 
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
-  const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
+  const acg = ch.acgState;
+  const combatArm = acg.pathway === "mercenary" ? acg.combatArm : "";
+  const armKey = (combatArm || "Infantry").toLowerCase();
   rollSkillFromColumn(ch, data.mos, armKey, `${schoolName} (MOS)`);
 }
 
 function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
-  const branchKey = (ch.acgState.branch ?? "Line").toLowerCase();
+  const acg = ch.acgState;
+  const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
+  const branchKey = (branch || "Line").toLowerCase();
   const candidates = [branchKey, branchKey === "line" ? "lineCrew" : branchKey,
     branchKey === "crew" ? "lineCrew" : branchKey];
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
@@ -366,7 +374,10 @@ function scoutCanAttendSchool(ch: Character, school: string): boolean {
   const meta = scoutSchoolMeta(ch, school);
   if (!meta) return true;
   if (meta.onceOnly && ch.acgState.schoolsAttended.includes(school)) return false;
-  if (meta.requiresDivision && ch.acgState.division !== meta.requiresDivision) return false;
+  if (meta.requiresDivision &&
+      (ch.acgState.pathway !== "scout" || ch.acgState.division !== meta.requiresDivision)) {
+    return false;
+  }
   if (meta.onceOnly) {
     // The first-term-no-commission rule mirrors PM line 3588 for any
     // school that promotes to officer status.

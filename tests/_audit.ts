@@ -39,10 +39,12 @@ export function auditAcg(opts: {
   c.choiceMode = "auto";
   c.acgPathway = opts.pathway;
   c.acgState = freshAcgState(opts.pathway);
-  if (opts.combatArm) c.acgState.combatArm = opts.combatArm;
-  if (opts.fleet) c.acgState.fleet = opts.fleet;
-  if (opts.division) c.acgState.division = opts.division;
-  if (opts.lineType) c.acgState.lineType = opts.lineType;
+  if (opts.combatArm && c.acgState.pathway === "mercenary") c.acgState.combatArm = opts.combatArm;
+  if (opts.fleet && c.acgState.pathway === "navy") c.acgState.fleet = opts.fleet;
+  if (opts.division && c.acgState.pathway === "scout") c.acgState.division = opts.division;
+  if (opts.lineType && c.acgState.pathway === "merchantPrince") {
+    c.acgState.lineType = opts.lineType;
+  }
   c.service = opts.service ?? "army";
 
   // beginAcg via the session enlist path so initialTraining and the

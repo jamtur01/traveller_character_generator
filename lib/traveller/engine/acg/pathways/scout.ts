@@ -85,7 +85,7 @@ export function scoutEnlist(ch: Character): void {
   if (ch.acgState?.preCareerCommission &&
       ch.acgState.schoolsAttended.includes("medicalSchool")) {
     ch.acgState.isOfficer = true;
-    ch.acgState.division = "bureaucracy";
+    ch.requireScoutAcg().division = "bureaucracy";
     ch.log(ev.enlistmentAttempt(
       `Imperial Scout Service Medical Branch (medical school direct commission, ${ch.acgState.rankCode})`,
       0, 0, 0, true,
@@ -103,7 +103,7 @@ export function scoutEnlist(ch: Character): void {
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
     ch.requireAcgState().isOfficer = false;
-    ch.requireAcgState().division = "bureaucracy";
+    ch.requireScoutAcg().division = "bureaucracy";
   } else {
     let dm = 0;
     for (const d of data.enlistment.dms) {
@@ -125,19 +125,18 @@ export function scoutEnlist(ch: Character): void {
       ch.requireAcgState().rankCode = data.enlistment.startingRank;
       ch.log(ev.drafted("Scout Service"));
     }
-    ch.requireAcgState().division = "field";
+    ch.requireScoutAcg().division = "field";
   }
   scoutAssignOffice(ch);
 }
 
 function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
-  const division: "field" | "bureaucracy" = ch.requireAcgState().division ?? "field";
-  ch.requireAcgState().division = division;
+  const division: "field" | "bureaucracy" = ch.requireScoutAcg().division;
   const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
-  if (!row) { ch.requireAcgState().office = "Survey"; return; }
+  if (!row) { ch.requireScoutAcg().office = "Survey"; return; }
   const off = row[division];
-  ch.requireAcgState().office = typeof off === "string" ? off : "Survey";
+  ch.requireScoutAcg().office = typeof off === "string" ? off : "Survey";
   // acgState.office + acgState.division are read by subsequent assignment rolls.
 }
 
@@ -147,7 +146,7 @@ function scoutAssignOffice(ch: Character): void {
  *  receives the skill shown." */
 export function scoutInitialTraining(ch: Character): void {
   const data = dataFor(ch);
-  const office = ch.requireAcgState().office ?? "Survey";
+  const office = ch.requireScoutAcg().office || "Survey";
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
     ch.addSkill(skill, 1, `Initial Training (${office})`);
@@ -161,7 +160,7 @@ export function scoutInitialTraining(ch: Character): void {
 
 function scoutRollSkill(ch: Character): void {
   const data = dataFor(ch);
-  const division = ch.requireAcgState().division ?? "field";
+  const division = ch.requireScoutAcg().division;
   rollSkillFromColumn(ch, data.skillTables[division], "first",
     (col) => `Scout ${division} ${col}`);
 }
@@ -171,7 +170,7 @@ export function scoutRollAssignment(ch: Character): string {
   const data = dataFor(ch);
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
-  const division = ch.requireAcgState().division ?? "field";
+  const division = ch.requireScoutAcg().division;
   // PM p. 57: administrators (rank ≥ the administrator floor) in the
   // Bureaucracy may voluntarily take a +DM on the duty roll. Both the
   // eligible-rank floor and the DM value come from JSON (the administrator
@@ -222,7 +221,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   // Transfer assignment (Field → Bureaucracy, per manual p. 56). The Scout
   // may decline; if declined, reroll once. If transfer is on the reroll, it
   // is mandatory. In auto mode we accept the transfer.
-  if (assignment === "Transfer" && ch.requireAcgState().division === "field") {
+  if (assignment === "Transfer" && ch.requireScoutAcg().division === "field") {
     const accept = scoutDecideTransfer(ch, /*onReroll*/ false);
     if (accept) {
       applyScoutTransferToBureaucracy(ch);
@@ -247,11 +246,11 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     return;
   }
   // Resolution sub-table keyed by office.
-  const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
+  const officeKey = labelToColumnKey(ch.requireScoutAcg().office || "Survey");
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
     throw new Error(
-      `Scout: no resolution sub-table for office "${ch.requireAcgState().office}" ` +
+      `Scout: no resolution sub-table for office "${ch.requireScoutAcg().office}" ` +
       `(key "${officeKey}", edition: ${ch.editionId}).`,
     );
   }
@@ -259,7 +258,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   if (!resTable.columns.includes(assignmentCol)) {
     throw new Error(
       `Scout: assignment "${assignment}" (col "${assignmentCol}") not in ` +
-      `resolution columns for office "${ch.requireAcgState().office}" ` +
+      `resolution columns for office "${ch.requireScoutAcg().office}" ` +
       `(available: ${resTable.columns.join(", ")}).`,
     );
   }
@@ -300,7 +299,7 @@ function getScoutSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
 function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const data = dataFor(ch);
-  const division = ch.requireAcgState().division ?? "field";
+  const division = ch.requireScoutAcg().division;
   const table = data.skillTables[division];
   if (!table.columns.includes(column)) {
     // Fallback to the office's normal column if the manual column isn't
@@ -314,7 +313,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
-  const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
+  const officeKey = labelToColumnKey(ch.requireScoutAcg().office || "Survey");
   const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
   if (!row) return;
   const school = row[officeKey];
@@ -349,7 +348,7 @@ function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
 
 function applyScoutTransferToBureaucracy(ch: Character): void {
   const data = dataFor(ch);
-  const acg = ch.requireAcgState();
+  const acg = ch.requireScoutAcg();
   // Idempotency guard: if the recursive scoutResolveAssignment below
   // pauses on an interactive choice, the runner re-invokes the outer
   // resolveAssignment with assignment="Transfer" on resume. Without this
@@ -357,7 +356,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // office reroll) would re-apply on every resume.
   if (!acg.perYear.transferAppliedThisYear) {
     acg.perYear.transferAppliedThisYear = true;
-    const fromDivision = acg.division ?? "field";
+    const fromDivision = acg.division;
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
     const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
@@ -406,8 +405,8 @@ function promoteScout(ch: Character): void {
  *  a scout/courier (if he has not already received one through mustering
  *  out) and a stipend ... of Cr4000 per year." */
 export function scoutFinalizeMuster(ch: Character): void {
-  if (!ch.acgState) return;
-  if (ch.acgState.office !== "Detached Duty") return;
+  const acg = ch.acgState;
+  if (acg?.pathway !== "scout" || acg.office !== "Detached Duty") return;
   const { musterTarget, stipendPerYear } = dataFor(ch).detachedDuty;
   const r = ch.rng.roll(2);
   const dm = ch.terms;

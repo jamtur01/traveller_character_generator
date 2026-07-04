@@ -7,66 +7,13 @@
 
 export type AcgPathwayId = "mercenary" | "navy" | "scout" | "merchantPrince";
 
-/** Per-pathway field markers. The AcgState union is structurally the
- *  same shape across pathways (so legacy callers and cross-cutting code
- *  like cloneCharacter / serialization / cross-pathway switching can
- *  keep working) — these interfaces narrow the `pathway` discriminator
- *  AND tighten the pathway-specific fields so pathway code calling
- *  `ch.requireMercenaryAcg()` gets a non-optional `combatArm` etc. */
-export interface MercenaryAcgFields {
-  pathway: "mercenary";
-  combatArm: string;
-}
-export interface NavyAcgFields {
-  pathway: "navy";
-  fleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
-}
-export interface ScoutAcgFields {
-  pathway: "scout";
-  division: "field" | "bureaucracy";
-}
-export interface MerchantAcgFields {
-  pathway: "merchantPrince";
-  lineType: string;
-}
-
-/** AcgState narrowed to a particular pathway. Field-level optionality
- *  preserved; only the pathway discriminator is tightened. Use the
- *  Character.requireXxxAcg() helpers to obtain a value of this type. */
-export type MercenaryAcgState = AcgState & MercenaryAcgFields;
-export type NavyAcgState = AcgState & NavyAcgFields;
-export type ScoutAcgState = AcgState & ScoutAcgFields;
-export type MerchantAcgState = AcgState & MerchantAcgFields;
-
-/** Type guards. */
-export function isMercenaryAcg(acg: AcgState): acg is MercenaryAcgState {
-  return acg.pathway === "mercenary" && typeof acg.combatArm === "string";
-}
-export function isNavyAcg(acg: AcgState): acg is NavyAcgState {
-  return acg.pathway === "navy" && (
-    acg.fleet === "imperialNavy" || acg.fleet === "reserveFleet" || acg.fleet === "systemSquadron"
-  );
-}
-export function isScoutAcg(acg: AcgState): acg is ScoutAcgState {
-  return acg.pathway === "scout" && (acg.division === "field" || acg.division === "bureaucracy");
-}
-export function isMerchantAcg(acg: AcgState): acg is MerchantAcgState {
-  return acg.pathway === "merchantPrince" && typeof acg.lineType === "string";
-}
-
-/** All the per-character ACG state. Lives on Character.acgState. */
-export interface AcgState {
+/** All per-character ACG state is a `pathway`-discriminated union
+ *  (MercenaryAcgState | NavyAcgState | ScoutAcgState | MerchantAcgState).
+ *  BaseAcgState holds the pathway-agnostic fields; each variant adds its
+ *  role-selection fields as non-optional so pathway code reads them without
+ *  optional-chaining once narrowed on `pathway` (require*Acg / assertPathway). */
+export interface BaseAcgState {
   pathway: AcgPathwayId;
-
-  // Pathway-specific role selection (set on enlistment).
-  combatArm?: string;      // Mercenary
-  branch?: string;         // Navy / Merchant Prince department
-  fleet?: string;          // Navy: "imperialNavy" | "reserveFleet" | "systemSquadron"
-  office?: string;         // Scout
-  division?: "field" | "bureaucracy"; // Scout
-  department?: string;     // Merchant Prince
-  lineType?: string;       // Merchant Prince: megacorp/sector/etc
-  mos?: string;            // Mercenary
 
   // Rank ladder state. Code is service-specific (E1-E9, O1-O10, IS-1
   // through IS-18). isOfficer drives command-duty eligibility and the
@@ -225,6 +172,58 @@ export interface AcgState {
   scoutAdminDmDecision?: boolean;
 }
 
+/** Mercenary pathway: Army/Marines combat-arms service. */
+export interface MercenaryAcgState extends BaseAcgState {
+  pathway: "mercenary";
+  /** Combat arm (Infantry, Cavalry, Artillery, ...); set on enlistment. */
+  combatArm: string;
+  /** Service branch: "Army" | "Marines" (drafted values also land here). */
+  branch: string;
+  /** Military Occupational Specialty skill; set during initial training. */
+  mos: string;
+}
+
+/** Navy pathway: Imperial/Reserve/System fleet service. */
+export interface NavyAcgState extends BaseAcgState {
+  pathway: "navy";
+  fleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
+  /** Naval branch ("Line" | "Crew" | "Medical" | "Flight" | ...); set at enlistment. */
+  branch: string;
+}
+
+/** Scout pathway: Field vs Bureaucracy division service. */
+export interface ScoutAcgState extends BaseAcgState {
+  pathway: "scout";
+  office: string;
+  division: "field" | "bureaucracy";
+}
+
+/** Merchant Prince pathway: line/department service. */
+export interface MerchantAcgState extends BaseAcgState {
+  pathway: "merchantPrince";
+  department: string;
+  lineType: string;        // megacorp / sector-wide / Free Trader / etc
+}
+
+/** All per-character ACG state, discriminated on `pathway`. Lives on
+ *  Character.acgState. Narrow via Character.require*Acg / assertPathway to
+ *  read a variant's non-optional role fields. */
+export type AcgState =
+  | MercenaryAcgState
+  | NavyAcgState
+  | ScoutAcgState
+  | MerchantAcgState;
+
+/** Assert (and narrow) that an AcgState is on a given pathway. Replaces the
+ *  former isXxxAcg type-guard functions; the require*Acg helpers call this. */
+export function assertPathway<P extends AcgPathwayId>(
+  acg: AcgState, pathway: P,
+): asserts acg is Extract<AcgState, { pathway: P }> {
+  if (acg.pathway !== pathway) {
+    throw new Error(`Expected ${pathway} acgState, got pathway=${acg.pathway}`);
+  }
+}
+
 /** Year-scoped ACG markers. The runner replaces this wholesale at each
  *  year boundary (`clearYearScopedState` → `acg.perYear = freshPerYear()`)
  *  so pathway code gating on these flags starts fresh next year. */
@@ -334,8 +333,7 @@ export function freshPerTerm(): PerTermAcgState {
 /** Build a fresh AcgState for a pathway. Used by chargen entry points
  *  (beginAcg, doPreCareer) and tests that need a known-good baseline. */
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
-  return {
-    pathway,
+  const base = {
     rankCode: "E1",
     isOfficer: false,
     year: 1,
@@ -355,6 +353,16 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
     browniePointsSpent: 0,
     decorationDmStrategy: 0,
   };
+  switch (pathway) {
+    case "mercenary":
+      return { ...base, pathway, combatArm: "", branch: "", mos: "" };
+    case "navy":
+      return { ...base, pathway, fleet: "imperialNavy", branch: "" };
+    case "scout":
+      return { ...base, pathway, office: "", division: "field" };
+    case "merchantPrince":
+      return { ...base, pathway, department: "", lineType: "" };
+  }
 }
 
 // ---------------------------------------------------------------------------

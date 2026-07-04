@@ -76,7 +76,7 @@ describe("Scout PM audit — Bureaucracy vs Field auto-rank (PM p. 59)", () => {
     c.useAcg = true;
     c.acgPathway = "scout";
     c.acgState = freshAcgState("scout");
-    c.acgState.division = "bureaucracy";
+    c.requireScoutAcg().division = "bureaucracy";
     c.service = "scouts";
     let snap = session.enlist(
       { character: c, phase: "acg_enlist" },

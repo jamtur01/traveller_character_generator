@@ -33,7 +33,7 @@ function freshMtCharacter(): Character {
   c.choiceMode = "interactive";
   c.acgPathway = "mercenary";
   c.acgState = freshAcgState("mercenary");
-  c.acgState.combatArm = "Infantry";
+  c.requireMercenaryAcg().combatArm = "Infantry";
   c.service = "army";
   return c;
 }

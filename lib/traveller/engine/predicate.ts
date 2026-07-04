@@ -233,6 +233,9 @@ function homeworldFieldOk(f: HomeworldFieldTest, ctx: PredicateContext): boolean
  *  department skill-name sets so the evaluator stays free of edition data. */
 export function buildPredicateContext(ch: Character): PredicateContext {
   const acg = ch.acgState;
+  const merc = acg?.pathway === "mercenary" ? acg : undefined;
+  const navy = acg?.pathway === "navy" ? acg : undefined;
+  const merch = acg?.pathway === "merchantPrince" ? acg : undefined;
   const hwData = getEdition(ch.editionId).data;
   return {
     attributes: ch.attributes,
@@ -243,13 +246,13 @@ export function buildPredicateContext(ch: Character): PredicateContext {
     isOfficer: acg?.isOfficer ?? false,
     inCommand: acg?.inCommand ?? false,
     retired: ch.retired,
-    fleet: acg?.fleet,
+    fleet: navy?.fleet,
     skills: ch.skills,
-    combatArm: acg?.combatArm ?? "",
-    department: acg?.department ?? "",
+    combatArm: merc?.combatArm ?? "",
+    department: merch?.department ?? "",
     crossTrainedArms: acg?.crossTrainedArms ?? [],
     schoolsAttended: acg?.schoolsAttended ?? [],
-    mos: acg?.mos,
+    mos: merc?.mos,
     mosArmSkillNames: mercenaryArmSkillNames(ch),
     departmentSkillNames: merchantDepartmentSkillNames(ch),
     homeworldTech: ch.homeworld?.tech,
@@ -262,7 +265,7 @@ export function buildPredicateContext(ch: Character): PredicateContext {
 
 function mercenaryArmSkillNames(ch: Character): string[] {
   const acg = ch.acgState;
-  if (!acg?.combatArm) return [];
+  if (acg?.pathway !== "mercenary" || !acg.combatArm) return [];
   const mos = getAcgPathway(ch.editionId, "mercenary")?.mos as
     { rows: Array<Record<string, unknown>> } | undefined;
   if (!mos) return [];
@@ -277,7 +280,7 @@ function mercenaryArmSkillNames(ch: Character): string[] {
 
 function merchantDepartmentSkillNames(ch: Character): string[] {
   const acg = ch.acgState;
-  if (!acg?.department) return [];
+  if (acg?.pathway !== "merchantPrince" || !acg.department) return [];
   const dept = (getAcgPathway(ch.editionId, "merchantPrince")?.skillTables as
     { department?: { rows: Array<Record<string, unknown>> } } | undefined)?.department;
   if (!dept) return [];

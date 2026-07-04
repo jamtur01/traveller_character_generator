@@ -377,7 +377,7 @@ export function serviceSkillColumnFor(
   }
   const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 3;
   if (rankNum(acg.rankCode) >= ncoMin) return pol?.enlistedNcoColumn ?? "ncoSkills";
-  const branch = acg.branch ?? "";
+  const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
   return pol?.enlistedLowRankColumns[branch]
     ?? pol?.enlistedLowRankColumns["army"]
     ?? pol?.enlistedLowRankDefault

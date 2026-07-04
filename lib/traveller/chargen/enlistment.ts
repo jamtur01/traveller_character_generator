@@ -19,7 +19,7 @@ import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
 import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
 import { merchantEnlist } from "@/lib/traveller/engine/acg/pathways/merchantPrince";
-import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
+import { freshAcgState } from "@/lib/traveller/engine/acg/state";
 
 /** Options for beginAcg — pathway-specific enlistment parameters. */
 export interface BeginAcgOptions {
@@ -77,34 +77,24 @@ export function beginAcg(
     ch.service = "merchants" as ServiceKey;
   }
 
-  ch.acgState = {
-    pathway: effPathway,
-    rankCode: hasCommission ? prev!.rankCode : "E1",
-    isOfficer: hasCommission ? prev!.isOfficer : false,
-    year: 1,
-    currentAssignment: null,
-    inCommand: false,
-    justRetained: false,
-    retainedAssignment: null,
-    perYear: freshPerYear(),
-    perTerm: freshPerTerm(),
-    injuredThisYear: false,
-    assignmentHistory: [],
-    combatRibbons: 0,
-    commandClusters: 0,
-    schoolsAttended: prev?.schoolsAttended ? [...prev.schoolsAttended] : [],
-    decorations: prev?.decorations ? [...prev.decorations] : [],
-    browniePoints: prev?.browniePoints ?? 0,
-    browniePointsSpent: prev?.browniePointsSpent ?? 0,
-    decorationDmStrategy: 0,
-    ...(prev?.honorsGraduations ? { honorsGraduations: [...prev.honorsGraduations] } : {}),
-    ...(hasCommission ? { preCareerCommission: true } : {}),
-    ...(prev?.preCareerBranch !== undefined ? { preCareerBranch: prev.preCareerBranch } : {}),
-    ...(prev?.preCareerFirstTermShort ? { preCareerFirstTermShort: true } : {}),
-    ...(prev?.preCareerDraftedInto ? { preCareerDraftedInto: prev.preCareerDraftedInto } : {}),
-    ...(prev?.attemptMerchantAcademy !== undefined
-      ? { attemptMerchantAcademy: prev.attemptMerchantAcademy } : {}),
-  };
+  const acg = freshAcgState(effPathway);
+  if (hasCommission) {
+    acg.rankCode = prev!.rankCode;
+    acg.isOfficer = prev!.isOfficer;
+    acg.preCareerCommission = true;
+  }
+  if (prev?.schoolsAttended) acg.schoolsAttended = [...prev.schoolsAttended];
+  if (prev?.decorations) acg.decorations = [...prev.decorations];
+  acg.browniePoints = prev?.browniePoints ?? 0;
+  acg.browniePointsSpent = prev?.browniePointsSpent ?? 0;
+  if (prev?.honorsGraduations) acg.honorsGraduations = [...prev.honorsGraduations];
+  if (prev?.preCareerBranch !== undefined) acg.preCareerBranch = prev.preCareerBranch;
+  if (prev?.preCareerFirstTermShort) acg.preCareerFirstTermShort = true;
+  if (prev?.preCareerDraftedInto) acg.preCareerDraftedInto = prev.preCareerDraftedInto;
+  if (prev?.attemptMerchantAcademy !== undefined) {
+    acg.attemptMerchantAcademy = prev.attemptMerchantAcademy;
+  }
+  ch.acgState = acg;
   if (hasCommission) ch.commissioned = true;
   if (draft) {
     ch.drafted = true;
@@ -136,7 +126,7 @@ export function beginAcg(
         navyEnlist(ch, options.fleet ?? "imperialNavy");
         break;
       case "scout":
-        ch.acgState.division = options.division ?? "field";
+        ch.requireScoutAcg().division = options.division ?? "field";
         scoutEnlist(ch);
         break;
       case "merchantPrince":

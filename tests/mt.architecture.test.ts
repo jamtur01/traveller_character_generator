@@ -67,9 +67,10 @@ describe("Structured DM arrays evaluate correctly", () => {
 
   it("fleet condition fires only for matching fleet", () => {
     const c = makeCh(true);
-    c.acgState!.fleet = "imperialNavy";
+    c.acgState = freshAcgState("navy");
+    c.requireNavyAcg().fleet = "imperialNavy";
     expect(applyStructuredDms([{ fleet: "imperialNavy", dm: -2 }], c)).toBe(-2);
-    c.acgState!.fleet = "reserveFleet";
+    c.requireNavyAcg().fleet = "reserveFleet";
     expect(applyStructuredDms([{ fleet: "imperialNavy", dm: -2 }], c)).toBe(0);
   });
 

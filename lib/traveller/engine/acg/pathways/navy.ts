@@ -131,7 +131,7 @@ export function navyEnlist(
   }
   const data = dataFor(ch);
   const spec = data.enlistment[fleet];
-  ch.requireAcgState().fleet = fleet;
+  ch.requireNavyAcg().fleet = fleet;
 
   // Naval Academy / NOTC / Medical-School graduates: read the fleet
   // assignment from JSON (navy.preCareerFleetAssignment).
@@ -162,24 +162,24 @@ export function navyEnlist(
     }
     if (forcedFleet && fleet !== forcedFleet) {
       const fromFleet = fleet ?? undefined;
-      ch.requireAcgState().fleet = forcedFleet;
+      ch.requireNavyAcg().fleet = forcedFleet;
       ch.log(ev.transferred(
         forcedFleet, "fleet", fromFleet,
         "academy/NOTC commission (PM p. 52)",
       ));
     } else {
-      ch.requireAcgState().fleet = forcedFleet ?? fleet;
+      ch.requireNavyAcg().fleet = forcedFleet ?? fleet;
     }
     // Medical School graduate joins the Medical Branch automatically.
     if (forcedBranch) {
-      ch.requireAcgState().branch = forcedBranch;
+      ch.requireNavyAcg().branch = forcedBranch;
       ch.log(ev.enlistmentAttempt(
-        `${ch.requireAcgState().fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.requireAcgState().rankCode})`,
+        `${ch.requireNavyAcg().fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.requireAcgState().rankCode})`,
         0, 0, 0, true,
       ));
     } else {
       ch.log(ev.enlistmentAttempt(
-        `${ch.requireAcgState().fleet} Navy (academy/NOTC, ${ch.requireAcgState().rankCode})`,
+        `${ch.requireNavyAcg().fleet} Navy (academy/NOTC, ${ch.requireAcgState().rankCode})`,
         0, 0, 0, true,
       ));
       navyAssignBranch(ch);
@@ -206,7 +206,7 @@ export function navyEnlist(
       throw new Error("Navy draft rejection — choose another path");
     }
     ch.drafted = true;
-    ch.requireAcgState().fleet = "imperialNavy";
+    ch.requireNavyAcg().fleet = "imperialNavy";
     ch.requireAcgState().rankCode = data.enlistment.startingRank;
     ch.requireAcgState().isOfficer = false;
     ch.log(ev.drafted("Imperial Navy"));
@@ -223,11 +223,11 @@ function navyAssignBranch(ch: Character): void {
   // exposed in pickOrDefer.
   const schools = ch.requireAcgState().schoolsAttended;
   if (schools.includes("medicalSchool")) {
-    ch.requireAcgState().branch = "Medical";
+    ch.requireNavyAcg().branch = "Medical";
     return;
   }
   if (schools.includes("flightSchool")) {
-    ch.requireAcgState().branch = "Flight";
+    ch.requireNavyAcg().branch = "Flight";
     return;
   }
   if (ch.attributes.social >= data.branchChoiceSocialMin
@@ -239,7 +239,7 @@ function navyAssignBranch(ch: Character): void {
       kind: "navyBranch",
       label: "Choose your Naval branch (Social 9+ may select).",
       options: filtered,
-      onResolve: (ch, branch) => { ch.requireAcgState().branch = branch; },
+      onResolve: (ch, branch) => { ch.requireNavyAcg().branch = branch; },
     });
     return;
   }
@@ -257,7 +257,7 @@ function navyAssignBranch(ch: Character): void {
       break;
     }
   }
-  ch.requireAcgState().branch = rolled ?? (ch.requireAcgState().isOfficer ? "Line" : "Crew");
+  ch.requireNavyAcg().branch = rolled ?? (ch.requireAcgState().isOfficer ? "Line" : "Crew");
   // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }
 
@@ -268,7 +268,7 @@ function isBranchAllowedForFleet(ch: Character, branch: string): boolean {
   const restrictions = dataFor(ch).branchFleetRestrictions ?? {};
   const allowedFleets = restrictions[branch];
   if (!allowedFleets) return true;
-  return allowedFleets.includes(ch.acgState?.fleet ?? "");
+  return allowedFleets.includes(ch.acgState?.pathway === "navy" ? ch.acgState.fleet : "");
 }
 
 function filterBranchesByFleet(ch: Character, branches: string[]): string[] {
@@ -324,11 +324,11 @@ function navyServiceSkillRoll(ch: Character, column: string): void {
 function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const col = labelToColumnKey(ch.requireAcgState().branch ?? "Line");
+  const col = labelToColumnKey(ch.requireNavyAcg().branch || "Line");
   const candidates = [col, col === "line" ? "lineCrew" : col,
     col === "crew" ? "lineCrew" : col];
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
-    `Navy ${ch.requireAcgState().branch ?? "Line"} branch skills`);
+    `Navy ${ch.requireNavyAcg().branch || "Line"} branch skills`);
 }
 
 /** Command Duty roll (officers only). */
@@ -366,7 +366,7 @@ export function navyCommandDuty(ch: Character): void {
 
 function navyRollCommandDuty(ch: Character): void {
   const data = dataFor(ch);
-  const branch = ch.requireAcgState().branch ?? "Line";
+  const branch = ch.requireNavyAcg().branch || "Line";
   const row = data.commandDuty.rows.find((r) => r.branch === branch);
   if (!row) { ch.requireAcgState().inCommand = false; return; }
   const parsed = parseResolutionTarget(row.target);
@@ -410,7 +410,7 @@ function getNavySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 /** Resolve assignment. Branch picks which resolution sub-table to use. */
 export function navyResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  const branch = ch.requireAcgState().branch ?? "Line";
+  const branch = ch.requireNavyAcg().branch || "Line";
   const resKey = data.branchResolution?.[branch] ?? "lineCrew";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) {
@@ -507,7 +507,7 @@ export function navySpecialAssignment(ch: Character): void {
 
 export function navyReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  const fleet = ch.requireAcgState().fleet ?? "imperialNavy";
+  const fleet = ch.requireNavyAcg().fleet;
   const spec = data.reenlistment.perFleet[fleet];
   if (!spec) {
     throw new Error(`Navy reenlistment missing perFleet config for "${fleet}"`);
@@ -528,9 +528,10 @@ export function navyReenlist(ch: Character): boolean {
  *  branch. A character with no cross-training has only their current
  *  branch as an option and no prompt is shown. */
 function offerNavyBranchChange(ch: Character): void {
-  if (!ch.acgState || !ch.acgState.isOfficer) return;
-  const current = ch.acgState.branch ?? "";
-  const crossTrained = ch.acgState.crossTrainedBranches ?? [];
+  const acg = ch.acgState;
+  if (acg?.pathway !== "navy" || !acg.isOfficer) return;
+  const current = acg.branch || "";
+  const crossTrained = acg.crossTrainedBranches ?? [];
   // F7: filter cross-trained branches by fleet eligibility too.
   const eligible = [
     current,
@@ -544,8 +545,9 @@ function offerNavyBranchChange(ch: Character): void {
     label,
     context: { source: "reenlist", reenlistChangeBranch: true },
     apply: (ch, chosen) => {
-      if (!ch.acgState) return;
-      ch.acgState.branch = chosen;
+      const acg = ch.acgState;
+      if (acg?.pathway !== "navy") return;
+      acg.branch = chosen;
       ch.log(ev.transferred(chosen, "branch", current, "reenlist (via cross-training)"));
     },
   });

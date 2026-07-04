@@ -347,7 +347,8 @@ describe("R1: pre-career state preserved into beginAcg", () => {
     // Manually establish post-college non-commissioned state, then beginAcg.
     const c = freshAcgCandidate(7);
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -379,7 +380,8 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
     c.useAcg = true;
     c.choiceMode = "auto";
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -403,7 +405,8 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
     c.useAcg = true;
     c.choiceMode = "auto";
     c.acgState = {
-      pathway: "navy", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "navy", fleet: "imperialNavy", branch: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -438,7 +441,8 @@ describe("R5: honors gates", () => {
     // Manually build state: college honors but no commission. Bypass dice.
     const c = freshAcgCandidate(12);
     c.acgState = {
-      pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },
@@ -456,7 +460,8 @@ describe("R5: honors gates", () => {
     // Manually build state: graduated Naval Academy, no honors.
     const c = freshAcgCandidate(12);
     c.acgState = {
-      pathway: "mercenary", rankCode: "O1", isOfficer: true, year: 1,
+      pathway: "mercenary", combatArm: "", branch: "", mos: "",
+      rankCode: "O1", isOfficer: true, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
       retainedAssignment: null, injuredThisYear: false, perYear: {},
       perTerm: { promotedThisTerm: false },

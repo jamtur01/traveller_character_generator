@@ -25,7 +25,7 @@ function walkSmuggling() {
   c.choiceMode = "auto";
   c.acgPathway = "merchantPrince";
   c.acgState = freshAcgState("merchantPrince");
-  c.acgState.lineType = "Free Trader";
+  c.requireMerchantAcg().lineType = "Free Trader";
   c.service = "merchants";
   let snap = session.enlist(
     { character: c, phase: "acg_enlist" },

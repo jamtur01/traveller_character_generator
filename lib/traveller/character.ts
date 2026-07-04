@@ -12,7 +12,7 @@ import type {
   ScoutAcgState, MerchantAcgState,
 } from "./engine/acg/state";
 import {
-  isMercenaryAcg, isNavyAcg, isScoutAcg, isMerchantAcg, freshAcgState,
+  assertPathway, freshAcgState,
 } from "./engine/acg/state";
 import {
   editionHasHomeworld,
@@ -452,30 +452,22 @@ export class Character implements CharacterState {
    *  fields (combatArm, fleet, division, lineType) are non-optional. */
   requireMercenaryAcg(): MercenaryAcgState {
     const acg = this.requireAcgState();
-    if (!isMercenaryAcg(acg)) {
-      throw new Error(`Expected mercenary acgState, got pathway=${acg.pathway}`);
-    }
+    assertPathway(acg, "mercenary");
     return acg;
   }
   requireNavyAcg(): NavyAcgState {
     const acg = this.requireAcgState();
-    if (!isNavyAcg(acg)) {
-      throw new Error(`Expected navy acgState, got pathway=${acg.pathway}`);
-    }
+    assertPathway(acg, "navy");
     return acg;
   }
   requireScoutAcg(): ScoutAcgState {
     const acg = this.requireAcgState();
-    if (!isScoutAcg(acg)) {
-      throw new Error(`Expected scout acgState, got pathway=${acg.pathway}`);
-    }
+    assertPathway(acg, "scout");
     return acg;
   }
   requireMerchantAcg(): MerchantAcgState {
     const acg = this.requireAcgState();
-    if (!isMerchantAcg(acg)) {
-      throw new Error(`Expected merchantPrince acgState, got pathway=${acg.pathway}`);
-    }
+    assertPathway(acg, "merchantPrince");
     return acg;
   }
 
@@ -486,12 +478,16 @@ export class Character implements CharacterState {
   // lazy-init-on-set behavior was a footgun that silently materialized
   // an acgState whenever a test wrote `c.browniePoints = 0`.
   get acgBranch(): string | null {
-    if (!this.acgState) return null;
-    return this.acgState.branch ?? this.acgState.combatArm ?? this.acgState.office
-      ?? this.acgState.department ?? null;
+    const acg = this.acgState;
+    if (!acg) return null;
+    if (acg.pathway === "mercenary") return (acg.branch || acg.combatArm) || null;
+    if (acg.pathway === "navy") return acg.branch || null;
+    if (acg.pathway === "scout") return acg.office || null;
+    return acg.department || null;
   }
   get acgMos(): string | null {
-    return this.acgState?.mos ?? null;
+    const acg = this.acgState;
+    return acg?.pathway === "mercenary" ? (acg.mos || null) : null;
   }
   get decorations(): string[] {
     return this.acgState?.decorations ?? [];

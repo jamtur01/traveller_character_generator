@@ -226,7 +226,7 @@ describe("MT ACG: each Run-term click after a paused choice must be a no-op", ()
     c.choiceMode = "interactive";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
-    c.acgState.combatArm = "Infantry";
+    c.requireMercenaryAcg().combatArm = "Infantry";
     c.service = "army";
     let snap: session.ChargenSnapshot = { character: c, phase: "term" };
     snap = session.runTerm(snap);

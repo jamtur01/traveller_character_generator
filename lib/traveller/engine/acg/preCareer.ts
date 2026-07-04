@@ -273,7 +273,8 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Megacorporation or a Sector-wide line may apply for admission to a
   // Merchant Academy." Block admission if those conditions aren't met.
   if (opt === "merchantAcademy") {
-    const lineType = ch.acgState?.lineType;
+    const lineType = ch.acgState?.pathway === "merchantPrince"
+      ? (ch.acgState.lineType || undefined) : undefined;
     const allowed = (spec.requiresLineType ?? []).includes(lineType ?? "");
     if (!allowed) {
       out.notes.push(
@@ -672,7 +673,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     // PM p. 47: "may select the department to which he will be assigned"
     // — record the player's pick so the post-enlistment flow doesn't
     // re-roll department assignment.
-    if (ch.acgState) ch.acgState.department = choice;
+    if (ch.acgState?.pathway === "merchantPrince") ch.acgState.department = choice;
     for (let i = 0; i < skillsCount; i++) {
       if (ch.rng.roll(1) >= skillsTarget) {
         const row = rollDieRow(ch, dept, { dice: 1, dm: 0, lo: 1, hi: 6 });
