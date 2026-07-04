@@ -43,6 +43,37 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // app/** must not reach into engine internals or the raw edition view
+  // layer; the rule-interpretation helpers the UI needs are surfaced via the
+  // "@/lib/traveller" barrel (view-model). Keeps presentation code from
+  // re-deriving engine-owned rules out of raw JSON shape.
+  {
+    files: ["app/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^\\.\\./",
+              message:
+                "Use '@/…' absolute imports instead of parent-relative ('../') paths.",
+            },
+            {
+              regex: "^@/lib/traveller/engine/",
+              message:
+                "Do not import engine internals from app/; use the '@/lib/traveller' barrel.",
+            },
+            {
+              regex: "^@/lib/traveller/view",
+              message:
+                "Do not import the edition view layer from app/; use the '@/lib/traveller' barrel.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

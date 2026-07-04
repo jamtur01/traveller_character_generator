@@ -2,9 +2,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import {
-  anagathicsEligible, termLengthYears,
-} from "@/lib/traveller/editions/view";
+import { anagathicsEligible, termLengthYears } from "@/lib/traveller";
 import { getEditionServices } from "@/lib/traveller/services";
 import {
   PhaseCard, PrimaryButton, SecondaryButton, Stat,

@@ -6,7 +6,7 @@ import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
 import {
   acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
-} from "./traveller/editions/view";
+} from "./traveller/view";
 
 /** Skills that populate the sheet's "Equipment Qualified On" box: the
  *  edition's vehicle cascade (its umbrella of vehicle / aircraft /

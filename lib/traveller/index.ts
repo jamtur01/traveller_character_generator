@@ -39,6 +39,10 @@ export type {
 export {
   benefitDmFor, cashDmFor, maxCashRolls,
 } from "./engine/musterDm";
+export { anagathicsEligible, termLengthYears } from "./view";
+export {
+  isPreCareerEligible, preCareerLabel, preCareerUiSummary,
+} from "./engine/acg/preCareer";
 export type { AcgData, AcgPathway } from "./editions/types";
 export {
   formatCharacterSheet, formatBenefit, aggregateBenefits,

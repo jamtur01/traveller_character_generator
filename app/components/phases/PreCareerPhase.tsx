@@ -3,7 +3,7 @@
 import type { Character } from "@/lib/traveller/character";
 import {
   isPreCareerEligible, preCareerLabel, preCareerUiSummary,
-} from "@/lib/traveller/engine/acg/preCareer";
+} from "@/lib/traveller";
 import { PhaseCard, PrimaryButton } from "@/app/components/ui";
 
 export type PreCareerOption =

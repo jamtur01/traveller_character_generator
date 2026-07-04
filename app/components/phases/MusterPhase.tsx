@@ -1,9 +1,7 @@
 "use client";
 
 import type { Character } from "@/lib/traveller/character";
-import {
-  benefitDmFor, cashDmFor, maxCashRolls,
-} from "@/lib/traveller/engine/musterDm";
+import { benefitDmFor, cashDmFor, maxCashRolls } from "@/lib/traveller";
 import {
   PhaseCard, SecondaryButton, Stat, SECTION_LABEL,
 } from "@/app/components/ui";
