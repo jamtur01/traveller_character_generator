@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Character, cloneCharacter } from "@/lib/traveller/character";
+import { cloneCharacter } from "@/lib/traveller/character";
 import { DEFAULT_EDITION_ID, listEditions } from "@/lib/traveller/editions";
 import * as session from "@/lib/traveller/chargen/session";
 import type { ServiceKey } from "@/lib/traveller/types";
@@ -25,8 +25,7 @@ import { EndPhase } from "./components/phases/EndPhase";
 type Phase = session.ChargenPhase;
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("start");
-  const [character, setCharacter] = useState<Character | null>(null);
+  const [snap, setSnap] = useState<session.ChargenSnapshot | null>(null);
   const [verbose, setVerbose] = useState(true);
   const [interactiveMode, setInteractiveMode] = useState(false);
   const [edition, setEdition] = useState<string>(DEFAULT_EDITION_ID);
@@ -37,28 +36,22 @@ export default function Home() {
     ServiceKey | "random"
   >("random");
 
-  // Mirror character + phase in refs so async handlers see the latest
-  // values, not the closure-captured ones. Functional setState would be
-  // React-idiomatic but its updater re-runs in dev StrictMode, which
-  // would re-roll dice.
-  const characterRef = useRef<Character | null>(null);
+  // Mirror the WHOLE snapshot in a ref so async handlers see the latest
+  // value, not the closure-captured one — and so the frontier (the paused
+  // action's re-execution base) is never dropped between actions.
+  // Functional setState would be React-idiomatic but its updater re-runs
+  // in dev StrictMode, which would re-roll dice.
+  const snapRef = useRef<session.ChargenSnapshot | null>(null);
   useEffect(() => {
-    characterRef.current = character;
-  }, [character]);
-  const phaseRef = useRef<Phase>("start");
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
+    snapRef.current = snap;
+  }, [snap]);
 
-  const commit = (c: Character, p: Phase) => {
-    characterRef.current = c;
-    phaseRef.current = p;
-    setCharacter(c);
-    setPhase(p);
-  };
+  const character = snap?.character ?? null;
+  const phase: Phase = snap?.phase ?? "start";
 
-  const applySnap = (snap: session.ChargenSnapshot) => {
-    commit(snap.character, snap.phase as Phase);
+  const commit = (next: session.ChargenSnapshot) => {
+    snapRef.current = next;
+    setSnap(next);
   };
 
   const setAcgForm = (patch: Partial<AcgFormState>) =>
@@ -66,13 +59,19 @@ export default function Home() {
 
   const startCareer = () => {
     const editionMeta = listEditions().find((e) => e.id === edition);
-    applySnap(session.startCareer({
+    // Seed every run: the event-sourced resume model re-executes a paused
+    // action from its cloned base, so a seeded stream makes re-runs (and
+    // the whole run) deterministic and the session reproducible from its
+    // seed + action log (chargen/replay).
+    const seed = Math.floor(Math.random() * 0x1_0000_0000);
+    commit(session.startCareer({
       edition,
       verbose,
       interactiveMode,
       supportsInteractive: editionMeta?.supportsInteractive === true,
       useAcg,
       acgPathway,
+      seed,
     }));
   };
 
@@ -80,13 +79,10 @@ export default function Home() {
    *  UI hints (auto-enlist pathway, service, fleet) when an academy
    *  outcome should pre-populate the enlistment form. */
   const applyPreCareer = (opt: session.PreCareerOption) => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    const result = session.applyPreCareer(
-      { character: prev, phase: phaseRef.current },
-      opt,
-    );
-    applySnap(result.snapshot);
+    const result = session.applyPreCareer(prev, opt);
+    commit(result.snapshot);
     if (opt === "skip") {
       setAcgForm({ service: "army", fleet: "imperialNavy" });
     }
@@ -98,82 +94,76 @@ export default function Home() {
   };
 
   const resolvePending = (choiceId: string, optionIdx: number) => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.resolvePending(
-      { character: prev, phase: phaseRef.current },
-      choiceId, optionIdx,
-    ));
+    commit(session.resolvePending(prev, choiceId, optionIdx));
   };
 
   const enlist = () => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.enlist(
-      { character: prev, phase: phaseRef.current },
-      {
-        verbose,
-        preferredService,
-        acgService: acgForm.service,
-        acgCombatArm: acgForm.combatArm,
-        acgFleet: acgForm.fleet,
-        acgDivision: acgForm.division,
-        acgLineType: acgForm.lineType,
-        acgSubsectorTech: acgForm.subsectorTech,
-        acgMerchantAcademy: acgForm.merchantAcademy,
-      },
-    ));
+    commit(session.enlist(prev, {
+      verbose,
+      preferredService,
+      acgService: acgForm.service,
+      acgCombatArm: acgForm.combatArm,
+      acgFleet: acgForm.fleet,
+      acgDivision: acgForm.division,
+      acgLineType: acgForm.lineType,
+      acgSubsectorTech: acgForm.subsectorTech,
+      acgMerchantAcademy: acgForm.merchantAcademy,
+    }));
   };
 
   const runTerm = () => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.runTerm({
-      character: prev, phase: phaseRef.current,
-    }));
+    commit(session.runTerm(prev));
   };
 
   const attemptMusterOut = () => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.attemptMusterOut({
-      character: prev, phase: phaseRef.current,
-    }));
+    commit(session.attemptMusterOut(prev));
   };
 
   const pickSkill = (table: number) => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.pickSkill(
-      { character: prev, phase: phaseRef.current },
-      table,
-    ));
+    commit(session.pickSkill(prev, table));
   };
 
   const musterChoice = (kind: "cash" | "benefit") => {
-    const prev = characterRef.current;
+    const prev = snapRef.current;
     if (!prev) return;
-    applySnap(session.musterChoice(
-      { character: prev, phase: phaseRef.current },
-      kind,
-    ));
+    commit(session.musterChoice(prev, kind));
   };
 
   const toggleVerbose = (v: boolean) => {
     setVerbose(v);
-    const prev = characterRef.current;
-    if (prev) {
-      const c = cloneCharacter(prev);
-      c.showHistory = v ? "verbose" : "simple";
-      characterRef.current = c;
-      setCharacter(c);
+    const prev = snapRef.current;
+    if (prev) commit(session.setVerbose(prev, v));
+  };
+
+  const toggleAnagathics = (next: boolean) => {
+    const prev = snapRef.current;
+    if (!prev) return;
+    const c = cloneCharacter(prev.character);
+    c.anagathicsStandingOrder = next;
+    if (prev.frontier) {
+      // Apply the standing order to the paused action's re-execution base
+      // too — a resume re-runs from that base, and would otherwise lose it.
+      const base = cloneCharacter(prev.frontier.base);
+      base.anagathicsStandingOrder = next;
+      commit({ ...prev, character: c, frontier: { ...prev.frontier, base } });
+    } else {
+      commit({ character: c, phase: prev.phase });
     }
   };
 
   const reset = () => {
-    characterRef.current = null;
-    setCharacter(null);
-    setPhase("start");
+    snapRef.current = null;
+    setSnap(null);
   };
 
   return (
@@ -261,13 +251,7 @@ export default function Home() {
               character={character}
               onRunTerm={runTerm}
               onMusterOut={attemptMusterOut}
-              onToggleAnagathics={(next) => {
-                const prev = characterRef.current;
-                if (!prev) return;
-                const c = cloneCharacter(prev);
-                c.anagathicsStandingOrder = next;
-                commit(c, "term");
-              }}
+              onToggleAnagathics={toggleAnagathics}
             />
           )}
 

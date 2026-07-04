@@ -17,8 +17,8 @@ import {
   startCareer, applyPreCareer, enlist, resolvePending, runTerm, pickSkill,
   attemptMusterOut, musterChoice, setVerbose,
   type ChargenSnapshot, type StartCareerOptions, type EnlistOptions,
+  type PreCareerOption,
 } from "./session";
-import type { PreCareerOption } from "@/lib/traveller/engine/acg/preCareer";
 
 /** One recorded chargen action. `resolve` records only the chosen option
  *  index; the pending choice it targets is deterministic under the seed. */
