@@ -19,6 +19,7 @@ import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { runAcgYear } from "@/lib/traveller/engine/runners/acg";
 import { getEditionServices } from "@/lib/traveller/services";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { editionHasAcg } from "@/lib/traveller/engine/acg";
 import { freshAcgState } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
@@ -92,6 +93,13 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
   if (opts.useAcg && editionHasAcg(opts.edition) && opts.acgPathway) {
     ch.useAcg = true;
     ch.acgPathway = opts.acgPathway;
+    // PM p. 44: ACG characters (and pre-career at 18) begin at age 18 —
+    // declared in acg.common.startAge rather than inherited from the
+    // constructor literal. Basic flow applies per-service startAge at enlist.
+    ch.age = requireRule(
+      getEdition(opts.edition).data.advancedCharacterGeneration?.common?.startAge,
+      "advancedCharacterGeneration.common.startAge", "PM p. 44",
+    );
     return { character: ch, phase: "pre_career" };
   }
   return { character: ch, phase: "career" };

@@ -46,7 +46,17 @@ function computeEnlistable(editionId: string): ServiceKey[] {
     "belters", "sailors", "diplomats", "doctors", "flyers", "barbarians",
     "bureaucrats", "rogues", "scientists", "hunters", "lawenforcers",
   ];
-  return CLASSIC_ORDER.filter((k) => map[k] !== undefined);
+  const known = CLASSIC_ORDER.filter((k) => map[k] !== undefined);
+  // A JSON service key missing from the presentation order must not vanish
+  // from the enlistment pool — append unknowns after the classic ordering.
+  // Services whose enlistment declares automaticIf (nobles: auto-enroll on
+  // Soc 10+, CotI) are not voluntarily enlistable and stay out of the pool.
+  const jsonServices = getEdition(editionId).data.services;
+  const rest = (Object.keys(map) as ServiceKey[]).filter(
+    (k) => !CLASSIC_ORDER.includes(k)
+      && !jsonServices[k]?.checks.enlistment.automaticIf,
+  );
+  return [...known, ...rest];
 }
 
 /** Services available for random enlistment selection in the given

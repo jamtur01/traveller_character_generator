@@ -106,6 +106,9 @@ export function beginAcg(
   // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
   // the character's pendingChoices stand. The UI resolves them and the
   // pause-and-resume machinery in runAcgYear handles subsequent flow.
+  // The `??` defaults below are API-surface conveniences (auto flows and
+  // tests that don't present a picker), each mirroring the first printed
+  // option of its table; the UI and RunLog always pass explicit values.
   pauseGuard(() => {
     switch (effPathway) {
       case "mercenary":
@@ -176,7 +179,16 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
   let gated = ch.homeworld
     ? availableServicesForHomeworld(ch, ch.homeworld, enlistable)
     : enlistable;
-  if (gated.length === 0) gated = enlistable;
+  if (gated.length === 0) {
+    // JSON-declared homeworld gates excluded every service. Fall back to the
+    // ungated list so the character stays playable, but record the waiver
+    // loudly in the history instead of silently disabling declared gates.
+    ch.log(ev.enlistmentAttempt(
+      "any service", 0, 0, 0, false,
+      `homeworld gates excluded all services — gate waived (tech ${ch.homeworld?.tech ?? "?"})`,
+    ));
+    gated = enlistable;
+  }
   let preferredService: ServiceKey;
   if (method && method !== "random") {
     preferredService = method as ServiceKey;

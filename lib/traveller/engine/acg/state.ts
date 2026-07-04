@@ -335,6 +335,9 @@ export function freshPerTerm(): PerTermAcgState {
  *  (beginAcg, doPreCareer) and tests that need a known-good baseline. */
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
   const base = {
+    // Pre-enlistment placeholders: every pathway's enlist overwrites
+    // rankCode/isOfficer from its JSON enlistment startingRank before any
+    // rank-keyed read; "E1" is never consumed as a game value before then.
     rankCode: "E1",
     isOfficer: false,
     year: 1,

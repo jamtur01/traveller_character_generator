@@ -210,7 +210,12 @@ function starportMeets(
   const order = getEdition(ch.editionId).data.homeworld?.starportOrder ?? [];
   const have = order.indexOf(home.toUpperCase());
   const want = order.indexOf(minimum.toUpperCase());
-  if (have < 0 || want < 0) return true;
+  if (have < 0 || want < 0) {
+    throw new Error(
+      `Starport code not in homeworld.starportOrder (have "${home}", ` +
+      `minimum "${minimum}") — fix the edition JSON; gates must not silently pass.`,
+    );
+  }
   return have >= want;
 }
 
@@ -645,7 +650,10 @@ function merchantAwardBonus(ch: Character): void {
   );
   const indices = Object.keys(merchants.musterCash).map(Number);
   const rawRoll = clampedRoll(ch, 1, 0, Math.min(...indices), Math.max(...indices));
-  const fullAmount = merchants.musterCash[rawRoll] ?? 0;
+  const fullAmount = requireRule(
+    merchants.musterCash[rawRoll],
+    `merchants musterCash[${rawRoll}]`, "PM p. 60 in-service bonus",
+  );
   const cash = Math.floor(fullAmount / divisor);
   if (cash <= 0) return;
   ch.credits += cash;
@@ -966,7 +974,7 @@ function merchantRankLadder(
   const acg = ch.requireMerchantAcg();
   const deptKey = lineSizeFor(data, acg.lineType!) === "FreeTrader"
     ? "freeTrader"
-    : labelToColumnKey(acg.department ?? "deck");
+    : labelToColumnKey(merchantDepartmentOf(ch));
   const ladder = data.ranksAndPromotions[deptKey];
   return Array.isArray(ladder) ? ladder : null;
 }

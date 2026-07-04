@@ -209,6 +209,8 @@ export interface AcgData {
 
 /** Common ACG block (shared rules across pathways). */
 export interface AcgCommonData {
+  /** PM p. 44: ACG begins at age 18 (applied by startCareer). */
+  startAge?: number;
   preCareerOptions?: Record<string, unknown>;
   browniePoints?: { awards?: unknown[] };
   decorationTiers?: { tiers?: Array<Record<string, unknown>> };

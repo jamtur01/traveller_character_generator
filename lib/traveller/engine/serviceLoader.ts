@@ -157,7 +157,14 @@ export function buildServiceDef(
   // --- cash --------------------------------------------------------------
   const musterCash: Record<number, number> = {};
   for (let r = 1; r <= 7; r++) {
-    musterCash[r] = serviceData.musterOut.cash[r] ?? 0;
+    const cell = serviceData.musterOut.cash[r];
+    if (cell === undefined) {
+      throw new Error(
+        `services.${serviceData.displayName}.musterOut.cash[${r}] is missing — ` +
+        "printed dashes are stored as explicit null (Cr0), absent rows are data errors.",
+      );
+    }
+    musterCash[r] = cell ?? 0; // printed dash (null) = no cash on this row
   }
 
   // --- muster benefits ---------------------------------------------------
@@ -267,7 +274,14 @@ function applyAutoEntry(
   }
   if (e.skill) {
     const name = resolveAutoSkill(e.skill, ch);
-    ch.addSkill(name, e.level ?? 1, source);
+    ch.addSkill(
+      name,
+      requireRule(
+        e.level,
+        `automaticSkills level for "${e.skill}"`, "TTB/PM service tables",
+      ),
+      source,
+    );
   }
 }
 

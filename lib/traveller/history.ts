@@ -609,7 +609,7 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "marineTradition":
       if (e.outcome === "forced") {
-        return `Marine Tradition: Blade Combat → ${e.forcedSkill ?? "Large Blade"}.`;
+        return `Marine Tradition: Blade Combat → ${e.forcedSkill ?? "(unrecorded)"}.`;
       }
       return "Marine Tradition save passed — normal Blade Combat cascade.";
     case "assignmentRolled": {

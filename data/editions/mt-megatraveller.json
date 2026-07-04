@@ -3638,6 +3638,8 @@
       ]
     },
     "common": {
+      "startAge": 18,
+      "$startAgeRule": "PM p. 44: 'The character begins at age 18' — ACG and its pre-career options start at age 18; basic-flow services apply their own startAge at enlistment instead.",
       "preCareerOptions": {
         "$comment": "Each option declares displayName (UI label), eligibility (attribute gates that must be met to apply at all — failures hide the option from the picker rather than showing 'requires X'), and the throw specs the engine rolls. PM p. 47 line refs in $rule fields.",
         "college": {

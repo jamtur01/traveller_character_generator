@@ -4,6 +4,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import {
   buildPredicateContext, evaluatePredicate,
   type Predicate, type PredicateContext,
@@ -134,7 +135,10 @@ export function rollHomeworld(ch: Character): Homeworld | null {
     // Starport 12 (D-X) requires a follow-up 1D.
     if (col === "starport" && value === "D-X") {
       const dr = ch.rng.roll(1);
-      value = data.starportXRoll.results[String(dr)] ?? "X";
+      value = requireRule(
+        data.starportXRoll.results[String(dr)],
+        `homeworld.starportXRoll.results["${dr}"]`, "MT homeworld starport table",
+      );
     }
     (result as Record<string, string>)[col] = value;
   }

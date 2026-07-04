@@ -211,10 +211,18 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
       ch.log(ev.browniePoint(-1, "Mitigate court martial", ch.acgState.browniePoints));
     }
   }
-  const outcome = cm.dieResults.find((o) => o.roll === r)
-    ?? cm.dieResults.reduce((closest, o) =>
-        Math.abs(o.roll - r) < Math.abs(closest.roll - r) ? o : closest,
-        cm.dieResults[0]!);
+  // PM p. 47: the table is contiguous -1..10. Edge results clamp (BP spends
+  // and DMs can push past either end); a MID-table gap is broken edition
+  // data and must fail loudly, not map to the nearest row.
+  const rolls = cm.dieResults.map((o) => o.roll);
+  const clamped = Math.max(Math.min(...rolls), Math.min(Math.max(...rolls), r));
+  const outcome = cm.dieResults.find((o) => o.roll === clamped);
+  if (!outcome) {
+    throw new Error(
+      `courtMartial.dieResults has no row for roll ${clamped} — the PM p. 47 ` +
+      "table is contiguous; fix the edition JSON.",
+    );
+  }
   const result = outcome.result;
   ch.log(ev.courtMartial(result));
 

@@ -107,7 +107,11 @@ export function normalizeAttr(s: string): keyof Attributes {
   if (lc.startsWith("end")) return "endurance";
   if (lc.startsWith("int")) return "intelligence";
   if (lc.startsWith("edu")) return "education";
-  return "social";
+  if (lc.startsWith("soc")) return "social";
+  throw new Error(
+    `Unknown attribute label "${s}" in an edition-JSON predicate/DM rule — ` +
+    "fix the JSON; labels must start with Str/Dex/End/Int/Edu/Soc.",
+  );
 }
 
 /** Parse a rank code like "O3" / "E-5" into its letter band and number. */
