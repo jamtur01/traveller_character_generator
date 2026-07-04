@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project conventions
 
-A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI) and MegaTraveller. ~12k lines of TypeScript across `lib/`, `app/`, with ~3000 tests in `tests/`.
+A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI) and MegaTraveller. ~15k lines of TypeScript across `lib/`, `app/`, with ~3400 tests in `tests/`.
 
 ## JSON is the source of truth
 
@@ -36,6 +36,29 @@ Every `Character` carries an `editionId`. Engine code that reads game data takes
 CT uses abbreviations like `"Stren"`. MT uses both abbreviations and full names (`"Strength"`, `"Str"`). Every edition declares its own `attributeAbbreviations` and `skillLabelRenames` blocks to normalize.
 
 The legacy `s` global (`lib/traveller/services`) binds to `DEFAULT_EDITION_ID` only. For edition-agnostic code, use `getEditionServices(ch.editionId)` instead.
+
+## State model
+
+`Character` (`character.ts`) holds core state plus two cohesive sub-objects declared in `characterState.ts`:
+
+- `ch.anagathics` (`AnagathicsState`) — the anagathics sub-machine + apparent-age; `resetPerTerm()` clears the per-term flags.
+- `ch.muster` (`MusterState`) — muster bookkeeping (`forceTable`, `musterRolls`, `musterLog`, …).
+
+Flat accessors on `Character` (e.g. `ch.musterRolls`, `ch.apparentAge`) remain as a stable projection over the sub-objects for the UI/pdfSheet — not dual storage; the sub-object is the source of truth.
+
+`AcgState` (`engine/acg/state.ts`) is a **pathway-discriminated union** (`MercenaryAcgState | NavyAcgState | ScoutAcgState | MerchantAcgState`, keyed on `pathway`) plus `perYear`/`perTerm` scope sub-records. Read a pathway's role fields only after narrowing — `ch.requireMercenaryAcg()` / `assertPathway(acg, "navy")`; `clearYearScopedState` is `acg.perYear = freshPerYear()`.
+
+## Shared roll/DM helpers
+
+Don't hand-roll the "roll a die, find the row, read a column" ritual — reuse:
+
+- `rollDieRow(ch, table, {dice, dm, lo, hi})` and `rollSkillFromColumn(ch, table, col, source)` (`engine/acg/pathways/shared.ts`)
+- `columnDmFor(dms, column, ch)` (`engine/acg/tables.ts`) for column-scoped skill-table DMs
+- `evaluateDM` (basic) / `applyStructuredDms` (ACG) for condition DMs; `clampedRoll` for bounded rolls
+
+## UI boundary
+
+`app/**` reads rules only through the edition view-model (`editions/view.ts`: `termLengthYears`, `anagathicsEligible`, `pistolSkills`, …) and `EditionMeta` capability flags (`hasSkillCap`, `hasAnagathics`). Never re-derive a rule from raw JSON in a component.
 
 ## Test discipline
 
@@ -165,46 +188,57 @@ If you're working on JSON content, run `test:audit` first — failures there mea
 
 4. **Adding services or pathways.** Most "I need to write engine code for this" turns out to be "I need to add data to JSON and the engine already reads it." Skim `data/editions/mt-megatraveller.json` before extending TS.
 
-5. **Anagathics retry path is subtle.** `tryAnagathics(allowRetry=true)` may call `rollAnagathicsAvailability` twice. State flags (`anagathicsWithdrawalThisTerm`, `onAnagathics`) must be consistent at the end. See `character.ts:1122` and the regression test in `tests/regressions.test.ts`.
+5. **Anagathics retry path is subtle.** `tryAnagathics(allowRetry=true)` may call `rollAnagathicsAvailability` twice. The state flags now live on `ch.anagathics` (`AnagathicsState`): `anagathicsWithdrawalThisTerm`, `onAnagathics`, etc. must be consistent at the end, and per-term flags reset via `ch.anagathics.resetPerTerm()`. See the regression test in `tests/regressions.test.ts`.
 
-6. **Ship mortgage clamping.** Repeat ship benefits pay down `repeatReducesMortgageYears` per receipt, but the subtraction must clamp at 0 — don't let mortgage go negative. See `cellResolver.ts:289`.
+6. **Ship mortgage.** First receipt of a mortgaged ship sources the initial mortgage from `benefitDetails.firstReceiptMortgageYears` (owned ships omit it → no mortgage). Repeat receipts pay down `repeatReducesMortgageYears` per receipt, clamped at 0 — never negative. See `cellResolver.ts applyShipBenefit`.
 
 ## File map
 
 ```
 lib/traveller/
-  character.ts            — Character class (1500 lines)
-  random.ts               — roll, arnd, rndInt helpers
+  character.ts            — Character class (~1500 lines)
+  characterState.ts       — AnagathicsState / MusterState sub-objects
+  random.ts               — Rng: roll, arnd, rndInt
+  history.ts              — typed HistoryEvent log + render-time verbosity
   cascades.ts             — CT-bound cascade exports (legacy; prefer cascadePoolByKey)
   index.ts                — public barrel (Character NOT re-exported — see comment)
   editions/
     index.ts              — DEFAULT_EDITION_ID, getEdition, listEditions
-    types.ts              — Edition / EditionMeta / hooks types
+    schema.ts             — Zod validation of the JSON blocks (parseRules/parseCanonData)
+    types.ts              — Edition / EditionMeta / CanonData / hook types
+    view.ts               — UI view-model (termLengthYears, anagathicsEligible, …)
     ct-classic/hooks.ts   — CT-only doPromotion overrides (e.g., nobles social-by-rank)
     mt-megatraveller/hooks.ts
   engine/
-    runner.ts             — basic-chargen term step runner
+    serviceLoader.ts      — buildServiceDef: JSON ServiceData → runtime ServiceDef
     cellResolver.ts       — applyCell: attribute / cascade / Includes / ship / passage
     cascadeMap.ts         — cascadePoolByKey, isCascadeLabel, cascadeKeyForLabel
+    predicate.ts          — evaluatePredicate (the one DM/condition DSL)
     dmEvaluator.ts        — evaluateDM(rules, DmContext)
     musterDm.ts           — benefitDmFor, cashDmFor, maxCashRolls
-    serviceLoader.ts      — builds ServiceDef from JSON for an edition
-    skillRestrictions.ts  — homeworld tech/law gates
-    homeworld.ts          — rollHomeworld, applyHomeworldSkills (MT only)
+    skillRestrictions.ts  — homeworld tech/law skill gates
+    homeworld.ts          — MT homeworld generation
+    registry.ts           — named-extension registry helper
     choices.ts            — ChoicePendingError, pickOrDefer plumbing
-    steps/                — lifecycle steps: survival, commission, promotion, etc.
+    steps/                — basic lifecycle steps: survival, commission, promotion, …
+    runners/              — basic.ts + acg.ts step walkers
     acg/                  — Advanced Character Generation (MT)
-      runner.ts           — runAcgTerm, runAcgYear, runAcgReenlist
-      tables.ts           — structured DM evaluation, resolution lookup
+      runner.ts, phaseRunner.ts, jsonPhases.ts — per-year/term step drivers
+      tables.ts           — structured/column DM evaluation, resolution lookup
+      state.ts            — AcgState discriminated union + perYear/perTerm
+      subStepCache.ts     — per-year sub-step memoization for resume
       browniePoints.ts    — tryMitigate, spendBrowniePoints
       awards.ts           — decorations, court-martial, brownie awards
       preCareer.ts        — college, naval/military/merchant academy, med/flight school
       schools.ts          — special-assignment school application
       pathways/
+        shared.ts         — createPathwaySpecRegistry, rollDieRow/rollSkillFromColumn, reenlist
         mercenary.ts      — army/marines
         navy.ts           — imperial/reserve/system squadron
         scout.ts          — field/bureaucracy divisions
         merchantPrince.ts — line types + departments
+  chargen/                — session, enlistment, term, muster, reenlist, aging,
+                            anagathics, weaponBenefits, skillCap, replay
 data/
   editions/
     ct-classic.json
