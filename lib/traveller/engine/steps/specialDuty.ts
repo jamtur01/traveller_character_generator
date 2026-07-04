@@ -7,6 +7,7 @@
 
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
+import { applyOvershootBonus } from "./overshoot";
 
 export const specialDutyStep: StepFn = ({ ch, edition, config }) => {
   if (ch.deceased) return;
@@ -20,9 +21,5 @@ export const specialDutyStep: StepFn = ({ ch, edition, config }) => {
   if (!succeeded) return;
   ch.skillPoints += 1;
 
-  const overshootN = config.doubleBonusOvershoot as number | undefined;
-  if (overshootN && r >= target + overshootN) {
-    ch.skillPoints += 1;
-    ch.log(ev.bonusSkillPoint("Special Duty", overshootN));
-  }
+  applyOvershootBonus(ch, config, r - target, "Special Duty");
 };

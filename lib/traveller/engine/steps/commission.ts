@@ -9,6 +9,7 @@
 import { intToOrdinal } from "@/lib/traveller/formatting";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
+import { applyOvershootBonus } from "./overshoot";
 
 export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
   if (ch.deceased) return;
@@ -34,11 +35,7 @@ export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
   ch.rank += 1;
   ch.skillPoints += 1;
 
-  const overshootN = config.doubleBonusOvershoot as number | undefined;
-  if (overshootN && margin >= overshootN) {
-    ch.skillPoints += 1;
-    ch.log(ev.bonusSkillPoint("Commission", overshootN));
-  }
+  applyOvershootBonus(ch, config, margin, "Commission");
 
   service.doPromotion(ch);
   ch.log(ev.promoted(

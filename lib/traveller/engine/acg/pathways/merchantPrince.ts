@@ -31,7 +31,6 @@ import {
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
-import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import {
   applyOnce, markComplete, resetIfComplete,
   alreadyApplied, markApplied,
@@ -40,7 +39,7 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
-  clearRetention, consumeRetainedAssignment, rollDieRow,
+  clearRetention, consumeRetainedAssignment, rollDieRow, rollSkillFromColumn,
 } from "./shared";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
@@ -564,13 +563,9 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
  *  cell. The merchant skill tables list one skill per die row, so the column
  *  selects which department/rank variant of that row is taken. */
 function rollMerchantSkillColumn(ch: Character, tableKey: string, column: string): void {
-  const data = dataFor(ch);
-  const table = data.skillTables[tableKey];
+  const table = dataFor(ch).skillTables[tableKey];
   if (!table) return;
-  const row = rollDieRow(ch, table, { dice: 1, dm: 0, lo: 1, hi: 6 });
-  if (!row) return;
-  const v = row[column];
-  if (typeof v === "string") applyAcgSkillCell(ch, v, `Merchant ${tableKey} ${column}`);
+  rollSkillFromColumn(ch, table, column, `Merchant ${tableKey} ${column}`);
 }
 
 function merchantAwardBonus(ch: Character): void {

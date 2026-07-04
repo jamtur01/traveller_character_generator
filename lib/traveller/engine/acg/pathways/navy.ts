@@ -28,7 +28,7 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
-  rollDieRow, resolveCommandDuty,
+  rollDieRow, resolveCommandDuty, branchSkillCandidates,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
@@ -322,8 +322,7 @@ function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
   const col = labelToColumnKey(ch.requireNavyAcg().branch || "Line");
-  const candidates = [col, col === "line" ? "lineCrew" : col,
-    col === "crew" ? "lineCrew" : col];
+  const candidates = branchSkillCandidates(col);
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
     `Navy ${ch.requireNavyAcg().branch || "Line"} branch skills`);
 }

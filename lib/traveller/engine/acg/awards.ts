@@ -155,8 +155,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
       }
     }
     const dieN = o.die === "1D" ? 1 : 2;
-    let gr = 0;
-    for (let i = 0; i < dieN; i++) gr += ch.rng.roll(1);
+    const gr = ch.rng.roll(dieN);
     const baseTotal = gr + dm;
     let total = baseTotal;
     // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
@@ -187,8 +186,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
     if (resultDmWhenMatches(ch, d.when, assignment)) dm += d.dm;
   }
   const dieN = cm.resultRoll?.die === "2D" ? 2 : 1;
-  let dieTotal = 0;
-  for (let i = 0; i < dieN; i++) dieTotal += ch.rng.roll(1);
+  const dieTotal = ch.rng.roll(dieN);
   let r = dieTotal + dm;
   // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
   // Auto modes drive the result toward the best outcome — the lowest
@@ -312,7 +310,7 @@ function applyDisciplinaryResult(ch: Character, result: string, lc: string): voi
  *  rather than a plain forced retirement. */
 function applyJailSentence(ch: Character, result: string, discharged: boolean): void {
   if (/jail\s+2D\s+months/i.test(result)) {
-    const months = ch.rng.roll(1) + ch.rng.roll(1);
+    const months = ch.rng.roll(2);
     ch.log(ev.statusChange(
       "jailed",
       `${months} months — consumes this year of service`,
@@ -323,8 +321,7 @@ function applyJailSentence(ch: Character, result: string, discharged: boolean): 
   let served = "imprisoned";
   if (yearsMatch) {
     const dice = parseInt(yearsMatch[1]!, 10);
-    let years = 0;
-    for (let i = 0; i < dice; i++) years += ch.rng.roll(1);
+    const years = ch.rng.roll(dice);
     ch.age += years;
     served = `imprisoned ${years} years (${dice}D rolled)`;
   }
@@ -351,8 +348,7 @@ function applyDeathPenalty(ch: Character, result: string, lc: string): void {
   const guardsMatch = result.match(/killing\s+(\d+)D\s+guards/i);
   if (guardsMatch) {
     const dice = parseInt(guardsMatch[1]!, 10);
-    let killed = 0;
-    for (let i = 0; i < dice; i++) killed += ch.rng.roll(1);
+    const killed = ch.rng.roll(dice);
     st.guardsKilledInEscape = killed;
   }
   if (lc.includes("escape")) {

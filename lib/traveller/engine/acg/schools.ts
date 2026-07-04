@@ -13,7 +13,8 @@ import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { event as ev } from "@/lib/traveller/history";
 import {
-  serviceSkillColumnFor, rollSkillFromColumn, rollDieRow, type SkillColumnPolicy,
+  serviceSkillColumnFor, rollSkillFromColumn, rollDieRow, branchSkillCandidates,
+  type SkillColumnPolicy,
 } from "@/lib/traveller/engine/acg/pathways/shared";
 import {
   type StructuredDm,
@@ -243,8 +244,7 @@ function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string
   const acg = ch.acgState;
   const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
   const branchKey = (branch || "Line").toLowerCase();
-  const candidates = [branchKey, branchKey === "line" ? "lineCrew" : branchKey,
-    branchKey === "crew" ? "lineCrew" : branchKey];
+  const candidates = branchSkillCandidates(branchKey);
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
     `${schoolName} (branch skills)`);
 }
