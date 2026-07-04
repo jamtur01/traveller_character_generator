@@ -86,26 +86,26 @@ describe("CT TTB retirement pay (TTB p. 25)", () => {
 
   it("Term 5 = Cr 4,000 (engine default; TTB)", () => {
     const c = ct(5);
-    c.endedAsRetired = true;
+    c.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c);
     expect(c.retirementPay).toBe(4000);
   });
 
   it("Term 6 = Cr 6,000; +Cr 2,000 per additional term", () => {
     const c6 = ct(6);
-    c6.endedAsRetired = true;
+    c6.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c6);
     expect(c6.retirementPay).toBe(6000);
 
     const c10 = ct(10);
-    c10.endedAsRetired = true;
+    c10.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c10);
     expect(c10.retirementPay).toBe(14000); // 4000 + 5*2000
   });
 
   it("< 5 terms = no pension", () => {
     const c = ct(4);
-    c.endedAsRetired = true;
+    c.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c);
     expect(c.retirementPay).toBe(0);
   });
@@ -113,7 +113,7 @@ describe("CT TTB retirement pay (TTB p. 25)", () => {
   it("Scouts excluded from pension", () => {
     const c = ct(8);
     c.service = "scouts";
-    c.endedAsRetired = true;
+    c.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c);
     expect(c.retirementPay).toBe(0);
   });
@@ -121,7 +121,7 @@ describe("CT TTB retirement pay (TTB p. 25)", () => {
   it("'other' service excluded from pension", () => {
     const c = ct(8);
     c.service = "other";
-    c.endedAsRetired = true;
+    c.chargenStatus = { kind: "retired", reason: "retirement", withPension: true };
     musterOutPay(c);
     expect(c.retirementPay).toBe(0);
   });

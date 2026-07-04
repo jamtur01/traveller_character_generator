@@ -48,7 +48,7 @@ export function doAging(ch: Character): void {
   // freezes from this point rather than from chronological age. The
   // getter reports `age` when the backing field is 0, but a later
   // freeze needs the concrete value.
-  ch.snapshotApparentAge();
+  ch.anagathics.snapshotApparentAge(ch.age);
 
   // Short terms count as 2 years (PM p. 16) — don't trip full-term
   // aging breakpoints. On anagathics, apparent age (frozen) drives the
@@ -103,7 +103,7 @@ export function doAging(ch: Character): void {
   // Maintained anagathics freezes apparent age; otherwise it tracks
   // chronological age, less any Frozen Watch physical-age offset so the
   // apparent (physical) age stays behind chronological on the sheet.
-  if (!ch.anagathics.onAnagathics) ch.apparentAge = ch.age + physicalOffset;
+  if (!ch.anagathics.onAnagathics) ch.anagathics.apparentAgeLine = ch.age + physicalOffset;
 
   // Aging crisis: any attribute at or below the configured threshold
   // triggers a save against death. Pass → attribute clamped to 1.

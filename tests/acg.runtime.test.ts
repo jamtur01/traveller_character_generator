@@ -332,7 +332,7 @@ describe("Merchant Prince ACG runtime", () => {
     c.acgState.attemptMerchantAcademy = true;
     c.beginAcg("merchantPrince", { lineType: "Megacorp" });
     expect(typeof c.requireMerchantAcg().department).toBe("string");
-    expect(c.requireMerchantAcg().department.length).toBeGreaterThan(0);
+    expect(c.requireMerchantAcg().department!.length).toBeGreaterThan(0);
   });
 
   it("Enlisted ranks advance on each new term via startOfTerm hook", () => {

@@ -19,18 +19,12 @@ import { anagathicsSurvivalDm } from "@/lib/traveller/chargen/anagathics";
 
 /** Skill-table key for the given table index (1-based). Order declared
  *  by the edition under `skillTableMeta.order`. */
-function skillTableKeyForIndex(editionData: unknown, idx: number): string | null {
-  const meta = (editionData as {
-    skillTableMeta?: { order?: string[] };
-  }).skillTableMeta;
-  return meta?.order?.[idx - 1] ?? null;
+function skillTableKeyForIndex(editionData: CanonData, idx: number): string | null {
+  return editionData.skillTableMeta?.order[idx - 1] ?? null;
 }
 
-function skillTableDisplayNameForKey(editionData: unknown, key: string): string {
-  const meta = (editionData as {
-    skillTableMeta?: { displayNames?: Record<string, string> };
-  }).skillTableMeta;
-  return meta?.displayNames?.[key] ?? key;
+function skillTableDisplayNameForKey(editionData: CanonData, key: string): string {
+  return editionData.skillTableMeta?.displayNames[key] ?? key;
 }
 
 /** Roll 2D + `dm` against `target`, log via ev.roll under `label`, and return

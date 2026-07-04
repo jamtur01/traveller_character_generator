@@ -59,6 +59,19 @@ function clearYearScopedState(acg: Character["acgState"]): void {
   acg.perYear = freshPerYear();
 }
 
+/** Advance the character one year: chronological age, years-served, and the
+ *  ACG year counter, then clear the year-scoped markers. Shared epilogue for
+ *  the exit branches that complete a whole year in one shot (initial training,
+ *  its post-pause finalization, and the defensive no-op). The normal-completion
+ *  branch keeps its own resume-gated age/yearsServed increment at step 3 (so a
+ *  retention pause/resume can't double-count) and so does not use this. */
+function advanceYear(ch: Character, acg: NonNullable<Character["acgState"]>): void {
+  ch.age += 1;
+  acg.yearsServed = (acg.yearsServed ?? 0) + 1;
+  acg.year += 1;
+  clearYearScopedState(acg);
+}
+
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
   if (!ch.acgState) throw new Error("Character has no acgState; not on ACG path");
   const hooks = getEdition(ch.editionId).hooks;
@@ -100,20 +113,14 @@ export function runAcgYear(ch: Character): void {
     // consulted — but a dedicated label keeps telemetry / logs honest.
     const ok = runStep(ch, "initialTraining", () => p.initialTraining!(ch));
     if (!ok) return;
-    ch.age += 1;
-    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
-    acg.year += 1;
-    clearYearScopedState(acg);
+    advanceYear(ch, acg);
     return;
   }
   // Post-pause finalization: initial training started but paused on a
   // choice. The UI has now resolved the choice (and re-invoked us);
   // finish year 1 of term 1 without falling into the normal cycle.
   if (ch.terms === 0 && acg.year === 1 && acg.initialTrainingDone) {
-    ch.age += 1;
-    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
-    acg.year += 1;
-    clearYearScopedState(acg);
+    advanceYear(ch, acg);
     return;
   }
 
@@ -159,10 +166,7 @@ export function runAcgYear(ch: Character): void {
   }
   if (!assignment) {
     // Defensive: nothing to resolve. Treat as a no-op year.
-    ch.age += 1;
-    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
-    acg.year += 1;
-    clearYearScopedState(acg);
+    advanceYear(ch, acg);
     return;
   }
 

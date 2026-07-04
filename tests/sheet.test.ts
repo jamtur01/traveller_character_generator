@@ -24,8 +24,7 @@ function jamison(): Character {
   ];
   c.benefits = ["Free Trader"];
   c.mortgage = 10;
-  c.endedAsRetired = true;
-  c.chargenStatus = { kind: "retired", reason: "test fixture" };
+  c.chargenStatus = { kind: "retired", reason: "test fixture", withPension: true };
   return c;
 }
 

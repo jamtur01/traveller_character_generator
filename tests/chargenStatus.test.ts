@@ -38,11 +38,11 @@ describe("ChargenStatus atomicity (#3)", () => {
     )).toBe(true);
   });
 
-  it("endChargenDischarged sets status='retired' but endedAsRetired=false", () => {
+  it("endChargenDischarged sets status='retired' but withPension=false", () => {
     const c = freshChar();
     c.endChargenDischarged();
     expect(c.chargenStatus.kind).toBe("retired");
-    expect(c.endedAsRetired).toBe(false);
+    expect(c.chargenStatus).toMatchObject({ withPension: false });
     expect(c.retired).toBe(false);
   });
 
@@ -66,7 +66,7 @@ describe("isChargenEnded covers exactly the terminal states (#3)", () => {
     const c = freshChar();
     c.chargenStatus = { kind: "deceased", reason: "x" };
     expect(c.isChargenEnded).toBe(true);
-    c.chargenStatus = { kind: "retired", reason: "x" };
+    c.chargenStatus = { kind: "retired", reason: "x", withPension: false };
     expect(c.isChargenEnded).toBe(true);
     c.chargenStatus = { kind: "mustered" };
     expect(c.isChargenEnded).toBe(true);

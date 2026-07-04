@@ -5,6 +5,7 @@
 import type { Character } from "@/lib/traveller/character";
 import type { ServiceKey } from "@/lib/traveller/types";
 import type { Predicate } from "@/lib/traveller/engine/predicate";
+import type { StepRegistry } from "@/lib/traveller/engine/steps/types";
 
 export interface EditionMeta {
   id: string;
@@ -244,16 +245,15 @@ export type AcgPathway = AcgPathwayData;
  * dispatches per-year / per-term work through these callbacks. Editions
  * that don't have ACG omit the block entirely.
  */
-// Enlist signatures vary across pathways (mercenary takes service+combatArm;
-// navy takes fleet; merchantPrince takes lineType; scout takes nothing). The
-// type uses an `any`-typed rest parameter so concrete factories — which have
-// well-typed signatures locally — can be assigned without a cast.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AcgEnlist = (ch: Character, ...args: any[]) => void;
-
 export interface AcgPathwayImpl {
   pathway: string;
-  enlist: AcgEnlist;
+  // Enlist signatures vary across pathways (mercenary: service+combatArm;
+  // navy: fleet; merchantPrince: lineType; scout: none). The field is
+  // registered per pathway but never dispatched through this interface —
+  // beginAcg calls each concrete enlist directly with typed args. Method
+  // syntax gives the rest parameter bivariant checking so the concrete
+  // signatures assign without an `any`-typed rest.
+  enlist(ch: Character, ...args: unknown[]): void;
   initialTraining?: (ch: Character) => void;
   commandDuty?: (ch: Character) => void;
   rollAssignment: (ch: Character) => string;
@@ -283,6 +283,15 @@ export interface EditionHooks {
    * register a factory here.
    */
   acgPathways?: Record<string, () => AcgPathwayImpl>;
+  /**
+   * Per-edition overrides for basic-chargen lifecycle steps. Merged over the
+   * global STEP_REGISTRY at lookup time ({ ...STEP_REGISTRY, ...hooks.steps }),
+   * so an edition may replace a shared step or add a new step id its JSON
+   * references. StepRegistry is a `Record<string, StepFn>` index map, so any
+   * subset of step ids is a valid override set. Omit to use the shared
+   * defaults — no edition overrides a basic step yet, so behavior is unchanged.
+   */
+  steps?: StepRegistry;
 }
 
 export interface Edition {

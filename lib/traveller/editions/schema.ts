@@ -33,8 +33,11 @@ const RankExtraRollSchema = z.object({
 
 export const RulesSchema = z.looseObject({
   // Skill-cap (PM p. 39 Int+Edu cap). Presence indicates the edition
-  // enforces a per-character skill-level total cap.
-  skillCap: z.unknown().optional(),
+  // enforces a per-character skill-level total cap; `attributes` names the
+  // operands summed to form the cap (looseObject keeps the $rule citation).
+  skillCap: z.looseObject({
+    attributes: z.array(z.string()).optional(),
+  }).optional(),
   // Attribute hard limits + per-edition socialMin override.
   attributeCaps: z.object({
     max: z.number().optional(),

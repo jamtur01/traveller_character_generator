@@ -175,12 +175,13 @@ export interface BaseAcgState {
 /** Mercenary pathway: Army/Marines combat-arms service. */
 export interface MercenaryAcgState extends BaseAcgState {
   pathway: "mercenary";
-  /** Combat arm (Infantry, Cavalry, Artillery, ...); set on enlistment. */
-  combatArm: string;
+  /** Combat arm (Infantry, Cavalry, Artillery, ...); null until enlistment
+   *  assigns it. */
+  combatArm: string | null;
   /** Service branch: "Army" | "Marines" (drafted values also land here). */
   branch: string;
-  /** Military Occupational Specialty skill; set during initial training. */
-  mos: string;
+  /** Military Occupational Specialty skill; null until initial training. */
+  mos: string | null;
 }
 
 /** Navy pathway: Imperial/Reserve/System fleet service. */
@@ -194,15 +195,15 @@ export interface NavyAcgState extends BaseAcgState {
 /** Scout pathway: Field vs Bureaucracy division service. */
 export interface ScoutAcgState extends BaseAcgState {
   pathway: "scout";
-  office: string;
+  office: string | null;
   division: "field" | "bureaucracy";
 }
 
 /** Merchant Prince pathway: line/department service. */
 export interface MerchantAcgState extends BaseAcgState {
   pathway: "merchantPrince";
-  department: string;
-  lineType: string;        // megacorp / sector-wide / Free Trader / etc
+  department: string | null;
+  lineType: string | null;        // megacorp / sector-wide / Free Trader / etc
 }
 
 /** All per-character ACG state, discriminated on `pathway`. Lives on
@@ -355,13 +356,13 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
   };
   switch (pathway) {
     case "mercenary":
-      return { ...base, pathway, combatArm: "", branch: "", mos: "" };
+      return { ...base, pathway, combatArm: null, branch: "", mos: null };
     case "navy":
       return { ...base, pathway, fleet: "imperialNavy", branch: "" };
     case "scout":
-      return { ...base, pathway, office: "", division: "field" };
+      return { ...base, pathway, office: null, division: "field" };
     case "merchantPrince":
-      return { ...base, pathway, department: "", lineType: "" };
+      return { ...base, pathway, department: null, lineType: null };
   }
 }
 

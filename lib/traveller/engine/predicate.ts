@@ -252,7 +252,7 @@ export function buildPredicateContext(ch: Character): PredicateContext {
     department: merch?.department ?? "",
     crossTrainedArms: acg?.crossTrainedArms ?? [],
     schoolsAttended: acg?.schoolsAttended ?? [],
-    mos: merc?.mos,
+    mos: merc?.mos ?? undefined,
     mosArmSkillNames: mercenaryArmSkillNames(ch),
     departmentSkillNames: merchantDepartmentSkillNames(ch),
     homeworldTech: ch.homeworld?.tech,

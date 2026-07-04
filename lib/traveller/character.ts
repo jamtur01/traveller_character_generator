@@ -136,7 +136,6 @@ export interface CharacterState {
   retirementPay: number;
   chargenStatus: ChargenStatus;
   shortTermsCount: number;
-  endedAsRetired: boolean;
   muster: MusterState;
   anagathics: AnagathicsState;
   editionId: string;
@@ -233,12 +232,6 @@ export class Character implements CharacterState {
    *  after the character has moved on to retired/mustered). */
   shortTermsCount = 0;
 
-  /** Remembers whether muster-out followed a retirement (vs. a court-
-   *  martial discharge or forced muster). Read by the `retired` getter
-   *  so retirement-pension eligibility persists into the muster-out
-   *  phase. Written by endChargenRetired / endChargenDischarged. */
-  endedAsRetired = false;
-
   // --- Derived getters for back-compat with existing readers --- //
   /** True while the character is serving normally. Short-term flips
    *  this to false (PM p. 16: short-term character is leaving service)
@@ -253,9 +246,9 @@ export class Character implements CharacterState {
   }
   /** True when the character retired *with* pension eligibility (the
    *  "retired" PDF checkbox). DD / forced-muster characters end with
-   *  status="retired" but endedAsRetired=false. */
+   *  status="retired" but withPension=false. */
   get retired(): boolean {
-    return this.endedAsRetired;
+    return this.chargenStatus.kind === "retired" && this.chargenStatus.withPension;
   }
   get musteredOut(): boolean {
     return this.chargenStatus.kind === "mustered";
@@ -309,8 +302,8 @@ export class Character implements CharacterState {
    *  for pension eligibility. Court-martial paths that strip the pension
    *  pass `withPension: false`. */
   endChargenRetired(reason: string, withPension?: boolean): void {
-    this.endedAsRetired = withPension ?? this.isRetirementEligible();
-    this.chargenStatus = { kind: "retired", reason };
+    const pension = withPension ?? this.isRetirementEligible();
+    this.chargenStatus = { kind: "retired", reason, withPension: pension };
     this.log(ev.endGeneration("retired", reason));
   }
 
@@ -318,8 +311,7 @@ export class Character implements CharacterState {
    *  to muster-out (with the appropriate penalty flags on acgState). No
    *  pension. */
   endChargenDischarged(): void {
-    this.endedAsRetired = false;
-    this.chargenStatus = { kind: "retired", reason: "discharged" };
+    this.chargenStatus = { kind: "retired", reason: "discharged", withPension: false };
     this.log(ev.endGeneration("retired", "discharged"));
   }
 
@@ -354,11 +346,12 @@ export class Character implements CharacterState {
    *  apparent-age line (AnagathicsState). */
   anagathics = new AnagathicsState();
 
-  // Back-compat accessors: the UI (app/**) and pdfSheet still read these
-  // through the flat Character surface and are owned by a separate change,
-  // so the flat names remain a stable public API. The single source of
-  // truth is the sub-objects above — these only project to (or, for the
-  // standing order the term UI toggles, forward to) them.
+  // Back-compat accessors: the UI (app/**), tests, and pdfSheet read these
+  // through the flat Character surface, so the flat names remain a stable
+  // public API. RULE: the sub-objects above are the single source of truth —
+  // engine code always reads AND writes ch.muster.*/ch.anagathics.* directly;
+  // these facades exist only to project to (or, for the standing order the
+  // term UI toggles, forward to) them for the UI/test/PDF read surface.
 
   /** Muster-out rolls remaining (read by the muster UI / stepper). */
   get musterRolls(): number { return this.muster.musterRolls; }
@@ -383,12 +376,6 @@ export class Character implements CharacterState {
   }
   set apparentAge(value: number) {
     this.anagathics.apparentAgeLine = value;
-  }
-  /** Snapshot the apparent-age line to the current chronological age if it
-   *  is still unset (idempotent). Called by the aging step so a later
-   *  anagathics opt-in freezes from this value rather than raw age. */
-  snapshotApparentAge(): void {
-    this.anagathics.snapshotApparentAge(this.age);
   }
   /**
    * The edition this character was rolled under. Determines which service
@@ -469,6 +456,24 @@ export class Character implements CharacterState {
     const acg = this.requireAcgState();
     assertPathway(acg, "merchantPrince");
     return acg;
+  }
+
+  /** Soft pathway-narrowed accessors — the non-throwing siblings of the
+   *  require*Acg family. Return the narrowed variant, or null when the
+   *  character isn't on that pathway (or isn't an ACG character at all).
+   *  Used by generic hooks that fire regardless of pathway and must
+   *  early-return on a mismatch instead of throwing. */
+  tryMercenaryAcg(): MercenaryAcgState | null {
+    return this.acgState?.pathway === "mercenary" ? this.acgState : null;
+  }
+  tryNavyAcg(): NavyAcgState | null {
+    return this.acgState?.pathway === "navy" ? this.acgState : null;
+  }
+  tryScoutAcg(): ScoutAcgState | null {
+    return this.acgState?.pathway === "scout" ? this.acgState : null;
+  }
+  tryMerchantAcg(): MerchantAcgState | null {
+    return this.acgState?.pathway === "merchantPrince" ? this.acgState : null;
   }
 
   // Read-only ACG accessors. Convenient default-empty fallbacks for the
@@ -604,13 +609,21 @@ export class Character implements CharacterState {
     beginAcgImpl(this, pathway, options);
   }
 
-  /** Apply the user's pick for a pending choice. */
+  /** Apply the user's pick for a pending choice. A stale/unknown id
+   *  (idx < 0) is a graceful no-op (the choice may already be resolved),
+   *  but a known choice with an out-of-range optionIdx is a programming
+   *  bug that must fail loud rather than silently stalling the flow. */
   resolveChoice(id: string, optionIdx: number): void {
     const idx = this.pendingChoices.findIndex((p) => p.id === id);
     if (idx < 0) return;
     const choice = this.pendingChoices[idx]!;
     const chosen = choice.options[optionIdx];
-    if (chosen === undefined) return;
+    if (chosen === undefined) {
+      throw new Error(
+        `resolveChoice: optionIdx ${optionIdx} out of range for choice ${id} ` +
+          `(${choice.options.length} options)`,
+      );
+    }
     this.pendingChoices.splice(idx, 1);
     choice.onResolve(this, chosen);
   }
@@ -664,8 +677,7 @@ export class Character implements CharacterState {
    *  0 for editions with no skillCap block (CT); callers gate on block
    *  presence via enforceSkillCap. */
   skillCap(): number {
-    const spec = getEdition(this.editionId).rules.skillCap as
-      { attributes?: string[] } | undefined;
+    const spec = getEdition(this.editionId).rules.skillCap;
     let sum = 0;
     for (const a of spec?.attributes ?? []) sum += this.attributes[a as AttributeKey];
     return sum;

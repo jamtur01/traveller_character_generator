@@ -204,7 +204,7 @@ describe("C1: court-martial applies combined disciplinary effects", () => {
     expect(c.acgState!.musterRollPenalty).toBe(-3);
     // Forced muster-out (as a discharge, not a pensioned retirement).
     expect(c.isChargenEnded).toBe(true);
-    expect(c.endedAsRetired).toBe(false);
+    expect(c.retired).toBe(false);
     // Jail-years aging applied. Teeth: pre-fix the dishonorable branch
     // returned before the jail branch, so age stayed 30.
     expect(c.age).toBe(35);

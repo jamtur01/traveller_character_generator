@@ -47,14 +47,10 @@ export class MusterState {
   }
 
   /** Deep copy (independent musterLog array), preserving the reset/clone
-   *  methods — cloneCharacter needs a value-object copy, not a bare spread. */
+   *  methods — cloneCharacter needs a value-object copy, not a bare spread.
+   *  Object.assign auto-tracks scalar fields; only mutable arrays are copied. */
   clone(): MusterState {
-    const next = new MusterState();
-    next.forceTable = this.forceTable;
-    next.forceTableIndex = this.forceTableIndex;
-    next.musterCashUsed = this.musterCashUsed;
-    next.musterRolls = this.musterRolls;
-    next.pendingMusterRoll = this.pendingMusterRoll;
+    const next = Object.assign(new MusterState(), this);
     next.musterLog = [...this.musterLog];
     return next;
   }
@@ -128,18 +124,9 @@ export class AnagathicsState {
 
   /** Deep copy, preserving methods and the apparent-age line —
    *  cloneCharacter needs a value-object copy, not structuredClone (which
-   *  would drop the prototype and its methods). */
+   *  would drop the prototype and its methods). All fields are scalar, so
+   *  Object.assign is a complete copy. */
   clone(): AnagathicsState {
-    const next = new AnagathicsState();
-    next.onAnagathics = this.onAnagathics;
-    next.anagathicsActiveThisTerm = this.anagathicsActiveThisTerm;
-    next.anagathicsWithdrawalThisTerm = this.anagathicsWithdrawalThisTerm;
-    next.anagathicsEverTaken = this.anagathicsEverTaken;
-    next.anagathicsBenefitForfeitedTerms = this.anagathicsBenefitForfeitedTerms;
-    next.anagathicsShortTermOverlap = this.anagathicsShortTermOverlap;
-    next.wantsAnagathicsThisTerm = this.wantsAnagathicsThisTerm;
-    next.anagathicsStandingOrder = this.anagathicsStandingOrder;
-    next.apparentAgeLine = this.apparentAgeLine;
-    return next;
+    return Object.assign(new AnagathicsState(), this);
   }
 }

@@ -143,7 +143,7 @@ function scoutAssignOffice(ch: Character): void {
  *  receives the skill shown." */
 export function scoutInitialTraining(ch: Character): void {
   const data = dataFor(ch);
-  const office = ch.requireScoutAcg().office || "Survey";
+  const office = ch.requireScoutAcg().office ?? "Survey";
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
     ch.addSkill(skill, 1, `Initial Training (${office})`);
@@ -243,7 +243,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     return;
   }
   // Resolution sub-table keyed by office.
-  const officeKey = labelToColumnKey(ch.requireScoutAcg().office || "Survey");
+  const officeKey = labelToColumnKey(ch.requireScoutAcg().office ?? "Survey");
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
     throw new Error(
@@ -310,7 +310,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
-  const officeKey = labelToColumnKey(ch.requireScoutAcg().office || "Survey");
+  const officeKey = labelToColumnKey(ch.requireScoutAcg().office ?? "Survey");
   const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
   if (!row) return;
   const school = row[officeKey];

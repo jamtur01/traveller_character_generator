@@ -191,7 +191,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   }
 
   const acg = ch.requireMercenaryAcg();
-  const armKey = labelToColumnKey(acg.combatArm);
+  const armKey = labelToColumnKey(acg.combatArm!);
   // PM p. 51: homeworld tech DM (+1 at Avg Stellar+) lives in data.mos.dms
   // as a StructuredDm (homeworldTechAtLeast); evaluate it here.
   const dm = applyDmRules(data.mos.dms, ch, "skills");
@@ -218,7 +218,7 @@ export function mercenaryCommandDuty(ch: Character): void {
   const acg = ch.requireMercenaryAcg();
   resolveCommandDuty(ch, {
     rows: data.commandDuty.rows,
-    role: acg.combatArm,
+    role: acg.combatArm!,
     cellKey: acg.branch === "Marines" ? "marines" : "army",
     dm: applyDmRules(data.commandDuty.dms, ch, "promotion"),
   });
@@ -230,7 +230,7 @@ export function mercenaryRollAssignment(ch: Character): string {
   const data = dataFor(ch);
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
-  const armKey = labelToColumnKey(acg.combatArm);
+  const armKey = labelToColumnKey(acg.combatArm!);
   const r = ch.rng.roll(2);
   const row = data.assignment.rows.find((row) => row.die === r);
   if (!row) throw new Error(`Mercenary assignment table missing row for die=${r}`);
@@ -270,7 +270,7 @@ function getMercenarySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch);
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
   const acg = ch.requireMercenaryAcg();
-  const arm = acg.combatArm;
+  const arm = acg.combatArm!;
   const resKey = data.combatArmResolution?.[arm] ?? "commando";
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
@@ -395,7 +395,7 @@ export function mercenaryReenlist(ch: Character): boolean {
 function offerArmChange(ch: Character, data: MercenaryData): void {
   const acg = ch.acgState;
   if (acg?.pathway !== "mercenary") return;
-  const current = acg.combatArm || "Infantry";
+  const current = acg.combatArm ?? "Infantry";
   const isOfficer = acg.isOfficer === true;
   const crossTrained = acg.crossTrainedArms ?? [];
   const honors = acg.honorsGraduations ?? [];

@@ -58,7 +58,7 @@ export type ChargenStatus =
   | { kind: "active" }
   | { kind: "shortTerm"; reason?: string }
   | { kind: "mandatoryReenlist" }
-  | { kind: "retired"; reason?: string }
+  | { kind: "retired"; reason?: string; withPension: boolean }
   | { kind: "deceased"; reason?: string }
   | { kind: "mustered" };
 

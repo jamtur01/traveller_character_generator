@@ -274,7 +274,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Merchant Academy." Block admission if those conditions aren't met.
   if (opt === "merchantAcademy") {
     const lineType = ch.acgState?.pathway === "merchantPrince"
-      ? (ch.acgState.lineType || undefined) : undefined;
+      ? (ch.acgState.lineType ?? undefined) : undefined;
     const allowed = (spec.requiresLineType ?? []).includes(lineType ?? "");
     if (!allowed) {
       out.notes.push(

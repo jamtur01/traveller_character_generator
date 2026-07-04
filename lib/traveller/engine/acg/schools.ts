@@ -234,7 +234,7 @@ function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const acg = ch.acgState;
   const combatArm = acg.pathway === "mercenary" ? acg.combatArm : "";
-  const armKey = (combatArm || "Infantry").toLowerCase();
+  const armKey = (combatArm ?? "Infantry").toLowerCase();
   rollSkillFromColumn(ch, data.mos, armKey, `${schoolName} (MOS)`);
 }
 

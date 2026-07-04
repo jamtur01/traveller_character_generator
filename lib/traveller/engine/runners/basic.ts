@@ -8,7 +8,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { STEP_REGISTRY } from "@/lib/traveller/engine/steps";
+import { STEP_REGISTRY, type StepRegistry } from "@/lib/traveller/engine/steps";
 import { requireHook } from "@/lib/traveller/engine/registry";
 
 /** Validate that every lifecycle.terms[i].id in this edition resolves
@@ -16,17 +16,19 @@ import { requireHook } from "@/lib/traveller/engine/registry";
  *  surfaces at edition load, not at first runTermSteps call. No-op if
  *  the edition omits a lifecycle block (e.g., ACG-only editions). */
 export function validateLifecycleSteps(editionId: string): void {
-  const lifecycle = getEdition(editionId).data.lifecycle;
+  const edition = getEdition(editionId);
+  const lifecycle = edition.data.lifecycle;
   if (!lifecycle?.terms) return;
+  const registry: StepRegistry = { ...STEP_REGISTRY, ...edition.hooks.steps };
   const unknown: string[] = [];
   for (const step of lifecycle.terms) {
-    if (!STEP_REGISTRY[step.id]) unknown.push(step.id);
+    if (!registry[step.id]) unknown.push(step.id);
   }
   if (unknown.length > 0) {
     throw new Error(
       `Edition "${editionId}" lifecycle.terms references unknown step id` +
       `${unknown.length === 1 ? "" : "s"}: ${unknown.join(", ")}. ` +
-      `Available: ${Object.keys(STEP_REGISTRY).join(", ")}.`,
+      `Available: ${Object.keys(registry).join(", ")}.`,
     );
   }
 }
@@ -49,12 +51,13 @@ export function runTermSteps(ch: Character): void {
   }
   const sequence = lifecycle.terms;
   const service = ch.serviceDef();
+  const registry: StepRegistry = { ...STEP_REGISTRY, ...edition.hooks.steps };
   for (const step of sequence) {
     // Halt the term early if chargen has formally ended for this character
     // — deceased / retired / mustered. Short-term status remains "active"-
     // ish so special-duty + skill steps still fire per PM p. 16.
     if (ch.isChargenEnded) return;
-    const fn = requireHook(STEP_REGISTRY, step.id, () =>
+    const fn = requireHook(registry, step.id, () =>
       `Edition ${edition.meta.id}: unknown lifecycle step "${step.id}"`);
     fn({
       ch: ch,

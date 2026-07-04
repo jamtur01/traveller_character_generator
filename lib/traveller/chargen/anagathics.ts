@@ -77,7 +77,7 @@ function rollAnagathicsAvailability(ch: Character): boolean {
   const r = ch.rng.roll(2) + dm;
   const success = r >= target;
   if (success) {
-    if (!ch.anagathics.onAnagathics) ch.apparentAge = ch.age;
+    if (!ch.anagathics.onAnagathics) ch.anagathics.apparentAgeLine = ch.age;
     ch.anagathics.onAnagathics = true;
     ch.anagathics.anagathicsActiveThisTerm = true;
     ch.anagathics.anagathicsEverTaken = true;

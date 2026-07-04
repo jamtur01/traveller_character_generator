@@ -21,6 +21,8 @@ import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
 import type { AcgState } from "@/lib/traveller/engine/acg/state";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
+import type { DMRule } from "@/lib/traveller/editions/types";
 
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
@@ -289,6 +291,19 @@ export function rollDieRow(
   return table.rows.find((row) => row.die === r);
 }
 
+/** rollDieRow that throws on a table miss, with the rolled die in the message
+ *  — for the assignment / MOS lookups that surface the die in their diagnostic
+ *  (mercenary MOS + assignment, navy assignment). */
+export function rollDieRowOrThrow(
+  ch: Character, table: DieKeyedTable,
+  opts: { dice: number; dm: number; lo: number; hi: number }, tableName: string,
+): Record<string, unknown> {
+  const r = clampedRoll(ch, opts.dice, opts.dm, opts.lo, opts.hi);
+  const row = table.rows.find((row) => row.die === r);
+  if (!row) throw new Error(`${tableName} table missing row for die=${r}`);
+  return row;
+}
+
 /** How a skill roll resolves its column. A plain string is a fixed column
  *  (used for both the per-column DM and the cell read). `{ candidates }`
  *  computes the DM on `candidates[0]` and reads the first candidate whose
@@ -331,6 +346,35 @@ export function rollSkillFromColumn(
       return;
     }
   }
+}
+
+/** Column-candidate list for a branch-skill roll: the branch's own column,
+ *  plus the line↔crew alias fallbacks (line and crew share a "lineCrew"
+ *  column). Shared by navy branch skills and school branch skills so the
+ *  aliasing can't drift between the two sites. */
+export function branchSkillCandidates(col: string): string[] {
+  return [col, col === "line" ? "lineCrew" : col, col === "crew" ? "lineCrew" : col];
+}
+
+/** The service branch of the two branch-carrying pathways (mercenary, navy);
+ *  "" for pathways without a branch. The single cross-variant branch read used
+ *  by the branch-skill column lookups (schools + service-skill column). */
+export function branchOf(acg: AcgState): string {
+  return (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
+}
+
+/** ACG enlistment roll+log shared by mercenary/navy/scout: sum the spec's DMs
+ *  (Character satisfies DmContext, so pass ch directly), roll 2D, log the
+ *  attempt, and return whether it met the target. The divergent
+ *  success/draft/rank tails stay in each caller. */
+export function rollAcgEnlistment(
+  ch: Character, spec: { target: number; dms?: DMRule[] }, label: string,
+): boolean {
+  const dm = evaluateDM(spec.dms, ch);
+  const r = ch.rng.roll(2);
+  const succeeded = r + dm >= spec.target;
+  ch.log(ev.enlistmentAttempt(label, r, dm, spec.target, succeeded));
+  return succeeded;
 }
 
 /** Clear the one-shot retained-assignment flags. Only navy sets them (its
@@ -399,7 +443,7 @@ export function serviceSkillColumnFor(
   }
   const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 3;
   if (rankNum(acg.rankCode) >= ncoMin) return pol?.enlistedNcoColumn ?? "ncoSkills";
-  const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
+  const branch = branchOf(acg);
   return pol?.enlistedLowRankColumns[branch]
     ?? pol?.enlistedLowRankColumns["army"]
     ?? pol?.enlistedLowRankDefault

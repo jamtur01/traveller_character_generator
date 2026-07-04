@@ -286,7 +286,7 @@ function offerMerchantAcademy(ch: Character): void {
 
 function merchantAssignDepartment(ch: Character): void {
   const data = dataFor(ch);
-  const size = lineSizeFor(data, ch.requireMerchantAcg().lineType);
+  const size = lineSizeFor(data, ch.requireMerchantAcg().lineType!);
   if (size === "FreeTrader") {
     ch.requireMerchantAcg().department = "Free Trader";
     return;
@@ -303,7 +303,7 @@ export function merchantRollAssignment(ch: Character): string {
   const data = dataFor(ch);
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
-  const size = lineSizeFor(data, acg.lineType);
+  const size = lineSizeFor(data, acg.lineType!);
   const lineCol = assignmentColumnFor(size);
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
   const dm = columnDmFor(data.specificAssignment.dms, lineCol, ch);
@@ -376,7 +376,7 @@ function selectMerchantResolutionTable(
 ): { table: MerchantResolutionTable; colKey: string } {
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
-  const deptKey = labelToColumnKey(acg.department || "Deck");
+  const deptKey = labelToColumnKey(acg.department ?? "Deck");
   const isFreeTrader = acg.lineType === "Free Trader";
   const isFreeTraderOther =
     isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
@@ -456,7 +456,7 @@ function merchantCheckAvailablePosition(ch: Character): void {
   acg.effectiveRankCode = null;
   const data = dataFor(ch);
   const ap = data.availablePositions;
-  const size = lineSizeFor(data, acg.lineType);
+  const size = lineSizeFor(data, acg.lineType!);
   let target: ResolutionTarget;
   let dm: number;
   if (size === "FreeTrader") {
@@ -520,7 +520,7 @@ function availableSkillColumns(ch: Character, table: MerchantSkillTable): string
   const cols = table.columns.filter((c) => c !== "die");
   const avail = table.columnAvailability;
   if (!avail) return cols.slice(0, 1);
-  const dept = ch.requireMerchantAcg().department;
+  const dept = ch.requireMerchantAcg().department!;
   const pctx = buildPredicateContext(ch);
   return cols.filter((c) => columnAvailableForCharacter(avail[c], dept, pctx));
 }
@@ -591,7 +591,7 @@ function merchantAwardBonus(ch: Character): void {
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const data = dataFor(ch);
   const order = data.enlistment.rows.map((r) => r.typeOfLine);
-  const idx = order.indexOf(ch.requireMerchantAcg().lineType);
+  const idx = order.indexOf(ch.requireMerchantAcg().lineType!);
   if (idx < 0) return;
   // PM p. 60: "It is not possible to transfer up to a megacorporation."
   // The enlistment table is ordered Megacorp → ... → Free Trader (index 0
@@ -636,7 +636,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
       const rule = data.specialRules?.specialDutyCommission;
-      const lineType = ch.requireMerchantAcg().lineType;
+      const lineType = ch.requireMerchantAcg().lineType!;
       const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
       ch.requireAcgState().isOfficer = true;
       ch.requireAcgState().rankCode = rank;
@@ -681,7 +681,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // target department.
       const minBlockRank =
         data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank ?? 5;
-      const from = acg.department;
+      const from = acg.department!;
       const to = transfer[1]!;
       const blockedByRank = officerRank >= minBlockRank;
       const alreadyThere = to.toLowerCase() === from.toLowerCase();
@@ -739,7 +739,7 @@ export function applyReducedPassageBenefit(ch: Character): void {
 function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void {
   const acg = ch.acgState;
   if (acg?.pathway !== "merchantPrince") return;
-  const size = lineSizeFor(data, acg.lineType);
+  const size = lineSizeFor(data, acg.lineType!);
   if (size === "FreeTrader") return; // Free Traders don't change department
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
   const all = new Set<string>();
@@ -747,7 +747,7 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
     const v = row[lineCol];
     if (typeof v === "string") all.add(v);
   }
-  const current = acg.department;
+  const current = acg.department!;
   offerRoleChange(ch, {
     current,
     options: [current, ...[...all].filter((d) => d !== current)],
@@ -810,7 +810,7 @@ function applyDeckAutoTransferIfDue(ch: Character): void {
   if (acg.department === rule.destinationDepartment) return;
   // PM says "after one full term in rank O4" — we trigger at startOfTerm
   // when the rank was reached in the previous term.
-  const from = acg.department;
+  const from = acg.department!;
   acg.department = rule.destinationDepartment;
   ch.log(ev.transferred(rule.destinationDepartment, "department", from));
 }
@@ -844,9 +844,9 @@ function merchantRankLadder(
   ch: Character, data: MerchantData,
 ): MerchantRankRow[] | null {
   const acg = ch.requireMerchantAcg();
-  const deptKey = lineSizeFor(data, acg.lineType) === "FreeTrader"
+  const deptKey = lineSizeFor(data, acg.lineType!) === "FreeTrader"
     ? "freeTrader"
-    : labelToColumnKey(acg.department || "deck");
+    : labelToColumnKey(acg.department ?? "deck");
   const ladder = data.ranksAndPromotions[deptKey];
   return Array.isArray(ladder) ? ladder : null;
 }
