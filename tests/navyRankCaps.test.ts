@@ -32,7 +32,7 @@ function navyOfficerAt(
   c.acgState!.rankCode = rankCode;
   c.acgState!.branch = "Line";
   c.acgState!.fleet = fleet;
-  c.acgState!.promotedThisTerm = false;
+  c.acgState!.perTerm.promotedThisTerm = false;
   return c;
 }
 
@@ -44,7 +44,7 @@ function navyOfficerAt(
 function pushPromotions(c: Character, attempts: number): string {
   for (let i = 0; i < attempts; i++) {
     if (!c.activeDuty || c.deceased) break;
-    c.acgState!.promotedThisTerm = false;
+    c.acgState!.perTerm.promotedThisTerm = false;
     navyResolveAssignment(c, "Battle");
   }
   return c.acgState!.rankCode;

@@ -432,7 +432,7 @@ export function tryMitigate(
   // Resume case: if a prior pass through this phase already auto-
   // mitigated (and possibly queued a BP review that paused the engine),
   // return the cached spend/margin so re-runs don't double-charge BPs.
-  // The cache lives on AcgState.thisYearOutcomes and is cleared at year
+  // The cache lives on AcgState.perYear.thisYearOutcomes and is cleared at
   // boundary by runAcgYear. "courtMartial" is not cacheable (no per-year
   // sub-step slot for it) — asCacheableKey returns null there.
   const phase = asCacheableKey(req.rollName);
@@ -531,7 +531,7 @@ function queueBpReview(
   }
   // Pause the engine on the BP-review prompt. The pathway's
   // resolveAssignment is idempotent on resume via the per-year
-  // sub-step cache (AcgState.thisYearOutcomes): dice rolls and
+  // sub-step cache (AcgState.perYear.thisYearOutcomes): dice rolls and
   // auto-mitigation spends are cached, so re-running after the player
   // resolves the prompt doesn't re-roll or double-spend. A non-throwing
   // queue is the wrong primitive for life-or-death rolls — it would

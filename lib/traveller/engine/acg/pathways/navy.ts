@@ -344,7 +344,7 @@ export function navyCommandDuty(ch: Character): void {
     // Without this gate, every "Run term" / runAcgYear re-entry — while
     // the choice is still queued OR after it resolves — re-fires this
     // function, queueing another identical prompt. The flag lives in
-    // thisYearOutcomes.applied and is cleared at year boundary.
+    // perYear.thisYearOutcomes.applied and is cleared at year boundary.
     if (alreadyApplied(ch, "navyCommandDutyOptIn-prompted")) return;
     markApplied(ch, "navyCommandDutyOptIn-prompted");
     ch.pickOrDefer({

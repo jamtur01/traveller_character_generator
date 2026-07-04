@@ -206,7 +206,7 @@ function buildPromotion(p: PhasePromotion, callbacks: PathwayCallbacks): PhaseDe
       if (ctx.res.promotion === "none") return true;
       if (p.skipIfNotBureaucracy && acg.division !== "bureaucracy") return true;
       if (acg.isOfficer && ctx.res.promotionOfficersBarred === true) return true;
-      if (acg.isOfficer && acg.promotedThisTerm) return true;
+      if (acg.isOfficer && acg.perTerm.promotedThisTerm) return true;
       return false;
     },
     target: (ctx) => ctx.res.promotion,
@@ -269,7 +269,7 @@ function applyDecorationResolution(
   r: { roll: number; margin: number },
   courtMartialThreshold: number,
 ): void {
-  const cached = ctx.ch.acgState?.thisYearOutcomes?.decoration;
+  const cached = ctx.ch.acgState?.perYear.thisYearOutcomes?.decoration;
   const margin = cached?.marginAfterMit ?? r.margin;
   const tier = resolveDecorationTier(ctx.ch, margin);
   if (tier) {

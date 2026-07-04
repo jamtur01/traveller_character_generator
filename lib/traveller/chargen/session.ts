@@ -199,7 +199,7 @@ export function resolvePending(
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
   }
-  if (ch.useAcg && ch.acgState?.pausedAtStep && ch.pendingChoices.length === 0) {
+  if (ch.useAcg && ch.acgState?.perYear.pausedAtStep && ch.pendingChoices.length === 0) {
     try {
       runAcgYear(ch);
     } catch (err) {

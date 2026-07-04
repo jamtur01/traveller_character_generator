@@ -342,7 +342,7 @@ export function applyPromotion(
   const next = advanceRankRow(ladder, acg.rankCode, opts?.cap);
   if (!next) return false;
   acg.rankCode = next[0];
-  if (acg.isOfficer) acg.promotedThisTerm = true;
+  if (acg.isOfficer) acg.perTerm.promotedThisTerm = true;
   ch.log(ev.promoted(next[1]));
   opts?.onPromote?.(ch);
   return true;

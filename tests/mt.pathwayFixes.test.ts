@@ -290,7 +290,7 @@ describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
     c.acgState.rankCode = "E4";
     c.acgState.department = "Deck";
     c.acgState.lineType = "Megacorp";
-    c.acgState.routeAssignmentThisTerm = true;
+    c.acgState.perTerm.routeAssignmentThisTerm = true;
     merchantEndOfTerm(c);
     expect(c.acgState!.isOfficer).toBe(true);
     expect(c.acgState!.rankCode).toBe("O1");
@@ -307,7 +307,7 @@ describe("H1: Merchant Prince promotion exam (department-keyed ladder)", () => {
     c.acgState.rankCode = "E4";
     c.acgState.department = "Deck";
     c.acgState.lineType = "Megacorp";
-    c.acgState.routeAssignmentThisTerm = true;
+    c.acgState.perTerm.routeAssignmentThisTerm = true;
     merchantEndOfTerm(c);
     expect(c.acgState!.isOfficer).toBe(false);
     expect(c.acgState!.rankCode).toBe("E4");

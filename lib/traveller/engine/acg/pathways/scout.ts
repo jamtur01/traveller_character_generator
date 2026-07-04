@@ -355,8 +355,8 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // resolveAssignment with assignment="Transfer" on resume. Without this
   // marker the transfer side effects (rank change, division change,
   // office reroll) would re-apply on every resume.
-  if (!acg.transferAppliedThisYear) {
-    acg.transferAppliedThisYear = true;
+  if (!acg.perYear.transferAppliedThisYear) {
+    acg.perYear.transferAppliedThisYear = true;
     const fromDivision = acg.division ?? "field";
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
@@ -374,10 +374,10 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   // Resolve a fresh assignment in the new division. Cache the rolled
   // assignment so a pause inside the recursive resolve doesn't re-roll
   // (non-deterministically) on resume.
-  if (acg.scoutTransferNextAssign === undefined) {
-    acg.scoutTransferNextAssign = scoutRollAssignment(ch);
+  if (acg.perYear.scoutTransferNextAssign === undefined) {
+    acg.perYear.scoutTransferNextAssign = scoutRollAssignment(ch);
   }
-  const nextAssign = acg.scoutTransferNextAssign;
+  const nextAssign = acg.perYear.scoutTransferNextAssign;
   if (nextAssign !== "Transfer") {
     scoutResolveAssignment(ch, nextAssign);
   }

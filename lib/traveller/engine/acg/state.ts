@@ -80,8 +80,14 @@ export interface AcgState {
   inCommand: boolean;      // result of this year's command duty roll
   justRetained: boolean;
   retainedAssignment: string | null;
-  promotedThisTerm: boolean;
   injuredThisYear: boolean;
+
+  /** Year-scoped markers, reset wholesale each year by the runner
+   *  (clearYearScopedState → `acg.perYear = freshPerYear()`). */
+  perYear: PerYearAcgState;
+  /** Term-scoped markers, reset wholesale each term by the runner
+   *  (`acg.perTerm = freshPerTerm()`). */
+  perTerm: PerTermAcgState;
 
   // Resume / record fields.
   assignmentHistory: string[];
@@ -140,13 +146,6 @@ export interface AcgState {
   crossTrainedBranches?: string[];
 
   // Merchant Prince specific: promotion-exam state.
-  /** True when the character has earned the right to take the department
-   *  promotion exam without regard for skill requirements (Special Duty
-   *  "Department Test" result). Consumed on next exam attempt. */
-  canTakeDeptTest?: boolean;
-  /** Per-term DM modifier accumulated from Special Duty schools (e.g.
-   *  Business School: +1 on exam for O6+). */
-  examDm?: number;
   /** Free Trader Owner/Captain (rank O5+) at muster-out gets an automatic
    *  Free Trader ship. Set when the rank reaches that threshold. */
   freeTraderShipEarned?: boolean;
@@ -207,11 +206,6 @@ export interface AcgState {
   subsectorTechCode?: string;
 
   // Interactive-mode runner resumption state.
-  /** When a substep of runAcgYear queued an interactive choice and threw
-   *  ChoicePendingError, the runner records the substep name here so the
-   *  next runAcgYear call resumes from the right place. Null when the
-   *  year isn't paused. */
-  pausedAtStep?: string | null;
   /** Set true after the one-shot initial training fires (first year of
    *  first term). Prevents replay on resumption. */
   initialTrainingDone?: boolean;
@@ -229,6 +223,17 @@ export interface AcgState {
   scoutTransferDecision?: boolean;
   /** Scout: whether to take the administrator DM on the duty roll. */
   scoutAdminDmDecision?: boolean;
+}
+
+/** Year-scoped ACG markers. The runner replaces this wholesale at each
+ *  year boundary (`clearYearScopedState` → `acg.perYear = freshPerYear()`)
+ *  so pathway code gating on these flags starts fresh next year. */
+export interface PerYearAcgState {
+  /** When a substep of runAcgYear queued an interactive choice and threw
+   *  ChoicePendingError, the runner records the substep name here so the
+   *  next runAcgYear call resumes from the right place. Null when the
+   *  year isn't paused. */
+  pausedAtStep?: string | null;
   /** Scout: marks that applyScoutTransferToBureaucracy already ran this
    *  year. Re-entry from pause/resume skips the transfer side effects. */
   transferAppliedThisYear?: boolean;
@@ -240,20 +245,12 @@ export interface AcgState {
    *  scoutTransferNextAssign. The recursive merchantResolveAssignment
    *  after transferMerchantLine would otherwise re-roll on resume. */
   merchantTransferNextAssign?: string;
-
-  // Merchant Prince: per-term flags consumed at end-of-term.
-  /** Merchant Prince: true if any year of the current term was a Route
-   *  assignment (PM p. 61: enlisted commission exam available if "they
-   *  are serving on a Route assignment"). Reset at startOfTerm. */
-  routeAssignmentThisTerm?: boolean;
-
   /** Per-year capture of acg.justRetained snapshotted before the
    *  pathway's rollAssignment clears it. Used to annotate the
    *  assignmentRolled event with retention status, surviving a
    *  pause/resume cycle (the resumed run reads this instead of the
    *  already-cleared justRetained flag). Cleared at year boundary. */
   wasRetainedThisYear?: boolean;
-
   /** Sub-step idempotence cache for resolveAssignment. Each phase stores
    *  the dice outcome + any auto-mitigation spend so a pause/resume on
    *  an interactive choice (BP review etc.) doesn't re-roll the phase
@@ -261,6 +258,27 @@ export interface AcgState {
    *  non-idempotent side effects (decoration push, addSkill, etc.).
    *  Cleared at year boundary by the runner. */
   thisYearOutcomes?: ThisYearOutcomes;
+}
+
+/** Term-scoped ACG markers. The runner replaces this wholesale at each
+ *  term boundary (`acg.perTerm = freshPerTerm()`). examDm and
+ *  canTakeDeptTest are additionally consumed/reset at end-of-term by the
+ *  merchant promotion exam. */
+export interface PerTermAcgState {
+  /** Set true when a promotion fired this term; gates the per-term
+   *  promotion cap (officers promote at most once per term). */
+  promotedThisTerm: boolean;
+  /** Merchant Prince: true if any year of the current term was a Route
+   *  assignment (PM p. 61: enlisted commission exam available if "they
+   *  are serving on a Route assignment"). Reset at startOfTerm. */
+  routeAssignmentThisTerm?: boolean;
+  /** Per-term DM modifier accumulated from Special Duty schools (e.g.
+   *  Business School: +1 on exam for O6+). */
+  examDm?: number;
+  /** True when the character has earned the right to take the department
+   *  promotion exam without regard for skill requirements (Special Duty
+   *  "Department Test" result). Consumed on next exam attempt. */
+  canTakeDeptTest?: boolean;
 }
 
 /** Per-sub-step result captured for resume idempotence. */
@@ -301,6 +319,18 @@ export interface ThisYearOutcomes {
   complete?: boolean;
 }
 
+/** Fresh year-scoped markers. The runner assigns this at each year
+ *  boundary (clearYearScopedState) so year-gated flags start clean. */
+export function freshPerYear(): PerYearAcgState {
+  return { pausedAtStep: null };
+}
+
+/** Fresh term-scoped markers. The runner assigns this at each term
+ *  boundary so term-gated flags (promotion cap, route/exam) start clean. */
+export function freshPerTerm(): PerTermAcgState {
+  return { promotedThisTerm: false };
+}
+
 /** Build a fresh AcgState for a pathway. Used by chargen entry points
  *  (beginAcg, doPreCareer) and tests that need a known-good baseline. */
 export function freshAcgState(pathway: AcgPathwayId): AcgState {
@@ -313,7 +343,8 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
     inCommand: false,
     justRetained: false,
     retainedAssignment: null,
-    promotedThisTerm: false,
+    perYear: freshPerYear(),
+    perTerm: freshPerTerm(),
     injuredThisYear: false,
     assignmentHistory: [],
     combatRibbons: 0,

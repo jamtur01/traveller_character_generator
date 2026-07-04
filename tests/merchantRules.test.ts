@@ -116,7 +116,7 @@ describe("Merchant Department Test exception (PM p. 65)", () => {
     const c = merchantOfficer({ lineType: "Sector-wide", department: "Deck", rankCode: "O2" });
     const acg = c.requireMerchantAcg();
     acg.effectiveRankCode = "O1"; // failed available-position check this year
-    acg.canTakeDeptTest = true; // PM p. 65 special-duty "Department Test" result
+    acg.perTerm.canTakeDeptTest = true; // PM p. 65 special-duty "Department Test" result
     vi.spyOn(Math, "random").mockReturnValue(0.999); // exam (O2 -> O3, 7+) passes
 
     merchantEndOfTerm(c);
@@ -125,7 +125,7 @@ describe("Merchant Department Test exception (PM p. 65)", () => {
     expect(rollEvents(c, "Promotion")).toHaveLength(1);
     expect(acg.rankCode).toBe("O3");
     expect(promotions(c)).toHaveLength(1);
-    expect(acg.canTakeDeptTest).toBe(false); // consumed
+    expect(acg.perTerm.canTakeDeptTest).toBe(false); // consumed
   });
 });
 

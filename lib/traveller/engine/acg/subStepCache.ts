@@ -25,8 +25,8 @@ export type SubStepKey =
 
 function getCache(ch: Character): ThisYearOutcomes {
   const acg = ch.requireAcgState();
-  if (!acg.thisYearOutcomes) acg.thisYearOutcomes = {};
-  return acg.thisYearOutcomes;
+  if (!acg.perYear.thisYearOutcomes) acg.perYear.thisYearOutcomes = {};
+  return acg.perYear.thisYearOutcomes;
 }
 
 /** Call at the start of each pathway resolveAssignment. If the previous
@@ -38,8 +38,8 @@ function getCache(ch: Character): ThisYearOutcomes {
  *  direct invocation. */
 export function resetIfComplete(ch: Character): void {
   const acg = ch.acgState;
-  if (acg?.thisYearOutcomes?.complete) {
-    delete acg.thisYearOutcomes;
+  if (acg?.perYear.thisYearOutcomes?.complete) {
+    delete acg.perYear.thisYearOutcomes;
   }
 }
 
@@ -71,7 +71,7 @@ export function applyOnce(ch: Character, key: string, fn: () => void): void {
 
 /** True if the named side effect has already fired this year. */
 export function alreadyApplied(ch: Character, key: string): boolean {
-  return ch.acgState?.thisYearOutcomes?.applied?.[key] === true;
+  return ch.acgState?.perYear.thisYearOutcomes?.applied?.[key] === true;
 }
 
 /** Mark a side effect as fired without running anything (used when the
@@ -141,7 +141,7 @@ export function getCachedMitigation(
   ch: Character,
   phase: SubStepKey,
 ): { spent: number; newMargin: number } | undefined {
-  const cache = ch.acgState?.thisYearOutcomes?.[phase];
+  const cache = ch.acgState?.perYear.thisYearOutcomes?.[phase];
   if (!cache || cache.autoMitigated === undefined) return undefined;
   return {
     spent: cache.autoMitigated,

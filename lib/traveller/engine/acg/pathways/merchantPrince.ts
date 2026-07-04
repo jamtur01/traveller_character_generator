@@ -334,7 +334,7 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
     // value so a pause inside the recursive resolve doesn't re-roll
     // (non-deterministically) on resume. Cleared at year boundary.
     const acg = ch.requireAcgState();
-    if (acg.merchantTransferNextAssign === undefined) {
+    if (acg.perYear.merchantTransferNextAssign === undefined) {
       // PM allows only one transfer per year. If the reroll lands on
       // another transfer, reroll until we get a real assignment rather
       // than silently dropping the year's resolution. Bound the loop
@@ -343,9 +343,9 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
       for (let i = 0; i < 8 && (next === "Transfer Up" || next === "Transfer Down"); i++) {
         next = merchantRollAssignment(ch);
       }
-      acg.merchantTransferNextAssign = next;
+      acg.perYear.merchantTransferNextAssign = next;
     }
-    const next = acg.merchantTransferNextAssign;
+    const next = acg.perYear.merchantTransferNextAssign;
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }
@@ -444,7 +444,7 @@ const MERCHANT_CALLBACKS: PathwayCallbacks = {
     acg.assignmentHistory.push(ctx.assignment);
     // PM p. 61: enlisted commission exam is available "if they are
     // serving on a Route assignment" during the current term.
-    if (ctx.assignment === "Route") acg.routeAssignmentThisTerm = true;
+    if (ctx.assignment === "Route") acg.perTerm.routeAssignmentThisTerm = true;
   },
 };
 
@@ -658,7 +658,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     return;
   }
   if (sa === "Department Test") {
-    ch.requireAcgState().canTakeDeptTest = true;
+    ch.requireAcgState().perTerm.canTakeDeptTest = true;
     return;
   }
   const key = labelToColumnKey(sa);
@@ -702,7 +702,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     if (examMatch) {
       const minExamRank = examMatch[1] ? parseInt(examMatch[1], 10) : 0;
       if (officerRank >= minExamRank) {
-        acg.examDm = (acg.examDm ?? 0) + 1;
+        acg.perTerm.examDm = (acg.perTerm.examDm ?? 0) + 1;
       }
     }
   }
@@ -767,9 +767,6 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 }
 
 export function merchantStartOfTerm(ch: Character): void {
-  // Reset per-term flags before any per-year resolution fires.
-  delete ch.requireAcgState().routeAssignmentThisTerm;
-  delete ch.requireAcgState().canTakeDeptTest;
   // PM p. 60: enlisted personnel advance one grade every four years. The
   // merchant service defines no enlisted rank titles above the starting
   // grade, so seniority numbering is capped at enlistedRankMax to avoid
@@ -833,14 +830,14 @@ export function merchantEndOfTerm(ch: Character): void {
   } else if (servedOnRouteThisTerm(ch)) {
     attemptMerchantEnlistedCommissionExam(ch);
   }
-  ch.acgState.examDm = 0;
+  ch.acgState.perTerm.examDm = 0;
 }
 
 function servedOnRouteThisTerm(ch: Character): boolean {
   // PM p. 61: "they may be able to take if they are serving on a
   // Route assignment". Set whenever a Route assignment was rolled
   // during the current term; cleared at startOfTerm.
-  return ch.acgState?.routeAssignmentThisTerm === true;
+  return ch.acgState?.perTerm.routeAssignmentThisTerm === true;
 }
 
 /** Officer rank ladder for the character's current department, read from
@@ -867,7 +864,7 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const entry = ladder.find((r) => rankNum(r[0]) === 1) ?? ladder[0]!;
   const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
-  const dm = acg.examDm ?? 0;
+  const dm = acg.perTerm.examDm ?? 0;
   const r = ch.rng.roll(2);
   const succeeded = r + dm >= target;
   ch.log(ev.roll("Commission", r, dm, target, succeeded, "Merchant enlisted-route exam"));
@@ -891,8 +888,8 @@ function attemptMerchantPromotionExam(ch: Character): void {
   // sets effectiveRankCode (serving one rank lower), which bars the exam —
   // unless the character earned a Department Test (PM p. 65), the one stated
   // exception. canTakeDeptTest is a one-shot, consumed here.
-  const deptTest = acg.canTakeDeptTest === true;
-  acg.canTakeDeptTest = false;
+  const deptTest = acg.perTerm.canTakeDeptTest === true;
+  acg.perTerm.canTakeDeptTest = false;
   if (acg.effectiveRankCode && !deptTest) {
     ch.log(ev.statusChange(
       "promotionSkipped", "no position available at rank; not eligible to test",
@@ -907,7 +904,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const target = parseInt(String(nextRow[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
   const penalty = acg.nextPromotionPenalty ?? 0;
-  const dm = (acg.examDm ?? 0) + penalty;
+  const dm = (acg.perTerm.examDm ?? 0) + penalty;
   if (penalty < 0) acg.nextPromotionPenalty = 0;
   const r = ch.rng.roll(2);
   const succeeded = r + dm >= target;

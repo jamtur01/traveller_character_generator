@@ -23,7 +23,7 @@ export function doServiceTermStep(ch: Character): void {
   // we must NOT re-emit termBegin/section or reset anagathics flags on
   // the resumed pass, or each Run-term click duplicates the term header.
   const acgResuming = ch.useAcg && !!ch.acgState && (
-    ch.acgState.pausedAtStep != null
+    ch.acgState.perYear.pausedAtStep != null
     || ch.acgState.termStartYearsServed !== undefined
   );
   if (!acgResuming) {

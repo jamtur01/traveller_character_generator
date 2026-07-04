@@ -37,7 +37,8 @@ describe("beginAcg consumes draft flag (PM p. 47 Rrev2)", () => {
     c.acgState = {
       pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: [], decorations: [], browniePoints: 0,
       browniePointsSpent: 0, decorationDmStrategy: 0,
@@ -89,7 +90,8 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
     c.acgState = {
       pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: [], decorations: [], browniePoints: 0,
       browniePointsSpent: 0, decorationDmStrategy: 0,
@@ -116,7 +118,8 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
     c.acgState = {
       pathway: "mercenary", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: [], decorations: [], browniePoints: 0,
       browniePointsSpent: 0, decorationDmStrategy: 0,
@@ -141,7 +144,8 @@ describe("Flight School washout drafts navy short-term (PM p. 47)", () => {
     c.acgState = {
       pathway: "navy", rankCode: "O1", isOfficer: true, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, promotedThisTerm: false, injuredThisYear: false,
+      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["navalAcademy"], decorations: [], browniePoints: 0,
       browniePointsSpent: 0, decorationDmStrategy: 0,

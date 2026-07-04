@@ -11,6 +11,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
+import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
 
@@ -44,7 +45,7 @@ function runStep(
   } catch (err) {
     if (err instanceof ChoicePendingError) {
       // Preserve where we paused so resumption picks the right step.
-      ch.requireAcgState().pausedAtStep = stepName;
+      ch.requireAcgState().perYear.pausedAtStep = stepName;
       return false;
     }
     throw err;
@@ -57,14 +58,9 @@ function runStep(
  *  pausedAtStep is also nulled — it's logically year-scoped (records
  *  where the year paused) so a future year should never inherit a
  *  stale value. */
-function clearYearScopedState(acg: import("../../character").Character["acgState"]): void {
+function clearYearScopedState(acg: Character["acgState"]): void {
   if (!acg) return;
-  acg.pausedAtStep = null;
-  delete acg.transferAppliedThisYear;
-  delete acg.scoutTransferNextAssign;
-  delete acg.merchantTransferNextAssign;
-  delete acg.wasRetainedThisYear;
-  delete acg.thisYearOutcomes;
+  acg.perYear = freshPerYear();
 }
 
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
@@ -130,8 +126,8 @@ export function runAcgYear(ch: Character): void {
   }
 
   // Pick up where we left off, if a previous run paused on a choice.
-  const startIdx = acg.pausedAtStep
-    ? Math.max(0, YEAR_STEPS.indexOf(acg.pausedAtStep as YearStep))
+  const startIdx = acg.perYear.pausedAtStep
+    ? Math.max(0, YEAR_STEPS.indexOf(acg.perYear.pausedAtStep as YearStep))
     : 0;
 
   // Step 0: roll the year's assignment (PM checklist 6.A.1).
@@ -143,8 +139,8 @@ export function runAcgYear(ch: Character): void {
     // Stash on acgState so a pause/resume inside rollAssignment doesn't
     // lose the value (justRetained is cleared by the pathway before any
     // throw point, so the resumed call would otherwise read false).
-    if (acg.wasRetainedThisYear === undefined) {
-      acg.wasRetainedThisYear = acg.justRetained === true;
+    if (acg.perYear.wasRetainedThisYear === undefined) {
+      acg.perYear.wasRetainedThisYear = acg.justRetained === true;
     }
     let rolled: string | null = null;
     const ok = runStep(ch, "rollAssignment", () => {
@@ -156,7 +152,7 @@ export function runAcgYear(ch: Character): void {
     if (assignment) {
       ch.log(ev.assignmentRolled(
         assignment, ch.terms + 1, acg.year,
-        acg.wasRetainedThisYear ? true : undefined,
+        acg.perYear.wasRetainedThisYear ? true : undefined,
       ));
     }
   }
@@ -223,7 +219,7 @@ export function runAcgTerm(ch: Character): void {
   // anagathics — that would clobber mid-term state and re-queue every
   // preRun prompt.
   const p = getPathwayImpl(ch);
-  const isResuming = ch.acgState.pausedAtStep != null
+  const isResuming = ch.acgState.perYear.pausedAtStep != null
     || (ch.acgState.year ?? 1) > 1
     || (ch.acgState.termStartYearsServed !== undefined);
   if (!isResuming) {
@@ -234,7 +230,7 @@ export function runAcgTerm(ch: Character): void {
     ch.preSurvivalAnagathicsHook();
     if (p.startOfTerm) p.startOfTerm(ch);
     ch.acgState.year = 1;
-    ch.acgState.promotedThisTerm = false;
+    ch.acgState.perTerm = freshPerTerm();
     ch.acgState.termStartYearsServed = ch.acgState.yearsServed ?? 0;
   }
   const yearsAtTermStart = ch.acgState.termStartYearsServed ?? 0;
@@ -257,7 +253,7 @@ export function runAcgTerm(ch: Character): void {
     // If the year paused on an interactive choice, bail — the session
     // layer will re-enter runAcgTerm after resolve. Without this guard
     // we'd advance the for-loop past the paused year on the next call.
-    if (ch.acgState.pausedAtStep != null) return;
+    if (ch.acgState.perYear.pausedAtStep != null) return;
   }
   // Term completed all its years — clear the term-start snapshot and
   // reset year so the next runAcgTerm call re-initializes (instead of

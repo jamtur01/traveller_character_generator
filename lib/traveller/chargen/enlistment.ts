@@ -19,6 +19,7 @@ import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
 import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
 import { merchantEnlist } from "@/lib/traveller/engine/acg/pathways/merchantPrince";
+import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
 
 /** Options for beginAcg — pathway-specific enlistment parameters. */
 export interface BeginAcgOptions {
@@ -85,7 +86,8 @@ export function beginAcg(
     inCommand: false,
     justRetained: false,
     retainedAssignment: null,
-    promotedThisTerm: false,
+    perYear: freshPerYear(),
+    perTerm: freshPerTerm(),
     injuredThisYear: false,
     assignmentHistory: [],
     combatRibbons: 0,
