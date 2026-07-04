@@ -26,6 +26,7 @@ export type ChoiceKind =
   | "scoutAdminDm"          // Scout administrator voluntary +2 DM on duty roll
   | "merchantDepartment"    // Merchant Academy: pick one of five depts
   | "merchantSkillTable"    // Merchant: service / department / life
+  | "merchantSkillColumn"   // Merchant: pick an available skill column in the chosen table
   | "reduceSkill"           // Int+Edu skill cap: pick a skill to reduce by 1
   | "repeatWeaponBenefit"   // Repeated weapon benefit (PM p. 20): same/different/category
   | "bpSpend";              // Brownie-point spend prompt (PM p. 46)

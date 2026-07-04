@@ -417,7 +417,7 @@ function promoteScout(ch: Character): void {
   const ladder = acg.isOfficer ? data.ranks.administrator : data.ranks.ordinary;
   applyPromotion(ch, ladder, {
     onPromote: (ch) => {
-      if (acg.isOfficer) scoutRollSkillFromColumn(ch, "administratorRank");
+      if (acg.isOfficer) scoutRollSkillFromColumn(ch, "adminRank");
       else scoutRollSkill(ch);
     },
   });

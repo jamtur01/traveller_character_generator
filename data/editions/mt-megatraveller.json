@@ -8173,7 +8173,15 @@
             }
           ],
           "dms": [],
-          "notes": []
+          "notes": [],
+          "columnAvailability": {
+            "$rule": "PM p. 63 skill-table notes: Merchant Life available to all; Shipboard Life except Sales/Administration; Officer skills rank O0+; Merchantile (merchant) skills except Engineering; Master skills Deck department rank O4+.",
+            "merchantLife": { "allDepartments": true },
+            "shipboardLife": { "exceptDepartments": ["Sales", "Administration"] },
+            "officerSkills": { "minRank": "O0" },
+            "merchantSkills": { "exceptDepartments": ["Engineering"] },
+            "masterSkills": { "departments": ["Deck"], "minRank": "O4" }
+          }
         },
         "department": {
           "columns": [
@@ -8235,7 +8243,15 @@
             }
           ],
           "dms": [],
-          "notes": []
+          "notes": [],
+          "columnAvailability": {
+            "$rule": "PM p. 63: department skill columns are available only to members of the named department; medic is the Purser department's medic track.",
+            "deck": { "departments": ["Deck"] },
+            "engineer": { "departments": ["Engineering"] },
+            "purser": { "departments": ["Purser"] },
+            "medic": { "departments": ["Purser"] },
+            "admin": { "departments": ["Administration"] }
+          }
         },
         "life": {
           "columns": [
@@ -8297,7 +8313,15 @@
             }
           ],
           "dms": [],
-          "notes": []
+          "notes": [],
+          "columnAvailability": {
+            "$rule": "PM p. 63: Sales Life = Sales only; Planet Life = Administration and Sales; Free Trader columns = Free Traders only.",
+            "salesLife": { "departments": ["Sales"] },
+            "planetLife": { "departments": ["Administration", "Sales"] },
+            "freeTraderLife": { "departments": ["Free Trader"] },
+            "freeTraderService": { "departments": ["Free Trader"] },
+            "freeTraderBusiness": { "departments": ["Free Trader"] }
+          }
         }
       },
       "specialDuty": {

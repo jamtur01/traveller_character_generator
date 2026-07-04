@@ -248,105 +248,123 @@ function applyCourtMartialResult(ch: Character, result: string): void {
   if (!ch.acgState) return;
   const lc = result.toLowerCase();
   if (lc.includes("dismissed")) return;
+  // Death penalty / escape is terminal and mutually exclusive with the
+  // lesser disciplinary outcomes — resolve it on its own.
+  if (lc.includes("death")) {
+    applyDeathPenalty(ch, result, lc);
+    return;
+  }
+  applyDisciplinaryResult(ch, result, lc);
+}
+
+/** Apply the composable disciplinary outcomes. A single court-martial
+ *  result may combine several effects — result 4 is "Jail 2D months;
+ *  reduce rank -2" and results 5-7 are "Jail ND years; dishonorable
+ *  discharge" (manual p. 47) — so each named effect is applied in turn,
+ *  then the terminal disposition (jail muster-out or discharge) resolves
+ *  once. The pre-fix code returned after the first matching branch, so a
+ *  combined result dropped either the jail sentence (result 4) or the
+ *  jail-years aging (results 5-7). */
+function applyDisciplinaryResult(ch: Character, result: string, lc: string): void {
+  const st = ch.acgState;
+  if (!st) return;
 
   // Reprimand: -N to next promotion. Manual p. 47 lists -1 and -3 variants.
   if (lc.includes("reprimand")) {
     const m = result.match(/-(\d+)/);
-    const mag = m ? parseInt(m[1]!, 10) : 1;
-    ch.acgState.nextPromotionPenalty =
-      (ch.acgState.nextPromotionPenalty ?? 0) - mag;
-    return;
+    st.nextPromotionPenalty =
+      (st.nextPromotionPenalty ?? 0) - (m ? parseInt(m[1]!, 10) : 1);
   }
 
   // Reduce rank by N.
   if (lc.includes("reduce rank")) {
-    const m = result.match(/-(\d+)/);
-    const mag = m ? parseInt(m[1]!, 10) : 1;
-    reduceRank(ch, mag);
-    return;
+    const m = result.match(/reduce rank\s*-?(\d+)/i);
+    reduceRank(ch, m ? parseInt(m[1]!, 10) : 1);
   }
 
-  // Dishonorable discharge — character loses 3 mustering-out rolls and gets
-  // no pension (manual p. 47). Captured here as flags consulted at muster.
-  if (lc.includes("dishonorable") || /\bdd\b/i.test(result)) {
-    ch.acgState.musterRollPenalty =
-      (ch.acgState.musterRollPenalty ?? 0) - 3;
-    ch.acgState.pensionForfeit = true;
-    ch.endChargenDischarged();
+  // Dishonorable discharge — the character loses 3 mustering-out rolls and
+  // gets no pension (manual p. 47), captured as flags consulted at muster.
+  const dishonorable = lc.includes("dishonorable") || /\bdd\b/i.test(result);
+  if (dishonorable) {
+    st.musterRollPenalty = (st.musterRollPenalty ?? 0) - 3;
+    st.pensionForfeit = true;
     ch.log(ev.statusChange(
       "dishonorablyDischarged",
       "-3 mustering-out rolls, no pension",
     ));
-    return;
   }
 
-  // Jail. "Jail 2D months" serves as the next year of service; longer
-  // sentences are full muster-out terminators that age the character by
-  // a rolled NDx-year sentence (manual p. 47).
+  // Jail. "Jail 2D months" serves as the next year of service (no aging or
+  // muster-out); a 1D/2D-year sentence ages the character and forces
+  // muster-out (manual p. 47). A discharge without a jail sentence still
+  // ends chargen.
   if (lc.includes("jail")) {
-    const monthsMatch = result.match(/jail\s+2D\s+months/i);
-    if (monthsMatch) {
-      // "Jail 2D months" is the mildest jail outcome: roll and log the
-      // duration for the record, then end court-martial resolution. (Unlike
-      // the "Jail ND years" path below, it neither ages the character nor
-      // forfeits benefits.)
-      const months = ch.rng.roll(1) + ch.rng.roll(1);
-      ch.log(ev.statusChange(
-        "jailed",
-        `${months} months — consumes this year of service`,
-      ));
-      return;
-    }
-    // "Jail 1D years; ..." or "Jail 2D years; ..."
-    ch.acgState.musterRollPenalty =
-      (ch.acgState.musterRollPenalty ?? 0) - 3;
-    ch.acgState.pensionForfeit = true;
-    const yearsMatch = result.match(/jail\s+(\d+)D\s+years/i);
-    if (yearsMatch) {
-      const dice = parseInt(yearsMatch[1]!, 10);
-      let years = 0;
-      for (let i = 0; i < dice; i++) years += ch.rng.roll(1);
-      ch.age += years;
-      ch.endChargenRetired(`imprisoned ${years} years (${dice}D rolled)`, false);
-    } else {
-      ch.endChargenRetired("imprisoned", false);
-    }
+    applyJailSentence(ch, result, dishonorable);
+  } else if (dishonorable) {
+    ch.endChargenDischarged();
+  }
+}
+
+/** Apply a jail sentence. A 2D-month sentence consumes the next year of
+ *  service in place of the normal cycle; a 1D/2D-year sentence ages the
+ *  character by the rolled term and forces muster-out. `discharged` routes
+ *  the terminal state through endChargenDischarged (dishonorable discharge)
+ *  rather than a plain forced retirement. */
+function applyJailSentence(ch: Character, result: string, discharged: boolean): void {
+  if (/jail\s+2D\s+months/i.test(result)) {
+    const months = ch.rng.roll(1) + ch.rng.roll(1);
+    ch.log(ev.statusChange(
+      "jailed",
+      `${months} months — consumes this year of service`,
+    ));
     return;
   }
+  const yearsMatch = result.match(/jail\s+(\d+)D\s+years/i);
+  let served = "imprisoned";
+  if (yearsMatch) {
+    const dice = parseInt(yearsMatch[1]!, 10);
+    let years = 0;
+    for (let i = 0; i < dice; i++) years += ch.rng.roll(1);
+    ch.age += years;
+    served = `imprisoned ${years} years (${dice}D rolled)`;
+  }
+  if (discharged) {
+    ch.log(ev.statusChange("jailed", served));
+    ch.endChargenDischarged();
+  } else {
+    ch.endChargenRetired(served, false);
+  }
+}
 
-  // Death penalty / escape. The character has a price on his head; no
-  // mustering-out benefits and no pension. Manual p. 47 lists three forms:
-  //   "Death; escape; KCr10 reward"
-  //   "Death; escape; KCr10 reward" (10-year sentence variant)
-  //   "Death; escape, killing 1D guards; KCr100 reward"
-  // We parse the bounty value and any "killing ND guards" suffix.
-  if (lc.includes("death")) {
-    ch.acgState.musterRollPenalty =
-      (ch.acgState.musterRollPenalty ?? 0) - 99; // zero out benefits
-    ch.acgState.pensionForfeit = true;
-    const bountyMatch = result.match(/KCr(\d+)/i);
-    if (bountyMatch) {
-      ch.acgState.bountyOnHeadKCr = parseInt(bountyMatch[1]!, 10);
-    }
-    const guardsMatch = result.match(/killing\s+(\d+)D\s+guards/i);
-    if (guardsMatch) {
-      const dice = parseInt(guardsMatch[1]!, 10);
-      let killed = 0;
-      for (let i = 0; i < dice; i++) killed += ch.rng.roll(1);
-      ch.acgState.guardsKilledInEscape = killed;
-    }
-    if (lc.includes("escape")) {
-      const bountyTxt = ch.acgState.bountyOnHeadKCr !== undefined
-        ? ` Bounty: KCr${ch.acgState.bountyOnHeadKCr}.`
-        : "";
-      const killedTxt = ch.acgState.guardsKilledInEscape
-        ? ` Killed ${ch.acgState.guardsKilledInEscape} guards in escape.`
-        : "";
-      ch.endChargenRetired(`death sentence; escaped.${bountyTxt}${killedTxt}`, false);
-    } else {
-      ch.endChargenDeceased("executed (death sentence; no benefits or pension)");
-    }
-    return;
+/** Death penalty / escape. The character has a price on his head and
+ *  receives no mustering-out benefits or pension. Manual p. 47 lists three
+ *  forms; we parse the bounty value and any "killing ND guards" suffix. */
+function applyDeathPenalty(ch: Character, result: string, lc: string): void {
+  const st = ch.acgState;
+  if (!st) return;
+  st.musterRollPenalty = (st.musterRollPenalty ?? 0) - 99; // zero out benefits
+  st.pensionForfeit = true;
+  const bountyMatch = result.match(/KCr(\d+)/i);
+  if (bountyMatch) {
+    st.bountyOnHeadKCr = parseInt(bountyMatch[1]!, 10);
+  }
+  const guardsMatch = result.match(/killing\s+(\d+)D\s+guards/i);
+  if (guardsMatch) {
+    const dice = parseInt(guardsMatch[1]!, 10);
+    let killed = 0;
+    for (let i = 0; i < dice; i++) killed += ch.rng.roll(1);
+    st.guardsKilledInEscape = killed;
+  }
+  if (lc.includes("escape")) {
+    const bountyTxt = st.bountyOnHeadKCr !== undefined
+      ? ` Bounty: KCr${st.bountyOnHeadKCr}.`
+      : "";
+    const killedTxt = st.guardsKilledInEscape
+      ? ` Killed ${st.guardsKilledInEscape} guards in escape.`
+      : "";
+    ch.endChargenRetired(`death sentence; escaped.${bountyTxt}${killedTxt}`, false);
+  } else {
+    ch.endChargenDeceased("executed (death sentence; no benefits or pension)");
   }
 }
 

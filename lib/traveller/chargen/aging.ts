@@ -52,11 +52,17 @@ export function doAging(ch: Character): void {
 
   // Short terms count as 2 years (PM p. 16) — don't trip full-term
   // aging breakpoints. On anagathics, apparent age (frozen) drives the
-  // row pick, anchored at the service's startAge.
+  // row pick, anchored at the service's startAge. A Navy Frozen Watch
+  // offset (acgState.physicalAgeOffset, <= 0) likewise pulls the aging
+  // basis back to physical age (PM p. 56), so cold-sleep years advance
+  // chronological age without aging the body.
   const serviceStartAge =
     getEdition(ch.editionId).data.services[ch.service]?.startAge ?? 18;
-  const effectiveTermsForAging = ch.onAnagathics
-    ? Math.max(0, Math.floor((ch.apparentAge - serviceStartAge) / ch.fullTermYears()))
+  const physicalOffset = ch.acgState?.physicalAgeOffset ?? 0;
+  const physicalAge = ch.apparentAge + physicalOffset;
+  const usesAgeBasis = ch.onAnagathics || physicalOffset !== 0;
+  const effectiveTermsForAging = usesAgeBasis
+    ? Math.max(0, Math.floor((physicalAge - serviceStartAge) / ch.fullTermYears()))
     : Math.max(0, ch.terms - ch.shortTermsCount);
 
   const applicable = aging.rows
@@ -95,8 +101,9 @@ export function doAging(ch: Character): void {
   }
   ch.anagathicsWithdrawalThisTerm = false;
   // Maintained anagathics freezes apparent age; otherwise it tracks
-  // chronological.
-  if (!ch.onAnagathics) ch.apparentAge = ch.age;
+  // chronological age, less any Frozen Watch physical-age offset so the
+  // apparent (physical) age stays behind chronological on the sheet.
+  if (!ch.onAnagathics) ch.apparentAge = ch.age + physicalOffset;
 
   // Aging crisis: any attribute at or below the configured threshold
   // triggers a save against death. Pass → attribute clamped to 1.

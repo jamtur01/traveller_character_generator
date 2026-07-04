@@ -452,7 +452,17 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     if (rule) {
       resetIfComplete(ch);
       applyOnce(ch, "navySpecialRuleApplied", () => {
-        ch.requireAcgState().assignmentHistory.push(assignment);
+        const acg = ch.requireAcgState();
+        acg.assignmentHistory.push(assignment);
+        // Frozen Watch (and any cold-sleep rule): the year still advances
+        // chronological age in runAcgYear, but physical aging is offset so
+        // the character is one year older chronologically than physically
+        // (PM p. 56). doAging drives the aging saving throws off physical
+        // age. noSkillRoll is honored implicitly — this branch skips every
+        // resolution phase, so no skill is rolled.
+        if (rule.physicalAgeDelta) {
+          acg.physicalAgeOffset = (acg.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
+        }
         if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
       });
       markComplete(ch);

@@ -166,6 +166,15 @@ export interface AcgState {
    *  Set true the first time an SEH is awarded; consumed at muster. */
   sehPromotionPending?: boolean;
 
+  /** Accumulated physical-age offset relative to chronological age
+   *  (`ch.age`); always <= 0. Navy Frozen Watch assignments (PM p. 56)
+   *  spend a year in cold sleep: chronological age advances, physical age
+   *  does not ("one year older chronologically than physically for each
+   *  year on Frozen Watch"). doAging drives the aging-table saving throws
+   *  off physical age (chronological + this offset), reusing the same
+   *  age-basis path as the anagathics apparent-age mechanism. */
+  physicalAgeOffset?: number;
+
   /** Total years served across all terms — incremented per year inside
    *  runAcgYear. Distinct from terms (which counts terms entered) because
    *  a character invalided/jailed mid-term gets a partial term that doesn't
