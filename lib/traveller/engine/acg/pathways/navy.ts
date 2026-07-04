@@ -14,12 +14,11 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyStructuredDms, columnDmFor, labelToColumnKey, lookupResolution,
+  applyStructuredDms, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applySpecialAssignment } from "@/lib/traveller/engine/acg/schools";
-import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import {
   applyOnce, markComplete, resetIfComplete,
   alreadyApplied, markApplied,
@@ -29,7 +28,7 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, consumeRetainedAssignment, clampedRoll,
+  applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn, rollDieRow,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 
@@ -251,8 +250,7 @@ function navyAssignBranch(ch: Character): void {
   // doesn't have it (cap at 8 attempts as a safety net — the table has
   // multiple non-Tech-Services rows so re-roll converges quickly).
   for (let attempt = 0; attempt < 8; attempt++) {
-    const r = clampedRoll(ch, 1, dm, 0, 7);
-    const row = data.branchAssignment.rows.find((row) => row.die === r);
+    const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm, lo: 0, hi: 7 });
     const candidate = String(row?.[col] ?? "Line");
     if (isBranchAllowedForFleet(ch, candidate)) {
       rolled = candidate;
@@ -320,35 +318,17 @@ function navyOfficerSkillChoice(ch: Character): void {
 function navyServiceSkillRoll(ch: Character, column: string): void {
   const data = dataFor(ch);
   if (!data.serviceSkills) return;
-  const table = data.serviceSkills;
-  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
-  const dm = columnDmFor(table.dms, column, ch);
-  const r = clampedRoll(ch, 1, dm, 1, maxDie);
-  const row = table.rows.find((row) => row.die === r);
-  if (!row) return;
-  const skill = row[column];
-  if (typeof skill === "string") applyAcgSkillCell(ch, skill, `Navy ${column}`);
+  rollSkillFromColumn(ch, data.serviceSkills, column, `Navy ${column}`);
 }
 
 function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const table = data.branchSkills;
   const col = labelToColumnKey(ch.requireAcgState().branch ?? "Line");
-  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
-  const dm = columnDmFor(table.dms, col, ch);
-  const r = clampedRoll(ch, 1, dm, 1, maxDie);
-  const row = table.rows.find((row) => row.die === r);
-  if (!row) return;
-  // Convert branch to column key.
   const candidates = [col, col === "line" ? "lineCrew" : col,
     col === "crew" ? "lineCrew" : col];
-  let skill: string | undefined;
-  for (const cand of candidates) {
-    const v = row[cand];
-    if (typeof v === "string") { skill = v; break; }
-  }
-  if (skill) applyAcgSkillCell(ch, skill, `Navy ${ch.requireAcgState().branch ?? "Line"} branch skills`);
+  rollSkillFromColumn(ch, data.branchSkills, { candidates },
+    `Navy ${ch.requireAcgState().branch ?? "Line"} branch skills`);
 }
 
 /** Command Duty roll (officers only). */

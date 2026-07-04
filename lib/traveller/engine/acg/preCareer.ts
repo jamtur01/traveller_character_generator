@@ -29,6 +29,7 @@ import type { Rng } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
+import { rollDieRow } from "@/lib/traveller/engine/acg/pathways/shared";
 
 export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
@@ -674,8 +675,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     if (ch.acgState) ch.acgState.department = choice;
     for (let i = 0; i < skillsCount; i++) {
       if (ch.rng.roll(1) >= skillsTarget) {
-        const r = ch.rng.roll(1);
-        const row = dept.rows.find((row) => row.die === r);
+        const row = rollDieRow(ch, dept, { dice: 1, dm: 0, lo: 1, hi: 6 });
         const skill = row?.[choice];
         if (typeof skill === "string") out.skills.push([skill, 1]);
       }

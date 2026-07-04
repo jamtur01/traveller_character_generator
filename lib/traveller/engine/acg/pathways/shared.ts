@@ -13,7 +13,10 @@ import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
   type ResolveAssignmentConfig,
 } from "@/lib/traveller/engine/acg/jsonPhases";
-import { applyDmRules, applyStructuredDms, type StructuredDm } from "@/lib/traveller/engine/acg/tables";
+import {
+  applyDmRules, applyStructuredDms, columnDmFor, type StructuredDm,
+} from "@/lib/traveller/engine/acg/tables";
+import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
 import type { AcgState } from "@/lib/traveller/engine/acg/state";
@@ -161,8 +164,7 @@ export function rollSpecialAssignment(
   const dm = applyStructuredDms(table.dms, ch);
   const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const rollOnce = (): string | null => {
-    const r = Math.max(1, Math.min(7, ch.rng.roll(1) + dm));
-    const v = table.rows.find((row) => row.die === r)?.[col];
+    const v = rollDieRow(ch, table, { dice: 1, dm, lo: 1, hi: 7 })?.[col];
     return typeof v === "string" ? v : null;
   };
   let sa = rollOnce();
@@ -244,6 +246,69 @@ export function clampedRoll(
   ch: Character, dice: number, dm: number, lo: number, hi: number,
 ): number {
   return Math.max(lo, Math.min(hi, ch.rng.roll(dice) + dm));
+}
+
+/** A die-keyed JSON table: every row carries a `die` (the 1-based roll
+ *  index) plus per-column cell values. */
+interface DieKeyedTable {
+  rows: ReadonlyArray<Record<string, unknown>>;
+}
+
+/** Roll `dice`d6 + `dm`, clamp to [lo, hi], and return the row whose `die`
+ *  equals the result (or undefined when the table has no such row). This is
+ *  the one clampedRoll-plus-`rows.find(r => r.die === roll)` primitive that
+ *  every die-keyed ACG table read repeats. Callers keep ownership of the DM
+ *  source, the cell read, and the miss policy (silent / default / throw). */
+export function rollDieRow(
+  ch: Character, table: DieKeyedTable,
+  opts: { dice: number; dm: number; lo: number; hi: number },
+): Record<string, unknown> | undefined {
+  const r = clampedRoll(ch, opts.dice, opts.dm, opts.lo, opts.hi);
+  return table.rows.find((row) => row.die === r);
+}
+
+/** How a skill roll resolves its column. A plain string is a fixed column
+ *  (used for both the per-column DM and the cell read). `{ candidates }`
+ *  computes the DM on `candidates[0]` and reads the first candidate whose
+ *  cell is a string (navy/schools line↔crew aliasing). `"first"` uses the
+ *  first non-`die` column for the DM and reads the first non-`die` column
+ *  whose cell is a string (scout skill tables). */
+export type SkillColumn = string | { candidates: string[] } | "first";
+
+/** A 1D skill table: rows keyed by `die`, optional per-column `dms`, and an
+ *  optional `columns` list (needed only for the `"first"` scan). */
+interface SkillRollTable extends DieKeyedTable {
+  columns?: readonly string[];
+  dms?: StructuredDm[];
+}
+
+/** The 1D-skill-roll-from-a-column ritual shared by every MT ACG pathway and
+ *  the school module (PM pp. 50-59): compute the table's max die, sum the
+ *  column-scoped DMs, roll 1D clamped to [1, maxDie], find the die row, and
+ *  apply the resolved skill cell via applyAcgSkillCell. `column` selects the
+ *  column-resolution shape; `source` is the history attribution — a fixed
+ *  string, or a function of the matched column for tables whose label names
+ *  the column that hit. A row miss or a non-string cell is a silent no-op,
+ *  matching every original site. */
+export function rollSkillFromColumn(
+  ch: Character, table: SkillRollTable, column: SkillColumn,
+  source: string | ((matchedCol: string) => string),
+): void {
+  const candidates = column === "first"
+    ? (table.columns ?? []).filter((c) => c !== "die")
+    : typeof column === "string" ? [column] : column.candidates;
+  const dmCol = candidates[0] ?? "";
+  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
+  const dm = columnDmFor(table.dms, dmCol, ch);
+  const row = rollDieRow(ch, table, { dice: 1, dm, lo: 1, hi: maxDie });
+  if (!row) return;
+  for (const c of candidates) {
+    const v = row[c];
+    if (typeof v === "string") {
+      applyAcgSkillCell(ch, v, typeof source === "function" ? source(c) : source);
+      return;
+    }
+  }
 }
 
 /** Clear the one-shot retained-assignment flags. Only navy sets them (its

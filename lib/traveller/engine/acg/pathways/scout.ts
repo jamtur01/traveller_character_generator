@@ -20,16 +20,15 @@ import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
-  applyDmRules, columnDmFor, labelToColumnKey, lookupResolution,
+  applyDmRules, labelToColumnKey, lookupResolution,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
-import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, applyPromotion, runReenlist,
-  clearRetention, consumeRetainedAssignment, clampedRoll,
+  clearRetention, consumeRetainedAssignment, rollSkillFromColumn, rollDieRow,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
@@ -135,8 +134,7 @@ function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
   const division: "field" | "bureaucracy" = ch.requireAcgState().division ?? "field";
   ch.requireAcgState().division = division;
-  const r = clampedRoll(ch, 2, 0, 2, 12);
-  const row = data.officeAssignment.rows.find((row) => row.die === r);
+  const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
   if (!row) { ch.requireAcgState().office = "Survey"; return; }
   const off = row[division];
   ch.requireAcgState().office = typeof off === "string" ? off : "Survey";
@@ -164,22 +162,8 @@ export function scoutInitialTraining(ch: Character): void {
 function scoutRollSkill(ch: Character): void {
   const data = dataFor(ch);
   const division = ch.requireAcgState().division ?? "field";
-  const table = data.skillTables[division];
-  const primaryCol = table.columns.find((c) => c !== "die") ?? "";
-  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
-  const dm = columnDmFor(table.dms, primaryCol, ch);
-  const r = clampedRoll(ch, 1, dm, 1, maxDie);
-  const row = table.rows.find((row) => row.die === r);
-  if (!row) return;
-  // The skill table columns vary; take the first column that has a value.
-  for (const col of table.columns) {
-    if (col === "die") continue;
-    const v = row[col];
-    if (typeof v === "string") {
-      applyAcgSkillCell(ch, v, `Scout ${division} ${col}`);
-      return;
-    }
-  }
+  rollSkillFromColumn(ch, data.skillTables[division], "first",
+    (col) => `Scout ${division} ${col}`);
 }
 
 export function scoutRollAssignment(ch: Character): string {
@@ -324,21 +308,14 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
     scoutRollSkill(ch);
     return;
   }
-  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
-  const dm = columnDmFor(table.dms, column, ch);
-  const r = clampedRoll(ch, 1, dm, 1, maxDie);
-  const row = table.rows.find((row) => row.die === r);
-  if (!row) return;
-  const v = row[column];
-  if (typeof v === "string") applyAcgSkillCell(ch, v, `Scout ${column}`);
+  rollSkillFromColumn(ch, table, column, `Scout ${column}`);
 }
 
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
   const officeKey = labelToColumnKey(ch.requireAcgState().office ?? "Survey");
-  const r = ch.rng.roll(1);
-  const row = data.schoolAssignment.rows.find((row) => row.die === r);
+  const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
   if (!row) return;
   const school = row[officeKey];
   if (typeof school !== "string") return;
@@ -383,8 +360,7 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     const fromDivision = acg.division ?? "field";
     acg.division = "bureaucracy";
     // Reroll office assignment under the Bureaucracy division.
-    const r = clampedRoll(ch, 2, 0, 2, 12);
-    const row = data.officeAssignment.rows.find((row) => row.die === r);
+    const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
     const off = row?.bureaucracy;
     const newOffice = typeof off === "string" ? off : "Technical";
     acg.office = newOffice;

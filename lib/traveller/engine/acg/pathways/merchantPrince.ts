@@ -40,7 +40,7 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
-  clearRetention, consumeRetainedAssignment,
+  clearRetention, consumeRetainedAssignment, rollDieRow,
 } from "./shared";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
@@ -292,8 +292,7 @@ function merchantAssignDepartment(ch: Character): void {
     return;
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
-  const r = ch.rng.roll(1);
-  const row = data.departmentAssignment.rows.find((row) => row.die === r);
+  const row = rollDieRow(ch, data.departmentAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
   if (!row) { ch.requireAcgState().department = "Purser"; return; }
   ch.requireAcgState().department = String(row[lineCol] ?? "Purser");
   // acgState.department is read by subsequent assignment / skill rolls.
@@ -574,8 +573,7 @@ function rollMerchantSkillColumn(ch: Character, tableKey: string, column: string
   const data = dataFor(ch);
   const table = data.skillTables[tableKey];
   if (!table) return;
-  const r = ch.rng.roll(1);
-  const row = table.rows.find((row) => row.die === r);
+  const row = rollDieRow(ch, table, { dice: 1, dm: 0, lo: 1, hi: 6 });
   if (!row) return;
   const v = row[column];
   if (typeof v === "string") applyAcgSkillCell(ch, v, `Merchant ${tableKey} ${column}`);
@@ -623,8 +621,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialDuty) return;
   const dm = applyStructuredDms(data.specialDuty.dms, ch);
-  const r = clampedRoll(ch, 1, dm, 1, 7);
-  const row = data.specialDuty.rows.find((row) => row.die === r);
+  const row = rollDieRow(ch, data.specialDuty, { dice: 1, dm, lo: 1, hi: 7 });
   if (!row) return;
   const col = ch.requireAcgState().isOfficer ? "officers" : "deckHands";
   const sa = row[col];

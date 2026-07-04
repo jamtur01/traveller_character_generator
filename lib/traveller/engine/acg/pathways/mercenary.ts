@@ -25,12 +25,11 @@
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyDmRules, columnDmFor, labelToColumnKey, lookupResolution,
+  applyDmRules, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
-import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import {
   applyOnce, markComplete, resetIfComplete,
 } from "@/lib/traveller/engine/acg/subStepCache";
@@ -40,7 +39,7 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, serviceSkillColumnFor, clearRetention,
-  consumeRetainedAssignment, clampedRoll,
+  consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
   type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
@@ -370,15 +369,7 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
 }
 
 function rollMercenarySkillFromColumn(ch: Character, col: string): void {
-  const data = dataFor(ch);
-  const maxDie = Math.max(...data.serviceSkills.rows.map((row) => row.die as number));
-  const dm = columnDmFor(data.serviceSkills.dms, col, ch);
-  const r = clampedRoll(ch, 1, dm, 1, maxDie);
-  const row = data.serviceSkills.rows.find((row) => row.die === r);
-  if (!row) return;
-  const skill = row[col] as string | undefined;
-  if (!skill) return;
-  applyAcgSkillCell(ch, skill, `mercenary ${col}`);
+  rollSkillFromColumn(ch, dataFor(ch).serviceSkills, col, `mercenary ${col}`);
 }
 
 
