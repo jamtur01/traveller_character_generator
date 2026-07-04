@@ -35,32 +35,32 @@ describe("anagathics integration (B5)", () => {
       c.age = 34;
       c.terms = 3;
       c.preSurvivalAnagathicsHook();
-      expect(c.wantsAnagathicsThisTerm).toBe(false);
-      expect(c.anagathicsActiveThisTerm).toBe(false);
+      expect(c.anagathics.wantsAnagathicsThisTerm).toBe(false);
+      expect(c.anagathics.anagathicsActiveThisTerm).toBe(false);
     });
 
     it("declines silently when not yet eligible (age < 30 or terms < 3)", () => {
       const c = makeMtChar();
       c.age = 22;
       c.terms = 1;
-      c.anagathicsStandingOrder = true;
+      c.anagathics.anagathicsStandingOrder = true;
       c.preSurvivalAnagathicsHook();
-      expect(c.wantsAnagathicsThisTerm).toBe(false);
+      expect(c.anagathics.wantsAnagathicsThisTerm).toBe(false);
     });
 
     it("sets wantsAnagathicsThisTerm and attempts supply when eligible", () => {
       const c = makeMtChar();
       c.age = 34;
       c.terms = 3;
-      c.anagathicsStandingOrder = true;
+      c.anagathics.anagathicsStandingOrder = true;
       // Force availability success (homeworld has +3 starport + +3 tech, so
       // any 2d6 ≥ 6 succeeds with the +6 DM — fix to a known value).
       vi.spyOn(c.rng, "roll").mockReturnValueOnce(6);
       c.preSurvivalAnagathicsHook();
-      expect(c.wantsAnagathicsThisTerm).toBe(true);
-      expect(c.anagathicsActiveThisTerm).toBe(true);
-      expect(c.onAnagathics).toBe(true);
-      expect(c.anagathicsEverTaken).toBe(true);
+      expect(c.anagathics.wantsAnagathicsThisTerm).toBe(true);
+      expect(c.anagathics.anagathicsActiveThisTerm).toBe(true);
+      expect(c.anagathics.onAnagathics).toBe(true);
+      expect(c.anagathics.anagathicsEverTaken).toBe(true);
     });
 
     it("desire still flags survival DM even when supply not found", () => {
@@ -68,15 +68,15 @@ describe("anagathics integration (B5)", () => {
       c.homeworld = { ...c.homeworld!, starport: "E", tech: "Industrial" } as Homeworld;
       c.age = 34;
       c.terms = 3;
-      c.anagathicsStandingOrder = true;
+      c.anagathics.anagathicsStandingOrder = true;
       // Pin every roll low so: (1) availability fails, (2) retry survival
       // fails, (3) no second availability roll fires. Without pinning all
       // three calls, real random fills in and the retry path can flip
       // anagathicsActiveThisTerm to true (CI flake).
       vi.spyOn(c.rng, "roll").mockReturnValue(2);
       c.preSurvivalAnagathicsHook();
-      expect(c.wantsAnagathicsThisTerm).toBe(true);
-      expect(c.anagathicsActiveThisTerm).toBe(false);
+      expect(c.anagathics.wantsAnagathicsThisTerm).toBe(true);
+      expect(c.anagathics.anagathicsActiveThisTerm).toBe(false);
     });
   });
 
@@ -88,7 +88,7 @@ describe("anagathics integration (B5)", () => {
       c.service = "army";
       c.attributes.education = 5;
       c.showHistory = "verbose";
-      c.wantsAnagathicsThisTerm = true;
+      c.anagathics.wantsAnagathicsThisTerm = true;
       const svc = getEditionServices(c.editionId)["army"]!;
       const rollSpy = vi.spyOn(c.rng, "roll").mockReturnValue(6);
       svc.checkSurvival(c);
@@ -101,7 +101,7 @@ describe("anagathics integration (B5)", () => {
       c.showHistory = "verbose";
       c.service = "nobles";
       c.attributes.social = 11;
-      c.wantsAnagathicsThisTerm = true;
+      c.anagathics.wantsAnagathicsThisTerm = true;
       const svc = getEditionServices(c.editionId)["nobles"]!;
       const rollSpy = vi.spyOn(c.rng, "roll").mockReturnValue(8);
       svc.checkSurvival(c);
@@ -124,9 +124,9 @@ describe("anagathics integration (B5)", () => {
       const c = makeMtChar();
       c.terms = 5;
       c.rank = 0;
-      c.anagathicsBenefitForfeitedTerms = 2;
+      c.anagathics.anagathicsBenefitForfeitedTerms = 2;
       const withForfeit = c.musterOutRolls();
-      c.anagathicsBenefitForfeitedTerms = 0;
+      c.anagathics.anagathicsBenefitForfeitedTerms = 0;
       const withoutForfeit = c.musterOutRolls();
       // Each forfeited term shaves perTerm rolls.
       expect(withoutForfeit - withForfeit).toBeGreaterThan(0);
@@ -145,7 +145,7 @@ describe("anagathics integration (B5)", () => {
        .mockReturnValueOnce(8)  // retry survival roll: pass (army survival is 5+)
        .mockReturnValueOnce(6); // availability roll 2: 6 + +6 starport/tech DMs = pass
       expect(c.tryAnagathics()).toBe(true);
-      expect(c.onAnagathics).toBe(true);
+      expect(c.anagathics.onAnagathics).toBe(true);
     });
 
     it("on first failure, forces muster-out when retry survival fails", () => {
@@ -173,7 +173,7 @@ describe("anagathics integration (B5)", () => {
       c.service = "army";
       vi.spyOn(c.rng, "roll").mockReturnValueOnce(2); // fail, no retry
       expect(c.tryAnagathics(false)).toBe(false);
-      expect(c.onAnagathics).toBe(false);
+      expect(c.anagathics.onAnagathics).toBe(false);
     });
   });
 
@@ -186,8 +186,8 @@ describe("anagathics integration (B5)", () => {
       c.terms = 4;
       c.age = 34;
       c.apparentAge = 34;
-      c.onAnagathics = true;
-      c.anagathicsBenefitForfeitedTerms = 1;
+      c.anagathics.onAnagathics = true;
+      c.anagathics.anagathicsBenefitForfeitedTerms = 1;
       // Aging table for term 4-7 has Str/Dex/End each needing a save. With
       // auto-saves on 2, only the third one rolls. Force that to fail.
       vi.spyOn(c.rng, "roll").mockReturnValue(2);
@@ -208,7 +208,7 @@ describe("anagathics integration (B5)", () => {
       c.terms = 4;
       c.age = 34;
       c.apparentAge = 34;
-      c.onAnagathics = false;
+      c.anagathics.onAnagathics = false;
       vi.spyOn(c.rng, "roll").mockReturnValue(2);
       c.doAging();
       const reductions =
@@ -222,16 +222,16 @@ describe("anagathics integration (B5)", () => {
   describe("doServiceTermStep resets per-term flags", () => {
     it("clears anagathicsActiveThisTerm at the start of each term", () => {
       const c = makeMtChar();
-      c.anagathicsActiveThisTerm = true;
-      c.anagathicsWithdrawalThisTerm = true;
+      c.anagathics.anagathicsActiveThisTerm = true;
+      c.anagathics.anagathicsWithdrawalThisTerm = true;
       // Standing order off — hook is a no-op; just verify the reset.
       c.service = "army";
       c.terms = 0;
       c.resumeActive();
       vi.spyOn(c.rng, "roll").mockReturnValue(8);
       c.doServiceTermStep();
-      expect(c.anagathicsActiveThisTerm).toBe(false);
-      expect(c.anagathicsWithdrawalThisTerm).toBe(false);
+      expect(c.anagathics.anagathicsActiveThisTerm).toBe(false);
+      expect(c.anagathics.anagathicsWithdrawalThisTerm).toBe(false);
     });
   });
 });
@@ -255,17 +255,17 @@ describe("anagathics integration (B5)", () => {
 describe("H2: anagathics short-term overlap counter", () => {
   it("enterShortTerm records the overlap when anagathics is active this term", () => {
     const c = makeMtChar();
-    c.anagathicsActiveThisTerm = true;
+    c.anagathics.anagathicsActiveThisTerm = true;
     c.enterShortTerm("survival fail");
-    expect(c.anagathicsShortTermOverlap).toBe(1);
+    expect(c.anagathics.anagathicsShortTermOverlap).toBe(1);
     expect(c.shortTermsCount).toBe(1);
   });
 
   it("enterShortTerm leaves overlap at 0 when anagathics is NOT active", () => {
     const c = makeMtChar();
-    c.anagathicsActiveThisTerm = false;
+    c.anagathics.anagathicsActiveThisTerm = false;
     c.enterShortTerm("reenlistment denied");
-    expect(c.anagathicsShortTermOverlap).toBe(0);
+    expect(c.anagathics.anagathicsShortTermOverlap).toBe(0);
     expect(c.shortTermsCount).toBe(1);
   });
 
@@ -274,16 +274,16 @@ describe("H2: anagathics short-term overlap counter", () => {
     c.rank = 0; // no rank-band extra rolls
     c.terms = 4;
     c.shortTermsCount = 1;
-    c.anagathicsBenefitForfeitedTerms = 1;
+    c.anagathics.anagathicsBenefitForfeitedTerms = 1;
     // The short term and the forfeit term are the SAME term.
-    c.anagathicsShortTermOverlap = 1;
+    c.anagathics.anagathicsShortTermOverlap = 1;
     // qualifyingTerms = 4 - 1 - 1 + 1 = 3; perTerm 2 → 6 rolls.
     const withAddBack = c.musterOutRolls();
     expect(withAddBack).toBe(6);
 
     // Drop the add-back → the term is excluded twice (the pre-fix bug):
     // qualifyingTerms = 4 - 1 - 1 = 2; perTerm 2 → 4 rolls.
-    c.anagathicsShortTermOverlap = 0;
+    c.anagathics.anagathicsShortTermOverlap = 0;
     const doublyExcluded = c.musterOutRolls();
     expect(doublyExcluded).toBe(4);
 

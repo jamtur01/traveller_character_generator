@@ -60,20 +60,20 @@ function rollAnagathicsAvailability(ch: Character): boolean {
   const r = ch.rng.roll(2) + dm;
   const success = r >= target;
   if (success) {
-    if (!ch.onAnagathics) ch.apparentAge = ch.age;
-    ch.onAnagathics = true;
-    ch.anagathicsActiveThisTerm = true;
-    ch.anagathicsEverTaken = true;
-    ch.anagathicsBenefitForfeitedTerms += 1;
+    if (!ch.anagathics.onAnagathics) ch.apparentAge = ch.age;
+    ch.anagathics.onAnagathics = true;
+    ch.anagathics.anagathicsActiveThisTerm = true;
+    ch.anagathics.anagathicsEverTaken = true;
+    ch.anagathics.anagathicsBenefitForfeitedTerms += 1;
     // The retry path can flip from "lost supply" to "found supply"
     // within the same term — clear any withdrawal flag set by the
     // failed attempt so the character doesn't get withdrawal effects.
-    ch.anagathicsWithdrawalThisTerm = false;
+    ch.anagathics.anagathicsWithdrawalThisTerm = false;
     ch.log(ev.anagathics("found", r, target));
-  } else if (ch.onAnagathics) {
+  } else if (ch.anagathics.onAnagathics) {
     ch.log(ev.anagathics("lost", r, target));
-    ch.anagathicsWithdrawalThisTerm = true;
-    ch.onAnagathics = false;
+    ch.anagathics.anagathicsWithdrawalThisTerm = true;
+    ch.anagathics.onAnagathics = false;
   } else {
     ch.log(ev.anagathics("unavailable", r, target));
   }
@@ -108,21 +108,21 @@ function rollAnagathicsRetrySurvival(ch: Character): boolean {
  *  character meets eligibility, set wantsAnagathicsThisTerm and attempt
  *  to locate a supply. Called at term start before survival. */
 export function preSurvivalAnagathicsHook(ch: Character): void {
-  if (!ch.anagathicsStandingOrder) return;
+  if (!ch.anagathics.anagathicsStandingOrder) return;
   const rules = getAnagathicsRules(ch);
   const minAge = rules?.eligibility?.minAge ?? 30;
   const minTerms = rules?.eligibility?.minTerms ?? 3;
   if (ch.age < minAge || ch.terms < minTerms) return;
-  ch.wantsAnagathicsThisTerm = true;
+  ch.anagathics.wantsAnagathicsThisTerm = true;
   tryAnagathics(ch);
 }
 
 /** Voluntarily stop taking anagathics. Reverts to normal survival;
  *  withdrawal applies at term end. */
 export function discontinueAnagathics(ch: Character): void {
-  if (!ch.onAnagathics) return;
-  ch.onAnagathics = false;
-  ch.anagathicsActiveThisTerm = false;
-  ch.anagathicsWithdrawalThisTerm = true;
+  if (!ch.anagathics.onAnagathics) return;
+  ch.anagathics.onAnagathics = false;
+  ch.anagathics.anagathicsActiveThisTerm = false;
+  ch.anagathics.anagathicsWithdrawalThisTerm = true;
   ch.log(ev.anagathics("withdrawal"));
 }

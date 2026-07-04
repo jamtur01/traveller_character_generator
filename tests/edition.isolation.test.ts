@@ -133,7 +133,7 @@ describe("doBladeBenefit reads pool from character's edition", () => {
     c.skills = [];
     c.benefits = [];
     c.events = [];
-    c.musterLog = [];
+    c.muster.musterLog = [];
     return c;
   }
 

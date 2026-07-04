@@ -107,13 +107,13 @@ describe("MT muster DMs (PM p. 17)", () => {
 describe("MT anagathics permanent cash cap (PM p. 15)", () => {
   it("Anagathics-touched character: cap drops to 2 cash rolls", () => {
     const c = makeMt();
-    c.anagathicsEverTaken = true;
+    c.anagathics.anagathicsEverTaken = true;
     expect(maxCashRolls(c)).toBe(2);
   });
 
   it("Anagathics-untouched character: cap stays at 3", () => {
     const c = makeMt();
-    c.anagathicsEverTaken = false;
+    c.anagathics.anagathicsEverTaken = false;
     expect(maxCashRolls(c)).toBe(3);
   });
 });

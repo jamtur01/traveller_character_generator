@@ -119,7 +119,7 @@ export function applyDmRules(
   // noble service). Magnitudes live in JSON (rules.anagathics); mirror the
   // basic-chargen read in engine/serviceLoader.ts.
   if (rollType === "survival" &&
-      (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm)) {
+      (ch.anagathics.anagathicsActiveThisTerm || ch.anagathics.wantsAnagathicsThisTerm)) {
     const anag = getEdition(ch.editionId).rules.anagathics;
     const noblePenalty = anag?.nobleSurvivalDm;
     const standardPenalty = anag?.survivalDm ?? 0;

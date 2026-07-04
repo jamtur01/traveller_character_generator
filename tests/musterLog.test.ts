@@ -19,7 +19,7 @@ describe("musterOutCash", () => {
     // Force the d6 to roll 3 → Navy cash table 3 = Cr5,000.
     vi.spyOn(Math, "random").mockReturnValue(2 / 6 + 0.001);
     c.musterOutCash(0);
-    expect(c.musterLog[0]).toMatch(/^Cr[\d,]+ cash$/);
+    expect(c.muster.musterLog[0]).toMatch(/^Cr[\d,]+ cash$/);
     expect(c.credits).toBeGreaterThan(0);
     vi.restoreAllMocks();
   });
@@ -32,7 +32,7 @@ describe("musterOutBenefit — outcome descriptions", () => {
     // Navy benefit roll 3 → +2 Education (post-fix).
     vi.spyOn(Math, "random").mockReturnValue(2 / 6 + 0.001);
     c.musterOutBenefit(0);
-    expect(c.musterLog[0]).toContain("+2 Edu");
+    expect(c.muster.musterLog[0]).toContain("+2 Edu");
     vi.restoreAllMocks();
   });
 
@@ -42,7 +42,7 @@ describe("musterOutBenefit — outcome descriptions", () => {
     // Scout benefit roll 6 → Scout Ship.
     vi.spyOn(Math, "random").mockReturnValue(5 / 6 + 0.001);
     c.musterOutBenefit(0);
-    expect(c.musterLog[0]).toBe("Scout Ship");
+    expect(c.muster.musterLog[0]).toBe("Scout Ship");
     expect(c.ship).toBe(true);
     vi.restoreAllMocks();
   });
@@ -53,7 +53,7 @@ describe("musterOutBenefit — outcome descriptions", () => {
     // Pirate benefit roll 4 is a no-op in CotI.
     vi.spyOn(Math, "random").mockReturnValue(3 / 6 + 0.001);
     c.musterOutBenefit(0);
-    expect(c.musterLog[0]).toBe("No benefit");
+    expect(c.muster.musterLog[0]).toBe("No benefit");
     vi.restoreAllMocks();
   });
 
@@ -65,7 +65,7 @@ describe("musterOutBenefit — outcome descriptions", () => {
     // weapon once, as the bare weapon name.
     vi.spyOn(Math, "random").mockReturnValue(3 / 6 + 0.001);
     c.musterOutBenefit(0);
-    const entry = c.musterLog[0]!;
+    const entry = c.muster.musterLog[0]!;
     expect(entry).not.toMatch(/-0/);
     expect(entry).toBe(c.bladeBenefit);
     vi.restoreAllMocks();

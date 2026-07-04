@@ -60,7 +60,7 @@ export function doAging(ch: Character): void {
     getEdition(ch.editionId).data.services[ch.service]?.startAge ?? 18;
   const physicalOffset = ch.acgState?.physicalAgeOffset ?? 0;
   const physicalAge = ch.apparentAge + physicalOffset;
-  const usesAgeBasis = ch.onAnagathics || physicalOffset !== 0;
+  const usesAgeBasis = ch.anagathics.onAnagathics || physicalOffset !== 0;
   const effectiveTermsForAging = usesAgeBasis
     ? Math.max(0, Math.floor((physicalAge - serviceStartAge) / ch.fullTermYears()))
     : Math.max(0, ch.terms - ch.shortTermsCount);
@@ -70,13 +70,13 @@ export function doAging(ch: Character): void {
     .sort((a, b) => b.endOfTerm - a.endOfTerm)[0];
   if (!applicable) return;
 
-  const withdrawal = ch.anagathicsWithdrawalThisTerm;
+  const withdrawal = ch.anagathics.anagathicsWithdrawalThisTerm;
   // Anagathics benefit: auto-save N (default 2) highest-save attrs —
   // most likely to fail, so the benefit lands where it helps most.
   const effects = Object.entries(applicable.effects) as
     [AttributeKey, { delta: number; save: number }][];
   const autoSaves = new Set<AttributeKey>();
-  if (ch.onAnagathics && !withdrawal && effects.length > 0) {
+  if (ch.anagathics.onAnagathics && !withdrawal && effects.length > 0) {
     const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
     const autoSavesPerTerm =
       getEdition(ch.editionId).rules.anagathics?.agingAutoSavesPerTerm ?? 2;
@@ -99,11 +99,11 @@ export function doAging(ch: Character): void {
       ageAttribute(ch, attr, eff.save, eff.delta);
     }
   }
-  ch.anagathicsWithdrawalThisTerm = false;
+  ch.anagathics.anagathicsWithdrawalThisTerm = false;
   // Maintained anagathics freezes apparent age; otherwise it tracks
   // chronological age, less any Frozen Watch physical-age offset so the
   // apparent (physical) age stays behind chronological on the sheet.
-  if (!ch.onAnagathics) ch.apparentAge = ch.age + physicalOffset;
+  if (!ch.anagathics.onAnagathics) ch.apparentAge = ch.age + physicalOffset;
 
   // Aging crisis: any attribute at or below the configured threshold
   // triggers a save against death. Pass → attribute clamped to 1.

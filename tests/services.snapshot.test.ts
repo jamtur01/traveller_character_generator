@@ -40,7 +40,7 @@ function freshCharacter(svc: ServiceKey): Character {
   c.skills = [];
   c.benefits = [];
   c.events = [];
-  c.musterLog = [];
+  c.muster.musterLog = [];
   c.bladeBenefit = "";
   c.gunBenefit = "";
   c.mortgage = 0;
@@ -109,8 +109,8 @@ function acquireSkillMatrix(svc: ServiceKey) {
   for (let table = 1; table <= 4; table++) {
     for (let d = 1; d <= 6; d++) {
       const c = freshCharacter(svc);
-      c.forceTable = true;
-      c.forceTableIndex = table;
+      c.muster.forceTable = true;
+      c.muster.forceTableIndex = table;
       forceD6(d);
       s[svc].acquireSkill(c);
       vi.restoreAllMocks();

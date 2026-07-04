@@ -43,7 +43,7 @@ export function benefitDmFor(ch: Character): number {
 export function maxCashRolls(ch: Character): number {
   const r = rules(ch);
   const base = r?.maxCashTableRolls ?? 3;
-  if (!ch.anagathicsEverTaken) return base;
+  if (!ch.anagathics.anagathicsEverTaken) return base;
   const cap = getEdition(ch.editionId).rules.anagathics?.cashRollCap ?? 2;
   return Math.min(cap, base);
 }

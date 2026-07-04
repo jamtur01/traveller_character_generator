@@ -15,20 +15,20 @@ describe("cloneCharacter", () => {
     a.skills = [["Pilot", 1]];
     a.benefits = ["High Passage"];
     a.events = [{ kind: "raw", level: "simple", text: "Enlisted" }];
-    a.musterLog = ["Cr5,000 cash"];
+    a.muster.musterLog = ["Cr5,000 cash"];
 
     const b = cloneCharacter(a);
     b.attributes.strength = 99;
     b.skills.push(["Vacc Suit", 1]);
     b.benefits.push("Low Passage");
     b.events.push({ kind: "raw", level: "simple", text: "Another" });
-    b.musterLog.push("Another");
+    b.muster.musterLog.push("Another");
 
     expect(a.attributes.strength).not.toBe(99);
     expect(a.skills).toHaveLength(1);
     expect(a.benefits).toHaveLength(1);
     expect(a.events).toHaveLength(1);
-    expect(a.musterLog).toHaveLength(1);
+    expect(a.muster.musterLog).toHaveLength(1);
   });
 
   it("copies all scalar Character state (rank, credits, ship, TAS, mortgage, etc.)", () => {

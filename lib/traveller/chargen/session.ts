@@ -62,7 +62,7 @@ export interface ChargenResult {
 function pickSkillPhase(ch: Character): ChargenPhase {
   // The phase distinction is for the UI's stepper / progress bar only;
   // the engine treats the two identically.
-  return ch.forceTableIndex >= 3 ? "skill_adv" : "skill_basic";
+  return ch.muster.forceTableIndex >= 3 ? "skill_adv" : "skill_basic";
 }
 
 export interface StartCareerOptions {
@@ -212,19 +212,19 @@ export function resolvePending(
   // Muster roll finalization (deferred from musterChoice when the cascade
   // paused). The sentinel persists across nested choices (e.g. skillCap
   // queued from addSkill); decrement only when the entire chain drains.
-  if (ch.pendingMusterRoll) {
-    ch.pendingMusterRoll = false;
+  if (ch.muster.pendingMusterRoll) {
+    ch.muster.pendingMusterRoll = false;
     // Defensive: never decrement below zero. The sentinel/decrement
     // pairing is supposed to be exact, but a redundant drain (e.g., a
     // nested choice chain finalized via another path first) must not
     // corrupt the roll budget.
-    if (ch.musterRolls > 0) ch.musterRolls -= 1;
-    if (ch.musterRolls === 0) {
+    if (ch.muster.musterRolls > 0) ch.muster.musterRolls -= 1;
+    if (ch.muster.musterRolls === 0) {
       ch.musterOutPay();
       ch.markMustered();
       return { character: ch, phase: "end" };
     }
-    if (ch.musterCashUsed >= maxCashRolls(ch)) {
+    if (ch.muster.musterCashUsed >= maxCashRolls(ch)) {
       return { character: ch, phase: "muster_no_cash" };
     }
     return { character: ch, phase: "muster" };
@@ -296,10 +296,10 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
 export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot {
   const ch = cloneCharacter(snap.character);
   if (table === 0) {
-    ch.forceTable = false;
+    ch.muster.forceTable = false;
   } else {
-    ch.forceTable = true;
-    ch.forceTableIndex = table;
+    ch.muster.forceTable = true;
+    ch.muster.forceTableIndex = table;
   }
   ch.skillPoints -= 1;
   try {
@@ -360,13 +360,13 @@ function enterMuster(ch: Character): ChargenSnapshot {
   // Already entered muster — don't reset musterRolls (would discard
   // already-spent rolls if the UI dispatches enterMuster twice).
   if (ch.musteredOut) {
-    if (ch.musterRolls === 0) return { character: ch, phase: "end" };
-    if (ch.musterCashUsed >= maxCashRolls(ch)) return { character: ch, phase: "muster_no_cash" };
+    if (ch.muster.musterRolls === 0) return { character: ch, phase: "end" };
+    if (ch.muster.musterCashUsed >= maxCashRolls(ch)) return { character: ch, phase: "muster_no_cash" };
     return { character: ch, phase: "muster" };
   }
   ch.enterMustered();
-  ch.musterRolls = ch.musterOutRolls();
-  if (ch.musterRolls === 0) {
+  ch.muster.musterRolls = ch.musterOutRolls();
+  if (ch.muster.musterRolls === 0) {
     ch.musterOutPay();
     ch.markMustered();
     return { character: ch, phase: "end" };
@@ -388,7 +388,7 @@ export function musterChoice(
   // throw ChoicePendingError mid-cascade. Without this ordering, a
   // paused cash roll wouldn't count toward maxCashRolls on resume — the
   // user could pick "cash" again past the cap.
-  if (kind === "cash") ch.musterCashUsed += 1;
+  if (kind === "cash") ch.muster.musterCashUsed += 1;
   try {
     if (kind === "cash") {
       ch.musterOutCash(cashDM);
@@ -397,16 +397,16 @@ export function musterChoice(
     }
   } catch (err) {
     if (!(err instanceof ChoicePendingError)) throw err;
-    ch.pendingMusterRoll = true;
+    ch.muster.pendingMusterRoll = true;
     return { character: ch, phase: snap.phase };
   }
-  ch.musterRolls -= 1;
-  if (ch.musterRolls === 0) {
+  ch.muster.musterRolls -= 1;
+  if (ch.muster.musterRolls === 0) {
     ch.musterOutPay();
     ch.markMustered();
     return { character: ch, phase: "end" };
   }
-  if (ch.musterCashUsed >= maxCashRolls(ch)) {
+  if (ch.muster.musterCashUsed >= maxCashRolls(ch)) {
     return { character: ch, phase: "muster_no_cash" };
   }
   return { character: ch, phase: "muster" };

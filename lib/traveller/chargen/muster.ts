@@ -45,11 +45,11 @@ export function musterOutRolls(ch: Character): number {
   const rules = getEdition(ch.editionId).rules.musterOutRolls;
   const perTerm = rules?.perTerm ?? 1;
   const acgPartial = ch.acgState?.partialTerms ?? 0;
-  const anagathicsTerms = ch.anagathicsBenefitForfeitedTerms;
+  const anagathicsTerms = ch.anagathics.anagathicsBenefitForfeitedTerms;
   // A term counted by BOTH shortTermsCount and anagathicsTerms (anagathics
   // secured in a term that then failed survival) would be excluded twice;
   // add the recorded overlap back so each excluded term drops one roll.
-  const overlap = ch.anagathicsShortTermOverlap;
+  const overlap = ch.anagathics.anagathicsShortTermOverlap;
   const qualifyingTerms = Math.max(
     0,
     ch.terms - ch.shortTermsCount - acgPartial - anagathicsTerms + overlap,
@@ -71,7 +71,7 @@ export function musterOutCash(ch: Character, cashDM: number): void {
   const idx = Math.min(7, Math.max(1, rawRoll + cashDM));
   const cash = ch.serviceDef().musterCash[idx] ?? 0;
   ch.credits += cash;
-  ch.musterLog.push(`Cr${numCommaSep(cash)} cash`);
+  ch.muster.musterLog.push(`Cr${numCommaSep(cash)} cash`);
   ch.log(ev.musterCash(cash, rawRoll, cashDM));
 }
 
@@ -109,7 +109,7 @@ export function musterOutBenefit(ch: Character, benefitsDM: number): void {
   if (ch.mortgage < beforeMortgage) {
     parts.push(`Free Trader mortgage -${beforeMortgage - ch.mortgage} yrs`);
   }
-  ch.musterLog.push(parts.length > 0 ? parts.join(", ") : "No benefit");
+  ch.muster.musterLog.push(parts.length > 0 ? parts.join(", ") : "No benefit");
 }
 
 /** Apply retirement pay (if eligible) and run per-pathway finalizers. */

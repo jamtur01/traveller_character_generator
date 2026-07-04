@@ -80,7 +80,7 @@ export function buildServiceDef(
     // take anagathics"). The DM applies for every term in which the
     // character desires anagathics, whether or not the supply was
     // secured. Magnitudes live in JSON (rules.anagathics).
-    if (ch.anagathicsActiveThisTerm || ch.wantsAnagathicsThisTerm) {
+    if (ch.anagathics.anagathicsActiveThisTerm || ch.anagathics.wantsAnagathicsThisTerm) {
       const anag = edition.rules.anagathics;
       const noblePenalty = anag?.nobleSurvivalDm;
       const standardPenalty = anag?.survivalDm ?? 0;
@@ -171,10 +171,10 @@ export function buildServiceDef(
   // in interactive mode the choice is queued for the UI. Either way the
   // resolver rolls the cell die and applies the cell.
   const acquireSkill = (ch: Character): void => {
-    if (ch.forceTable) {
-      // Test path: ch.forceTableIndex forces a specific table; bypass the
+    if (ch.muster.forceTable) {
+      // Test path: ch.muster.forceTableIndex forces a specific table; bypass the
       // interactive picker entirely so existing row-level tests stay green.
-      runTablePick(ch, ch.forceTableIndex);
+      runTablePick(ch, ch.muster.forceTableIndex);
       return;
     }
     const meta = data.skillTableMeta;

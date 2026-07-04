@@ -86,7 +86,7 @@ function freshCharacter(editionId: string, svc: ServiceKey): Character {
   c.skills = [];
   c.benefits = [];
   c.events = [];
-  c.musterLog = [];
+  c.muster.musterLog = [];
   c.bladeBenefit = "";
   c.gunBenefit = "";
   c.mortgage = 40;
@@ -113,8 +113,8 @@ function runSkillRow(
   editionId: string, svc: ServiceKey, table: number, n: number,
 ): SkillRow {
   const c = freshCharacter(editionId, svc);
-  c.forceTable = true;
-  c.forceTableIndex = table;
+  c.muster.forceTable = true;
+  c.muster.forceTableIndex = table;
   forceD6(n);
   getEditionServices(editionId)[svc]!.acquireSkill(c);
   vi.restoreAllMocks();

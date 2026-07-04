@@ -28,10 +28,8 @@ export function doServiceTermStep(ch: Character): void {
   );
   if (!acgResuming) {
     // Reset per-term anagathics flags; intent for this term is set below
-    // from anagathicsStandingOrder (or by an explicit pre-survival call).
-    ch.anagathicsActiveThisTerm = false;
-    ch.anagathicsWithdrawalThisTerm = false;
-    ch.wantsAnagathicsThisTerm = false;
+    // from the standing order (or by an explicit pre-survival call).
+    ch.anagathics.resetPerTerm();
     ch.log(ev.section("--------------------------------------------"));
   }
   if (ch.useAcg && ch.acgState) {

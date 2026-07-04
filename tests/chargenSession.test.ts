@@ -98,13 +98,13 @@ describe("session.musterChoice phase routing", () => {
     c.service = "navy";
     c.terms = 2;
     c.enterMustered();
-    c.musterRolls = 3;
+    c.muster.musterRolls = 3;
     c.choiceMode = "auto";
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const snap = musterChoice({ character: c, phase: "muster" }, "cash");
-    expect(snap.character.musterRolls).toBe(2);
+    expect(snap.character.muster.musterRolls).toBe(2);
     expect(snap.phase).toBe("muster");
-    expect(snap.character.musterCashUsed).toBe(1);
+    expect(snap.character.muster.musterCashUsed).toBe(1);
   });
 
   it("last muster roll routes to end and emits endGeneration", () => {
@@ -113,7 +113,7 @@ describe("session.musterChoice phase routing", () => {
     c.service = "navy";
     c.terms = 2;
     c.enterMustered();
-    c.musterRolls = 1;
+    c.muster.musterRolls = 1;
     c.choiceMode = "auto";
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const snap = musterChoice({ character: c, phase: "muster" }, "cash");
@@ -129,13 +129,13 @@ describe("session.musterChoice phase routing", () => {
     c.service = "navy";
     c.terms = 2;
     c.enterMustered();
-    c.musterRolls = 2;
-    c.musterCashUsed = 2; // CT cap is 3 — about to hit it
+    c.muster.musterRolls = 2;
+    c.muster.musterCashUsed = 2; // CT cap is 3 — about to hit it
     c.choiceMode = "auto";
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const snap = musterChoice({ character: c, phase: "muster" }, "cash");
     expect(snap.phase).toBe("muster_no_cash");
-    expect(snap.character.musterCashUsed).toBe(3);
+    expect(snap.character.muster.musterCashUsed).toBe(3);
   });
 });
 
@@ -180,14 +180,14 @@ describe("session.resolvePending — muster cascade finalization", () => {
     c.service = "navy";
     c.terms = 2;
     c.enterMustered();
-    c.musterRolls = 2;
-    c.pendingMusterRoll = true;
+    c.muster.musterRolls = 2;
+    c.muster.pendingMusterRoll = true;
     c.choiceMode = "auto";
     // No actual pending choice to resolve — pass a non-existent id;
     // resolveChoice will be a no-op but the finalization should still run.
     const snap = resolvePending({ character: c, phase: "muster" }, "nope", 0);
-    expect(snap.character.musterRolls).toBe(1);
-    expect(snap.character.pendingMusterRoll).toBe(false);
+    expect(snap.character.muster.musterRolls).toBe(1);
+    expect(snap.character.muster.pendingMusterRoll).toBe(false);
     expect(snap.phase).toBe("muster");
   });
 });

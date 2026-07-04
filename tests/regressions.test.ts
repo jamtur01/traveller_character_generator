@@ -50,7 +50,7 @@ describe("Bug #1: anagathics retry clears withdrawal flag on success", () => {
     c.age = 34;
     c.terms = 3;
     c.service = "army";
-    c.onAnagathics = true;
+    c.anagathics.onAnagathics = true;
     // Sequence: availability roll fails → withdrawal set; retry survival
     // passes; retry availability succeeds → onAnagathics restored and
     // withdrawalThisTerm should be cleared.
@@ -59,8 +59,8 @@ describe("Bug #1: anagathics retry clears withdrawal flag on success", () => {
      .mockReturnValueOnce(8)  // retry survival: pass (army 5+)
      .mockReturnValueOnce(12); // retry availability: pass
     expect(c.tryAnagathics()).toBe(true);
-    expect(c.onAnagathics).toBe(true);
-    expect(c.anagathicsWithdrawalThisTerm).toBe(false);
+    expect(c.anagathics.onAnagathics).toBe(true);
+    expect(c.anagathics.anagathicsWithdrawalThisTerm).toBe(false);
   });
 
   it("character on anagathics: both availability attempts fail → withdrawal flag stays set, onAnagathics false", () => {
@@ -68,15 +68,15 @@ describe("Bug #1: anagathics retry clears withdrawal flag on success", () => {
     c.age = 34;
     c.terms = 3;
     c.service = "army";
-    c.onAnagathics = true;
+    c.anagathics.onAnagathics = true;
     c.homeworld = { ...c.homeworld!, starport: "E", tech: "Industrial" }; // no DMs
     const r = vi.spyOn(c.rng, "roll");
     r.mockReturnValueOnce(2)  // availability 1: fail
      .mockReturnValueOnce(8)  // retry survival: pass
      .mockReturnValueOnce(2); // retry availability: fail
     expect(c.tryAnagathics()).toBe(false);
-    expect(c.onAnagathics).toBe(false);
-    expect(c.anagathicsWithdrawalThisTerm).toBe(true);
+    expect(c.anagathics.onAnagathics).toBe(false);
+    expect(c.anagathics.anagathicsWithdrawalThisTerm).toBe(true);
   });
 });
 

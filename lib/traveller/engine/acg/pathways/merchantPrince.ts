@@ -590,7 +590,7 @@ function merchantAwardBonus(ch: Character): void {
   const cash = Math.floor(fullAmount / 2);
   if (cash <= 0) return;
   ch.credits += cash;
-  ch.musterLog.push(`Cr${cash} bonus (in-service)`);
+  ch.muster.musterLog.push(`Cr${cash} bonus (in-service)`);
   ch.log(ev.musterCash(cash, rawRoll, 0, "Merchant in-service bonus (half)"));
 }
 
@@ -942,7 +942,7 @@ export function merchantFinalizeMuster(ch: Character): void {
   ch.acgState.freeTraderShipEarned = true;
   ch.log(ev.raw("Free Trader ship (Owner/Captain)", "simple"));
   ch.addBenefit("Free Trader");
-  ch.musterLog.push("Free Trader ship (Owner/Captain)");
+  ch.muster.musterLog.push("Free Trader ship (Owner/Captain)");
 }
 
 export function getMerchantPrincePathway() {

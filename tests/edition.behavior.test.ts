@@ -26,7 +26,7 @@ function freshChar(editionId: string, service: ServiceKey, attrs = 9): Character
   c.skills = [];
   c.benefits = [];
   c.events = [];
-  c.musterLog = [];
+  c.muster.musterLog = [];
   return c;
 }
 

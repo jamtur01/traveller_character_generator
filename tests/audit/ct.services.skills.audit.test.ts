@@ -68,9 +68,9 @@ function freshCharacter(svc: ServiceKey): Character {
   c.skills = [];
   c.benefits = [];
   c.events = [];
-  c.musterLog = [];
+  c.muster.musterLog = [];
   c.service = svc;
-  c.forceTable = true;
+  c.muster.forceTable = true;
   return c;
 }
 
@@ -81,7 +81,7 @@ interface RowOutput {
 
 function rowFor(svc: ServiceKey, table: number, n: number): RowOutput {
   const c = freshCharacter(svc);
-  c.forceTableIndex = table;
+  c.muster.forceTableIndex = table;
   forceD6(n);
   s[svc].acquireSkill(c);
   vi.restoreAllMocks();

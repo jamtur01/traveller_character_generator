@@ -230,9 +230,7 @@ export function runAcgTerm(ch: Character): void {
     // PM p. 15: anagathics intent is declared before the term's first
     // survival roll. Reset per-term flags and consult the standing order
     // so the year-1 survival roll sees the correct DM.
-    ch.anagathicsActiveThisTerm = false;
-    ch.anagathicsWithdrawalThisTerm = false;
-    ch.wantsAnagathicsThisTerm = false;
+    ch.anagathics.resetPerTerm();
     ch.preSurvivalAnagathicsHook();
     if (p.startOfTerm) p.startOfTerm(ch);
     ch.acgState.year = 1;

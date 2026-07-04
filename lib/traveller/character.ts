@@ -66,6 +66,7 @@ import type { ChargenStatus } from "./types";
 import { getEditionServices } from "./services";
 import { DEFAULT_EDITION_ID, getEdition } from "./editions";
 import { formatCharacterSheet } from "./sheet";
+import { AnagathicsState, MusterState } from "./characterState";
 
 /** Roll the six initial 2d6 attributes. Consumes 12 Math.random calls
  *  — kept as a free helper so tests can inspect/replace it independent
@@ -136,20 +137,8 @@ export interface CharacterState {
   chargenStatus: ChargenStatus;
   shortTermsCount: number;
   endedAsRetired: boolean;
-  forceTable: boolean;
-  forceTableIndex: number;
-  musterCashUsed: number;
-  musterRolls: number;
-  pendingMusterRoll: boolean;
-  musterLog: string[];
-  onAnagathics: boolean;
-  anagathicsActiveThisTerm: boolean;
-  anagathicsWithdrawalThisTerm: boolean;
-  anagathicsEverTaken: boolean;
-  anagathicsBenefitForfeitedTerms: number;
-  anagathicsShortTermOverlap: number;
-  wantsAnagathicsThisTerm: boolean;
-  anagathicsStandingOrder: boolean;
+  muster: MusterState;
+  anagathics: AnagathicsState;
   editionId: string;
   homeworld: Homeworld | null;
   choiceMode: ChoiceMode;
@@ -289,8 +278,8 @@ export class Character implements CharacterState {
     // overlap in a dedicated counter so musterOutRolls can subtract each
     // excluded term exactly once (PM p. 15/16). Kept separate from
     // anagathicsBenefitForfeitedTerms, which also drives retirement pay.
-    if (this.anagathicsActiveThisTerm) {
-      this.anagathicsShortTermOverlap += 1;
+    if (this.anagathics.anagathicsActiveThisTerm) {
+      this.anagathics.anagathicsShortTermOverlap += 1;
     }
   }
 
@@ -357,73 +346,50 @@ export class Character implements CharacterState {
     if (this.events.some((e) => e.kind === "endGeneration")) return;
     this.log(ev.endGeneration("mustered"));
   }
-  forceTable = false;
-  forceTableIndex = 1;
-  musterCashUsed = 0;
-  musterRolls = 0;
-  /** Transient UI flag: the current muster roll (cash or benefit) paused
-   *  on a cascade or nested choice and hasn't completed yet. Set by
-   *  the muster-out UI handler when a ChoicePendingError is caught;
-   *  cleared by the resolvePending handler after the entire choice
-   *  chain drains. While true, musterRolls must NOT be decremented —
-   *  the roll's player-visible work isn't finished. */
-  pendingMusterRoll = false;
-  /** Human-readable log of each muster-out roll's outcome. */
-  musterLog: string[] = [];
-  /**
-   * Anagathics state (MT PM p. 15). Apparent age is what the Aging table
-   * uses each term; chronological `age` advances normally. Frozen each
-   * term anagathics supply is maintained; advances when supply is missing.
-   */
-  onAnagathics = false;
-  /** Per-term flag: anagathics taken this term. -1 survival DM, no muster
-   *  benefit roll this term. Player must specify before survival. */
-  anagathicsActiveThisTerm = false;
-  /** Per-term flag: character lost the anagathics supply this term — double
-   *  saving throws on aging. */
-  anagathicsWithdrawalThisTerm = false;
-  /** True once the character has ever opted into anagathics: caps cash
-   *  table rolls at 2 permanently. */
-  anagathicsEverTaken = false;
-  /** Apparent age — the Aging-table line the character is on. Defaults to
-   *  chronological age; diverges when anagathics is active. */
-  /** Private backing for apparentAge. Defaults to 0; the getter
-   *  reports `age` until doAging or anagathics explicitly assigns. */
-  private _apparentAge = 0;
-  /** Apparent age — the Aging-table line the character is on. Equals
-   *  chronological age until anagathics freezes it or doAging snapshots
-   *  the value. Getter ensures UI / PDF reads before the first aging
-   *  term don't see 0. */
+  /** Muster-out bookkeeping + skill-table force flags (MusterState). */
+  muster = new MusterState();
+
+  /** Anagathics sub-machine — per-term intent/effect flags, the persistent
+   *  standing order, the lifetime muster/retirement counters, and the
+   *  apparent-age line (AnagathicsState). */
+  anagathics = new AnagathicsState();
+
+  // Back-compat accessors: the UI (app/**) and pdfSheet still read these
+  // through the flat Character surface and are owned by a separate change,
+  // so the flat names remain a stable public API. The single source of
+  // truth is the sub-objects above — these only project to (or, for the
+  // standing order the term UI toggles, forward to) them.
+
+  /** Muster-out rolls remaining (read by the muster UI / stepper). */
+  get musterRolls(): number { return this.muster.musterRolls; }
+  /** Cash muster-out rolls spent so far (read by the muster UI). */
+  get musterCashUsed(): number { return this.muster.musterCashUsed; }
+  /** Human-readable muster-out roll log (read by the muster / end UI). */
+  get musterLog(): string[] { return this.muster.musterLog; }
+  /** Persistent anagathics standing order (read + toggled by the term UI). */
+  get anagathicsStandingOrder(): boolean {
+    return this.anagathics.anagathicsStandingOrder;
+  }
+  set anagathicsStandingOrder(value: boolean) {
+    this.anagathics.anagathicsStandingOrder = value;
+  }
+
+  /** Apparent age — the Aging-table line the character is on. Derived: the
+   *  stored line (AnagathicsState) resolved against chronological age.
+   *  Equals age until anagathics freezes it or doAging snapshots it. Read
+   *  by the PDF / sheet; assigned by the aging and anagathics steps. */
   get apparentAge(): number {
-    return this._apparentAge === 0 ? this.age : this._apparentAge;
+    return this.anagathics.resolveApparentAge(this.age);
   }
-  set apparentAge(v: number) {
-    this._apparentAge = v;
+  set apparentAge(value: number) {
+    this.anagathics.apparentAgeLine = value;
   }
-  /** Initialize the backing field of apparentAge to the current age if
-   *  it's still the default-zero sentinel. Idempotent. Called by the
-   *  aging step so that a later anagathics opt-in can freeze the field
-   *  from the value at this point rather than from chronological age. */
+  /** Snapshot the apparent-age line to the current chronological age if it
+   *  is still unset (idempotent). Called by the aging step so a later
+   *  anagathics opt-in freezes from this value rather than raw age. */
   snapshotApparentAge(): void {
-    if (this._apparentAge === 0) this._apparentAge = this.age;
+    this.anagathics.snapshotApparentAge(this.age);
   }
-  /** Count of terms in which anagathics was active — those terms forfeit
-   *  the muster-out benefit roll (PM p. 15). */
-  anagathicsBenefitForfeitedTerms = 0;
-  /** Count of terms that both secured anagathics AND became short terms.
-   *  Such a term is subtracted by both shortTermsCount and
-   *  anagathicsBenefitForfeitedTerms; musterOutRolls adds this back so the
-   *  term is excluded exactly once. Does not affect retirement pay. */
-  anagathicsShortTermOverlap = 0;
-  /** Per-term flag: player has declared intent to use anagathics this term.
-   *  Set before survival; cleared at the start of each term. When true,
-   *  survival receives the -1 (-2 for nobles) DM whether or not the supply
-   *  is later found. The pre-survival hook reads this and calls tryAnagathics. */
-  wantsAnagathicsThisTerm = false;
-  /** Persistent player preference: re-assert anagathics intent each term
-   *  once eligible. The pre-survival hook copies this into
-   *  wantsAnagathicsThisTerm at the start of each term. */
-  anagathicsStandingOrder = false;
   /**
    * The edition this character was rolled under. Determines which service
    * map, cascade pools, and edition hooks apply. Stays fixed for the
@@ -816,7 +782,7 @@ export class Character implements CharacterState {
   qualifyingRetirementTerms(): number {
     const retirement = getEdition(this.editionId).rules.retirement;
     if (retirement?.anagathicTermsExcluded) {
-      return this.terms - (this.anagathicsBenefitForfeitedTerms ?? 0);
+      return this.terms - (this.anagathics.anagathicsBenefitForfeitedTerms ?? 0);
     }
     return this.terms;
   }
@@ -954,7 +920,8 @@ export function cloneCharacter(ch: Character): Character {
   // future event kinds may grow nested arrays/objects — copying defends
   // against a mutation in the clone leaking back into the original.
   next.events = ch.events.map((e) => ({ ...e }));
-  next.musterLog = [...ch.musterLog];
+  next.muster = ch.muster.clone();
+  next.anagathics = ch.anagathics.clone();
   // pendingChoices must be cloned: workflow handlers in app/page.tsx mutate
   // the clone (via pickOrDefer → pendingChoices.push) before committing.
   // A shared reference leaks queued cascades back to the unrelated original

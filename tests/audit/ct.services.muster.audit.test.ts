@@ -49,7 +49,7 @@ function freshCharacter(svc: ServiceKey): Character {
   c.skills = [];
   c.benefits = [];
   c.events = [];
-  c.musterLog = [];
+  c.muster.musterLog = [];
   c.bladeBenefit = "";
   c.gunBenefit = "";
   c.mortgage = 40;
