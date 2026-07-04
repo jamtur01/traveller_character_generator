@@ -224,13 +224,14 @@ export function merchantEnlist(
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
   // Merchants as Purser Department Medic per PM p. 47). Otherwise default
   // to E1 enlisted.
-  if (!ch.requireAcgState().preCareerCommission) {
-    ch.requireAcgState().rankCode = data.enlistment.startingRank;
-    ch.requireAcgState().isOfficer = false;
-  } else if (ch.requireAcgState().schoolsAttended.includes("medicalSchool")) {
+  const acg = ch.requireAcgState();
+  if (!acg.preCareerCommission) {
+    acg.rankCode = data.enlistment.startingRank;
+    acg.isOfficer = false;
+  } else if (acg.schoolsAttended.includes("medicalSchool")) {
     ch.requireMerchantAcg().department = "Purser";
     ch.log(ev.enlistmentAttempt(
-      `Merchants Purser Department Medic (medical school direct commission, ${ch.requireAcgState().rankCode})`,
+      `Merchants Purser Department Medic (medical school direct commission, ${acg.rankCode})`,
       0, 0, 0, true,
     ));
   }
@@ -612,10 +613,11 @@ export function merchantSpecialAssignment(ch: Character): void {
   const dm = applyStructuredDms(data.specialDuty.dms, ch);
   const row = rollDieRow(ch, data.specialDuty, { dice: 1, dm, lo: 1, hi: 7 });
   if (!row) return;
-  const col = ch.requireAcgState().isOfficer ? "officers" : "deckHands";
+  const acg = ch.requireAcgState();
+  const col = acg.isOfficer ? "officers" : "deckHands";
   const sa = row[col];
   if (typeof sa !== "string") return;
-  ch.requireAcgState().schoolsAttended.push(sa);
+  acg.schoolsAttended.push(sa);
   ch.log(ev.schoolAssigned(sa, "merchantPrince"));
   awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
@@ -627,22 +629,23 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   // (grant rank O0 → enlisted becomes officer) and Department Test (allow
   // promotion examination this term).
   if (sa === "Commission") {
-    if (!ch.requireAcgState().isOfficer) {
+    const acg = ch.requireAcgState();
+    if (!acg.isOfficer) {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
       const rule = data.specialRules?.specialDutyCommission;
       const lineType = ch.requireMerchantAcg().lineType!;
       const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
-      ch.requireAcgState().isOfficer = true;
-      ch.requireAcgState().rankCode = rank;
+      acg.isOfficer = true;
+      acg.rankCode = rank;
       ch.commissioned = true;
       // O0 holders must pass exam for O1 within passO1DeadlineYears or
       // revert to enlisted (PM p. 63).
       if (rank === (rule?.defaultRank ?? "O0") && rule?.passO1DeadlineYears) {
-        ch.requireAcgState().commissionO0DeadlineYear =
-          (ch.requireAcgState().yearsServed ?? 0) + rule.passO1DeadlineYears;
+        acg.commissionO0DeadlineYear =
+          (acg.yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
-      ch.log(ev.promoted(ch.requireAcgState().rankCode, "Merchant commission"));
+      ch.log(ev.promoted(acg.rankCode, "Merchant commission"));
     }
     return;
   }
@@ -762,8 +765,9 @@ export function merchantStartOfTerm(ch: Character): void {
   // merchant service defines no enlisted rank titles above the starting
   // grade, so seniority numbering is capped at enlistedRankMax to avoid
   // emitting phantom ranks (e.g. E15) for improbably long enlisted careers.
-  if (!ch.requireAcgState().isOfficer && ch.terms > 0) {
-    const code = ch.requireAcgState().rankCode;
+  const acg = ch.requireAcgState();
+  if (!acg.isOfficer && ch.terms > 0) {
+    const code = acg.rankCode;
     const m = code.match(/^E(\d+)$/);
     if (m) {
       const n = parseInt(m[1]!, 10);

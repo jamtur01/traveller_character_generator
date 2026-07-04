@@ -472,15 +472,16 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   if (need > maxSpend) {
     return { spent: 0, newMargin: req.margin };
   }
-  if (ch.requireAcgState().browniePoints < need) {
+  const acg = ch.requireAcgState();
+  if (acg.browniePoints < need) {
     return { spent: 0, newMargin: req.margin };
   }
-  ch.requireAcgState().browniePoints -= need;
-  ch.requireAcgState().browniePointsSpent += need;
+  acg.browniePoints -= need;
+  acg.browniePointsSpent += need;
   ch.log(ev.browniePoint(
     -need,
     `Mitigated ${req.rollName} failure (avoided: ${req.consequence})`,
-    ch.requireAcgState().browniePoints,
+    acg.browniePoints,
   ));
   return { spent: need, newMargin: 0 };
 }

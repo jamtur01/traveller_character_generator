@@ -98,12 +98,13 @@ export function scoutEnlist(ch: Character): void {
   // PM p. 56: college graduates auto-enlist; college honors graduates start
   // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
   // into the Field. Read pre-career state to honor these rules.
+  const acg = ch.requireAcgState();
   if (hasCollege) {
     ch.log(ev.enlistmentAttempt("Imperial Scout Service (college graduate)", 0, 0, 0, true));
-    ch.requireAcgState().rankCode = hasCollegeHonors
+    acg.rankCode = hasCollegeHonors
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
-    ch.requireAcgState().isOfficer = false;
+    acg.isOfficer = false;
     ch.requireScoutAcg().division = "bureaucracy";
   } else {
     const dm = evaluateDM(data.enlistment.dms, { attributes: ch.attributes, terms: ch.terms });
@@ -111,15 +112,15 @@ export function scoutEnlist(ch: Character): void {
     const succeeded = r + dm >= data.enlistment.target;
     ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
     if (succeeded) {
-      ch.requireAcgState().rankCode = data.enlistment.startingRank;
-      ch.requireAcgState().isOfficer = false;
+      acg.rankCode = data.enlistment.startingRank;
+      acg.isOfficer = false;
     } else {
       const dr = ch.rng.roll(1);
       if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
         throw new Error("Scout draft rejection — choose another path");
       }
       ch.drafted = true;
-      ch.requireAcgState().rankCode = data.enlistment.startingRank;
+      acg.rankCode = data.enlistment.startingRank;
       ch.log(ev.drafted("Scout Service"));
     }
     ch.requireScoutAcg().division = "field";
@@ -177,12 +178,11 @@ export function scoutRollAssignment(ch: Character): string {
     ...data.ranks.administrator.map((r) => rankNum(String(r[0]))),
   );
   const adminDm = data.dutyAssignment.dms?.find((d) => d.rankAtLeast !== undefined)?.dm ?? 0;
-  const rank = rankNum(ch.requireAcgState().rankCode);
+  const rank = rankNum(acg.rankCode);
   const adminEligible = division === "bureaucracy" && rank >= adminMin;
   // Default to taking the DM; interactive mode exposes the choice.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
-    const acg = ch.requireAcgState();
     const takeLabel = `Take DM +${adminDm}`;
     if (acg.scoutAdminDmDecision !== undefined) {
       // Resume case — decision was made in the previous pause/resume
@@ -425,8 +425,9 @@ export function scoutFinalizeMuster(ch: Character): void {
 export function scoutReenlist(ch: Character): boolean {
   const data = dataFor(ch);
   // Up-or-out: ordinary rank must be ≥ terms served (PM p. 57).
-  if (!ch.requireAcgState().isOfficer && rankNum(ch.requireAcgState().rankCode) < ch.terms) {
-    ch.requireAcgState().reenlistDenialReason = "up-or-out: insufficient rank";
+  const acg = ch.requireAcgState();
+  if (!acg.isOfficer && rankNum(acg.rankCode) < ch.terms) {
+    acg.reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }
   return runReenlist(ch, {

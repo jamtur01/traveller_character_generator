@@ -143,7 +143,8 @@ export function mercenaryEnlist(
   const svcLabel = `${service === "army" ? "Army" : "Marines"} (${combatArm})`;
   // Academy/OTC graduates skip the enlistment roll — they are automatically
   // enlisted at the rank set by pre-career (O1 for Military Academy or OTC).
-  if (ch.requireAcgState().preCareerCommission) {
+  const acg = ch.requireAcgState();
+  if (acg.preCareerCommission) {
     ch.log(ev.enlistmentAttempt(`${svcLabel} (academy/OTC)`, 0, 0, 0, true));
     return;
   }
@@ -154,8 +155,8 @@ export function mercenaryEnlist(
   const succeeded = r + dm >= enlistSpec.target;
   ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
   if (succeeded) {
-    ch.requireAcgState().rankCode = enlistSpec.startingRank;
-    ch.requireAcgState().isOfficer = enlistSpec.startingRank.startsWith("O");
+    acg.rankCode = enlistSpec.startingRank;
+    acg.isOfficer = enlistSpec.startingRank.startsWith("O");
     return;
   }
 
@@ -174,8 +175,8 @@ export function mercenaryEnlist(
   const draftSpec = data.enlistment[draftedService];
   ch.log(ev.drafted(drafted));
   ch.requireMercenaryAcg().branch = drafted;
-  ch.requireAcgState().rankCode = draftSpec.startingRank;
-  ch.requireAcgState().isOfficer = false; // drafted = enlisted; no OCS first term
+  acg.rankCode = draftSpec.startingRank;
+  acg.isOfficer = false; // drafted = enlisted; no OCS first term
 }
 
 /** Initial training: first year of term 1. The first entry in
@@ -210,12 +211,12 @@ export function mercenaryInitialTraining(ch: Character): void {
  *  failure (or opting out) → staff position. Combat arm + service
  *  determine the target. */
 export function mercenaryCommandDuty(ch: Character): void {
-  if (!ch.requireAcgState().isOfficer) {
-    ch.requireAcgState().inCommand = false;
+  const acg = ch.requireMercenaryAcg();
+  if (!acg.isOfficer) {
+    acg.inCommand = false;
     return;
   }
   const data = dataFor(ch);
-  const acg = ch.requireMercenaryAcg();
   resolveCommandDuty(ch, {
     rows: data.commandDuty.rows,
     role: acg.combatArm!,
@@ -337,12 +338,13 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
   const cols: string[] = [];
   const lifeCol = ch.requireMercenaryAcg().branch === "Marines" ? "marineLife" : "armyLife";
   cols.push(lifeCol);
-  const rank = rankNum(ch.requireAcgState().rankCode);
+  const acg = ch.requireAcgState();
+  const rank = rankNum(acg.rankCode);
   const pol = dataFor(ch).skillColumnPolicy;
   const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 0;
-  if (!ch.requireAcgState().isOfficer && rank >= ncoMin) cols.push("ncoSkills");
-  if (ch.requireAcgState().isOfficer) {
-    if (ch.requireAcgState().inCommand) cols.push("commandSkills");
+  if (!acg.isOfficer && rank >= ncoMin) cols.push("ncoSkills");
+  if (acg.isOfficer) {
+    if (acg.inCommand) cols.push("commandSkills");
     else cols.push("staffSkills");
   }
   if (ch.requireMercenaryAcg().branch === "Marines") cols.push("shipboard");

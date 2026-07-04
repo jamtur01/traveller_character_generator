@@ -136,9 +136,10 @@ export function navyEnlist(
 
   // Naval Academy / NOTC / Medical-School graduates: read the fleet
   // assignment from JSON (navy.preCareerFleetAssignment).
-  if (ch.requireAcgState().preCareerCommission) {
+  const acg = ch.requireAcgState();
+  if (acg.preCareerCommission) {
     const policy = data.preCareerFleetAssignment;
-    const schools = ch.requireAcgState().schoolsAttended;
+    const schools = acg.schoolsAttended;
     let forcedFleet: typeof fleet | null = null;
     let forcedBranch: string | null = null;
     if (policy) {
@@ -152,7 +153,7 @@ export function navyEnlist(
         }
       }
       // Otherwise consider preCareerBranch (e.g. college NOTC → Reserve Fleet).
-      const branch = ch.requireAcgState().preCareerBranch;
+      const branch = acg.preCareerBranch;
       if (!forcedFleet && branch) {
         const entry = policy.byPreCareerBranch?.[branch];
         if (entry?.fleet) {
@@ -175,12 +176,12 @@ export function navyEnlist(
     if (forcedBranch) {
       ch.requireNavyAcg().branch = forcedBranch;
       ch.log(ev.enlistmentAttempt(
-        `${ch.requireNavyAcg().fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${ch.requireAcgState().rankCode})`,
+        `${ch.requireNavyAcg().fleet} Navy ${forcedBranch} Branch (academy/school direct commission, ${acg.rankCode})`,
         0, 0, 0, true,
       ));
     } else {
       ch.log(ev.enlistmentAttempt(
-        `${ch.requireNavyAcg().fleet} Navy (academy/NOTC, ${ch.requireAcgState().rankCode})`,
+        `${ch.requireNavyAcg().fleet} Navy (academy/NOTC, ${acg.rankCode})`,
         0, 0, 0, true,
       ));
       navyAssignBranch(ch);
@@ -193,8 +194,8 @@ export function navyEnlist(
   const succeeded = r + dm >= spec.target;
   ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
   if (succeeded) {
-    ch.requireAcgState().rankCode = data.enlistment.startingRank;
-    ch.requireAcgState().isOfficer = data.enlistment.startingRank.startsWith("O");
+    acg.rankCode = data.enlistment.startingRank;
+    acg.isOfficer = data.enlistment.startingRank.startsWith("O");
   } else {
     // Try draft.
     const dr = ch.rng.roll(1);
@@ -204,8 +205,8 @@ export function navyEnlist(
     }
     ch.drafted = true;
     ch.requireNavyAcg().fleet = "imperialNavy";
-    ch.requireAcgState().rankCode = data.enlistment.startingRank;
-    ch.requireAcgState().isOfficer = false;
+    acg.rankCode = data.enlistment.startingRank;
+    acg.isOfficer = false;
     ch.log(ev.drafted("Imperial Navy"));
   }
 
@@ -218,7 +219,8 @@ function navyAssignBranch(ch: Character): void {
   // Medical/Flight School graduates: automatic branch (manual p. 52).
   // Social 9+ characters may also pick any branch — that's a player choice
   // exposed in pickOrDefer.
-  const schools = ch.requireAcgState().schoolsAttended;
+  const acg = ch.requireAcgState();
+  const schools = acg.schoolsAttended;
   if (schools.includes("medicalSchool")) {
     ch.requireNavyAcg().branch = "Medical";
     return;
@@ -240,7 +242,7 @@ function navyAssignBranch(ch: Character): void {
     });
     return;
   }
-  const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
+  const col = acg.isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.branchAssignment.dms, ch);
   let rolled: string | null = null;
   // Re-roll if the rolled branch is Technical Services in a fleet that
@@ -254,7 +256,7 @@ function navyAssignBranch(ch: Character): void {
       break;
     }
   }
-  ch.requireNavyAcg().branch = rolled ?? (ch.requireAcgState().isOfficer ? "Line" : "Crew");
+  ch.requireNavyAcg().branch = rolled ?? (acg.isOfficer ? "Line" : "Crew");
   // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }
 
@@ -289,8 +291,9 @@ export function navyInitialTraining(ch: Character): void {
   // ineligible for Officer Staff Skills.
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const isAcademyOrNotcOfficer = ch.requireAcgState().isOfficer &&
-    ch.requireAcgState().preCareerCommission === true;
+  const acg = ch.requireAcgState();
+  const isAcademyOrNotcOfficer = acg.isOfficer &&
+    acg.preCareerCommission === true;
   if (isAcademyOrNotcOfficer && ch.choiceMode === "interactive") {
     // Officers may choose Branch Skills or Officer Staff Skills for each
     // of the two initial-training rolls. Expose as a player choice.
@@ -329,8 +332,9 @@ function navyBranchSkillRoll(ch: Character): void {
 
 /** Command Duty roll (officers only). */
 export function navyCommandDuty(ch: Character): void {
-  if (!ch.requireAcgState().isOfficer) {
-    ch.requireAcgState().inCommand = false;
+  const acg = ch.requireAcgState();
+  if (!acg.isOfficer) {
+    acg.inCommand = false;
     return;
   }
   // Per manual: not consulting the table results in assignment to staff.
@@ -467,8 +471,9 @@ function promoteNavy(ch: Character): void {
 }
 
 export function navyRetention(ch: Character, assignment: string): void {
-  if (ch.requireAcgState().justRetained) {
-    ch.requireAcgState().justRetained = false;
+  const acg = ch.requireAcgState();
+  if (acg.justRetained) {
+    acg.justRetained = false;
     return;
   }
   // Per manual p. 53: "no one can be retained in the same assignment more
@@ -480,10 +485,10 @@ export function navyRetention(ch: Character, assignment: string): void {
     Record<string, { noRetention?: boolean }>;
   const r = ch.rng.roll(1);
   if (r === 6 && !specials[assignment]?.noRetention) {
-    ch.requireAcgState().retainedAssignment = assignment;
-    ch.requireAcgState().justRetained = true;
+    acg.retainedAssignment = assignment;
+    acg.justRetained = true;
   } else {
-    ch.requireAcgState().retainedAssignment = null;
+    acg.retainedAssignment = null;
   }
 }
 

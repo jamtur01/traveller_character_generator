@@ -186,9 +186,10 @@ function buildSurvival(p: PhaseSurvival, build: BuildContext): PhaseDef {
       if (typeof ctx.res.survival !== "number") return;
       const combat = build.combatAssignments(ctx.ch);
       if (!combat.includes(ctx.assignment)) return;
-      ctx.ch.requireAcgState().decorations.push("Purple Heart");
+      const acg = ctx.ch.requireAcgState();
+      acg.decorations.push("Purple Heart");
       ctx.ch.log(decorationEv("Purple Heart", `Wounded in ${ctx.assignment}`));
-      ctx.ch.requireAcgState().injuredThisYear = true;
+      acg.injuredThisYear = true;
     };
   }
   return base;
@@ -397,11 +398,12 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
     options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
       "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
     onResolve: (ch, choice) => {
-      if (choice.startsWith("-2")) ch.requireAcgState().decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) ch.requireAcgState().decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) ch.requireAcgState().decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) ch.requireAcgState().decorationDmStrategy = 2;
-      else ch.requireAcgState().decorationDmStrategy = 0;
+      const acg = ch.requireAcgState();
+      if (choice.startsWith("-2")) acg.decorationDmStrategy = -2;
+      else if (choice.startsWith("-1")) acg.decorationDmStrategy = -1;
+      else if (choice.startsWith("+1")) acg.decorationDmStrategy = 1;
+      else if (choice.startsWith("+2")) acg.decorationDmStrategy = 2;
+      else acg.decorationDmStrategy = 0;
     },
   });
 });
