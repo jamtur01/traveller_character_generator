@@ -499,7 +499,7 @@ export function formatEvent(e: HistoryEvent): string {
       if (e.target === 0 && e.roll === 0) {
         return `Enlistment in ${e.service}: ${verb}${note}.`;
       }
-      return `Enlistment in ${e.service}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}${note}.`;
+      return `Enlistment in ${e.service}: ${rollVs(e.roll, e.target, e.dm)} — ${verb}${note}.`;
     }
     case "drafted":
       return `Drafted into ${e.service}.`;
@@ -512,7 +512,7 @@ export function formatEvent(e: HistoryEvent): string {
     case "roll": {
       const ctx = e.context ? ` (${e.context})` : "";
       const verb = e.succeeded ? "passed" : "failed";
-      return `${e.rollName}${ctx}: ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ${verb}.`;
+      return `${e.rollName}${ctx}: ${rollVs(e.roll, e.target, e.dm)} — ${verb}.`;
     }
     case "decoration": {
       const reason = e.reason ? ` (${e.reason})` : "";
@@ -523,7 +523,7 @@ export function formatEvent(e: HistoryEvent): string {
     case "reenlistment": {
       const tailBits: string[] = [];
       if (e.roll !== undefined && e.target !== undefined) {
-        tailBits.push(`${e.roll} vs ${e.target}+`);
+        tailBits.push(rollVs(e.roll, e.target));
       }
       if (e.reason) tailBits.push(e.reason);
       const tail = tailBits.length ? ` (${tailBits.join("; ")})` : "";
@@ -562,7 +562,7 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "anagathics": {
       const tail = e.roll !== undefined && e.target !== undefined
-        ? ` (${e.roll} vs ${e.target}+)` : "";
+        ? ` (${rollVs(e.roll, e.target)})` : "";
       switch (e.outcome) {
         case "found": return `Anagathics: supply found this term${tail}.`;
         case "lost": return `Anagathics: lost supply — withdrawal effects at end of term.`;
@@ -622,7 +622,7 @@ export function formatEvent(e: HistoryEvent): string {
     case "bonusSkillPoint":
       return `${e.source} overshoot +${e.overshoot}: +1 bonus skill point.`;
     case "commandDuty":
-      return `Command duty roll ${e.roll}${dmStr(e.dm)} vs ${e.target}+ — ` +
+      return `Command duty roll ${rollVs(e.roll, e.target, e.dm)} — ` +
         (e.inCommand ? "in command" : "staff position") + ".";
     case "schoolAssigned":
       return `School assignment: ${e.school}` +
@@ -686,6 +686,13 @@ export function formatEvent(e: HistoryEvent): string {
 function dmStr(dm: number): string {
   if (dm === 0) return "";
   return dm > 0 ? ` + ${dm}` : ` − ${Math.abs(dm)}`;
+}
+
+/** "5 + 2 vs 8+" — the roll(+DM)-versus-target fragment shared by the
+ *  enlistment / check / command-duty render cases. Omit `dm` for the no-DM
+ *  form (reenlistment / anagathics tails). */
+function rollVs(roll: number, target: number, dm?: number): string {
+  return `${roll}${dm !== undefined ? dmStr(dm) : ""} vs ${target}+`;
 }
 
 const ATTR_SHORT_LOOKUP: Record<string, string> = {

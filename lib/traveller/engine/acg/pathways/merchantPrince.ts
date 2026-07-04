@@ -846,6 +846,18 @@ function merchantRankLadder(
   return Array.isArray(ladder) ? ladder : null;
 }
 
+/** Roll a 2D merchant exam vs `target` with `dm`, log via ev.roll, and return
+ *  the pass flag. The shared roll+log of the officer promotion and enlisted-
+ *  route commission exams; target-parse + penalty handling stay per-caller. */
+function rollMerchantExam(
+  ch: Character, target: number, dm: number, label: string, note: string,
+): boolean {
+  const r = ch.rng.roll(2);
+  const succeeded = r + dm >= target;
+  ch.log(ev.roll(label, r, dm, target, succeeded, note));
+  return succeeded;
+}
+
 /** PM p. 61: enlisted characters serving a Route assignment may test for
  *  a commission. Passing the department's entry-officer exam grants O1. */
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {
@@ -856,10 +868,9 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const entry = ladder.find((r) => rankNum(r[0]) === 1) ?? ladder[0]!;
   const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
-  const dm = acg.perTerm.examDm ?? 0;
-  const r = ch.rng.roll(2);
-  const succeeded = r + dm >= target;
-  ch.log(ev.roll("Commission", r, dm, target, succeeded, "Merchant enlisted-route exam"));
+  const succeeded = rollMerchantExam(
+    ch, target, acg.perTerm.examDm ?? 0, "Commission", "Merchant enlisted-route exam",
+  );
   if (succeeded) {
     acg.isOfficer = true;
     acg.rankCode = "O1";
@@ -898,13 +909,11 @@ function attemptMerchantPromotionExam(ch: Character): void {
   const penalty = acg.nextPromotionPenalty ?? 0;
   const dm = (acg.perTerm.examDm ?? 0) + penalty;
   if (penalty < 0) acg.nextPromotionPenalty = 0;
-  const r = ch.rng.roll(2);
-  const succeeded = r + dm >= target;
-  ch.log(ev.roll(
-    "Promotion", r, dm, target, succeeded,
+  const succeeded = rollMerchantExam(
+    ch, target, dm, "Promotion",
     `Merchant exam (${acg.rankCode}→${nextRow[0]})`
     + (penalty ? `, reprimand penalty ${penalty}` : ""),
-  ));
+  );
   if (!succeeded) return;
   acg.rankCode = nextRow[0];
   ch.log(ev.promoted(nextRow[1]));
