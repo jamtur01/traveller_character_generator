@@ -68,7 +68,7 @@ describe("interactive ACG: decoration-DM tradeoff (regression #1)", () => {
       (p) => p.kind === "decorationDmTradeoff",
     );
     if (!choice) return; // pathway didn't reach a numeric decoration phase
-    snap = session.resolvePending(snap, choice.id, 2); // "No tradeoff"
+    snap = session.resolvePending(snap, choice.id, 2).snapshot; // "No tradeoff"
     // After resolution + year resume, no fresh decorationDmTradeoff
     // prompt should be queued for the same year.
     const remaining = snap.character.pendingChoices.filter(
@@ -135,7 +135,7 @@ describe("interactive ACG: OTC promotion log (regression #4)", () => {
     if (after.character.pendingChoices.length > 0) {
       const choice = after.character.pendingChoices[0]!;
       if (choice.kind === "cascade" && choice.context?.source === "otcBranch") {
-        after = session.resolvePending(after, choice.id, 0); // Army
+        after = session.resolvePending(after, choice.id, 0).snapshot; // Army
       }
     }
 

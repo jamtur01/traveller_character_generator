@@ -210,7 +210,7 @@ describe("session.resolvePending — frontier contract", () => {
         const rolls = snap.character.muster.musterRolls;
         expect(snap.frontier).toBeDefined();
         const choice = snap.character.pendingChoices[0]!;
-        snap = resolvePending(snap, choice.id, 0);
+        snap = resolvePending(snap, choice.id, 0).snapshot;
         // The re-run either completed the roll (decrement) or hit a nested
         // frontier (same roll still in flight from a fresh base).
         if (snap.character.pendingChoices.length === 0) {

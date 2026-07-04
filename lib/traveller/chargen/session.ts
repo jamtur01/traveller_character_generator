@@ -122,7 +122,12 @@ export interface StartCareerOptions {
   useAcg: boolean;
   acgPathway: string;
   /** Seed the character's RNG for a reproducible run (see chargen/replay).
-   *  Required for interactive-mode determinism — see the header invariant. */
+   *  Interactive-mode determinism requires this OR a fully pinned
+   *  Math.random (the walker-test pattern): resolvePending re-executes the
+   *  paused action from its base, and an unseeded, unpinned rng re-rolls
+   *  fresh values on every re-run, silently diverging from the displayed
+   *  prefix. The UI always seeds. No runtime guard — the engine cannot
+   *  detect a pinned Math.random. */
   seed?: number;
 }
 
@@ -200,6 +205,13 @@ function executeAction(ch: Character, action: FrontierAction): ChargenResult {
 function runAction(
   prev: Character, action: FrontierAction, resolutions: number[],
 ): ChargenResult {
+  if (prev.pendingChoices.length > 0) {
+    throw new Error(
+      `session: cannot dispatch "${action.kind}" while a choice is pending — ` +
+      "the paused action must be resolved first (resolvePending); building " +
+      "on the partial mid-action state would abandon the frontier",
+    );
+  }
   const base = cloneCharacter(prev);
   const ch = cloneCharacter(prev);
   ch.decisionCursor = { resolutions, pos: 0 };
@@ -222,12 +234,16 @@ function runAction(
  *  frontier's resolutions and re-run the paused action from its base. The
  *  re-executed prefix consumes the recorded indices inline; execution then
  *  reaches the next frontier or completes (phase routing happens naturally
- *  inside the re-run — no post-drain special cases). */
+ *  inside the re-run — no post-drain special cases). Returns the full
+ *  ChargenResult: when the re-run completes a pre-career action, `hints`
+ *  carries the enlistment-form pre-population that would otherwise be
+ *  lost (in interactive mode the OTC / medical-school outcomes are always
+ *  delivered through this path). */
 export function resolvePending(
   snap: ChargenSnapshot,
   choiceId: string,
   optionIdx: number,
-): ChargenSnapshot {
+): ChargenResult {
   const frontier = snap.frontier;
   if (!frontier) {
     throw new Error(
@@ -250,7 +266,7 @@ export function resolvePending(
   }
   return runAction(
     frontier.base, frontier.action, [...frontier.resolutions, optionIdx],
-  ).snapshot;
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -279,9 +295,9 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
  *  term's outcome (skill picks pending, deceased, mustered out, etc.). */
 export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
   // If a player choice is still pending, refuse to advance — the term
-  // action is paused on its frontier and must be resolved first. The UI's
-  // PendingChoicesPanel renders alongside the Run term button, so the
-  // player has the resolve action in front of them.
+  // action is paused on its frontier and must be resolved first (the UI
+  // shows only the PendingChoicesPanel while paused). Soft identity
+  // return: the panel's resolve action is the only way forward.
   if (snap.character.pendingChoices.length > 0) return snap;
   return runAction(snap.character, { kind: "runTerm" }, []).snapshot;
 }

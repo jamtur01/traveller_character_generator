@@ -9,9 +9,10 @@
 // replay re-applies each recorded index against whatever choice is pending at
 // that point — which is itself deterministic under the seed.
 //
-// This is an ADDITIVE reconstruction layer over the existing session actions;
-// it does not replace the live session's interactive pause/resume flags (those
-// correctly drive a single in-flight run and don't need to be event-sourced).
+// This is the same execution path the live session uses: session actions are
+// event-sourced re-execution (pauses resolve by re-running the action from
+// its pre-action base), so folding a RunLog and driving the session live are
+// one code path — replayRun is the canonical "reduce(RunLog) → snapshot".
 
 import {
   startCareer, applyPreCareer, enlist, resolvePending, runTerm, pickSkill,
@@ -54,7 +55,7 @@ export function applyChargenAction(
       if (!pending) {
         throw new Error("replay: `resolve` action but no pending choice");
       }
-      return resolvePending(snap, pending.id, action.optionIdx);
+      return resolvePending(snap, pending.id, action.optionIdx).snapshot;
     }
     case "attemptMusterOut": return attemptMusterOut(snap);
     case "musterChoice": return musterChoice(snap, action.kind);

@@ -75,9 +75,17 @@ export default function Home() {
     }));
   };
 
-  /** Apply a pre-career option. Session.applyPreCareer returns optional
-   *  UI hints (auto-enlist pathway, service, fleet) when an academy
-   *  outcome should pre-populate the enlistment form. */
+  /** Enlistment-form pre-population from a pre-career outcome (academy /
+   *  OTC / medical direct commission). In interactive mode these arrive
+   *  via resolvePending (the branch prompt IS the outcome), in auto mode
+   *  via applyPreCareer. */
+  const applyHints = (hints?: session.UiHints) => {
+    if (!hints) return;
+    if (hints.acgPathway) setAcgPathway(hints.acgPathway);
+    if (hints.acgService) setAcgForm({ service: hints.acgService });
+    if (hints.acgFleet) setAcgForm({ fleet: hints.acgFleet });
+  };
+
   const applyPreCareer = (opt: session.PreCareerOption) => {
     const prev = snapRef.current;
     if (!prev) return;
@@ -86,17 +94,15 @@ export default function Home() {
     if (opt === "skip") {
       setAcgForm({ service: "army", fleet: "imperialNavy" });
     }
-    if (result.hints) {
-      if (result.hints.acgPathway) setAcgPathway(result.hints.acgPathway);
-      if (result.hints.acgService) setAcgForm({ service: result.hints.acgService });
-      if (result.hints.acgFleet) setAcgForm({ fleet: result.hints.acgFleet });
-    }
+    applyHints(result.hints);
   };
 
   const resolvePending = (choiceId: string, optionIdx: number) => {
     const prev = snapRef.current;
     if (!prev) return;
-    commit(session.resolvePending(prev, choiceId, optionIdx));
+    const result = session.resolvePending(prev, choiceId, optionIdx);
+    commit(result.snapshot);
+    applyHints(result.hints);
   };
 
   const enlist = () => {

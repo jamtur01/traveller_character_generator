@@ -428,14 +428,15 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             preferred: [defaultBranchLabel],
             context: { source: "otcBranch" },
             onResolve: (ch, chosen) => {
-              const branch = chosen === "Marines" ? "marines" : "army";
-              ch.requireAcgState().preCareerBranch = branch;
+              // Inline resolution (decision cursor): all effects live here.
+              // Code after pickOrDefer runs only on this resolved path —
+              // the frontier path throws and discards `out`, so a default
+              // assignment after the call would clobber the pick on re-run.
+              out.branch = chosen === "Marines" ? "marines" : "army";
               ch.log(ev.promoted(rank, `OTC (${chosen})`));
+              out.notes.push(`OTC commission earned (${chosen}).`);
             },
           });
-          // Pending choice — set a default so non-pause callers see something.
-          out.branch = defaultBranch;
-          out.notes.push("OTC commission earned (branch pending choice).");
         } else {
           out.branch = defaultBranch;
           ch.log(ev.promoted(rank, `OTC (${defaultBranchLabel})`));
@@ -570,16 +571,19 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         options: branches.map((b) => b.label),
         preferred: [fallback.label],
         context: { source: "medicalCommission" },
-        onResolve: (ch, chosen) => {
+        onResolve: (_ch, chosen) => {
+          // Inline resolution: set the result fields here (see the OTC
+          // prompt above). applyPreCareerResult / doApplyPreCareer apply
+          // branch + pathway from `out` — no direct character writes.
           const picked = branches.find((b) => b.label === chosen) ?? fallback;
-          if (!picked) return;
-          ch.requireAcgState().preCareerBranch = picked.branch;
-          ch.acgPathway = picked.pathway;
+          out.branch = picked.branch;
+          out.autoEnlistPathway = picked.pathway;
         },
       });
+    } else {
+      out.branch = fallback.branch;
+      out.autoEnlistPathway = fallback.pathway;
     }
-    out.branch = fallback.branch;
-    out.autoEnlistPathway = fallback.pathway;
   }
 
   return out;

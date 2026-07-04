@@ -5,8 +5,13 @@
 // choices synchronously from Character.decisionCursor; only the frontier
 // choice pauses. This harness is the behavioral contract that made deleting
 // the old mid-flight machinery (pausedAtStep, subStepCache, closure-caches)
-// safe: it proves the live interactive path is equivalent to pure
-// re-execution, across both editions and every ACG pathway.
+// safe. Scope, precisely: the driver folds the same applyChargenAction that
+// replayRun folds, so P2 is *determinism of the single execution path* (plus
+// P1 re-execution stability, P3 prefix composability, P4 rng-position
+// integrity) — not an independent second implementation, and not decision
+// fidelity (a pick applied-then-clobbered identically in live and replay
+// passes all four properties; that is covered by the targeted pick-fidelity
+// regression tests instead).
 //
 // It generalizes tests/replay.test.ts's driveChargen loop: a config-
 // parameterized driver walks each (config, seed) run to a terminal phase via
@@ -248,11 +253,7 @@ function nextAction(
       // schoolsAttempted record makes the legal set shrink monotonically.
       const schools = schoolAttempts >= 2 ? [] : legalPreCareerSchools(c);
       const pick = rng.int(0, schools.length);
-      // NOTE: ChargenAction's preCareer option type omits "skip" although
-      // session.applyPreCareer accepts (and the UI issues) it — a RunLog
-      // cannot represent a skip without this cast. Type gap to fix in the
-      // resume-model rewrite; runtime replay handles "skip" correctly.
-      const option = (pick === schools.length ? "skip" : schools[pick]!) as PreCareerOption;
+      const option = pick === schools.length ? "skip" : schools[pick]!;
       return { type: "preCareer", option };
     }
     case "career": return { type: "enlist", opts: basicEnlistOptions(c, rng) };

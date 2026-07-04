@@ -49,7 +49,7 @@ export function drainChoices(
     const c = cur.character.pendingChoices[0]!;
     const idx = Math.min(pick, c.options.length - 1);
     resolved.push({ kind: c.kind, pick: idx, label: c.label });
-    cur = session.resolvePending(cur, c.id, idx);
+    cur = session.resolvePending(cur, c.id, idx).snapshot;
   }
   return cur;
 }

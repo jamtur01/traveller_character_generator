@@ -174,7 +174,7 @@ describe("Pre-career interactive walkthroughs", () => {
       (p) => p.kind === "cascade" && p.context?.source === "otcBranch",
     );
     if (otcChoice) {
-      snap = session.resolvePending(snap, otcChoice.id, 0); // Army
+      snap = session.resolvePending(snap, otcChoice.id, 0).snapshot; // Army
     }
     // Exactly one OTC promotion event.
     const otcPromotions = snap.character.events.filter(
