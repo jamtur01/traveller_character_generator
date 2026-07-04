@@ -20,7 +20,10 @@ afterEach(() => {
 // service throws TypeError at first access.
 const s = getEditionServices("ct-classic") as Record<ServiceKey, ServiceDef>;
 const ALL: ServiceKey[] = [...getEnlistableServices("ct-classic"), "nobles"];
-const BASE = 7;
+// 8 (not 7) so the character clears the advancedEducation8Plus Edu gate
+// (advancedEducationEduMin = 8) when acquireSkillMatrix forces table 4; the
+// snapshot's attrDelta is relative to BASE, so absolute value is inconsequential.
+const BASE = 8;
 
 /** Force every Math.random() call to produce d6 = `v`. */
 function forceD6(v: number): void {

@@ -40,7 +40,10 @@ const WATERCRAFTS = cascadePoolByKey("watercraft", "ct-classic");
 
 const s = getEditionServices("ct-classic") as Record<ServiceKey, ServiceDef>;
 
-const BASE = 7;
+// 8 (not 7) so the character clears the advancedEducation8Plus Edu gate
+// (advancedEducationEduMin = 8) when table 4 is forced; deltas are relative
+// to BASE so its absolute value is otherwise inconsequential.
+const BASE = 8;
 const POOLS = {
   blade: BLADES as readonly string[],
   bow: BOWS as readonly string[],

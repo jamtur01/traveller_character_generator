@@ -91,6 +91,13 @@ function rollAnagathicsRetrySurvival(ch: Character): boolean {
   const svc = ch.serviceDef();
   const passed = svc.checkSurvival(ch);
   if (!passed) {
+    // Short-term muster (PM p. 15): the failed retry ends the term early, so
+    // the character served only rules.survival.shortTermYears — not a full
+    // term. term.ts advanced age by fullTermYears at term start; rewind to
+    // the short-term length, matching survival.ts short-term semantics.
+    const shortTermYears =
+      getEdition(ch.editionId).rules.survival?.shortTermYears ?? 2;
+    ch.age -= ch.fullTermYears() - shortTermYears;
     ch.shortTermsCount += 1;
     ch.endChargenRetired("failed anagathics retry survival");
   }

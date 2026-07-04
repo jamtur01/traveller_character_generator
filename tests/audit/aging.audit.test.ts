@@ -76,13 +76,17 @@ for (const editionId of ["ct-classic", "mt-megatraveller"]) {
   });
 }
 
-describe("MT Aging unaffected attributes (PM p. 47)", () => {
-  it("Education and Social Standing never aged", () => {
-    const a = aging("mt-megatraveller") as unknown as {
-      unaffected?: string[];
-    };
-    expect(a.unaffected).toEqual(expect.arrayContaining([
-      "education", "social",
-    ]));
-  });
+describe("Aging never touches Education or Social (PM p. 47 / TTB p. 24)", () => {
+  // The `aging.unaffected` documentation key was removed as dead data (no
+  // engine consumer). The rule is enforced structurally: no aging row's
+  // effects reference education or social, so neither is ever aged.
+  for (const editionId of ["ct-classic", "mt-megatraveller"]) {
+    it(`${editionId}: no aging row affects education or social`, () => {
+      for (const r of aging(editionId).rows) {
+        const affected = Object.keys(r.effects);
+        expect(affected).not.toContain("education");
+        expect(affected).not.toContain("social");
+      }
+    });
+  }
 });

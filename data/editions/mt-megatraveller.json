@@ -296,22 +296,10 @@
     "advancedEducationEduMin": 8
   },
   "rules": {
-    "dice": {
-      "characteristics": "2d6 each",
-      "serviceChecks": "2d6",
-      "draft": "1d6",
-      "skillTableRoll": "1d6",
-      "musterOutRoll": "1d6",
-      "agingSave": "2d6"
-    },
     "survival": {
       "onFailure": "shortTerm",
       "shortTermYears": 2,
-      "fullTermYears": 4,
-      "shortTermDoesNotCountForMusterBenefits": true,
-      "skipCommissionPromotionInShortTerm": true,
-      "specialDutyAndSkillsStillRoll": true,
-      "optionalDeathRule": "Referee or player may decide that failure of the survival throw results in death and that a new character must be generated."
+      "fullTermYears": 4
     },
     "reenlistment": {
       "$rule": "MT PM p. 15 (basic reenlistment rule, echoed for ACG): a reenlistment throw is required at the end of every term; a roll of exactly 12 forces mandatory reenlistment. MT allows unlimited voluntary terms — there is no fixed retirement-term cap.",
@@ -321,10 +309,6 @@
     "skillEligibility": {
       "initialTerm": 2,
       "subsequentTerm": 1,
-      "onPositionOrCommission": 1,
-      "onPromotion": 1,
-      "onSpecialDuty": 1,
-      "doubleSkillMargin": 4,
       "perTermExceptions": {
         "scouts": 2,
         "doctors": 2,
@@ -372,15 +356,9 @@
     },
     "draft": {
       "trigger": "failedEnlistment",
-      "overridesHomeworldRestriction": true,
       "noCommissionFirstTerm": true,
       "die": "1D",
       "note": "Failed enlistment is followed by a 1D draft roll using each service's 'draft' field. Draft assignment overrides homeworld career restrictions. Drafted characters cannot receive a commission during their first term of service."
-    },
-    "merchantBonus": {
-      "rule": "Successful bonus throw lets the character roll once on the Cash mustering-out table and receive half the indicated amount.",
-      "halfOfCashTable": true,
-      "cashTableSource": "services.merchants.musterOut.cash"
     },
     "nobleTitles": {
       "$rule": "PM p. 8 lines 516-526. Social Standing B (11) through F (15) confers a noble title. G (16) Archduke and H (17) Emperor are beyond PC range and listed here for completeness.",
@@ -811,16 +789,13 @@
   "benefitDetails": {
     "passages": {
       "High Psg": {
-        "displayName": "High Passage",
-        "cashValueCredits": 10000
+        "displayName": "High Passage"
       },
       "Mid Psg": {
-        "displayName": "Mid Passage",
-        "cashValueCredits": 8000
+        "displayName": "Mid Passage"
       },
       "Low Psg": {
-        "displayName": "Low Passage",
-        "cashValueCredits": 1000
+        "displayName": "Low Passage"
       }
     },
     "Travellers'": {
@@ -901,12 +876,7 @@
     },
     "Weapon": {
       "firstReceipt": "Select and receive any weapon.",
-      "repeat": "May select same weapon again, a different weapon, or one level of skill in a weapon previously taken as a mustering-out benefit.",
-      "choices": [
-        "Blade",
-        "Gun"
-      ],
-      "repeatMayBecomeSkill": true
+      "repeat": "May select same weapon again, a different weapon, or one level of skill in a weapon previously taken as a mustering-out benefit."
     }
   },
   "services": {
@@ -3451,7 +3421,6 @@
   },
   "aging": {
     "source": "MegaTraveller Players Manual enhanced character generation aging table, printed page 47",
-    "startsAfterFourthTerm": true,
     "rows": [
       {
         "age": 34,
@@ -3620,7 +3589,6 @@
         }
       }
     ],
-    "unaffected": ["education", "social"],
     "agingCrisis": {
       "$rule": "PM p. 47 / TTB p. 24: 'If, as a result of aging, a characteristic is reduced to zero, the character has an aging crisis and becomes quite ill. A basic saving throw of 8+ applies to avoid death.'",
       "whenAttributeReducedTo": 0,
@@ -4214,8 +4182,7 @@
               "dm": 2
             }
           ],
-          "startingRank": "E1",
-          "academyRank": "O1 from Military Academy or college OTC"
+          "startingRank": "E1"
         },
         "marines": {
           "target": 9,
@@ -4231,8 +4198,7 @@
               "dm": 2
             }
           ],
-          "startingRank": "E1",
-          "academyRank": "O1 from Naval Academy or college NOTC"
+          "startingRank": "E1"
         },
         "draft": {
           "die": "1D",
@@ -7322,6 +7288,10 @@
           "$rule": "PM p. 61 line 3837: 'Officers automatically transfer to the Deck Department after one full term in rank O4.'",
           "rankCode": "O4",
           "destinationDepartment": "Deck"
+        },
+        "schoolTransfer": {
+          "$rule": "PM p. 61: 'Schools/training both require a transfer to the specified department on completion, except that transfers do not take place for individuals rank O5+. No transfer occurs if already in that department.'",
+          "noTransferAtOrAboveOfficerRank": 5
         },
         "reducedPassage": {
           "$rule": "PM p. 61 line 3851: 'Individuals formerly employed by a merchant line may purchase stand-by middle passages at half price if the ship has empty staterooms available.'",

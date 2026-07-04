@@ -196,8 +196,21 @@ export function buildServiceDef(
   };
 
   function runTablePick(ch: Character, tableIdx: number): void {
-    const tableKey = skillTableKeyForIndex(edition.data, tableIdx);
+    let tableKey = skillTableKeyForIndex(edition.data, tableIdx);
     if (!tableKey) return;
+    // Edu gate (PM/TTB): advancedEducation8Plus requires Education >=
+    // skillTableMeta.advancedEducationEduMin. The interactive/auto picker
+    // filters it out for ineligible characters, but the forceTable path
+    // (session pickSkill + row-audit tests) resolves a raw index and would
+    // otherwise roll it. Fall back to the standard advancedEducation table
+    // so an ineligible character still gains a skill from a table it can use.
+    const meta = data.skillTableMeta;
+    if (
+      tableKey === "advancedEducation8Plus" && meta
+      && ch.attributes.education < meta.advancedEducationEduMin
+    ) {
+      tableKey = "advancedEducation";
+    }
     const table = (serviceData.skillTables as Record<string, (string | null)[]>)[tableKey];
     if (!table) return;
     const r = ch.rng.roll(1);

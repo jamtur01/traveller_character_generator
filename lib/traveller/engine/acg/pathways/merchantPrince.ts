@@ -89,6 +89,7 @@ export interface MerchantData {
       rankCode: string;
       destinationDepartment: string;
     };
+    schoolTransfer?: { noTransferAtOrAboveOfficerRank?: number };
     reducedPassage?: unknown;
     freeTraderShip?: { minOfficerRank?: string };
     [k: string]: unknown;
@@ -680,15 +681,32 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   }
   // Department transfer effects (manual p. 60-61).
   if (res.effect) {
+    const acg = ch.requireAcgState();
+    const officerRank = acg.isOfficer ? rankNum(acg.rankCode) : 0;
     const transfer = res.effect.match(/Transfer to (\w+)/i);
     if (transfer) {
-      const from = ch.requireAcgState().department ?? "";
+      // PM p. 61: school/training transfers do not take place for officers
+      // at/above the JSON-declared rank (O5+), nor when already in the
+      // target department.
+      const minBlockRank =
+        data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank ?? 5;
+      const from = acg.department ?? "";
       const to = transfer[1]!;
-      ch.requireAcgState().department = to;
-      ch.log(ev.transferred(to, "department", from));
+      const blockedByRank = officerRank >= minBlockRank;
+      const alreadyThere = to.toLowerCase() === from.toLowerCase();
+      if (!blockedByRank && !alreadyThere) {
+        acg.department = to;
+        ch.log(ev.transferred(to, "department", from));
+      }
     }
-    if (/DM \+1 on (?:the )?exam/i.test(res.effect)) {
-      ch.requireAcgState().examDm = (ch.requireAcgState().examDm ?? 0) + 1;
+    // PM p. 65: the exam DM applies only at/above the rank named in the
+    // effect ("for O6+"); an unqualified "DM +1 on exam" applies always.
+    const examMatch = res.effect.match(/DM \+1 on (?:the )?exam(?: for O(\d+)\+)?/i);
+    if (examMatch) {
+      const minExamRank = examMatch[1] ? parseInt(examMatch[1], 10) : 0;
+      if (officerRank >= minExamRank) {
+        acg.examDm = (acg.examDm ?? 0) + 1;
+      }
     }
   }
 }

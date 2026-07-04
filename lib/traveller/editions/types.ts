@@ -42,9 +42,7 @@ export interface DMRule extends Predicate {
 export interface CheckData {
   target: number | null;
   dms?: DMRule[];
-  label?: string;
   inverseToLeave?: boolean;
-  special?: string;
   /** CotI auto-enrolment (e.g. Nobles): enlistment succeeds automatically
    *  when the named attribute meets `min`. Absent = no auto-enrolment. */
   automaticIf?: { attribute: string; min: number };
@@ -114,16 +112,7 @@ export interface BenefitDetail {
   firstReceiptMortgageYears?: number;
   repeatReducesMortgageYears?: number;
   repeat?: string;
-  cashValueCredits?: number;
-  resalePercent?: number;
-  revivalSave?: string;
   description?: string;
-  valueCredits?: number;
-  typicalValueCredits?: number;
-  valuableValueRoll?: string;
-  choices?: string | string[];
-  repeatMayBecomeSkill?: boolean;
-  basis?: string;
 }
 
 export interface LifecycleStep {

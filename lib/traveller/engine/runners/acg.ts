@@ -10,7 +10,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
-import { awardBrownie } from "@/lib/traveller/engine/acg/awards";
+import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
 
@@ -275,7 +275,8 @@ export function runAcgTerm(ch: Character): void {
     ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
     ch.terms += 1;
   } else if (yearsThisTerm === termLength && !ch.deceased && ch.activeDuty) {
-    awardBrownie(ch, 1, `Completed ${termLength}-year term`);
+    const termBp = bpAwardFor(ch, "Finish each 4-year term") ?? 0;
+    awardBrownie(ch, termBp, `Completed ${termLength}-year term`);
     ch.terms += 1;
     // Mark a 3-year first term as a partial (it doesn't count for full
     // muster benefits per PM short-term rule, matching basic-flow short

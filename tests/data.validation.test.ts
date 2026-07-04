@@ -65,7 +65,11 @@ if (ACTIVE_EDITIONS.length === 0) {
   throw new Error("No active editions registered — data.validation.test cannot run");
 }
 
-const BASE = 7;
+// Baseline attribute value. 8 (not 7) so the character satisfies the
+// advancedEducation8Plus Edu gate (advancedEducationEduMin = 8) when the sweep
+// forces table 4; attribute deltas are measured relative to BASE, so its
+// absolute value is otherwise inconsequential.
+const BASE = 8;
 
 function forceD6(v: number): void {
   vi.spyOn(Math, "random").mockReturnValue((v - 1) / 6 + 0.0001);

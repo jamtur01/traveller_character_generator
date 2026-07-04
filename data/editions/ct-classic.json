@@ -97,14 +97,6 @@
       "min": 0,
       "socialMin": 1
     },
-    "dice": {
-      "characteristics": "2d6 each",
-      "serviceChecks": "2d6",
-      "draft": "1d6",
-      "skillTableRoll": "1d6",
-      "musterOutRoll": "1d6",
-      "agingSave": "2d6"
-    },
     "characteristicRange": {
       "initial": { "min": 2, "max": 12 },
       "modifiedPlayerCharacter": { "min": 1, "max": 15 }
@@ -112,9 +104,6 @@
     "skillEligibility": {
       "initialTerm": 2,
       "subsequentTerm": 1,
-      "onPositionOrCommission": 1,
-      "onPromotion": 1,
-      "advancedEducationTableRequiresEducation": 8,
       "perTermExceptions": {
         "scouts": 2,
         "belters": 2,
@@ -153,11 +142,11 @@
       "noCommissionFirstTerm": true
     },
     "retirement": {
-      "$rule": "TTB p. 18: pension eligible after 5 completed terms; Cr4000/yr at 5 terms + Cr2000/yr per further term (Cr4000+(terms-5)*2000, matching the printed 4000/6000/8000/10000/12000 table). Scouts and Other cannot retire; barbarians retire only in prose.",
+      "$rule": "TTB p. 18: pension eligible after 5 completed terms; Cr4000/yr at 5 terms + Cr2000/yr per further term (Cr4000+(terms-5)*2000, matching the printed 4000/6000/8000/10000/12000 table). Scouts and Other cannot retire (TTB p. 18); Barbarians cannot retire (CotI p. 8).",
       "eligibleAfterCompletedTerm": 5,
       "basePensionCredits": 4000,
       "pensionCreditsPerTerm": 2000,
-      "excludedServices": ["scouts", "other"]
+      "excludedServices": ["scouts", "other", "barbarians"]
     },
     "hexadecimalNotation": {
       "0": "0",
@@ -180,7 +169,6 @@
   },
   "aging": {
     "source": "TTB p. 24 aging table",
-    "startsAfterFourthTerm": true,
     "rows": [
       { "age": 34, "endOfTerm": 4, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
       { "age": 38, "endOfTerm": 5, "effects": { "strength": { "delta": -1, "save": 8 }, "dexterity": { "delta": -1, "save": 7 }, "endurance": { "delta": -1, "save": 8 } } },
@@ -192,16 +180,8 @@
       { "age": 62, "endOfTerm": 11, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
       { "age": "66+", "endOfTerm": 12, "effects": { "strength": { "delta": -2, "save": 9 }, "dexterity": { "delta": -2, "save": 9 }, "endurance": { "delta": -2, "save": 9 }, "intelligence": { "delta": -1, "save": 9 } } }
     ],
-    "unaffected": ["education", "social"],
     "agingCrisis": { "whenAttributeReducedTo": 0, "save": 8, "dice": "2d6" }
   },
-  "nobleRanks": [
-    { "hex": "B", "social": 11, "titles": ["Knight", "Knightess", "Dame"], "address": "Sir or Dame" },
-    { "hex": "C", "social": 12, "titles": ["Baron", "Baronet", "Baroness"], "allowedPrefixes": ["von", "haut", "hault"] },
-    { "hex": "D", "social": 13, "titles": ["Marquis", "Marquesa", "Marchioness"] },
-    { "hex": "E", "social": 14, "titles": ["Count", "Countess", "Contessa"] },
-    { "hex": "F", "social": 15, "titles": ["Duke", "Duchess"] }
-  ],
   "pdfExtraction": {
     "pdfFiles": [
       "CT_TTB_The_Traveller_Book.pdf",
@@ -299,23 +279,23 @@
   },
   "benefitDetails": {
     "passages": {
-      "High Psg": { "displayName": "High Passage", "cashValueCredits": 10000, "resalePercent": 90 },
-      "Mid Psg": { "displayName": "Mid Passage", "cashValueCredits": 8000, "resalePercent": 90 },
-      "Low Psg": { "displayName": "Low Passage", "cashValueCredits": 1000, "resalePercent": 90, "revivalSave": "5+" }
+      "High Psg": { "displayName": "High Passage" },
+      "Mid Psg": { "displayName": "Mid Passage" },
+      "Low Psg": { "displayName": "Low Passage" }
     },
     "Travellers'": { "displayName": "Travellers' Aid Society membership", "repeat": "no effect" },
     "Free Trader": { "shipType": "Type A Free Trader", "displayName": "Type A Free Trader", "firstReceiptMortgageYears": 40, "repeatReducesMortgageYears": 10 },
-    "Scout Ship":  { "shipType": "Type S Scout/Courier", "displayName": "Type S Scout Ship", "basis": "reserve use" },
+    "Scout Ship":  { "shipType": "Type S Scout/Courier", "displayName": "Type S Scout Ship" },
     "Corsair":     { "shipType": "Corsair", "displayName": "Pirate Corsair", "repeat": "no benefit" },
     "Seeker":      { "shipType": "Seeker", "displayName": "Type J Seeker", "repeat": "no benefit" },
     "Yacht":       { "shipType": "Yacht", "displayName": "Type Y Yacht", "repeat": "no benefit" },
     "Lab Ship":    { "shipType": "Type L Lab Ship", "displayName": "Type L Lab Ship", "repeat": "no benefit" },
     "Safari Ship": { "shipType": "Type K Safari Ship", "displayName": "Type X Safari Ship", "repeat": "no benefit" },
-    "Instruments": { "description": "Medical instrument set", "valueCredits": 5000, "repeat": "no effect" },
-    "Watch": { "description": "Presentation watch", "typicalValueCredits": 50, "valuableValueRoll": "2d6 * Cr100 on 7+", "repeat": "no effect" },
-    "Weapon": { "choices": ["Blade", "Gun"], "repeatMayBecomeSkill": true },
-    "Blade": { "choices": "bladesAndPolearms", "repeatMayBecomeSkill": true },
-    "Gun": { "choices": "guns", "repeatMayBecomeSkill": true }
+    "Instruments": { "description": "Medical instrument set", "repeat": "no effect" },
+    "Watch": { "description": "Presentation watch", "repeat": "no effect" },
+    "Weapon": {},
+    "Blade": {},
+    "Gun": {}
   },
   "services": {
     "navy": {

@@ -49,7 +49,9 @@ describe("Survival rule (PM p. 16)", () => {
     expect(r?.onFailure).toBe("shortTerm");
     expect(r?.shortTermYears).toBe(2);
     expect(r?.fullTermYears).toBe(4);
-    expect(r?.shortTermDoesNotCountForMusterBenefits).toBe(true);
+    // The short-term muster-benefit exclusion is enforced by shortTermsCount
+    // (tested in anagathics.test.ts), not a config flag — the dead
+    // rules.survival.shortTermDoesNotCountForMusterBenefits key was removed.
   });
 
   it("CT default: survival failure = death", () => {

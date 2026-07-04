@@ -99,29 +99,16 @@ export const RulesSchema = z.looseObject({
       z.string(),
     ]),
   ).optional(),
-  // Aging crisis (MT p. 47).
-  agingCrisis: z.object({
-    whenAttributeReducedTo: z.number().optional(),
-    save: z.number().optional(),
-  }).optional(),
   // Survival-failure consequence. CT defaults to death; MT to shortTerm.
   survival: z.object({
     onFailure: z.enum(["death", "shortTerm"]).optional(),
     shortTermYears: z.number().optional(),
     fullTermYears: z.number().optional(),
-    shortTermDoesNotCountForMusterBenefits: z.boolean().optional(),
-    skipCommissionPromotionInShortTerm: z.boolean().optional(),
-    specialDutyAndSkillsStillRoll: z.boolean().optional(),
-    optionalDeathRule: z.string().optional(),
   }).optional(),
   // Skill-eligibility table-row counts (CT/MT divergence).
   skillEligibility: z.object({
     initialTerm: z.number().optional(),
     subsequentTerm: z.number().optional(),
-    onPositionOrCommission: z.number().optional(),
-    onPromotion: z.number().optional(),
-    onSpecialDuty: z.number().optional(),
-    doubleSkillMargin: z.number().optional(),
     perTermExceptions: z.record(z.string(), z.number()).optional(),
   }).optional(),
   // Marine Tradition (F5 — forced Large Blade for Marines).
@@ -218,9 +205,7 @@ const DMRuleSchema = z.strictObject({
 const CheckSchema = z.looseObject({
   target: z.number().nullable(),
   dms: z.array(DMRuleSchema).optional(),
-  label: z.string().optional(),
   inverseToLeave: z.boolean().optional(),
-  special: z.string().optional(),
   // CotI auto-enrolment gate (e.g. Nobles): enlistment succeeds automatically
   // when the named attribute meets `min`.
   automaticIf: z.looseObject({
@@ -308,9 +293,7 @@ const AgingRowSchema = z.looseObject({
 
 const AgingSchema = z.looseObject({
   source: z.string().optional(),
-  startsAfterFourthTerm: z.boolean().optional(),
   rows: z.array(AgingRowSchema),
-  unaffected: z.array(z.string()).optional(),
   agingCrisis: z.looseObject({
     whenAttributeReducedTo: z.number().optional(),
     save: z.number().optional(),
@@ -405,15 +388,7 @@ const BenefitDetailSchema = z.looseObject({
   firstReceiptMortgageYears: z.number().optional(),
   repeatReducesMortgageYears: z.number().optional(),
   repeat: z.string().optional(),
-  cashValueCredits: z.number().optional(),
-  resalePercent: z.number().optional(),
-  revivalSave: z.string().optional(),
   description: z.string().optional(),
-  valueCredits: z.number().optional(),
-  typicalValueCredits: z.number().optional(),
-  valuableValueRoll: z.string().optional(),
-  choices: z.union([z.string(), z.array(z.string())]).optional(),
-  repeatMayBecomeSkill: z.boolean().optional(),
 });
 
 const SkillTableMetaSchema = strictCitations({
