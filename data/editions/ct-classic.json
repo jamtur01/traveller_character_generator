@@ -134,8 +134,9 @@
       "mandatoryRetireAfterTerm": 7
     },
     "survival": {
-      "$rule": "TTB p. 18: 'Upon enlistment (or upon being drafted), a character embarks on a term of service lasting four years.' Survival failure is death (the optional injury/short-term rule is not modeled as a lifecycle default).",
-      "fullTermYears": 4
+      "$rule": "TTB p. 18: 'Upon enlistment (or upon being drafted), a character embarks on a term of service lasting four years.' Survival failure is death: TTB p. 18 'Failure to achieve the survival throw means the character dies' (the CotI optional injury/short-term rule is not modeled as a lifecycle default).",
+      "fullTermYears": 4,
+      "onFailure": "death"
     },
     "draft": {
       "$rule": "TTB p. 18: 'Draftees are not eligible for commissions during their first term of service; they do become eligible during the second and subsequent terms of service if they reenlist.'",

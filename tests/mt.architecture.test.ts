@@ -155,12 +155,12 @@ describe("MT survival failure routes through non-death short-term path", () => {
     expect(c.musterOutRolls()).toBe(0);
     spy.mockRestore();
   });
-  it("CT survival block omits onFailure (defaults to death)", () => {
+  it("CT survival block declares onFailure death explicitly", () => {
     const ct = getEdition("ct-classic");
     const rules = ct.data.rules as { survival?: { onFailure?: unknown } } | undefined;
-    // CT declares rules.survival only for fullTermYears; with no onFailure,
-    // survival.ts falls back to "death" (no short-term injury path).
-    expect(rules?.survival?.onFailure).toBeUndefined();
+    // TTB p. 18: survival failure is death — declared in JSON, not defaulted
+    // in code (rules-lock: survival.ts reads onFailure via requireRule).
+    expect(rules?.survival?.onFailure).toBe("death");
   });
 });
 

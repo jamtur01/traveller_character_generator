@@ -18,7 +18,10 @@ import type { StepFn } from "./types";
 
 export const survivalStep: StepFn = ({ ch, service, edition }) => {
   if (service.checkSurvival(ch)) return;
-  const onFailure = edition.rules.survival?.onFailure ?? "death";
+  const onFailure = requireRule(
+    edition.rules.survival?.onFailure,
+    "rules.survival.onFailure", "TTB p. 18 death / PM p. 16 injury short-term",
+  );
   if (onFailure === "shortTerm") {
     const s = edition.rules.survival;
     const short = requireRule(
