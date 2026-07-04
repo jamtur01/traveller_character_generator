@@ -31,10 +31,6 @@ import {
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
-import {
-  applyOnce, markComplete, resetIfComplete,
-  alreadyApplied, markApplied,
-} from "@/lib/traveller/engine/acg/subStepCache";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
@@ -373,40 +369,26 @@ export function merchantRollAssignment(ch: Character): string {
 }
 
 export function merchantResolveAssignment(ch: Character, assignment: string): void {
-  // Reset per-year sub-step cache if a prior resolveAssignment ran to
-  // completion (the runner clears at year boundary, but direct test
-  // invocation can call us multiple times in the same notional year).
-  resetIfComplete(ch);
   if (assignment === "Transfer Up" || assignment === "Transfer Down") {
     const dir = assignment === "Transfer Up" ? "up" : "down";
-    const flag = dir === "up" ? "merchantTransferUpApplied" : "merchantTransferDownApplied";
-    applyOnce(ch, flag, () => transferMerchantLine(ch, dir));
-    // Reroll specific assignment in the new line. Cache the rolled
-    // value so a pause inside the recursive resolve doesn't re-roll
-    // (non-deterministically) on resume. Cleared at year boundary.
-    const acg = ch.requireAcgState();
-    if (acg.perYear.merchantTransferNextAssign === undefined) {
-      // PM allows only one transfer per year. If the reroll lands on
-      // another transfer, reroll until we get a real assignment rather
-      // than silently dropping the year's resolution. Bound the loop
-      // defensively so a misconfigured table can't infinite-loop.
-      let next = merchantRollAssignment(ch);
-      for (let i = 0; i < 8 && (next === "Transfer Up" || next === "Transfer Down"); i++) {
-        next = merchantRollAssignment(ch);
-      }
-      acg.perYear.merchantTransferNextAssign = next;
+    transferMerchantLine(ch, dir);
+    // Reroll specific assignment in the new line. PM allows only one
+    // transfer per year: if the reroll lands on another transfer, reroll
+    // until we get a real assignment rather than silently dropping the
+    // year's resolution. Bound the loop defensively so a misconfigured
+    // table can't infinite-loop.
+    let next = merchantRollAssignment(ch);
+    for (let i = 0; i < 8 && (next === "Transfer Up" || next === "Transfer Down"); i++) {
+      next = merchantRollAssignment(ch);
     }
-    const next = acg.perYear.merchantTransferNextAssign;
     if (next !== "Transfer Up" && next !== "Transfer Down") {
       merchantResolveAssignment(ch, next);
     }
-    markComplete(ch);
     return;
   }
   // "Special" routes through the Special Duty table (manual p. 60-63).
   if (assignment === "Special") {
     merchantSpecialAssignment(ch);
-    markComplete(ch);
     return;
   }
   // Available Position check (officers only).
@@ -553,11 +535,6 @@ function merchantRollSkill(ch: Character): void {
   if (tables.length === 0) return;
   // Interactive: let the player pick the table. Auto: round-robin by year.
   if (ch.choiceMode === "interactive" && tables.length > 1) {
-    // Mark applied BEFORE pickOrDefer to suppress duplicate prompts on
-    // re-entry (each "Run term" click while the choice is queued re-
-    // enters the skills phase; without the gate the prompt re-queues).
-    if (alreadyApplied(ch, "merchantSkillTable-prompted")) return;
-    markApplied(ch, "merchantSkillTable-prompted");
     ch.pickOrDefer({
       kind: "merchantSkillTable",
       label: "Merchant: choose which skill table to roll on this year.",
@@ -611,8 +588,6 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
   // department with more than one available column exposes the choice in
   // interactive mode; auto mode takes the first (department-appropriate) one.
   if (ch.choiceMode === "interactive" && columns.length > 1) {
-    if (alreadyApplied(ch, "merchantSkillColumn-prompted")) return;
-    markApplied(ch, "merchantSkillColumn-prompted");
     ch.pickOrDefer({
       kind: "merchantSkillColumn",
       label: `Merchant: choose a skill column from the ${tableKey} table.`,

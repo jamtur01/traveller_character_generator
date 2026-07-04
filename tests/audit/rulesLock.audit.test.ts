@@ -228,28 +228,13 @@ const ALLOWLIST: AllowEntry[] = [
       "return null here; the 1 is unreachable type-narrowing.",
   },
   {
-    file: "lib/traveller/engine/runners/acg.ts",
-    lineIncludes: "(ch.acgState.year ?? 1) > 1",
-    reason:
-      "Engine runtime state, not edition data: year is the engine's own " +
-      "1-based term-year counter (set to 1 by runAcgTerm itself); this is " +
-      "resume-detection bookkeeping.",
-  },
-  {
-    file: "lib/traveller/engine/runners/acg.ts",
-    lineIncludes: "(ch.acgState.year ?? 1) - 1",
-    reason:
-      "Engine runtime state, not edition data: same 1-based year counter as " +
-      "the resume-detection guard above, used to compute the loop restart " +
-      "index when re-entering a paused term.",
-  },
-  {
     file: "lib/traveller/chargen/enlistment.ts",
     lineIncludes: 'options.service ?? "army"',
     reason:
       "Comment-documented API-surface defaults (see the block above the " +
-      "pauseGuard in beginAcg): auto flows and tests that present no picker " +
-      "get the first printed option; UI and RunLog always pass explicit values.",
+      "pathway dispatch in beginAcg): auto flows and tests that present no " +
+      "picker get the first printed option; UI and RunLog always pass " +
+      "explicit values.",
   },
   {
     file: "lib/traveller/chargen/enlistment.ts",

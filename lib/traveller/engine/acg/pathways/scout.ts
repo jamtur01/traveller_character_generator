@@ -233,28 +233,21 @@ export function scoutRollAssignment(ch: Character): string {
   const adminDm = data.dutyAssignment.dms?.find((d) => d.rankAtLeast !== undefined)?.dm ?? 0;
   const rank = rankNum(acg.rankCode);
   const adminEligible = division === "bureaucracy" && rank >= adminMin;
-  // Default to taking the DM; interactive mode exposes the choice.
+  // Default to taking the DM; interactive mode exposes the choice. The
+  // decision cursor runs onResolve inline, so the closure over the local
+  // is applied before the roll below; on the frontier (unrecorded) case
+  // pickOrDefer throws and the whole action re-executes with the pick.
   let useAdminDm = adminEligible;
   if (adminEligible && ch.choiceMode === "interactive") {
     const takeLabel = `Take DM +${adminDm}`;
-    if (acg.scoutAdminDmDecision !== undefined) {
-      // Resume case — decision was made in the previous pause/resume
-      // cycle. Consume it.
-      useAdminDm = acg.scoutAdminDmDecision;
-      delete acg.scoutAdminDmDecision;
-    } else {
-      // First visit: queue the choice. pickOrDefer throws in interactive
-      // mode, so the line after this call is unreachable; the decision
-      // is captured on acgState so the resumed call reads it above.
-      ch.pickOrDefer({
-        kind: "scoutAdminDm",
-        label: `Take administrator DM +${adminDm} on the duty roll? (Natural 2 still forces war mission.)`,
-        options: [takeLabel, "Roll without DM"],
-        onResolve: (ch, choice) => {
-          ch.requireAcgState().scoutAdminDmDecision = choice === takeLabel;
-        },
-      });
-    }
+    ch.pickOrDefer({
+      kind: "scoutAdminDm",
+      label: `Take administrator DM +${adminDm} on the duty roll? (Natural 2 still forces war mission.)`,
+      options: [takeLabel, "Roll without DM"],
+      onResolve: (_ch, choice) => {
+        useAdminDm = choice === takeLabel;
+      },
+    });
   }
   const dm = useAdminDm ? adminDm : 0;
   const baseRoll = ch.rng.roll(2);
@@ -396,63 +389,44 @@ function routeScoutToSchool(ch: Character): void {
 function scoutDecideTransfer(ch: Character, onReroll: boolean): boolean {
   if (onReroll) return true; // mandatory on reroll
   if (ch.choiceMode !== "interactive") return true; // auto accepts
-  const acg = ch.requireAcgState();
-  if (acg.scoutTransferDecision !== undefined) {
-    // Resume case — decision made in prior pause/resume cycle.
-    const accept = acg.scoutTransferDecision;
-    delete acg.scoutTransferDecision;
-    return accept;
-  }
-  // First visit: queue the choice. pickOrDefer throws in interactive
-  // mode; the return below is dead code there. The decision is
-  // captured on acgState so the resumed call reads it above.
+  // The decision cursor runs onResolve inline, so the closure over the
+  // local applies before the return; on the frontier (unrecorded) case
+  // pickOrDefer throws and the whole action re-executes with the pick.
+  let accept = true;
   ch.pickOrDefer({
     kind: "scoutTransferDecline",
     label: "Accept transfer from Field to Bureaucracy? (Mandatory on reroll if declined.)",
     options: ["Accept transfer", "Decline (reroll once)"],
-    onResolve: (ch, choice) => {
-      ch.requireAcgState().scoutTransferDecision = choice === "Accept transfer";
+    onResolve: (_ch, choice) => {
+      accept = choice === "Accept transfer";
     },
   });
-  return true; // unreachable in interactive mode (pickOrDefer threw)
+  return accept;
 }
 
 function applyScoutTransferToBureaucracy(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireScoutAcg();
-  // Idempotency guard: if the recursive scoutResolveAssignment below
-  // pauses on an interactive choice, the runner re-invokes the outer
-  // resolveAssignment with assignment="Transfer" on resume. Without this
-  // marker the transfer side effects (rank change, division change,
-  // office reroll) would re-apply on every resume.
-  if (!acg.perYear.transferAppliedThisYear) {
-    acg.perYear.transferAppliedThisYear = true;
-    const fromDivision = acg.division;
-    acg.division = "bureaucracy";
-    // Reroll office assignment under the Bureaucracy division.
-    const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
-    const off = row?.bureaucracy;
-    if (typeof off !== "string") {
-      throw new Error(
-        `Scout officeAssignment table has no "bureaucracy" cell for the ` +
-        `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
-      );
-    }
-    acg.office = off;
-    // Bureaucracy has rank; ordinary rank becomes terms served, capped at
-    // the top ordinary rank defined in JSON (PM p. 57: IS-9).
-    const termsServed = Math.max(1, ch.terms);
-    const ordinaryMax = Math.max(...data.ranks.ordinary.map((r) => rankNum(String(r[0]))));
-    acg.rankCode = `IS-${Math.min(ordinaryMax, termsServed)}`;
-    ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
+  const fromDivision = acg.division;
+  acg.division = "bureaucracy";
+  // Reroll office assignment under the Bureaucracy division.
+  const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
+  const off = row?.bureaucracy;
+  if (typeof off !== "string") {
+    throw new Error(
+      `Scout officeAssignment table has no "bureaucracy" cell for the ` +
+      `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
+    );
   }
-  // Resolve a fresh assignment in the new division. Cache the rolled
-  // assignment so a pause inside the recursive resolve doesn't re-roll
-  // (non-deterministically) on resume.
-  if (acg.perYear.scoutTransferNextAssign === undefined) {
-    acg.perYear.scoutTransferNextAssign = scoutRollAssignment(ch);
-  }
-  const nextAssign = acg.perYear.scoutTransferNextAssign;
+  acg.office = off;
+  // Bureaucracy has rank; ordinary rank becomes terms served, capped at
+  // the top ordinary rank defined in JSON (PM p. 57: IS-9).
+  const termsServed = Math.max(1, ch.terms);
+  const ordinaryMax = Math.max(...data.ranks.ordinary.map((r) => rankNum(String(r[0]))));
+  acg.rankCode = `IS-${Math.min(ordinaryMax, termsServed)}`;
+  ch.log(ev.transferred("Scout Bureaucracy", "division", fromDivision));
+  // Resolve a fresh assignment in the new division.
+  const nextAssign = scoutRollAssignment(ch);
   if (nextAssign !== "Transfer") {
     scoutResolveAssignment(ch, nextAssign);
   }

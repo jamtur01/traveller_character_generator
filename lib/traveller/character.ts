@@ -105,6 +105,16 @@ export interface PreCareerOutcome {
   notes: string[];
 }
 
+/** Recorded player decisions for one session action's re-execution. The
+ *  session runs every action from a pristine pre-action base; pickOrDefer
+ *  consumes `resolutions[pos]` for each interactive choice it re-encounters
+ *  (in deterministic prompt order). The first choice past the end of
+ *  `resolutions` is the frontier — it queues and pauses. */
+export interface DecisionCursor {
+  readonly resolutions: readonly number[];
+  pos: number;
+}
+
 /** The pure data shape of a character — every stored (non-derived) field the
  *  engine mutates during chargen. `Character` implements this and layers the
  *  behavior (mutation kernel: log/addSkill/…; lifecycle facades that delegate
@@ -401,9 +411,19 @@ export class Character implements CharacterState {
   choiceMode: ChoiceMode = "auto";
   /**
    * Choices waiting for user resolution. Each entry holds the apply-on-pick
-   * closure; the UI calls resolveChoice(id, optionIdx) when the user picks.
+   * closure; the session resolves it by re-running the paused action with
+   * the picked option index appended to the decision cursor.
    */
   pendingChoices: PendingChoice<string>[] = [];
+  /**
+   * Execution-scoped decision cursor for event-sourced re-execution. The
+   * session sets it before running an action; pickOrDefer consumes recorded
+   * option indices synchronously (onResolve runs inline) until the cursor is
+   * exhausted — the next interactive choice is the frontier, which queues on
+   * pendingChoices and throws ChoicePendingError. Never persisted:
+   * cloneCharacter always nulls it on the clone.
+   */
+  decisionCursor: DecisionCursor | null = null;
 
   // ---------- Advanced Character Generation (MT) ----------
   /**
@@ -507,9 +527,13 @@ export class Character implements CharacterState {
 
   /**
    * Generic choice point. In auto mode, picks randomly from options and runs
-   * the resolver immediately. In interactive mode, queues a PendingChoice
-   * and returns without applying — the UI is expected to call resolveChoice
-   * later.
+   * the resolver immediately. In interactive mode, a previously-recorded
+   * decision-cursor entry resolves the choice synchronously (onResolve runs
+   * inline and execution continues); with the cursor exhausted (or absent),
+   * the choice queues on pendingChoices and ChoicePendingError unwinds to the
+   * session boundary, which snapshots the paused state. The session resumes
+   * by re-running the whole action from its pre-action base with the picked
+   * index appended to the cursor.
    */
   pickOrDefer(req: ChoiceRequest<string>): void {
     if (this.choiceMode === "auto") {
@@ -519,11 +543,25 @@ export class Character implements CharacterState {
       req.onResolve(this, this.rng.pick(pool));
       return;
     }
-    // Interactive mode: queue the choice and signal the runner to pause.
-    // The ACG runner catches ChoicePendingError, preserves the current
-    // yearStep, and bails. The UI resolves the choice via resolveChoice
-    // (which runs the queued closure), then re-invokes the runner to
-    // continue the year from where it paused.
+    const cursor = this.decisionCursor;
+    if (cursor && cursor.pos < cursor.resolutions.length) {
+      const idx = cursor.resolutions[cursor.pos]!;
+      cursor.pos += 1;
+      const chosen = req.options[idx];
+      if (chosen === undefined) {
+        // A recorded index that no longer maps to an option means the
+        // decision log and the re-executed flow have diverged — fail loudly
+        // rather than silently mis-resolving the choice.
+        throw new Error(
+          `decision cursor: recorded option index ${idx} is out of range for ` +
+          `choice "${req.label}" (${req.options.length} options) — ` +
+          "corrupted or stale decision log",
+        );
+      }
+      req.onResolve(this, chosen);
+      return;
+    }
+    // Frontier: queue the choice and unwind to the session boundary.
     const id = genChoiceId();
     this.pendingChoices.push({ id, ...req });
     throw new ChoicePendingError(id);
@@ -608,25 +646,6 @@ export class Character implements CharacterState {
     options: BeginAcgOptions = {},
   ): void {
     beginAcgImpl(this, pathway, options);
-  }
-
-  /** Apply the user's pick for a pending choice. A stale/unknown id
-   *  (idx < 0) is a graceful no-op (the choice may already be resolved),
-   *  but a known choice with an out-of-range optionIdx is a programming
-   *  bug that must fail loud rather than silently stalling the flow. */
-  resolveChoice(id: string, optionIdx: number): void {
-    const idx = this.pendingChoices.findIndex((p) => p.id === id);
-    if (idx < 0) return;
-    const choice = this.pendingChoices[idx]!;
-    const chosen = choice.options[optionIdx];
-    if (chosen === undefined) {
-      throw new Error(
-        `resolveChoice: optionIdx ${optionIdx} out of range for choice ${id} ` +
-          `(${choice.options.length} options)`,
-      );
-    }
-    this.pendingChoices.splice(idx, 1);
-    choice.onResolve(this, chosen);
   }
 
   // ---------- attributes / skills / benefits ----------
@@ -948,6 +967,10 @@ export function cloneCharacter(ch: Character): Character {
   // when the handler bails on ChoicePendingError, stacking stale choices
   // across stages.
   next.pendingChoices = [...ch.pendingChoices];
+  // The decision cursor is execution-scoped: it lives only for the duration
+  // of one session action's (re-)execution and must never leak into a stored
+  // snapshot or a re-run base.
+  next.decisionCursor = null;
   // chargenStatus is a discriminated union; the variant objects are
   // immutable per the helpers, but freshly cloning avoids any chance of
   // shared-reference aliasing on future field additions.

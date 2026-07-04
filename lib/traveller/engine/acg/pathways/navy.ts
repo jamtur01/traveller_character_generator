@@ -18,10 +18,6 @@ import {
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applySpecialAssignment } from "@/lib/traveller/engine/acg/schools";
-import {
-  applyOnce, markComplete, resetIfComplete,
-  alreadyApplied, markApplied,
-} from "@/lib/traveller/engine/acg/subStepCache";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
@@ -423,13 +419,6 @@ export function navyCommandDuty(ch: Character): void {
   // Per manual: not consulting the table results in assignment to staff.
   // In interactive mode the player can decline the roll.
   if (ch.choiceMode === "interactive") {
-    // Mark applied BEFORE pickOrDefer (which throws in interactive mode).
-    // Without this gate, every "Run term" / runAcgYear re-entry — while
-    // the choice is still queued OR after it resolves — re-fires this
-    // function, queueing another identical prompt. The flag lives in
-    // perYear.thisYearOutcomes.applied and is cleared at year boundary.
-    if (alreadyApplied(ch, "navyCommandDutyOptIn-prompted")) return;
-    markApplied(ch, "navyCommandDutyOptIn-prompted");
     ch.pickOrDefer({
       kind: "commandDutyOptIn",
       label: "Attempt the command-duty roll this year?",
@@ -511,22 +500,18 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
     }>;
     const rule = specials[assignment];
     if (rule) {
-      resetIfComplete(ch);
-      applyOnce(ch, "navySpecialRuleApplied", () => {
-        const acg = ch.requireAcgState();
-        acg.assignmentHistory.push(assignment);
-        // Frozen Watch (and any cold-sleep rule): the year still advances
-        // chronological age in runAcgYear, but physical aging is offset so
-        // the character is one year older chronologically than physically
-        // (PM p. 56). doAging drives the aging saving throws off physical
-        // age. noSkillRoll is honored implicitly — this branch skips every
-        // resolution phase, so no skill is rolled.
-        if (rule.physicalAgeDelta) {
-          acg.physicalAgeOffset = (acg.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
-        }
-        if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
-      });
-      markComplete(ch);
+      const acg = ch.requireAcgState();
+      acg.assignmentHistory.push(assignment);
+      // Frozen Watch (and any cold-sleep rule): the year still advances
+      // chronological age in runAcgYear, but physical aging is offset so
+      // the character is one year older chronologically than physically
+      // (PM p. 56). doAging drives the aging saving throws off physical
+      // age. noSkillRoll is honored implicitly — this branch skips every
+      // resolution phase, so no skill is rolled.
+      if (rule.physicalAgeDelta) {
+        acg.physicalAgeOffset = (acg.physicalAgeOffset ?? 0) + rule.physicalAgeDelta;
+      }
+      if (rule.historyLine) ch.log(ev.raw(rule.historyLine));
       return;
     }
     throw new Error(

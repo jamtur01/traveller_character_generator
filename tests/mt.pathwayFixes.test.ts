@@ -7,7 +7,8 @@
 //   - Navy medical/flight grads auto-branch, Naval Academy auto-enlists O1.
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { Character } from "../lib/traveller/character";
+import { Character, cloneCharacter } from "../lib/traveller/character";
+import { ChoicePendingError } from "../lib/traveller/engine/choices";
 import { runAcgTerm } from "../lib/traveller/engine/runners/acg";
 import {
   merchantRollAssignment,
@@ -184,24 +185,30 @@ describe("Mercenary: cross-trained Marines get reenlist DM +1", () => {
   });
 });
 
-describe("F4: interactive ACG choices pause the year via ChoicePendingError", () => {
-  it("navy Soc 9+ branch pick queues a navyBranch choice; resolveChoice applies it", () => {
+describe("F4: interactive ACG choices pause enlistment via ChoicePendingError", () => {
+  it("navy Soc 9+ branch pick pauses; a decision-cursor re-run applies it", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999);
     const c = makeMt();
     c.choiceMode = "interactive";
     c.attributes.social = 9;
-    c.beginAcg("navy", { fleet: "imperialNavy" });
-    // Interactive mode + Soc 9+ → branch choice is queued (not auto-resolved).
+    const base = cloneCharacter(c); // pre-action base, as the session captures
+    // Interactive mode + Soc 9+ → the branch choice queues and the pause
+    // unwinds to the caller (the session boundary in real flows).
+    expect(() => c.beginAcg("navy", { fleet: "imperialNavy" }))
+      .toThrow(ChoicePendingError);
     expect(c.pendingChoices.length).toBeGreaterThan(0);
     const choice = c.pendingChoices[0]!;
     expect(choice.kind).toBe("navyBranch");
     expect(choice.options).toContain("Flight");
-    expect(c.requireNavyAcg().branch).toBeFalsy(); // not set until choice resolves
-    // Resolve to Flight → branch stamps onto state, choice clears.
+    expect(c.requireNavyAcg().branch).toBeFalsy(); // not set until re-run
+    // Re-execute from the base with the pick recorded — the cursor consumes
+    // it inline (Math.random is pinned, so the prefix replays identically).
     const flightIdx = choice.options.indexOf("Flight");
-    c.resolveChoice(choice.id, flightIdx);
-    expect(c.requireNavyAcg().branch).toBe("Flight");
-    expect(c.pendingChoices.find((p) => p.id === choice.id)).toBeUndefined();
+    const rerun = cloneCharacter(base);
+    rerun.decisionCursor = { resolutions: [flightIdx], pos: 0 };
+    rerun.beginAcg("navy", { fleet: "imperialNavy" });
+    expect(rerun.requireNavyAcg().branch).toBe("Flight");
+    expect(rerun.pendingChoices.length).toBe(0);
   });
 });
 

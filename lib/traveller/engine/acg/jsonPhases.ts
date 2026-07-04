@@ -20,7 +20,6 @@ import {
   type PathwaySpec, type PhaseDef, type PhaseFailResult,
   type ResolveContext,
 } from "./phaseRunner";
-import { alreadyApplied, markApplied } from "./subStepCache";
 import { requireHook } from "@/lib/traveller/engine/registry";
 import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
@@ -271,12 +270,12 @@ function applyDecorationResolution(
   r: { roll: number; margin: number },
   courtMartialThreshold: number,
 ): void {
-  const cached = ctx.ch.acgState?.perYear.thisYearOutcomes?.decoration;
-  const margin = cached?.marginAfterMit ?? r.margin;
-  const tier = resolveDecorationTier(ctx.ch, margin);
+  // r.margin is the EFFECTIVE margin (the phase runner folds any BP
+  // mitigation in before invoking onPass/onFail).
+  const tier = resolveDecorationTier(ctx.ch, r.margin);
   if (tier) {
     awardDecoration(ctx.ch, tier);
-  } else if (margin <= courtMartialThreshold) {
+  } else if (r.margin <= courtMartialThreshold) {
     runCourtMartial(ctx.ch, ctx.assignment);
   }
 }
@@ -383,13 +382,6 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
   if (ctx.ch.choiceMode !== "interactive") return;
   if (ctx.res.decoration === "none") return;
   if (typeof ctx.res.survival !== "number" || typeof ctx.res.decoration !== "number") return;
-  // Mark applied BEFORE pickOrDefer (which throws ChoicePendingError in
-  // interactive mode). Without this gate every re-entry of runPhases —
-  // each "Run term" click while the choice is queued — would enqueue a
-  // fresh copy of the same prompt. The flag lives in the per-year
-  // thisYearOutcomes cache and is cleared at year boundary by the runner.
-  if (alreadyApplied(ctx.ch, "decorationDmTradeoff-prompted")) return;
-  markApplied(ctx.ch, "decorationDmTradeoff-prompted");
   // PM p. 49 declares the tradeoff; the +/-2 option bounds are declared in
   // acg.common.decorationDmTradeoff (a documented design choice — the book
   // states no cap).
@@ -415,7 +407,16 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
     options,
     onResolve: (ch, choice) => {
       const idx = options.indexOf(choice);
-      ch.requireAcgState().decorationDmStrategy = values[idx] ?? 0;
+      const strategy = values[idx] ?? 0;
+      // ctx.dms was computed before this prompt resolved, with the
+      // character's PRIOR strategy (0 in year 1; last year's pick later in
+      // the term) already folded in by combatResolutionDms. Replace that
+      // contribution with the fresh pick so the phase rolls see the DM the
+      // player just chose.
+      const prior = ch.requireAcgState().decorationDmStrategy;
+      ctx.dms.survival += strategy - prior;
+      ctx.dms.decoration = (ctx.dms.decoration ?? 0) - (strategy - prior);
+      ch.requireAcgState().decorationDmStrategy = strategy;
     },
   });
 });

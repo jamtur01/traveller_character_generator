@@ -1,11 +1,11 @@
 // Live-vs-replay equivalence property harness.
 //
-// The upcoming resume-model rewrite replaces the live pause/resume machinery
-// (acgState.perYear.pausedAtStep, the per-year subStepCache, the scout/merchant
-// closure-cache fields) with event-sourced re-execution: a session becomes a
-// RunLog {seed, start, actions} and every render re-derives state via
-// replayRun. Before that machinery is deleted, this harness proves — or
-// pinpoints where — TODAY'S live interactive path is equivalent to pure
+// The resume model is event-sourced re-execution: a paused session action
+// re-runs straight-through from a cloned pre-action base, answering recorded
+// choices synchronously from Character.decisionCursor; only the frontier
+// choice pauses. This harness is the behavioral contract that made deleting
+// the old mid-flight machinery (pausedAtStep, subStepCache, closure-caches)
+// safe: it proves the live interactive path is equivalent to pure
 // re-execution, across both editions and every ACG pathway.
 //
 // It generalizes tests/replay.test.ts's driveChargen loop: a config-
@@ -47,7 +47,7 @@ import {
 
 // ---------------------------------------------------------------------------
 // Configs. All interactive (choiceMode "interactive") — that is the mode the
-// pause/resume machinery serves. ACG is where pausedAtStep/subStepCache live;
+// pause/resume model serves (ACG is where mid-run choices concentrate);
 // each config asserts a measured floor of seeds that hit pending choices.
 // ---------------------------------------------------------------------------
 

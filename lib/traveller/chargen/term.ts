@@ -1,6 +1,9 @@
 // Service-term orchestration: resets per-term flags, logs the term
 // boundary + anagathics hook, and dispatches to the engine runner
-// (basic chargen) or runAcgTerm (ACG).
+// (basic chargen) or runAcgTerm (ACG). Runs straight through — an
+// interactive pause (ChoicePendingError) propagates to the session
+// boundary, which re-executes the whole term action from its pre-action
+// base once the player picks.
 
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
@@ -17,34 +20,21 @@ export function doServiceTermStep(ch: Character): void {
       || ch.chargenStatus.kind === "shortTerm") {
     ch.resumeActive();
   }
-  // Resume detection (ACG only): a prior runAcgYear paused on a player
-  // choice (decoration-DM tradeoff, brownie-point review, etc.). The
-  // session layer re-enters doServiceTermStep after the choice resolves;
-  // we must NOT re-emit termBegin/section or reset anagathics flags on
-  // the resumed pass, or each Run-term click duplicates the term header.
-  const acgResuming = ch.useAcg && !!ch.acgState && (
-    ch.acgState.perYear.pausedAtStep != null
-    || ch.acgState.termStartYearsServed !== undefined
-  );
-  if (!acgResuming) {
-    // Reset per-term anagathics flags; intent for this term is set below
-    // from the standing order (or by an explicit pre-survival call).
-    ch.anagathics.resetPerTerm();
-    ch.log(ev.section("--------------------------------------------"));
-  }
+  // Reset per-term anagathics flags; intent for this term is set below
+  // from the standing order (or by an explicit pre-survival call).
+  ch.anagathics.resetPerTerm();
+  ch.log(ev.section("--------------------------------------------"));
   if (ch.useAcg && ch.acgState) {
     // ACG runs its own per-year cycle inside runAcgTerm.
-    if (!acgResuming) {
-      const isFirstTerm = ch.terms === 0;
-      const shortTerm = isFirstTerm
-        && ch.acgState.preCareerFirstTermShort === true;
-      ch.log(ev.termBegin(
-        ch.terms + 1, ch.age,
-        shortTerm
-          ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
-          : undefined,
-      ));
-    }
+    const isFirstTerm = ch.terms === 0;
+    const shortTerm = isFirstTerm
+      && ch.acgState.preCareerFirstTermShort === true;
+    ch.log(ev.termBegin(
+      ch.terms + 1, ch.age,
+      shortTerm
+        ? { shortTerm: true, shortTermReason: "pre-career failure (PM p. 47)" }
+        : undefined,
+    ));
     runAcgTerm(ch);
     return;
   }

@@ -1,16 +1,17 @@
 // Declarative pathway phase runner. Pathways describe their per-year
 // resolution as an ordered list of PhaseDef entries; this module walks
-// them, applies the sub-step cache + applyOnce machinery uniformly, and
-// halts on chargen-ending failures. Removes ~60% of the
-// rollPhaseDice/applyOnce/tryMitigate boilerplate that each pathway's
-// resolveAssignment was duplicating.
+// them straight through, applies brownie-point mitigation uniformly, and
+// halts on chargen-ending failures. Removes the roll/mitigate/log
+// boilerplate that each pathway's resolveAssignment was duplicating.
+//
+// Interactive choices inside a phase (BP review, skill-column picks)
+// either consume a recorded decision inline (session decision cursor) or
+// throw ChoicePendingError, which unwinds to the session boundary — the
+// whole action re-executes from its pre-action base on resolve, so no
+// side effect here ever needs an idempotence gate.
 
 import type { Character } from "@/lib/traveller/character";
 import { tryMitigate, type MitigationRequest } from "./awards";
-import {
-  applyOnce, markComplete, resetIfComplete, rollPhaseDice,
-  type SubStepKey,
-} from "./subStepCache";
 import type { AssignmentResolution, ResolutionTarget } from "./state";
 
 /** Structural type for the per-pathway assignment-resolution table.
@@ -39,7 +40,9 @@ export interface ResolveContext {
    *  merchant has no promotion phase (exam is end-of-term). The
    *  matching phase entries are simply absent from the JSON
    *  `resolveAssignment.phases` list; the runner reads only the dms
-   *  the configured phases need. */
+   *  the configured phases need. Mutable: the interactive decoration-DM
+   *  tradeoff preRun adjusts survival/decoration inline when its prompt
+   *  resolves. */
   dms: {
     survival: number;
     skills: number;
@@ -49,8 +52,7 @@ export interface ResolveContext {
   };
 }
 
-/** Dice outcome returned by rollPhaseDice — re-exposed for phase
- *  callbacks that need to inspect the actual roll value. */
+/** Dice outcome for one phase roll. */
 export interface PhaseRoll {
   roll: number;
   margin: number;
@@ -60,7 +62,7 @@ export interface PhaseRoll {
 
 /** Outcome of a phase's onFail callback. Returning `endChargen`
  *  terminates the phase chain immediately and fires the corresponding
- *  Character helper (wrapped in applyOnce for idempotence). */
+ *  Character helper. */
 export interface PhaseFailResult {
   endChargen?: {
     kind: "retired" | "deceased";
@@ -70,8 +72,8 @@ export interface PhaseFailResult {
 }
 
 export interface PhaseDef {
-  /** Stable name — used as the cache key. */
-  phase: SubStepKey;
+  /** Stable name — identifies the phase in JSON configs. */
+  phase: "survival" | "promotion" | "decoration" | "skills" | "bonus";
   /** True if this phase should be skipped for the current context.
    *  Common reasons: target === "none", officer barred from promotion,
    *  already promoted this term, etc. */
@@ -81,23 +83,24 @@ export interface PhaseDef {
   /** Effective DM for the dice roll. May incorporate per-character
    *  modifiers beyond ctx.dms (e.g., promotion penalty consumption). */
   dm(ctx: ResolveContext): number;
-  /** Side effect that runs ONCE after the dice are rolled — typically
-   *  ch.log(ev.roll(...)). Gated by applyOnce keyed by phase. */
+  /** Side effect that runs once after the dice are rolled — typically
+   *  ch.log(ev.roll(...)). Receives the RAW roll (pre-mitigation margin). */
   logRoll?(ctx: ResolveContext, roll: PhaseRoll): void;
   /** Configuration for an optional brownie-point mitigation attempt
    *  on failure. Returning null skips the mitigation (e.g., skills
    *  phase without a mitigation policy). */
   mitigation?(ctx: ResolveContext, roll: PhaseRoll): MitigationRequest | null;
-  /** Side effect when the (possibly mitigated) margin is ≥ 0. Wrapped
-   *  in applyOnce. */
+  /** Side effect when the (possibly mitigated) margin is ≥ 0. The roll's
+   *  `margin` is the EFFECTIVE (post-mitigation) margin. */
   onPass?(ctx: ResolveContext, roll: PhaseRoll): void;
-  /** Side effect when the (possibly mitigated) margin is < 0. Wrapped
-   *  in applyOnce. Returning `endChargen` halts the phase chain and
-   *  ends chargen via the matching Character.endChargen* helper. */
+  /** Side effect when the (possibly mitigated) margin is < 0. Returning
+   *  `endChargen` halts the phase chain and ends chargen via the matching
+   *  Character.endChargen* helper. */
   onFail?(ctx: ResolveContext, roll: PhaseRoll): PhaseFailResult | void;
-  /** Side effect when the dice rolled exactly the target (margin
-   *  === 0). Wrapped in applyOnce. Common case: combat-assignment
-   *  Purple Heart on a survival just-pass. */
+  /** Side effect when the EFFECTIVE margin lands exactly on 0 — either
+   *  the raw roll matched the target, or mitigation pushed a failed roll
+   *  back to 0 (BP-saved). Common case: combat-assignment Purple Heart
+   *  on a survival just-pass. */
   onExact?(ctx: ResolveContext, roll: PhaseRoll): void;
 }
 
@@ -108,84 +111,66 @@ export interface PathwaySpec {
    *  for mercenary/navy). Runs once before the phase loop. */
   preRun?(ctx: ResolveContext): void;
   /** Final side effects after all phases (combat ribbons, command
-   *  clusters, assignmentHistory.push). Wrapped in applyOnce. */
+   *  clusters, assignmentHistory.push). */
   finalize?(ctx: ResolveContext): void;
 }
 
-/** Walk a pathway's phase list. Manages the sub-step cache (so
- *  pause/resume returns to the right point with consistent dice),
- *  applyOnce gates around side effects, and short-circuits on
+/** Roll one phase's dice vs `target` (a number — "none" is skipped by the
+ *  caller). "auto" succeeds without a roll. */
+function rollPhase(
+  ch: Character, target: number | "auto", dm: number,
+): PhaseRoll {
+  if (target === "auto") return { success: true, margin: 0, roll: 0, dm };
+  const roll = ch.rng.roll(2);
+  const margin = roll + dm - target;
+  return { roll, margin, success: margin >= 0, dm };
+}
+
+/** Walk a pathway's phase list straight through and short-circuit on
  *  end-of-chargen failures. Call from a pathway's resolveAssignment
  *  after computing the ResolveContext. */
 export function runPhases(spec: PathwaySpec, ctx: ResolveContext): void {
-  resetIfComplete(ctx.ch);
   if (spec.preRun) spec.preRun(ctx);
   for (const phase of spec.phases) {
     if (phase.skip?.(ctx)) continue;
     const target = phase.target(ctx);
     if (target === "none") continue;
-    const r = rollPhaseDice(ctx.ch, phase.phase, target, phase.dm(ctx));
-    // Use the cached dm from rollPhaseDice — on resume, phase.dm(ctx)
-    // can return a different value if its inputs were mutated by a
-    // logRoll closure (e.g., promotion penalty consumption). The
-    // cached value matches what the cached roll was computed against.
-    const roll: PhaseRoll = { roll: r.roll, margin: r.margin, success: r.success, dm: r.dm };
-    if (phase.logRoll) {
-      applyOnce(ctx.ch, `${phase.phase}-logged`, () => phase.logRoll!(ctx, roll));
-    }
+    const roll = rollPhase(ctx.ch, target, phase.dm(ctx));
+    if (phase.logRoll) phase.logRoll(ctx, roll);
     let effectiveMargin = roll.margin;
     if (!roll.success && phase.mitigation) {
       const req = phase.mitigation(ctx, roll);
       if (req) {
-        const mit = tryMitigate(ctx.ch, req);
-        effectiveMargin = mit.newMargin;
+        effectiveMargin = tryMitigate(ctx.ch, req).newMargin;
       }
     }
+    // Callbacks after the mitigation window see the effective margin.
+    const outcome: PhaseRoll = { ...roll, margin: effectiveMargin };
     if (effectiveMargin >= 0) {
-      if (phase.onPass) {
-        applyOnce(ctx.ch, `${phase.phase}-applied`, () => phase.onPass!(ctx, roll));
-      }
+      phase.onPass?.(ctx, outcome);
     } else if (phase.onFail) {
-      let halt: PhaseFailResult | undefined;
-      applyOnce(ctx.ch, `${phase.phase}-failed`, () => {
-        halt = phase.onFail!(ctx, roll) ?? undefined;
-      });
-      // applyOnce only runs the callback the first time; on resume
-      // halt is undefined but endChargen state (if any) was already
-      // applied. Use chargenStatus to detect the halt path.
+      const halt = phase.onFail(ctx, outcome) ?? undefined;
       if (ctx.ch.isChargenEnded) {
-        finalizeAndComplete(spec, ctx);
+        finalizePhases(spec, ctx);
         return;
       }
       if (halt?.endChargen) {
         const failure = halt.endChargen;
-        applyOnce(ctx.ch, `${phase.phase}-endChargen`, () => {
-          if (failure.kind === "deceased") ctx.ch.endChargenDeceased(failure.reason);
-          else ctx.ch.endChargenRetired(failure.reason, failure.withPension);
-        });
-        finalizeAndComplete(spec, ctx);
+        if (failure.kind === "deceased") ctx.ch.endChargenDeceased(failure.reason);
+        else ctx.ch.endChargenRetired(failure.reason, failure.withPension);
+        finalizePhases(spec, ctx);
         return;
       }
     }
-    // onExact fires when the EFFECTIVE margin lands exactly on 0 —
-    // either the raw roll matched the target, or post-mitigation
-    // pushed a failed roll back to 0 (BP-saved). Both cases count as
-    // "wounded but survived" for the Purple Heart pattern.
-    if (effectiveMargin === 0 && phase.onExact) {
-      applyOnce(ctx.ch, `${phase.phase}-exact`, () => phase.onExact!(ctx, roll));
-    }
+    if (effectiveMargin === 0 && phase.onExact) phase.onExact(ctx, outcome);
   }
-  finalizeAndComplete(spec, ctx);
+  finalizePhases(spec, ctx);
 }
 
-/** Run the pathway's finalize hook (if any) and mark the year complete.
- *  Called on both clean phase exhaust AND halt paths — a character
- *  invalided out on a combat assignment still served on it; finalize
- *  records the Combat Ribbon and pushes to assignmentHistory. */
-function finalizeAndComplete(spec: PathwaySpec, ctx: ResolveContext): void {
-  if (spec.finalize) {
-    // Namespaced key so a future phase named "finalize" can't collide.
-    applyOnce(ctx.ch, "pathway-finalize", () => spec.finalize!(ctx));
-  }
-  markComplete(ctx.ch);
+/** Run the pathway's finalize hook (if any). Called on both clean phase
+ *  exhaust AND halt paths — a character invalided out on a combat
+ *  assignment still served on it; finalize records the Combat Ribbon and
+ *  pushes to assignmentHistory. */
+function finalizePhases(spec: PathwaySpec, ctx: ResolveContext): void {
+  spec.finalize?.(ctx);
 }

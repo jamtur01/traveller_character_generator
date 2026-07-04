@@ -8,8 +8,8 @@
 
 /** Muster-out bookkeeping plus the skill-table force flags (the row-audit
  *  test path). Clustered so the muster roll budget, cash-roll accounting,
- *  the paused-roll sentinel, and force-table selection live behind one
- *  owned object with a single reset. */
+ *  and force-table selection live behind one owned object with a single
+ *  reset. */
 export class MusterState {
   /** Force a specific skill table in serviceLoader.acquireSkill (the
    *  row-audit / session skill-pick path), bypassing the interactive
@@ -22,12 +22,6 @@ export class MusterState {
   musterCashUsed!: number;
   /** Muster-out rolls remaining. */
   musterRolls!: number;
-  /** Transient UI flag: the current muster roll (cash or benefit) paused
-   *  on a cascade or nested choice and hasn't completed yet. Set when the
-   *  muster-out handler catches a ChoicePendingError; cleared by
-   *  resolvePending after the choice chain drains. While true, musterRolls
-   *  must NOT be decremented — the roll's player-visible work isn't done. */
-  pendingMusterRoll!: boolean;
   /** Human-readable log of each muster-out roll's outcome (plus any
    *  in-service bonuses, e.g. the Merchant Prince half-cash bonus). */
   musterLog!: string[];
@@ -42,7 +36,6 @@ export class MusterState {
     this.forceTableIndex = 1;
     this.musterCashUsed = 0;
     this.musterRolls = 0;
-    this.pendingMusterRoll = false;
     this.musterLog = [];
   }
 

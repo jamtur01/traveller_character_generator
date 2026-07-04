@@ -14,7 +14,6 @@ import {
 import {
   applyHomeworldSkills, availableServicesForHomeworld,
 } from "@/lib/traveller/engine/homeworld";
-import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
 import { navyEnlist, navyDraftFleetKey } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
@@ -106,29 +105,27 @@ export function beginAcg(
   }
   if (pathway === "navy") recordNavySubsectorTech(ch, options);
   // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
-  // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
-  // the character's pendingChoices stand. The UI resolves them and the
-  // pause-and-resume machinery in runAcgYear handles subsequent flow.
+  // branch pick, merchant academy opt-in, etc.); ChoicePendingError
+  // propagates to the session boundary, which snapshots the paused state
+  // and re-executes the enlist action once the player picks.
   // The `??` defaults below are API-surface conveniences (auto flows and
   // tests that don't present a picker), each mirroring the first printed
   // option of its table; the UI and RunLog always pass explicit values.
-  pauseGuard(() => {
-    switch (effPathway) {
-      case "mercenary":
-        mercenaryEnlist(ch, options.service ?? "army", options.combatArm ?? "Infantry");
-        break;
-      case "navy":
-        navyEnlist(ch, options.fleet ?? "imperialNavy");
-        break;
-      case "scout":
-        ch.requireScoutAcg().division = options.division ?? "field";
-        scoutEnlist(ch);
-        break;
-      case "merchantPrince":
-        merchantEnlist(ch, options.lineType ?? "Free Trader");
-        break;
-    }
-  });
+  switch (effPathway) {
+    case "mercenary":
+      mercenaryEnlist(ch, options.service ?? "army", options.combatArm ?? "Infantry");
+      break;
+    case "navy":
+      navyEnlist(ch, options.fleet ?? "imperialNavy");
+      break;
+    case "scout":
+      ch.requireScoutAcg().division = options.division ?? "field";
+      scoutEnlist(ch);
+      break;
+    case "merchantPrince":
+      merchantEnlist(ch, options.lineType ?? "Free Trader");
+      break;
+  }
 }
 
 /** Navy: record the subsector tech code (PM p. 52). Default: homeworld

@@ -29,9 +29,6 @@ export interface BaseAcgState {
   retainedAssignment: string | null;
   injuredThisYear: boolean;
 
-  /** Year-scoped markers, reset wholesale each year by the runner
-   *  (clearYearScopedState → `acg.perYear = freshPerYear()`). */
-  perYear: PerYearAcgState;
   /** Term-scoped markers, reset wholesale each term by the runner
    *  (`acg.perTerm = freshPerTerm()`). */
   perTerm: PerTermAcgState;
@@ -126,13 +123,6 @@ export interface BaseAcgState {
    *  a character invalided/jailed mid-term gets a partial term that doesn't
    *  contribute the full 4 years. */
   yearsServed?: number;
-  /** Snapshot of yearsServed at the start of the current term. Captured
-   *  once when runAcgTerm enters a fresh term and consulted at term end
-   *  to compute yearsThisTerm. Persisted on acgState so a pause/resume
-   *  cycle (which re-enters runAcgTerm) reads the original value rather
-   *  than the post-paused current count. Cleared when the term
-   *  completes. */
-  termStartYearsServed?: number;
   /** Count of terms that were started but not completed (4 years). Used
    *  by musterOutRolls to discount benefits from short terms. */
   partialTerms?: number;
@@ -152,24 +142,10 @@ export interface BaseAcgState {
    *  requires this for Naval characters and is harmless for others). */
   subsectorTechCode?: string;
 
-  // Interactive-mode runner resumption state.
-  /** Set true after the one-shot initial training fires (first year of
-   *  first term). Prevents replay on resumption. */
-  initialTrainingDone?: boolean;
   /** Reason a reenlistment was denied by pathway logic (e.g. scout
    *  up-or-out). Threaded into the next ev.reenlistment("denied") event;
    *  consumed by character.ts after emission. */
   reenlistDenialReason?: string;
-
-  // Scout pathway: resumption fields for interactive choices.
-  // Closure-local variables used to hold decisions across a pickOrDefer
-  // throw + resolve cycle, but closures die with the throw. These store
-  // the resolved decision on acgState so a re-entry of scoutResolveAssignment
-  // reads it rather than re-prompting.
-  /** Scout: whether to accept the Field→Bureaucracy transfer offer. */
-  scoutTransferDecision?: boolean;
-  /** Scout: whether to take the administrator DM on the duty roll. */
-  scoutAdminDmDecision?: boolean;
 }
 
 /** Mercenary pathway: Army/Marines combat-arms service. */
@@ -225,41 +201,6 @@ export function assertPathway<P extends AcgPathwayId>(
   }
 }
 
-/** Year-scoped ACG markers. The runner replaces this wholesale at each
- *  year boundary (`clearYearScopedState` → `acg.perYear = freshPerYear()`)
- *  so pathway code gating on these flags starts fresh next year. */
-export interface PerYearAcgState {
-  /** When a substep of runAcgYear queued an interactive choice and threw
-   *  ChoicePendingError, the runner records the substep name here so the
-   *  next runAcgYear call resumes from the right place. Null when the
-   *  year isn't paused. */
-  pausedAtStep?: string | null;
-  /** Scout: marks that applyScoutTransferToBureaucracy already ran this
-   *  year. Re-entry from pause/resume skips the transfer side effects. */
-  transferAppliedThisYear?: boolean;
-  /** Scout: cached post-transfer assignment so the recursive resolve
-   *  doesn't re-roll non-deterministically on pause/resume. Cleared at
-   *  year boundary alongside transferAppliedThisYear. */
-  scoutTransferNextAssign?: string;
-  /** Merchant: cached post-transfer assignment for the same reason as
-   *  scoutTransferNextAssign. The recursive merchantResolveAssignment
-   *  after transferMerchantLine would otherwise re-roll on resume. */
-  merchantTransferNextAssign?: string;
-  /** Per-year capture of acg.justRetained snapshotted before the
-   *  pathway's rollAssignment clears it. Used to annotate the
-   *  assignmentRolled event with retention status, surviving a
-   *  pause/resume cycle (the resumed run reads this instead of the
-   *  already-cleared justRetained flag). Cleared at year boundary. */
-  wasRetainedThisYear?: boolean;
-  /** Sub-step idempotence cache for resolveAssignment. Each phase stores
-   *  the dice outcome + any auto-mitigation spend so a pause/resume on
-   *  an interactive choice (BP review etc.) doesn't re-roll the phase
-   *  or double-spend brownie points. Phase-applied flags gate
-   *  non-idempotent side effects (decoration push, addSkill, etc.).
-   *  Cleared at year boundary by the runner. */
-  thisYearOutcomes?: ThisYearOutcomes;
-}
-
 /** Term-scoped ACG markers. The runner replaces this wholesale at each
  *  term boundary (`acg.perTerm = freshPerTerm()`). examDm and
  *  canTakeDeptTest are additionally consumed/reset at end-of-term by the
@@ -279,50 +220,6 @@ export interface PerTermAcgState {
    *  promotion exam without regard for skill requirements (Special Duty
    *  "Department Test" result). Consumed on next exam attempt. */
   canTakeDeptTest?: boolean;
-}
-
-/** Per-sub-step result captured for resume idempotence. */
-export interface SubStepOutcome {
-  /** Dice roll value (after dm). */
-  roll?: number;
-  /** Applied DM total. */
-  dm?: number;
-  /** Target throw. */
-  target?: number;
-  /** Pass / fail. */
-  success?: boolean;
-  /** Margin (positive = pass by N, negative = fail by N). */
-  margin?: number;
-  /** BPs auto-mitigated this sub-step (so re-runs return the cached
-   *  spend rather than spending again). */
-  autoMitigated?: number;
-  /** Margin after auto-mitigation. */
-  marginAfterMit?: number;
-}
-
-/** Per-year sub-step cache. Each key may hold a SubStepOutcome plus
- *  side-effect "applied" flags to gate non-idempotent state changes. */
-export interface ThisYearOutcomes {
-  survival?: SubStepOutcome;
-  promotion?: SubStepOutcome;
-  decoration?: SubStepOutcome;
-  skills?: SubStepOutcome;
-  bonus?: SubStepOutcome;
-  /** Side-effect-applied flags keyed by a phase-local string. Pathway
-   *  code uses these to guard non-idempotent side effects (decoration
-   *  push, rank++, log calls) on re-entry. */
-  applied?: Record<string, boolean>;
-  /** True once a pathway's resolveAssignment ran to completion this
-   *  year. Lets pathways detect a stale prior-year cache when they're
-   *  invoked directly (outside runAcgYear which clears at year end)
-   *  and reset before starting fresh. */
-  complete?: boolean;
-}
-
-/** Fresh year-scoped markers. The runner assigns this at each year
- *  boundary (clearYearScopedState) so year-gated flags start clean. */
-export function freshPerYear(): PerYearAcgState {
-  return { pausedAtStep: null };
 }
 
 /** Fresh term-scoped markers. The runner assigns this at each term
@@ -345,7 +242,6 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
     inCommand: false,
     justRetained: false,
     retainedAssignment: null,
-    perYear: freshPerYear(),
     perTerm: freshPerTerm(),
     injuredThisYear: false,
     assignmentHistory: [],

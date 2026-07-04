@@ -30,7 +30,6 @@ function freshAcgChar(bp = 5): Character {
     inCommand: false,
     justRetained: false,
     retainedAssignment: null,
-    perYear: {},
     perTerm: { promotedThisTerm: false },
     injuredThisYear: false,
     assignmentHistory: [],

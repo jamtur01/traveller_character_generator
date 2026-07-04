@@ -54,10 +54,11 @@ describe("interactive ACG: decoration-DM tradeoff (regression #1)", () => {
   });
 
   it("does not re-queue the prompt when the year resumes after resolve", () => {
-    // Tests the markApplied gate in jsonPhases.ts: after the player
-    // resolves the prompt, session.resolvePending calls runAcgYear
-    // directly to resume. Without the gate, the preRun hook re-fires
-    // and queues another identical prompt.
+    // After the player resolves the prompt, resolvePending re-runs the
+    // term from its pre-action base with the decision cursor answering the
+    // recorded pick inline — the preRun hook re-fires on the re-run, but
+    // its pickOrDefer is consumed synchronously, so no duplicate prompt
+    // may remain queued.
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const c = freshMtCharacter();
     let snap: session.ChargenSnapshot = { character: c, phase: "term" };

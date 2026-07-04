@@ -90,9 +90,10 @@ describe("Mercenary checklist (PM p. 64)", () => {
     // 3-5. Enlistment + Select Arm + Initial Training (via beginAcg).
     c.beginAcg("mercenary", { service: "army", combatArm: "Infantry" });
     expect(c.requireMercenaryAcg().combatArm).toBe("Infantry");
-    // 6. Resolve Current Term — initial training fires on year 1.
+    // 6. Resolve Current Term — initial training fires on year 1 and
+    // consumes the whole year (the year counter advances past it).
     runAcgYear(c);
-    expect(c.requireAcgState().initialTrainingDone).toBe(true);
+    expect(c.requireAcgState().year).toBe(2);
     expect(c.skills.length).toBeGreaterThan(0); // fixed + MOS
   });
 

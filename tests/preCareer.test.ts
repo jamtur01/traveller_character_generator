@@ -6,6 +6,7 @@
 
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { Character } from "../lib/traveller/character";
+import { ChoicePendingError } from "../lib/traveller/engine/choices";
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -350,7 +351,7 @@ describe("R1: pre-career state preserved into beginAcg", () => {
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
       rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["college"], decorations: [], browniePoints: 1,
@@ -383,7 +384,7 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
       rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: [], decorations: [], browniePoints: 0,
@@ -408,7 +409,7 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
       pathway: "navy", fleet: "imperialNavy", branch: "",
       rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: [], decorations: [], browniePoints: 0,
@@ -423,15 +424,19 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
 });
 
 describe("Rrev6: service is set even when beginAcg pathway queues a choice", () => {
-  it("interactive Navy enlistment with pending choice still leaves service=navy", () => {
+  it("interactive Navy enlistment pause still leaves service=navy", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.useAcg = true;
     c.choiceMode = "interactive";
     c.attributes.social = 9; // triggers navy branch choice
     vi.spyOn(Math, "random").mockReturnValue(0.999);
-    c.beginAcg("navy", { fleet: "imperialNavy" });
-    // The branch choice may be pending, but service must already be set.
+    // The branch choice pauses enlistment (ChoicePendingError unwinds to
+    // the session boundary in real flows), but service must already be set
+    // on the partial state — beginAcg stamps it before the pathway enlist.
+    expect(() => c.beginAcg("navy", { fleet: "imperialNavy" }))
+      .toThrow(ChoicePendingError);
+    expect(c.pendingChoices.length).toBeGreaterThan(0);
     expect(c.service).toBe("navy");
   });
 });
@@ -444,7 +449,7 @@ describe("R5: honors gates", () => {
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
       rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["college"], decorations: [], browniePoints: 0,
@@ -463,7 +468,7 @@ describe("R5: honors gates", () => {
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
       rankCode: "O1", isOfficer: true, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["navalAcademy"], decorations: [], browniePoints: 0,

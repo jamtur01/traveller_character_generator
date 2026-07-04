@@ -1,22 +1,31 @@
-// Chargen session — pure flow logic extracted from the React layer.
+// Chargen session — pure flow logic extracted from the React layer, built on
+// event-sourced re-execution.
 //
-// Why this exists: the page.tsx handlers (runTerm, musterChoice, finishTerm,
-// resolvePending, attemptMusterOut, pickSkill, applyPreCareer, enlist, ...)
-// own decisions like "after the muster cash roll completes, should phase
-// transition to end / muster_no_cash / muster?". Each handler duplicates the
-// pause-resume + ChoicePendingError plumbing. Three of the last four bugs
-// were in this flow control. Moving it to the engine layer:
-//   - Makes the flow testable independent of React.
-//   - Lets the UI become a renderer keyed by the returned phase.
-//   - Concentrates the ChoicePendingError handling in one place.
+// Model: every session action (enlist, runTerm, pickSkill, ...) captures a
+// pristine pre-action BASE (cloneCharacter before anything mutates — RNG
+// position included) and runs the flow STRAIGHT THROUGH on a working copy.
+// Player decisions flow through Character.decisionCursor: previously-recorded
+// option indices are consumed synchronously inline (pickOrDefer runs
+// onResolve immediately and execution continues); only the FRONTIER choice —
+// the first one past the recorded indices — queues on pendingChoices and
+// throws ChoicePendingError, unwinding to the single pauseGuard boundary in
+// runAction. The partial snapshot renders; when the player picks,
+// resolvePending appends the index to the frontier's resolutions and RE-RUNS
+// the same action from a clone of the base. The whole prefix re-executes
+// identically, previously-answered choices consume from the cursor, and
+// execution reaches the next frontier (or completes). No mid-flight resume
+// state and no idempotence caches exist: every re-run starts from a virgin
+// base.
 //
-// Each action is a pure function: (snapshot, ...args) → new snapshot. The
-// caller (React component) cloneCharacters as it sees fit; this module
-// doesn't mutate the inputs.
+// DETERMINISM INVARIANT: re-execution reproduces the prefix exactly iff the
+// character's RNG is deterministic across re-runs — i.e. the rng is seeded
+// (StartCareerOptions.seed; the replay harness and the UI always seed) or
+// Math.random is fully pinned (walker / session tests pin a constant). The
+// same cloned seeded rng yields the same draws, so the re-run is bit-for-bit
+// identical up to the frontier (proven by tests/equivalence.property.test.ts).
 
-import { Character, cloneCharacter, type PreCareerOutcome } from "@/lib/traveller/character";
-import { pauseGuard } from "@/lib/traveller/engine/choices";
-import { runAcgYear } from "@/lib/traveller/engine/runners/acg";
+import { Character, cloneCharacter } from "@/lib/traveller/character";
+import { ChoicePendingError, pauseGuard } from "@/lib/traveller/engine/choices";
 import { getEditionServices } from "@/lib/traveller/services";
 import { getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
@@ -38,9 +47,48 @@ export type ChargenPhase =
   | "muster_no_cash"
   | "end";
 
+export type PreCareerOption =
+  | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
+  | "medicalSchool" | "flightSchool" | "skip";
+
+export interface EnlistOptions {
+  verbose: boolean;
+  /** Basic chargen only — preferred service, or "random". */
+  preferredService: string;
+  /** ACG only. */
+  acgService: "army" | "marines";
+  acgCombatArm: string;
+  acgFleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
+  acgDivision: "field" | "bureaucracy";
+  acgLineType: string;
+  acgSubsectorTech: string;
+  acgMerchantAcademy: boolean;
+}
+
+/** One session action, as a plain re-dispatchable record (no closures — the
+ *  frontier must survive in React state / snapshots without live references). */
+export type FrontierAction =
+  | { kind: "runTerm" }
+  | { kind: "enlist"; opts: EnlistOptions }
+  | { kind: "preCareer"; opt: PreCareerOption }
+  | { kind: "pickSkill"; table: number }
+  | { kind: "attemptMusterOut" }
+  | { kind: "musterChoice"; choice: "cash" | "benefit" };
+
+/** A paused action: the pre-action base to re-execute from, the action to
+ *  re-dispatch, and the option indices already picked (in prompt order). */
+export interface Frontier {
+  action: FrontierAction;
+  base: Character;
+  resolutions: number[];
+}
+
 export interface ChargenSnapshot {
   character: Character;
   phase: ChargenPhase;
+  /** Present iff the character has a pending frontier choice. resolvePending
+   *  re-runs `action` from `base` with the picked index appended. */
+  frontier?: Frontier;
 }
 
 /** Hints back to the React layer when a flow action wants to update the
@@ -73,7 +121,8 @@ export interface StartCareerOptions {
   supportsInteractive: boolean;
   useAcg: boolean;
   acgPathway: string;
-  /** Seed the character's RNG for a reproducible run (see chargen/replay). */
+  /** Seed the character's RNG for a reproducible run (see chargen/replay).
+   *  Required for interactive-mode determinism — see the header invariant. */
   seed?: number;
 }
 
@@ -105,9 +154,110 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
   return { character: ch, phase: "career" };
 }
 
-export type PreCareerOption =
-  | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
-  | "medicalSchool" | "flightSchool" | "skip";
+// ---------------------------------------------------------------------------
+// Action dispatch. One boundary owns the whole pause protocol: runAction
+// clones the base, arms the decision cursor, runs the action straight
+// through, and either returns the completed routing or a paused snapshot
+// carrying the frontier.
+// ---------------------------------------------------------------------------
+
+/** The phase a paused snapshot renders in, per action kind. Panels are
+ *  hidden while a choice is pending, so this mainly keeps the stepper
+ *  anchored where the action was issued from. */
+function pausedPhaseFor(
+  action: FrontierAction, ch: Character, base: Character,
+): ChargenPhase {
+  switch (action.kind) {
+    case "preCareer": return "pre_career";
+    case "enlist": return "term";
+    case "runTerm": return "term";
+    case "attemptMusterOut": return "term";
+    case "pickSkill": return pickSkillPhase(ch);
+    case "musterChoice":
+      // Derive from the pre-action base (pre-increment cash accounting) so
+      // the paused snapshot stays in the phase the roll was issued from.
+      return base.muster.musterCashUsed >= maxCashRolls(base)
+        ? "muster_no_cash"
+        : "muster";
+  }
+}
+
+function executeAction(ch: Character, action: FrontierAction): ChargenResult {
+  switch (action.kind) {
+    case "preCareer": return doApplyPreCareer(ch, action.opt);
+    case "enlist": return { snapshot: doEnlist(ch, action.opts) };
+    case "runTerm": return { snapshot: doRunTerm(ch) };
+    case "pickSkill": return { snapshot: doPickSkill(ch, action.table) };
+    case "attemptMusterOut": return { snapshot: doAttemptMusterOut(ch) };
+    case "musterChoice": return { snapshot: doMusterChoice(ch, action.choice) };
+  }
+}
+
+/** Run one action from `prev` with the given recorded decisions. The ONLY
+ *  ChoicePendingError boundary in the session: a pause here means the
+ *  working copy holds the partial (renderable) state and the returned
+ *  frontier can re-execute the action once the player picks. */
+function runAction(
+  prev: Character, action: FrontierAction, resolutions: number[],
+): ChargenResult {
+  const base = cloneCharacter(prev);
+  const ch = cloneCharacter(prev);
+  ch.decisionCursor = { resolutions, pos: 0 };
+  let result: ChargenResult | undefined;
+  const outcome = pauseGuard(() => { result = executeAction(ch, action); });
+  ch.decisionCursor = null;
+  if (outcome === "paused") {
+    return {
+      snapshot: {
+        character: ch,
+        phase: pausedPhaseFor(action, ch, base),
+        frontier: { action, base, resolutions },
+      },
+    };
+  }
+  return result!;
+}
+
+/** Resolve a pending player choice: append the picked option index to the
+ *  frontier's resolutions and re-run the paused action from its base. The
+ *  re-executed prefix consumes the recorded indices inline; execution then
+ *  reaches the next frontier or completes (phase routing happens naturally
+ *  inside the re-run — no post-drain special cases). */
+export function resolvePending(
+  snap: ChargenSnapshot,
+  choiceId: string,
+  optionIdx: number,
+): ChargenSnapshot {
+  const frontier = snap.frontier;
+  if (!frontier) {
+    throw new Error(
+      "resolvePending: snapshot has no frontier — a pending choice must come " +
+      "from a paused session action (stale snapshot or corrupted state)",
+    );
+  }
+  const pending = snap.character.pendingChoices.find((p) => p.id === choiceId);
+  if (!pending) {
+    throw new Error(
+      `resolvePending: no pending choice with id "${choiceId}" ` +
+      `(pending: ${snap.character.pendingChoices.map((p) => p.id).join(", ") || "none"})`,
+    );
+  }
+  if (pending.options[optionIdx] === undefined) {
+    throw new Error(
+      `resolvePending: optionIdx ${optionIdx} out of range for choice ` +
+      `${choiceId} (${pending.options.length} options)`,
+    );
+  }
+  return runAction(
+    frontier.base, frontier.action, [...frontier.resolutions, optionIdx],
+  ).snapshot;
+}
+
+// ---------------------------------------------------------------------------
+// Public actions — thin wrappers that package a FrontierAction. Guards that
+// must not consume an action (pending choice, mandatory reenlistment) stay
+// out here so the no-op case returns the snapshot identity-equal.
+// ---------------------------------------------------------------------------
 
 /** Apply a pre-career option. Honors a chained-academic-progression: an
  *  honors college grad may chain into medical/flight school; an academy
@@ -117,15 +267,72 @@ export function applyPreCareer(
   snap: ChargenSnapshot,
   opt: PreCareerOption,
 ): ChargenResult {
+  return runAction(snap.character, { kind: "preCareer", opt }, []);
+}
+
+export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnapshot {
+  return runAction(snap.character, { kind: "enlist", opts }, []).snapshot;
+}
+
+/** Run one service term. ACG dispatches into runAcgTerm; basic chargen
+ *  runs the per-term step + skill picks. Routes phase based on the
+ *  term's outcome (skill picks pending, deceased, mustered out, etc.). */
+export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
+  // If a player choice is still pending, refuse to advance — the term
+  // action is paused on its frontier and must be resolved first. The UI's
+  // PendingChoicesPanel renders alongside the Run term button, so the
+  // player has the resolve action in front of them.
+  if (snap.character.pendingChoices.length > 0) return snap;
+  return runAction(snap.character, { kind: "runTerm" }, []).snapshot;
+}
+
+/** Pick a skill table (or pass 0 for the service's default). Advances
+ *  to the next skill-pick phase, the cascade-resolution flow, or
+ *  end-of-term. */
+export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot {
+  return runAction(snap.character, { kind: "pickSkill", table }, []).snapshot;
+}
+
+/** Voluntary muster-out — player chose to leave service when they were
+ *  eligible to stay. */
+export function attemptMusterOut(snap: ChargenSnapshot): ChargenSnapshot {
+  if (snap.character.mandatoryReenlistment) return snap;
+  return runAction(snap.character, { kind: "attemptMusterOut" }, []).snapshot;
+}
+
+/** Apply one muster-out cash or benefit roll. */
+export function musterChoice(
+  snap: ChargenSnapshot,
+  kind: "cash" | "benefit",
+): ChargenSnapshot {
+  return runAction(snap.character, { kind: "musterChoice", choice: kind }, []).snapshot;
+}
+
+/** Update the showHistory level on a snapshot's character. Also patches the
+ *  frontier base (when paused) so a re-execution keeps the new level. */
+export function setVerbose(snap: ChargenSnapshot, verbose: boolean): ChargenSnapshot {
   const ch = cloneCharacter(snap.character);
+  ch.showHistory = verbose ? "verbose" : "simple";
+  if (!snap.frontier) return { character: ch, phase: snap.phase };
+  const base = cloneCharacter(snap.frontier.base);
+  base.showHistory = ch.showHistory;
+  return {
+    character: ch,
+    phase: snap.phase,
+    frontier: { ...snap.frontier, base },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Action bodies. Straight-through flows on the working copy — no pauseGuard
+// here; ChoicePendingError propagates to runAction's boundary.
+// ---------------------------------------------------------------------------
+
+function doApplyPreCareer(ch: Character, opt: PreCareerOption): ChargenResult {
   if (opt === "skip") {
     return { snapshot: { character: ch, phase: ch.useAcg ? "acg_enlist" : "career" } };
   }
-  let outcome: PreCareerOutcome | undefined;
-  if (pauseGuard(() => { outcome = ch.doPreCareer(opt); }) === "paused") {
-    return { snapshot: { character: ch, phase: "pre_career" } };
-  }
-  const r = outcome!;
+  const r = ch.doPreCareer(opt);
   const hints: UiHints = {};
   if (r.autoEnlistPathway) {
     ch.acgPathway = r.autoEnlistPathway;
@@ -139,22 +346,7 @@ export function applyPreCareer(
   return { snapshot: { character: ch, phase: "pre_career" }, hints };
 }
 
-export interface EnlistOptions {
-  verbose: boolean;
-  /** Basic chargen only — preferred service, or "random". */
-  preferredService: string;
-  /** ACG only. */
-  acgService: "army" | "marines";
-  acgCombatArm: string;
-  acgFleet: "imperialNavy" | "reserveFleet" | "systemSquadron";
-  acgDivision: "field" | "bureaucracy";
-  acgLineType: string;
-  acgSubsectorTech: string;
-  acgMerchantAcademy: boolean;
-}
-
-export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnapshot {
-  const ch = cloneCharacter(snap.character);
+function doEnlist(ch: Character, opts: EnlistOptions): ChargenSnapshot {
   ch.showHistory = opts.verbose ? "verbose" : "simple";
   if (ch.useAcg && ch.acgPathway) {
     // PM p. 44: Merchant Academy may only be attempted after enlisting in a
@@ -182,6 +374,8 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
         ...(opts.acgSubsectorTech ? { subsectorTechCode: opts.acgSubsectorTech } : {}),
       });
     } catch (err) {
+      // A pause is not a failure — let it unwind to the session boundary.
+      if (err instanceof ChoicePendingError) throw err;
       ch.log(ev.endGeneration(
         "retired",
         `ACG enlistment failed: ${(err as Error).message}`,
@@ -196,66 +390,7 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
   return { character: ch, phase: "term" };
 }
 
-/** Resolve a pending player choice. Handles the entire choice-chain
- *  drain (nested cascades, queueBpReview, etc.), ACG runner resumption,
- *  and post-drain phase transitions (muster cascade finalization,
- *  basic-chargen skill-pick advancement). */
-export function resolvePending(
-  snap: ChargenSnapshot,
-  choiceId: string,
-  optionIdx: number,
-): ChargenSnapshot {
-  const ch = cloneCharacter(snap.character);
-  const phase = snap.phase;
-  pauseGuard(() => ch.resolveChoice(choiceId, optionIdx));
-  if (ch.useAcg && ch.acgState?.perYear.pausedAtStep && ch.pendingChoices.length === 0) {
-    pauseGuard(() => runAcgYear(ch));
-  }
-  if (ch.pendingChoices.length > 0) {
-    return { character: ch, phase };
-  }
-  // Muster roll finalization (deferred from musterChoice when the cascade
-  // paused). The sentinel persists across nested choices (e.g. skillCap
-  // queued from addSkill); decrement only when the entire chain drains.
-  if (ch.muster.pendingMusterRoll) {
-    ch.muster.pendingMusterRoll = false;
-    // Defensive: never decrement below zero. The sentinel/decrement
-    // pairing is supposed to be exact, but a redundant drain (e.g., a
-    // nested choice chain finalized via another path first) must not
-    // corrupt the roll budget.
-    if (ch.muster.musterRolls > 0) ch.muster.musterRolls -= 1;
-    if (ch.muster.musterRolls === 0) {
-      ch.musterOutPay();
-      ch.markMustered();
-      return { character: ch, phase: "end" };
-    }
-    if (ch.muster.musterCashUsed >= maxCashRolls(ch)) {
-      return { character: ch, phase: "muster_no_cash" };
-    }
-    return { character: ch, phase: "muster" };
-  }
-  // Basic-chargen skill-pick advancement.
-  if (!ch.useAcg && (phase === "skill_basic" || phase === "skill_adv")) {
-    if (ch.skillPoints > 0) {
-      return { character: ch, phase: pickSkillPhase(ch) };
-    }
-    return finishTerm(ch);
-  }
-  return { character: ch, phase };
-}
-
-/** Run one service term. ACG dispatches into runAcgTerm; basic chargen
- *  runs the per-term step + skill picks. Routes phase based on the
- *  term's outcome (skill picks pending, deceased, mustered out, etc.). */
-export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
-  // If a player choice is still queued from a prior pause, refuse to
-  // advance — running the term would re-enter the paused step with the
-  // choice still unresolved, advancing dice rolls with default values
-  // for the un-chosen parameter (e.g., the decoration-DM tradeoff).
-  // The UI's PendingChoicesPanel renders alongside the Run term button,
-  // so the player has the resolve action in front of them.
-  if (snap.character.pendingChoices.length > 0) return snap;
-  const ch = cloneCharacter(snap.character);
+function doRunTerm(ch: Character): ChargenSnapshot {
   // Some services (CoTI nobles) derive starting rank from social standing
   // each term rather than by a promotion roll. The rule lives in the
   // service's JSON rankBySocial block; absent for services promoted by roll
@@ -271,29 +406,21 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
       ch.commissioned = true;
     }
   }
-  if (pauseGuard(() => ch.doServiceTermStep()) === "paused") {
-    return { character: ch, phase: "term" };
-  }
+  ch.doServiceTermStep();
   if (ch.deceased) return { character: ch, phase: "end" };
   if (ch.skillPoints > 0) {
     return { character: ch, phase: pickSkillPhase(ch) };
   }
   if (!ch.useAcg) {
-    if (pauseGuard(() => ch.enforceSkillCap()) === "paused") {
-      return { character: ch, phase: "term" };
-    }
+    ch.enforceSkillCap();
+    if (!ch.deceased) ch.doAging();
   }
-  if (!ch.useAcg && !ch.deceased) ch.doAging();
   if (ch.deceased) return { character: ch, phase: "end" };
   if (!ch.activeDuty) return enterMuster(ch);
   return { character: ch, phase: "term" };
 }
 
-/** Pick a skill table (or pass 0 for the service's default). Advances
- *  to the next skill-pick phase, the cascade-resolution flow, or
- *  end-of-term. */
-export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot {
-  const ch = cloneCharacter(snap.character);
+function doPickSkill(ch: Character, table: number): ChargenSnapshot {
   if (table === 0) {
     ch.muster.forceTable = false;
   } else {
@@ -301,10 +428,7 @@ export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot
     ch.muster.forceTableIndex = table;
   }
   ch.skillPoints -= 1;
-  const picked = pauseGuard(() => getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch));
-  if (picked === "paused") {
-    return { character: ch, phase: pickSkillPhase(ch) };
-  }
+  getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch);
   if (ch.skillPoints > 0) {
     return { character: ch, phase: pickSkillPhase(ch) };
   }
@@ -312,29 +436,20 @@ export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot
 }
 
 /** End-of-term sequence — cap, aging, reenlistment, muster routing.
- *  Called once skillPoints reach 0 and no cascade choices remain. */
+ *  Called once skillPoints reach 0. */
 function finishTerm(ch: Character): ChargenSnapshot {
-  if (pauseGuard(() => ch.enforceSkillCap()) === "paused") {
-    return { character: ch, phase: "term" };
-  }
+  ch.enforceSkillCap();
   if (!ch.deceased) ch.doAging();
   if (ch.deceased) return { character: ch, phase: "end" };
   if (!ch.shortTermThisTerm && ch.activeDuty && !ch.deceased) {
-    if (pauseGuard(() => ch.doReenlistmentStep()) === "paused") {
-      return { character: ch, phase: "term" };
-    }
+    ch.doReenlistmentStep();
   }
   if (ch.deceased) return { character: ch, phase: "end" };
   if (!ch.activeDuty) return enterMuster(ch);
   return { character: ch, phase: "term" };
 }
 
-/** Voluntary muster-out — player choose to leave service when they were
- *  eligible to stay. */
-export function attemptMusterOut(snap: ChargenSnapshot): ChargenSnapshot {
-  const prev = snap.character;
-  if (prev.mandatoryReenlistment) return snap;
-  const ch = cloneCharacter(prev);
+function doAttemptMusterOut(ch: Character): ChargenSnapshot {
   // Only stamp "voluntary muster" if chargen hasn't already ended with
   // a more specific reason (deceased, court-martial discharge, etc.).
   // Otherwise the original reason would be overwritten by the generic
@@ -365,28 +480,14 @@ function enterMuster(ch: Character): ChargenSnapshot {
   return { character: ch, phase: "muster" };
 }
 
-/** Apply one muster-out cash or benefit roll. Handles the cascade-pauses
- *  case by setting pendingMusterRoll (resolvePending finalizes when the
- *  choice chain drains). */
-export function musterChoice(
-  snap: ChargenSnapshot,
-  kind: "cash" | "benefit",
-): ChargenSnapshot {
-  const ch = cloneCharacter(snap.character);
+function doMusterChoice(ch: Character, kind: "cash" | "benefit"): ChargenSnapshot {
   const cashDM = cashDmFor(ch);
   const benefitsDM = benefitDmFor(ch);
-  // Increment musterCashUsed BEFORE musterOutCash since the call can
-  // throw ChoicePendingError mid-cascade. Without this ordering, a
-  // paused cash roll wouldn't count toward maxCashRolls on resume — the
-  // user could pick "cash" again past the cap.
-  if (kind === "cash") ch.muster.musterCashUsed += 1;
-  const rolled = pauseGuard(() => {
-    if (kind === "cash") ch.musterOutCash(cashDM);
-    else ch.musterOutBenefit(benefitsDM);
-  });
-  if (rolled === "paused") {
-    ch.muster.pendingMusterRoll = true;
-    return { character: ch, phase: snap.phase };
+  if (kind === "cash") {
+    ch.muster.musterCashUsed += 1;
+    ch.musterOutCash(cashDM);
+  } else {
+    ch.musterOutBenefit(benefitsDM);
   }
   ch.muster.musterRolls -= 1;
   if (ch.muster.musterRolls === 0) {
@@ -398,11 +499,4 @@ export function musterChoice(
     return { character: ch, phase: "muster_no_cash" };
   }
   return { character: ch, phase: "muster" };
-}
-
-/** Update the showHistory level on a snapshot's character. */
-export function setVerbose(snap: ChargenSnapshot, verbose: boolean): ChargenSnapshot {
-  const ch = cloneCharacter(snap.character);
-  ch.showHistory = verbose ? "verbose" : "simple";
-  return { character: ch, phase: snap.phase };
 }

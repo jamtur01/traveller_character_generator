@@ -6,71 +6,30 @@
 // (see lib/traveller/editions/<id>/hooks.ts). Adding a new pathway: drop a
 // pathway module, declare its JSON block, register the factory in hooks.
 // No edits to this file are required.
+//
+// Interactive choices: pickOrDefer either consumes a recorded decision
+// inline (session decision cursor) or throws ChoicePendingError. The runner
+// does NOT catch it — the pause unwinds to the session boundary, which
+// snapshots the partial state and re-executes the whole term action from its
+// pre-action base once the player picks. There is no mid-flight resume state
+// here: every invocation runs straight through.
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { requireHook } from "@/lib/traveller/engine/registry";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
-import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
+import { freshPerTerm } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
 import { requireRule } from "@/lib/traveller/editions/strict";
 
-/** Names for the sub-steps inside a single one-year assignment cycle.
- *  The runner walks these in order; the index is recorded in acgState.yearStep
- *  so an interactive choice that throws ChoicePendingError can be resumed
- *  by re-invoking runAcgYear after the choice resolves. */
-// Per the ACG checklist (PM "Resolve Current Year"): determine assignment
-// FIRST, then command-duty within that assignment (officers only), then
-// resolve, then age+count, then retention. Pre-fix had commandDuty first.
-const YEAR_STEPS = [
-  "rollAssignment",
-  "commandDuty",
-  "resolveAssignment",
-  "ageAndCount",
-  "retention",
-] as const;
-type YearStep = typeof YEAR_STEPS[number];
-
-/** Step name set including special pre-cycle steps (initialTraining) that
- *  aren't part of YEAR_STEPS' resume indexing. The post-pause finalization
- *  branch handles initialTraining independently. */
-type PausableStep = YearStep | "initialTraining";
-
-function runStep(
-  ch: Character, stepName: PausableStep, fn: () => void,
-): boolean {
-  if (pauseGuard(fn) === "paused") {
-    // Preserve where we paused so resumption picks the right step.
-    ch.requireAcgState().perYear.pausedAtStep = stepName;
-    return false;
-  }
-  return true;
-}
-
-/** Clear all year-scoped state markers. Called when a year advances
- *  (successful completion, defensive no-op, initial-training paths) so
- *  pathway code that gates on these flags starts fresh next year.
- *  pausedAtStep is also nulled — it's logically year-scoped (records
- *  where the year paused) so a future year should never inherit a
- *  stale value. */
-function clearYearScopedState(acg: Character["acgState"]): void {
-  if (!acg) return;
-  acg.perYear = freshPerYear();
-}
-
 /** Advance the character one year: chronological age, years-served, and the
- *  ACG year counter, then clear the year-scoped markers. Shared epilogue for
- *  the exit branches that complete a whole year in one shot (initial training,
- *  its post-pause finalization, and the defensive no-op). The normal-completion
- *  branch keeps its own resume-gated age/yearsServed increment at step 3 (so a
- *  retention pause/resume can't double-count) and so does not use this. */
+ *  ACG year counter. Shared epilogue for the exit branches that skip the
+ *  normal resolution cycle (initial training and the no-assignment no-op). */
 function advanceYear(ch: Character, acg: NonNullable<Character["acgState"]>): void {
   ch.age += 1;
   acg.yearsServed = (acg.yearsServed ?? 0) + 1;
   acg.year += 1;
-  clearYearScopedState(acg);
 }
 
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
@@ -87,12 +46,9 @@ function getPathwayImpl(ch: Character): AcgPathwayImpl {
  *  mid-term retain only the years they actually served (PM p. 15 — each
  *  assignment is a year of service).
  *
- *  Interactive-mode resumption: when a pathway substep calls
- *  ch.pickOrDefer, ChoicePendingError propagates here. We catch it via
- *  runStep, record acgState.pausedAtStep, and return without advancing
- *  the year. The UI calls resolveChoice (which runs the queued closure),
- *  then re-invokes runAcgYear, which resumes from the recorded step.
- */
+ *  Per the ACG checklist (PM "Resolve Current Year"): determine assignment
+ *  FIRST, then command-duty within that assignment (officers only), then
+ *  resolve, then age+count, then retention. */
 export function runAcgYear(ch: Character): void {
   if (ch.deceased || !ch.activeDuty) return;
   if (!ch.acgState) throw new Error("Cannot run ACG year on non-ACG character");
@@ -100,137 +56,70 @@ export function runAcgYear(ch: Character): void {
   const acg = ch.acgState;
 
   // First year of the first term is initial training (no normal cycle).
-  // Mark initialTrainingDone BEFORE invoking the pathway so that if a
-  // pickOrDefer inside p.initialTraining throws ChoicePendingError, the
-  // resume path doesn't re-enter the function and double-apply side
-  // effects (skill rolls, MOS assignments). The deferred work lives in
-  // ch.pendingChoices; the UI resolves it, then re-invokes runAcgYear
-  // which lands in the finalization branch below.
-  if (ch.terms === 0 && acg.year === 1 && p.initialTraining &&
-      !acg.initialTrainingDone) {
-    acg.initialTrainingDone = true;
-    // pausedAtStep is functionally inert here — the post-pause branch
-    // above short-circuits on initialTrainingDone before startIdx is
-    // consulted — but a dedicated label keeps telemetry / logs honest.
-    const ok = runStep(ch, "initialTraining", () => p.initialTraining!(ch));
-    if (!ok) return;
-    advanceYear(ch, acg);
-    return;
-  }
-  // Post-pause finalization: initial training started but paused on a
-  // choice. The UI has now resolved the choice (and re-invoked us);
-  // finish year 1 of term 1 without falling into the normal cycle.
-  if (ch.terms === 0 && acg.year === 1 && acg.initialTrainingDone) {
+  if (ch.terms === 0 && acg.year === 1 && p.initialTraining) {
+    p.initialTraining(ch);
     advanceYear(ch, acg);
     return;
   }
 
-  // Pick up where we left off, if a previous run paused on a choice.
-  const startIdx = acg.perYear.pausedAtStep
-    ? Math.max(0, YEAR_STEPS.indexOf(acg.perYear.pausedAtStep as YearStep))
-    : 0;
-
-  // Step 0: roll the year's assignment (PM checklist 6.A.1).
-  let assignment = acg.currentAssignment ?? null;
-  if (startIdx <= 0) {
-    // Capture retention before the pathway clears the flag inside its
-    // rollAssignment. Every pathway with retention semantics (mercenary,
-    // navy, scout, merchant) consumes acg.justRetained internally.
-    // Stash on acgState so a pause/resume inside rollAssignment doesn't
-    // lose the value (justRetained is cleared by the pathway before any
-    // throw point, so the resumed call would otherwise read false).
-    if (acg.perYear.wasRetainedThisYear === undefined) {
-      acg.perYear.wasRetainedThisYear = acg.justRetained === true;
-    }
-    let rolled: string | null = null;
-    const ok = runStep(ch, "rollAssignment", () => {
-      rolled = p.rollAssignment(ch);
-    });
-    if (!ok) return;
-    assignment = rolled;
-    acg.currentAssignment = assignment;
-    if (assignment) {
-      ch.log(ev.assignmentRolled(
-        assignment, ch.terms + 1, acg.year,
-        acg.perYear.wasRetainedThisYear ? true : undefined,
-      ));
-    }
+  // Roll the year's assignment (PM checklist 6.A.1). Capture retention
+  // before the pathway clears the flag inside its rollAssignment — every
+  // pathway with retention semantics consumes acg.justRetained internally.
+  const wasRetained = acg.justRetained === true;
+  const assignment: string | null = p.rollAssignment(ch);
+  acg.currentAssignment = assignment;
+  if (assignment) {
+    ch.log(ev.assignmentRolled(
+      assignment, ch.terms + 1, acg.year,
+      wasRetained ? true : undefined,
+    ));
   }
 
-  // Step 1: command duty (officers only; per PM, after the assignment is
-  // known so the player can decide whether to seek a command position).
-  if (startIdx <= 1) {
-    if (p.commandDuty && !acg.justRetained) {
-      const ok = runStep(ch, "commandDuty", () => p.commandDuty!(ch));
-      if (!ok) return;
-    }
-  }
+  // Command duty (officers only; per PM, after the assignment is known so
+  // the player can decide whether to seek a command position).
+  if (p.commandDuty && !acg.justRetained) p.commandDuty(ch);
+
   if (!assignment) {
     // Defensive: nothing to resolve. Treat as a no-op year.
     advanceYear(ch, acg);
     return;
   }
 
-  // Step 2: resolve the assignment (or route through specialAssignment).
-  if (startIdx <= 2) {
-    const ok = runStep(ch, "resolveAssignment", () => {
-      if (assignment === "Special Duty" || assignment!.toLowerCase() === "specialduty") {
-        if (p.specialAssignment) p.specialAssignment(ch);
-      } else {
-        p.resolveAssignment(ch, assignment!);
-      }
-    });
-    if (!ok) return;
+  // Resolve the assignment (or route through specialAssignment).
+  if (assignment === "Special Duty" || assignment.toLowerCase() === "specialduty") {
+    if (p.specialAssignment) p.specialAssignment(ch);
+  } else {
+    p.resolveAssignment(ch, assignment);
   }
 
-  // Step 3: age + years bookkeeping.
-  if (startIdx <= 3) {
-    ch.age += 1;
-    acg.yearsServed = (acg.yearsServed ?? 0) + 1;
-  }
+  // Age + years bookkeeping.
+  ch.age += 1;
+  acg.yearsServed = (acg.yearsServed ?? 0) + 1;
 
-  // Step 4: retention (if alive and still serving).
-  if (startIdx <= 4) {
-    if (p.retention && ch.activeDuty && !ch.deceased) {
-      const ok = runStep(ch, "retention", () => p.retention!(ch, assignment!));
-      if (!ok) return;
-    }
-  }
+  // Retention (if alive and still serving).
+  if (p.retention && ch.activeDuty && !ch.deceased) p.retention(ch, assignment);
 
   acg.year += 1;
   acg.currentAssignment = null;
-  clearYearScopedState(acg);
 }
 
-/** Run a full four-year term. Time is accounted per year inside runAcgYear,
- *  so a character invalided/jailed/discharged mid-term keeps the years they
- *  actually served. Pathway endStateAtTerm completes the term with the
- *  partial-term info still visible. */
+/** Run a full four-year term straight through. Time is accounted per year
+ *  inside runAcgYear, so a character invalided/jailed/discharged mid-term
+ *  keeps the years they actually served. Pathway endStateAtTerm completes
+ *  the term with the partial-term info still visible. */
 export function runAcgTerm(ch: Character): void {
   if (!ch.acgState) throw new Error("Cannot run ACG term on non-ACG character");
   if (ch.deceased || !ch.activeDuty) return;
-  // Resume detection: a prior runAcgYear paused on an interactive choice
-  // (pausedAtStep set, or year > 1 because a prior year completed and
-  // the next one started but paused). Re-entering runAcgTerm from the
-  // session layer must NOT re-fire startOfTerm, reset year, or re-roll
-  // anagathics — that would clobber mid-term state and re-queue every
-  // preRun prompt.
   const p = getPathwayImpl(ch);
-  const isResuming = ch.acgState.perYear.pausedAtStep != null
-    || (ch.acgState.year ?? 1) > 1
-    || (ch.acgState.termStartYearsServed !== undefined);
-  if (!isResuming) {
-    // PM p. 15: anagathics intent is declared before the term's first
-    // survival roll. Reset per-term flags and consult the standing order
-    // so the year-1 survival roll sees the correct DM.
-    ch.anagathics.resetPerTerm();
-    ch.preSurvivalAnagathicsHook();
-    if (p.startOfTerm) p.startOfTerm(ch);
-    ch.acgState.year = 1;
-    ch.acgState.perTerm = freshPerTerm();
-    ch.acgState.termStartYearsServed = ch.acgState.yearsServed ?? 0;
-  }
-  const yearsAtTermStart = ch.acgState.termStartYearsServed ?? 0;
+  // PM p. 15: anagathics intent is declared before the term's first
+  // survival roll. Reset per-term flags and consult the standing order
+  // so the year-1 survival roll sees the correct DM.
+  ch.anagathics.resetPerTerm();
+  ch.preSurvivalAnagathicsHook();
+  if (p.startOfTerm) p.startOfTerm(ch);
+  ch.acgState.year = 1;
+  ch.acgState.perTerm = freshPerTerm();
+  const yearsAtTermStart = ch.acgState.yearsServed ?? 0;
   // Rrev2: pre-career failure may force the first term to a short term
   // (rules.preCareer.shortFirstTermYears, PM p. 44) instead of the full
   // rules.survival.fullTermYears term. The flag fires on the very first
@@ -243,26 +132,16 @@ export function runAcgTerm(ch: Character): void {
         "rules.preCareer.shortFirstTermYears", "PM p. 44",
       )
     : fullTermYears;
-  if (!isResuming && isFirstTerm && ch.acgState.preCareerFirstTermShort) {
+  if (isFirstTerm && ch.acgState.preCareerFirstTermShort) {
     // The shortTerm flag is recorded in ev.termBegin (emitted in
     // doServiceTermStep); consume the marker so subsequent terms run normally.
     delete ch.acgState.preCareerFirstTermShort;
   }
-  // When resuming, start at the current year (1-based), not 0. The
-  // for-loop iterates from year-1 (so year=2 → start at iteration 1).
-  const startY = isResuming ? (ch.acgState.year ?? 1) - 1 : 0;
-  for (let y = startY; y < termLength; y++) {
+  for (let y = 0; y < termLength; y++) {
     if (ch.deceased || !ch.activeDuty) break;
     runAcgYear(ch);
-    // If the year paused on an interactive choice, bail — the session
-    // layer will re-enter runAcgTerm after resolve. Without this guard
-    // we'd advance the for-loop past the paused year on the next call.
-    if (ch.acgState.perYear.pausedAtStep != null) return;
   }
-  // Term completed all its years — clear the term-start snapshot and
-  // reset year so the next runAcgTerm call re-initializes (instead of
-  // being detected as "resuming" via the lingering year>1 sentinel).
-  delete ch.acgState.termStartYearsServed;
+  // Reset year so the next runAcgTerm call starts a fresh term cycle.
   ch.acgState.year = 1;
   const yearsThisTerm = (ch.acgState.yearsServed ?? 0) - yearsAtTermStart;
   // Always advance terms by 1 if the character started the term, even if

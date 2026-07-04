@@ -9,9 +9,6 @@ import { event as ev } from "@/lib/traveller/history";
 import {
   buildPredicateContext, evaluatePredicate, type Predicate,
 } from "@/lib/traveller/engine/predicate";
-import {
-  cacheMitigation, getCachedMitigation, type SubStepKey,
-} from "./subStepCache";
 
 interface BrownieAward { event: string; points: number }
 
@@ -425,14 +422,6 @@ function reduceRank(ch: Character, mag: number): void {
   const newIdx = Math.max(0, idx - mag);
   ch.acgState.rankCode = codes[newIdx]!;
 }
-const CACHEABLE_PHASES: ReadonlySet<string> =
-  new Set<SubStepKey>(["survival", "promotion", "decoration", "skills", "bonus"]);
-
-/** Type-narrow a rollName to SubStepKey when it's actually cacheable.
- *  Avoids `as SubStepKey` casts that lie about "courtMartial". */
-function asCacheableKey(rollName: string): SubStepKey | null {
-  return CACHEABLE_PHASES.has(rollName) ? (rollName as SubStepKey) : null;
-}
 
 export interface MitigationRequest {
   rollName: "survival" | "decoration" | "promotion" | "skills" | "courtMartial" | "bonus";
@@ -459,7 +448,10 @@ export interface MitigationResult {
 }
 
 /** Try to mitigate a roll outcome by spending brownie points. Returns
- *  how many BPs were spent (0 if none) and the new margin. */
+ *  how many BPs were spent (0 if none) and the new margin. In interactive
+ *  mode the BP-review prompt resolves inline through the decision cursor
+ *  (or pauses the whole action at the session boundary), so the returned
+ *  result already reflects any player-directed extra spend. */
 export function tryMitigate(
   ch: Character,
   req: MitigationRequest,
@@ -467,24 +459,7 @@ export function tryMitigate(
   if (!ch.acgState) return { spent: 0, newMargin: req.margin };
   if (ch.acgState.browniePoints <= 0) return { spent: 0, newMargin: req.margin };
   if (req.margin >= 0) return { spent: 0, newMargin: req.margin }; // already a pass
-
-  // Resume case: if a prior pass through this phase already auto-
-  // mitigated (and possibly queued a BP review that paused the engine),
-  // return the cached spend/margin so re-runs don't double-charge BPs.
-  // The cache lives on AcgState.perYear.thisYearOutcomes and is cleared at
-  // boundary by runAcgYear. "courtMartial" is not cacheable (no per-year
-  // sub-step slot for it) — asCacheableKey returns null there.
-  const phase = asCacheableKey(req.rollName);
-  if (phase) {
-    const cached = getCachedMitigation(ch, phase);
-    if (cached) return cached;
-  }
-
-  if (ch.choiceMode === "auto") {
-    const result = autoMitigate(ch, req);
-    if (phase) cacheMitigation(ch, phase, result.spent, result.newMargin);
-    return result;
-  }
+  if (ch.choiceMode === "auto") return autoMitigate(ch, req);
   return interactiveMitigate(ch, req);
 }
 
@@ -532,32 +507,31 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
 /** Interactive mitigation: combine the configured auto-policy with a
  *  player-directed review prompt. When bpAutoPolicy is "manual" the
  *  auto layer spends nothing and the player decides everything via the
- *  prompt; the prompt's onResolve runs the request's onMitigated
+ *  prompt; the prompt's resolution runs the request's onMitigated
  *  callback when the spend pushes the margin to ≥ 0, allowing the
  *  pathway to revive a character who was about to be invalided
  *  (survival), award a missed decoration (decoration), force a
  *  promotion (promotion), or grant a missed skill (skills). */
 function interactiveMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   const result = autoMitigate(ch, req);
-  // Cache the auto-spend BEFORE queueBpReview can throw, so the resumed
-  // pathway sees the same spent/newMargin instead of re-rolling and
-  // re-spending.
-  const phase = asCacheableKey(req.rollName);
-  if (phase) cacheMitigation(ch, phase, result.spent, result.newMargin);
-  queueBpReview(ch, req, result);
-  return result;
+  return reviewBpSpend(ch, req, result);
 }
 
-/** Queue a non-blocking pendingChoice that lets the player spend additional
- *  brownie points after a failed roll. The choice's resolution recomputes
- *  outcomes via a tryMitigate-style callback on the character. */
-function queueBpReview(
+/** Offer the player additional brownie-point spending after a failed roll.
+ *  pickOrDefer either consumes a recorded decision inline (onResolve runs
+ *  synchronously and the updated result returns to the caller) or throws
+ *  ChoicePendingError, pausing the whole session action at its boundary —
+ *  the re-executed action passes back through here with the decision
+ *  recorded. A non-throwing queue would be the wrong primitive for
+ *  life-or-death rolls: it would let endChargenRetired fire before the
+ *  player has a chance to spend more BPs to revive. */
+function reviewBpSpend(
   ch: Character,
   req: MitigationRequest,
   result: MitigationResult,
-): void {
+): MitigationResult {
   const available = ch.acgState?.browniePoints ?? 0;
-  if (available <= 0) return;
+  if (available <= 0) return result;
   // Build "spend N more" options. PM p. 46 allows any number of BPs on
   // a single roll, so the cap is whatever the character can afford.
   // Bounded at 12 to keep the picker tractable for huge BP pools (the
@@ -569,14 +543,7 @@ function queueBpReview(
   for (let n = 1; n <= max; n++) {
     options.push(`Spend ${n} more brownie point(s)`);
   }
-  // Pause the engine on the BP-review prompt. The pathway's
-  // resolveAssignment is idempotent on resume via the per-year
-  // sub-step cache (AcgState.perYear.thisYearOutcomes): dice rolls and
-  // auto-mitigation spends are cached, so re-running after the player
-  // resolves the prompt doesn't re-roll or double-spend. A non-throwing
-  // queue is the wrong primitive for life-or-death rolls — it would
-  // let endChargenRetired fire before the player has a chance to spend
-  // more BPs to revive.
+  let final = result;
   ch.pickOrDefer({
     kind: "bpSpend",
     label:
@@ -588,26 +555,14 @@ function queueBpReview(
     onResolve: (ch, chosen) => {
       const m = chosen.match(/Spend (\d+) more/);
       const extra = m ? parseInt(m[1]!, 10) : 0;
-      const phase = asCacheableKey(req.rollName);
-      if (extra <= 0) {
-        // Player declined to spend more. The cache still holds the
-        // auto-mitigation result (result.spent, result.newMargin) which
-        // the resumed pathway will read — that's correct (no change).
-        return;
-      }
+      if (extra <= 0) return; // player declined — keep the auto result
       // Spend + log + margin via spendBrowniePoints (the one BP-spend
       // primitive). The base margin folds in the prior auto-mitigation spend
       // so the return is the post-spend total; totalSpent is the delta.
       const finalMargin = spendBrowniePoints(
         ch, extra, req.margin + result.spent, `Additional spend post-${req.rollName}`,
       );
-      // Update the sub-step cache so the resumed pathway sees the
-      // post-spend totals. Without this the cache returns the original
-      // autoMitigate values and the pathway re-fires the failure branch
-      // (e.g. endChargenRetired) even though the player just bought
-      // their way out.
-      const totalSpent = finalMargin - req.margin;
-      if (phase) cacheMitigation(ch, phase, totalSpent, finalMargin);
+      final = { spent: finalMargin - req.margin, newMargin: finalMargin };
       // F16: if the total spend pushed the margin to ≥ 0 and the
       // request carries an onMitigated callback, run it now to apply
       // the success outcome retroactively (revival / retroactive
@@ -617,12 +572,13 @@ function queueBpReview(
       }
     },
   });
+  return final;
 }
 
 /** Spend up to `amount` brownie points: decrement the pool, log the spend,
  *  and return `originalMargin` shifted by the amount actually spent (clamped
- *  to the available pool). The one BP-spend primitive — used by queueBpReview's
- *  post-roll review prompt. `reason` labels the logged history event. */
+ *  to the available pool). The one BP-spend primitive — used by the BP-review
+ *  prompt's post-roll spend. `reason` labels the logged history event. */
 export function spendBrowniePoints(
   ch: Character,
   amount: number,

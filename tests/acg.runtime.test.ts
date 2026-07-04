@@ -190,7 +190,7 @@ describe("Scout ACG runtime", () => {
     c.acgState = {
       pathway: "scout", office: "", division: "field", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["college"], decorations: [], browniePoints: 0,
@@ -209,7 +209,7 @@ describe("Scout ACG runtime", () => {
     c.acgState = {
       pathway: "scout", office: "", division: "field", rankCode: "E1", isOfficer: false, year: 1,
       currentAssignment: null, inCommand: false, justRetained: false,
-      retainedAssignment: null, injuredThisYear: false, perYear: {},
+      retainedAssignment: null, injuredThisYear: false,
       perTerm: { promotedThisTerm: false },
       assignmentHistory: [], combatRibbons: 0, commandClusters: 0,
       schoolsAttended: ["college"], decorations: [], browniePoints: 0,

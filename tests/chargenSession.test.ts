@@ -170,24 +170,55 @@ describe("session.attemptMusterOut", () => {
   });
 });
 
-describe("session.resolvePending — muster cascade finalization", () => {
-  it("nested skillCap choice still finalizes the muster roll", () => {
-    // Setup: a muster cascade just paused. pendingMusterRoll is true.
-    // We simulate the cascade resolving (no pending choices), and the
-    // session should decrement musterRolls + route phase.
+describe("session.resolvePending — frontier contract", () => {
+  it("throws on a snapshot without a frontier", () => {
+    // A pending choice can only come from a paused session action, which
+    // always records a frontier. A frontier-less resolve is corrupted
+    // session state and must fail loudly, not silently no-op.
     const c = new Character();
     c.editionId = "ct-classic";
     c.service = "navy";
     c.terms = 2;
     c.enterMustered();
     c.muster.musterRolls = 2;
-    c.muster.pendingMusterRoll = true;
     c.choiceMode = "auto";
-    // No actual pending choice to resolve — pass a non-existent id;
-    // resolveChoice will be a no-op but the finalization should still run.
-    const snap = resolvePending({ character: c, phase: "muster" }, "nope", 0);
-    expect(snap.character.muster.musterRolls).toBe(1);
-    expect(snap.character.muster.pendingMusterRoll).toBe(false);
-    expect(snap.phase).toBe("muster");
+    expect(() => resolvePending({ character: c, phase: "muster" }, "nope", 0))
+      .toThrow(/no frontier/);
+  });
+
+  it("muster roll that pauses on a cascade finalizes on resolve (re-execution)", () => {
+    // Interactive muster benefit roll: the weapon cascade queues, the
+    // musterChoice action pauses with a frontier, and resolving the pick
+    // re-runs the action from base — the roll decrement + phase routing
+    // happen inline in the re-run (no drain sentinel involved).
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    const c = new Character();
+    c.editionId = "ct-classic";
+    c.service = "navy";
+    c.terms = 2;
+    c.choiceMode = "interactive";
+    c.enterMustered();
+    c.muster.musterRolls = 2;
+    // Benefit table index 1 for navy is "Blade" under the forced rolls? Not
+    // guaranteed — drive rolls until a cascade queues or the rolls run out.
+    let snap: ChargenSnapshot = { character: c, phase: "muster" };
+    let sawPause = false;
+    for (let i = 0; i < 4 && snap.phase !== "end"; i++) {
+      snap = musterChoice(snap, "benefit");
+      while (snap.character.pendingChoices.length > 0) {
+        sawPause = true;
+        const rolls = snap.character.muster.musterRolls;
+        expect(snap.frontier).toBeDefined();
+        const choice = snap.character.pendingChoices[0]!;
+        snap = resolvePending(snap, choice.id, 0);
+        // The re-run either completed the roll (decrement) or hit a nested
+        // frontier (same roll still in flight from a fresh base).
+        if (snap.character.pendingChoices.length === 0) {
+          expect(snap.character.muster.musterRolls).toBe(rolls - 1);
+        }
+      }
+    }
+    expect(sawPause).toBe(true);
+    expect(snap.phase).toBe("end");
   });
 });
