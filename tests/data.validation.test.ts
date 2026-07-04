@@ -279,7 +279,8 @@ for (const meta of ACTIVE_EDITIONS) {
 
     if (cellLabel === "Travellers'") {
       expect(got.TAS, `${editionId}/${svc} muster row ${n}`).toBe(true);
-      expect(got.benefits).toEqual(["Travellers' Aid Society"]);
+      // B11: Travellers' now stores the JSON displayName (was hardcoded "Travellers' Aid Society").
+      expect(got.benefits).toEqual(["Travellers' Aid Society membership"]);
       return;
     }
     if (cellLabel === "Weapon" || cellLabel === "Blade" || cellLabel === "Gun") {

@@ -192,12 +192,12 @@ export function applyCell(
     if (mode === "muster") {
       // Muster cascades follow doWeaponBenefit's add-as-benefit-plus-skill-0
       // semantics on first occurrence; Character helpers manage repeats.
-      const lc = label.toLowerCase();
-      if (lc === "blade cbt" || lc === "blade combat" || lc === "blade") {
+      const cascadeKey = cascadeKeyForLabel(label, ch.editionId);
+      if (cascadeKey === "bladeCombat") {
         ch.doBladeBenefit();
         return;
       }
-      if (lc === "gun cbt" || lc === "gun combat" || lc === "gun") {
+      if (cascadeKey === "gunCombat") {
         ch.doGunBenefit();
         return;
       }
@@ -243,11 +243,18 @@ export function applyCell(
       return;
     }
     if (label === "Travellers'") {
-      if (ch.benefits.indexOf("Travellers' Aid Society") > -1) {
+      const detail = benefitDetails?.["Travellers'"];
+      const name = detail?.displayName;
+      if (!name) {
+        throw new Error(
+          `Edition "${ch.editionId}" benefitDetails.Travellers' is missing displayName.`,
+        );
+      }
+      if (detail?.repeat === "no effect" && ch.benefits.indexOf(name) > -1) {
         ch.log(ev.noEffect(`repeat ${label} (non-stackable)`));
         return;
       }
-      ch.addBenefit("Travellers' Aid Society");
+      ch.addBenefit(name);
       ch.TAS = true;
       return;
     }
@@ -260,9 +267,10 @@ export function applyCell(
       applyShipBenefit(ch, label, benefitDetails);
       return;
     }
-    // Plain benefit string (Instruments, Watch).
+    // Plain benefit string (Instruments, Watch). Non-stackable behavior is
+    // driven by benefitDetails.<label>.repeat === "no effect" (B11).
     const detail = benefitDetails?.[label];
-    if (detail?.repeat === "no effect" || label === "Watch" || label === "Instruments") {
+    if (detail?.repeat === "no effect") {
       if (ch.benefits.indexOf(label) > -1) {
         ch.log(ev.noEffect(`repeat ${label} (non-stackable)`));
         return;
@@ -327,4 +335,8 @@ function applyShipBenefit(
   }
   ch.addBenefit(label);
   ch.ship = true;
+  // First receipt: the initial mortgage is sourced from JSON. Mortgaged ships
+  // (e.g. Free Trader) declare firstReceiptMortgageYears; owned ships
+  // (Scout Ship/Corsair) omit it and carry no mortgage.
+  ch.mortgage = detail?.firstReceiptMortgageYears ?? 0;
 }

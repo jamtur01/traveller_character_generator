@@ -1069,7 +1069,7 @@ exports[`belters — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,
@@ -1907,7 +1907,7 @@ exports[`diplomats — service snapshot > data + behavior matches snapshot 1`] =
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,
@@ -3381,7 +3381,7 @@ exports[`marines — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,
@@ -3780,7 +3780,7 @@ exports[`merchants — service snapshot > data + behavior matches snapshot 1`] =
       "benefits": [
         "Free Trader",
       ],
-      "mortgage": undefined,
+      "mortgage": 40,
       "ship": true,
       "skills": [],
     },
@@ -4129,7 +4129,7 @@ exports[`navy — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,
@@ -4482,7 +4482,7 @@ exports[`nobles — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,
@@ -5746,7 +5746,7 @@ exports[`rogues — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": true,
       "attrDelta": {},
       "benefits": [
-        "Travellers' Aid Society",
+        "Travellers' Aid Society membership",
       ],
       "mortgage": undefined,
       "ship": undefined,

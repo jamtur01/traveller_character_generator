@@ -215,7 +215,7 @@ export class Character implements CharacterState {
   benefits: string[] = [];
   ship = false;
   TAS = false;
-  mortgage = 40;
+  mortgage = 0;
   bladeBenefit = "";
   gunBenefit = "";
   // Initial attributes — rolled by the constructor (or supplied via
@@ -697,9 +697,16 @@ export class Character implements CharacterState {
     return sum;
   }
 
-  /** Int+Edu — the MT cap on total skill levels. */
+  /** Sum of the attributes named in rules.skillCap.attributes — the MT cap
+   *  on total skill levels (PM p. 15). Operands are data, not code. Returns
+   *  0 for editions with no skillCap block (CT); callers gate on block
+   *  presence via enforceSkillCap. */
   skillCap(): number {
-    return this.attributes.intelligence + this.attributes.education;
+    const spec = getEdition(this.editionId).rules.skillCap as
+      { attributes?: string[] } | undefined;
+    let sum = 0;
+    for (const a of spec?.attributes ?? []) sum += this.attributes[a as AttributeKey];
+    return sum;
   }
 
   /** Enforce the Int+Edu skill cap (PM p. 39) — see chargen/skillCap. */
@@ -797,9 +804,28 @@ export class Character implements CharacterState {
     const retirement = getEdition(this.editionId).rules.retirement;
     const minTerms = retirement?.eligibleAfterCompletedTerm ?? 5;
     const excluded = retirement?.excludedServices ?? ["scouts", "other"];
-    if (this.terms < minTerms) return false;
+    if (this.qualifyingRetirementTerms() < minTerms) return false;
     if (excluded.includes(String(this.service))) return false;
     return true;
+  }
+
+  /** Terms that count toward retirement eligibility and pension. MT
+   *  (rules.retirement.anagathicTermsExcluded) excludes terms whose muster
+   *  benefits were forfeited to anagathics, so the `retired` flag and the
+   *  pension payment stay consistent (both must use this). */
+  qualifyingRetirementTerms(): number {
+    const retirement = getEdition(this.editionId).rules.retirement;
+    if (retirement?.anagathicTermsExcluded) {
+      return this.terms - (this.anagathicsBenefitForfeitedTerms ?? 0);
+    }
+    return this.terms;
+  }
+
+  /** Years per full term of service (rules.survival.fullTermYears; both
+   *  editions declare it). The term-begin age bump, aging breakpoints, and
+   *  the survival short-term rewind must all use this same value. */
+  fullTermYears(): number {
+    return getEdition(this.editionId).rules.survival?.fullTermYears ?? 4;
   }
 
   /** PM p. 16 (lines 939-943): a character is disabled — and must muster

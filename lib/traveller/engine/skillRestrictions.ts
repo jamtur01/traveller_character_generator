@@ -42,13 +42,22 @@ function dataFor(ch: Character): {
   lawOrder: string[];
 } | null {
   const ed = getEdition(ch.editionId);
-  const rules = (ed.data.rules as {
-    homeworldSkillRestrictions?: RestrictionsData;
-  } | undefined);
   const hw = ed.data.homeworld;
-  if (!rules?.homeworldSkillRestrictions || !hw?.techCodeOrder) return null;
+  // Editions without homeworld generation (CT) have no restrictions.
+  if (!hw?.techCodeOrder) return null;
+  const restrictions = ed.rules.homeworldSkillRestrictions;
+  if (!restrictions) {
+    // Homeworld generation is present but the restriction block is missing
+    // (or its rules key is misspelled). Fail loudly rather than silently
+    // disabling every homeworld weapon/vehicle skill limit (MT p. 39).
+    throw new Error(
+      `Edition "${ch.editionId}" has a homeworld block but no ` +
+      `rules.homeworldSkillRestrictions; homeworld skill limits would be ` +
+      `silently disabled. Add the block to the edition JSON.`,
+    );
+  }
   return {
-    r: rules.homeworldSkillRestrictions as RestrictionsData,
+    r: restrictions as RestrictionsData,
     techOrder: hw.techCodeOrder,
     lawOrder: hw.lawOrder ?? [],
   };

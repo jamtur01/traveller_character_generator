@@ -10,7 +10,7 @@ import { intToOrdinal } from "@/lib/traveller/formatting";
 import { event as ev } from "@/lib/traveller/history";
 import type { StepFn } from "./types";
 
-export const commissionStep: StepFn = ({ ch, service, config }) => {
+export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
   if (ch.deceased) return;
   if (ch.commissioned) return;
   if (ch.shortTermThisTerm) {
@@ -19,7 +19,7 @@ export const commissionStep: StepFn = ({ ch, service, config }) => {
     ));
     return;
   }
-  if (ch.drafted && ch.terms === 1) {
+  if (edition.rules.draft?.noCommissionFirstTerm && ch.drafted && ch.terms === 1) {
     ch.log(ev.statusChange(
       "commissionSkipped", "drafted in first term",
     ));

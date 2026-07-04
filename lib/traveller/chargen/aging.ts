@@ -56,7 +56,7 @@ export function doAging(ch: Character): void {
   const serviceStartAge =
     getEdition(ch.editionId).data.services[ch.service]?.startAge ?? 18;
   const effectiveTermsForAging = ch.onAnagathics
-    ? Math.max(0, Math.floor((ch.apparentAge - serviceStartAge) / 4))
+    ? Math.max(0, Math.floor((ch.apparentAge - serviceStartAge) / ch.fullTermYears()))
     : Math.max(0, ch.terms - ch.shortTermsCount);
 
   const applicable = aging.rows

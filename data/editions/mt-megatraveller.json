@@ -314,11 +314,9 @@
       "optionalDeathRule": "Referee or player may decide that failure of the survival throw results in death and that a new character must be generated."
     },
     "reenlistment": {
+      "$rule": "MT PM p. 15 (basic reenlistment rule, echoed for ACG): a reenlistment throw is required at the end of every term; a roll of exactly 12 forces mandatory reenlistment. MT allows unlimited voluntary terms — there is no fixed retirement-term cap.",
       "mandatoryOnExactRoll": 12,
-      "voluntaryAnyTerms": true,
-      "retireAfterCompletedTerm": 5,
-      "mandatoryRoll": 12,
-      "mandatoryRollNote": "A reenlistment throw of exactly 12 calls for mandatory reenlistment; Bureaucrats must reenlist if the reenlistment throw is successful."
+      "voluntaryAnyTerms": true
     },
     "skillEligibility": {
       "initialTerm": 2,
@@ -427,8 +425,10 @@
       }
     },
     "skillCap": {
+      "$rule": "MT PM p. 15 line 36: 'Total skill levels may never exceed Int + Edu.' The cap's operands are Intelligence and Education.",
       "rule": "No character can have more skills (combined total levels of skills) than the sum of Intelligence and Education. After each term's skill rolls, reduce any skill levels (player's discretion) to meet the restriction.",
-      "source": "MT PM p. 15"
+      "source": "MT PM p. 15",
+      "attributes": ["intelligence", "education"]
     },
     "disability": {
       "rule": "PM p. 16 (lines 939-943): characters may quit adventuring when any disability condition is met. In chargen this blocks further reenlistment — the character must muster out at the next term boundary.",
@@ -886,13 +886,15 @@
       "repeatReducesMortgageYears": 10
     },
     "Instruments": {
-      "description": "Medical instrument set"
+      "description": "Medical instrument set",
+      "repeat": "no effect"
     },
     "Forensic Kit": {
       "description": "Forensic field kit (Law Enforcer)"
     },
     "Watch": {
-      "description": "Presentation watch"
+      "description": "Presentation watch",
+      "repeat": "no effect"
     },
     "Letter": {
       "description": "Letter of Marque (Pirate)"
@@ -3683,6 +3685,7 @@
           },
           "otc": {
             "target": 8,
+            "autoEnlist": { "$rule": "PM p. 47: OTC graduates are automatically enlisted and commissioned as O1 in the Army or the Marines (mercenary pathway); the branch is a player choice.", "pathway": "mercenary", "branchOptions": ["Army", "Marines"] },
             "dms": [
               {
                 "attribute": "socialStanding",
@@ -3721,13 +3724,17 @@
                 "dm": 1
               }
             ],
-            "benefit": "Education becomes 10 or current Education +1, whichever is greater."
+            "benefit": "Education becomes 10 or current Education +1, whichever is greater.",
+            "$ruleEducationFloor": "PM p. 47: honors graduates receive Education 10 or current Edu +1, whichever is greater — the numeric floor is 10.",
+            "educationFloor": 10
           }
         },
         "navalAcademy": {
           "displayName": "Naval Academy",
           "uiSummary": "Soc 8+ to apply. Graduates auto-enlist as O1 Imperial Navy.",
           "$rulePreCareer": "PM p. 47: Naval Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "washOutDraftedInto": "navy",
+          "$ruleWashOut": "PM p. 47 / mt-acg-common §1b: Naval Academy wash-out (success-throw failure) drafts the character into the Navy for a short first term.",
           "courseYears": 4,
           "commissionRank": "O1",
           "autoEnlist": { "$rule": "PM p. 47: Naval Academy graduates auto-enlist as O1 Imperial Navy.", "branch": "navy", "pathway": "navy" },
@@ -3785,6 +3792,8 @@
           "displayName": "Military Academy",
           "uiSummary": "Soc 6+ to apply. Graduates auto-enlist as O1 Army/Marines.",
           "$rulePreCareer": "PM p. 47: Military Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "washOutDraftedInto": "army",
+          "$ruleWashOut": "PM p. 47 / mt-acg-common §1c: Military Academy wash-out (success-throw failure) drafts the character into the Army for a short first term.",
           "courseYears": 4,
           "commissionRank": "O1",
           "autoEnlist": { "$rule": "PM p. 47: Military Academy graduates auto-enlist as O1 Army/Marines (mercenary pathway).", "branch": "army", "pathway": "mercenary" },
@@ -3848,6 +3857,10 @@
           "displayName": "Merchant Academy",
           "uiSummary": "Post-enlistment only — available after joining a Megacorp or Sector-wide line.",
           "$rulePreCareer": "PM p. 47: Merchant Academy is a 4-year course; graduates receive an automatic O1 commission.",
+          "washOutDraftedInto": "army",
+          "$ruleWashOut": "PM p. 44/46 / mt-acg-common §1d: Merchant Academy wash-out (success-throw failure) drafts the character into the Army for a short first term.",
+          "requiresLineType": ["Megacorp", "Sector-wide"],
+          "$ruleRequiresLineType": "PM p. 44 / mt-acg-common §1d: a character may apply for a Merchant Academy only after enlisting in a Megacorporation or a Sector-wide line.",
           "courseYears": 4,
           "commissionRank": "O1",
           "autoEnlist": { "$rule": "PM p. 47: Merchant Academy graduates auto-enlist as O1 in a merchant line.", "branch": "merchants", "pathway": "merchantPrince" },
@@ -3902,6 +3915,15 @@
           "displayName": "Medical School",
           "uiSummary": "Honors of college / academy gates entry. Graduates receive Medical-3, Admin, +1 Edu.",
           "$rulePreCareer": "PM p. 47: Medical School is a 4-year course; graduates may take an automatic O3 direct commission.",
+          "honorsPrereq": ["college", "navalAcademy", "militaryAcademy"],
+          "$ruleHonorsPrereq": "PM p. 47 / mt-acg-common §1e: honors graduation from college, the Naval Academy, or the Military Academy qualifies a character to apply for Medical School.",
+          "directCommissionBranches": [
+            { "label": "Navy (Medical Branch)", "branch": "navy", "pathway": "navy" },
+            { "label": "Army", "branch": "army", "pathway": "mercenary" },
+            { "label": "Scouts", "branch": null, "pathway": "scout" },
+            { "label": "Merchants (Purser)", "branch": "merchants", "pathway": "merchantPrince" }
+          ],
+          "$ruleDirectCommission": "PM p. 47 / mt-acg-common §1e: graduates may take an automatic O3 direct commission in the Navy (Medical Branch), Army, Scouts, or Merchants (Purser Department Medic). Marines have no medical officers and are excluded.",
           "courseYears": 4,
           "commissionRank": "O3",
           "admission": {
@@ -3948,6 +3970,19 @@
           "displayName": "Flight School",
           "uiSummary": "Naval Academy honors or commissioned college honors. Ship's Boat, Navigation, 1D-3 (min 1) Pilot.",
           "$rulePreCareer": "PM p. 47: Flight School is a short (1-year) specialty course; graduates serve a short first term.",
+          "washOutDraftedInto": "navy",
+          "$ruleWashOut": "PM p. 47 / mt-acg-common §1f: Flight School wash-out (success-throw failure) reports the character for duty in the Navy for a short first term.",
+          "admissionPrereq": {
+            "$rule": "PM p. 47 / mt-acg-common §1f: attendance requires a commissioned college honors graduate, any Naval Academy graduate, or a commissioned Merchant Academy graduate.",
+            "honorsWithCommission": ["college"],
+            "gradAny": ["navalAcademy"],
+            "gradWithCommission": ["merchantAcademy"]
+          },
+          "autoAdmit": {
+            "$rule": "PM p. 47 / mt-acg-common §1f: a commissioned college honors graduate or a Naval Academy honors graduate is admitted automatically; other eligible applicants must roll for admission.",
+            "honorsWithCommission": ["college"],
+            "honorsAny": ["navalAcademy"]
+          },
           "courseYears": 1,
           "firstTermShort": true,
           "admission": {
@@ -5933,6 +5968,15 @@
         "notes": [
           "Schooling is for Int + Edu greater than 16."
         ]
+      },
+      "skillColumnPolicy": {
+        "$rule": "PM p. 55: 'Navy Life is available to any Navy character; Petty Officer, for rank E4 to E9; Command Officer, for rank O1+ with Command Duty; Staff Officer, for rank O1+ without Command Duty.' Shipboard/Shore Duty are assignment columns rolled via the per-year assignment flow, not the rank-based OCS/special-assignment service-skill roll.",
+        "officerInCommand": "commandOfficer",
+        "officerStaff": "staffOfficer",
+        "enlistedNcoColumn": "pettyOfficer",
+        "enlistedNcoMinRank": "E4",
+        "enlistedLowRankColumns": {},
+        "enlistedLowRankDefault": "navyLife"
       },
       "serviceSkills": {
         "columns": [
@@ -8386,7 +8430,7 @@
             "Liaison",
             "Trader"
           ],
-          "effect": "Transfer to Admin."
+          "effect": "Transfer to Administration."
         }
       }
     }

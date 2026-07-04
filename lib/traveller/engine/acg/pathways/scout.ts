@@ -20,7 +20,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
-  applyDmRules, labelToColumnKey, lookupResolution,
+  applyDmRules, columnDmFor, labelToColumnKey, lookupResolution,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
@@ -62,7 +62,7 @@ export interface ScoutData {
     rows: Array<Record<string, unknown>>;
   };
   schools?: { columns: string[]; rows: Array<Record<string, unknown>> };
-  skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>> }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>> } };
+  skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] } };
   ranks: { ordinary: Array<[string, string]>; administrator: Array<[string, string, number]> };
   reenlistment: { target: number };
   detachedDuty: { musterTarget: number; stipendPerYear: number };
@@ -165,10 +165,13 @@ function scoutRollSkill(ch: Character): void {
   const data = dataFor(ch);
   const division = ch.requireAcgState().division ?? "field";
   const table = data.skillTables[division];
-  const r = ch.rng.roll(1);
+  const primaryCol = table.columns.find((c) => c !== "die") ?? "";
+  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
+  const dm = columnDmFor(table.dms, primaryCol, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
-  // The skill table columns vary; just take the first column that has a value.
+  // The skill table columns vary; take the first column that has a value.
   for (const col of table.columns) {
     if (col === "die") continue;
     const v = row[col];
@@ -321,7 +324,9 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
     scoutRollSkill(ch);
     return;
   }
-  const r = ch.rng.roll(1);
+  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
+  const dm = columnDmFor(table.dms, column, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   const v = row[column];

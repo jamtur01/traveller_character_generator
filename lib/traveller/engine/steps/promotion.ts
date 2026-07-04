@@ -14,7 +14,17 @@ export const promotionStep: StepFn = ({ ch, service, config }) => {
     return;
   }
   if (!ch.commissioned) return;
-  const maxRank = Math.max(...Object.keys(service.ranks).map(Number));
+  // Real cap = highest rank index with a non-empty name. serviceLoader fills
+  // ranks 0-6 with "" for undefined slots, so Object.keys() is always 0-6;
+  // deriving the cap from it would let services topping at rank 5 (merchants,
+  // pirates, nobles, barbarians — ranks[6] is null/"") over-promote into an
+  // empty rank 6 with a spurious skill point.
+  const maxRank = Math.max(
+    0,
+    ...Object.entries(service.ranks)
+      .filter(([, name]) => name !== "")
+      .map(([idx]) => Number(idx)),
+  );
   if (ch.rank >= maxRank) return;
   if (service.promotionThrow === undefined) return;
 

@@ -14,7 +14,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyStructuredDms, labelToColumnKey, lookupResolution,
+  applyStructuredDms, columnDmFor, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
@@ -320,8 +320,11 @@ function navyOfficerSkillChoice(ch: Character): void {
 function navyServiceSkillRoll(ch: Character, column: string): void {
   const data = dataFor(ch);
   if (!data.serviceSkills) return;
-  const r = ch.rng.roll(1);
-  const row = data.serviceSkills.rows.find((row) => row.die === r);
+  const table = data.serviceSkills;
+  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
+  const dm = columnDmFor(table.dms, column, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
+  const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   const skill = row[column];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `Navy ${column}`);
@@ -330,11 +333,14 @@ function navyServiceSkillRoll(ch: Character, column: string): void {
 function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const r = ch.rng.roll(1);
-  const row = data.branchSkills.rows.find((row) => row.die === r);
+  const table = data.branchSkills;
+  const col = labelToColumnKey(ch.requireAcgState().branch ?? "Line");
+  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
+  const dm = columnDmFor(table.dms, col, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
+  const row = table.rows.find((row) => row.die === r);
   if (!row) return;
   // Convert branch to column key.
-  const col = labelToColumnKey(ch.requireAcgState().branch ?? "Line");
   const candidates = [col, col === "line" ? "lineCrew" : col,
     col === "crew" ? "lineCrew" : col];
   let skill: string | undefined;

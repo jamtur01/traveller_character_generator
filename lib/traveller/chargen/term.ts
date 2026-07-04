@@ -51,7 +51,7 @@ export function doServiceTermStep(ch: Character): void {
     return;
   }
   ch.terms += 1;
-  ch.age += 4;
+  ch.age += ch.fullTermYears();
   ch.log(ev.termBegin(ch.terms, ch.age));
   // Anagathics supply check happens before survival (per PM p. 15)
   // — supply outcome modifies the survival DM. Log order: termBegin

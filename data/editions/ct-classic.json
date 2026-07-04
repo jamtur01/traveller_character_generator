@@ -144,6 +144,14 @@
       "mandatoryOnExactRoll": 12,
       "mandatoryRetireAfterTerm": 7
     },
+    "survival": {
+      "$rule": "TTB p. 18: 'Upon enlistment (or upon being drafted), a character embarks on a term of service lasting four years.' Survival failure is death (the optional injury/short-term rule is not modeled as a lifecycle default).",
+      "fullTermYears": 4
+    },
+    "draft": {
+      "$rule": "TTB p. 18: 'Draftees are not eligible for commissions during their first term of service; they do become eligible during the second and subsequent terms of service if they reenlist.'",
+      "noCommissionFirstTerm": true
+    },
     "retirement": {
       "$rule": "TTB p. 18: pension eligible after 5 completed terms; Cr4000/yr at 5 terms + Cr2000/yr per further term (Cr4000+(terms-5)*2000, matching the printed 4000/6000/8000/10000/12000 table). Scouts and Other cannot retire; barbarians retire only in prose.",
       "eligibleAfterCompletedTerm": 5,
@@ -295,7 +303,7 @@
       "Mid Psg": { "displayName": "Mid Passage", "cashValueCredits": 8000, "resalePercent": 90 },
       "Low Psg": { "displayName": "Low Passage", "cashValueCredits": 1000, "resalePercent": 90, "revivalSave": "5+" }
     },
-    "Travellers'": { "name": "Travellers' Aid Society membership", "repeat": "no effect" },
+    "Travellers'": { "displayName": "Travellers' Aid Society membership", "repeat": "no effect" },
     "Free Trader": { "shipType": "Type A Free Trader", "displayName": "Type A Free Trader", "firstReceiptMortgageYears": 40, "repeatReducesMortgageYears": 10 },
     "Scout Ship":  { "shipType": "Type S Scout/Courier", "displayName": "Type S Scout Ship", "basis": "reserve use" },
     "Corsair":     { "shipType": "Corsair", "displayName": "Pirate Corsair", "repeat": "no benefit" },
@@ -303,8 +311,8 @@
     "Yacht":       { "shipType": "Yacht", "displayName": "Type Y Yacht", "repeat": "no benefit" },
     "Lab Ship":    { "shipType": "Type L Lab Ship", "displayName": "Type L Lab Ship", "repeat": "no benefit" },
     "Safari Ship": { "shipType": "Type K Safari Ship", "displayName": "Type X Safari Ship", "repeat": "no benefit" },
-    "Instruments": { "description": "Medical instrument set", "valueCredits": 5000 },
-    "Watch": { "description": "Presentation watch", "typicalValueCredits": 50, "valuableValueRoll": "2d6 * Cr100 on 7+" },
+    "Instruments": { "description": "Medical instrument set", "valueCredits": 5000, "repeat": "no effect" },
+    "Watch": { "description": "Presentation watch", "typicalValueCredits": 50, "valuableValueRoll": "2d6 * Cr100 on 7+", "repeat": "no effect" },
     "Weapon": { "choices": ["Blade", "Gun"], "repeatMayBecomeSkill": true },
     "Blade": { "choices": "bladesAndPolearms", "repeatMayBecomeSkill": true },
     "Gun": { "choices": "guns", "repeatMayBecomeSkill": true }

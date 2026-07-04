@@ -40,7 +40,7 @@ function freshCharacter(svc: ServiceKey): Character {
   c.musterLog = [];
   c.bladeBenefit = "";
   c.gunBenefit = "";
-  c.mortgage = 40;
+  c.mortgage = 0;
   c.ship = false;
   c.TAS = false;
   c.service = svc;
@@ -60,7 +60,7 @@ function diffState(c: Character) {
     benefits: [...c.benefits],
     skills: c.skills.map(([n, l]) => `${n}-${l}`),
     attrDelta,
-    mortgage: c.mortgage === 40 ? undefined : c.mortgage,
+    mortgage: c.mortgage || undefined,
     ship: c.ship || undefined,
     TAS: c.TAS || undefined,
   };

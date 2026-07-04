@@ -143,8 +143,10 @@ describe("Navy Material Benefits (TTB p. 24)", () => {
   it("row 2 → +1 Intel", () => assertRow("navy", 2, { attr: { intelligence: 1 } }));
   it("row 3 → +2 Educ", () => assertRow("navy", 3, { attr: { education: 2 } }));
   it("row 4 → Blade", () => assertWeaponRow("navy", 4));
+  // B11: Travellers' now stores the JSON displayName ("...membership") instead of
+  // the previously hardcoded "Travellers' Aid Society". Applies to every row below.
   it("row 5 → Travellers'", () => assertRow("navy", 5, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
   it("row 6 → High Psg", () => assertRow("navy", 6, { benefit: "High Passage" }));
   it("row 7 → +2 Social (rank 5/6 only)", () => assertRow("navy", 7, {
@@ -158,7 +160,7 @@ describe("Marines Material Benefits (TTB p. 24)", () => {
   it("row 3 → +1 Educ", () => assertRow("marines", 3, { attr: { education: 1 } }));
   it("row 4 → Blade", () => assertWeaponRow("marines", 4));
   it("row 5 → Travellers'", () => assertRow("marines", 5, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
   it("row 6 → High Psg", () => assertRow("marines", 6, { benefit: "High Passage" }));
   it("row 7 → +2 Social (rank 5/6 only)", () => assertRow("marines", 7, {
@@ -245,7 +247,7 @@ describe("Belters Material Benefits (CotI p. 6)", () => {
   it("row 3 → Weapon", () => assertWeaponRow("belters", 3));
   it("row 4 → High Psg", () => assertRow("belters", 4, { benefit: "High Passage" }));
   it("row 5 → Travellers'", () => assertRow("belters", 5, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
   it("row 6 → Seeker", () => {
     const got = rowFor("belters", 6);
@@ -277,7 +279,7 @@ describe("Diplomats Material Benefits (CotI p. 6)", () => {
   it("row 5 → +1 Social", () => assertRow("diplomats", 5, { attr: { social: 1 } }));
   it("row 6 → High Psg", () => assertRow("diplomats", 6, { benefit: "High Passage" }));
   it("row 7 → Travellers' (rank 5/6 only)", () => assertRow("diplomats", 7, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
 });
 
@@ -341,7 +343,7 @@ describe("Rogues Material Benefits (CotI p. 8)", () => {
   it("row 4 → Blade", () => assertWeaponRow("rogues", 4));
   it("row 5 → High Psg", () => assertRow("rogues", 5, { benefit: "High Passage" }));
   it("row 6 → Travellers'", () => assertRow("rogues", 6, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
   it("row 7 → no benefit (—, unreachable, Rogues have no ranks)", () => {
     assertRow("rogues", 7, { noop: true });
@@ -354,7 +356,7 @@ describe("Nobles Material Benefits (CotI p. 8)", () => {
   it("row 3 → Gun", () => assertWeaponRow("nobles", 3));
   it("row 4 → Blade", () => assertWeaponRow("nobles", 4));
   it("row 5 → Travellers'", () => assertRow("nobles", 5, {
-    benefit: "Travellers' Aid Society", TAS: true,
+    benefit: "Travellers' Aid Society membership", TAS: true,
   }));
   it("row 6 → Yacht", () => {
     const got = rowFor("nobles", 6);

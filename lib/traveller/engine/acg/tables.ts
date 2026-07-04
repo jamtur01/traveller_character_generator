@@ -90,7 +90,9 @@ export function lookupResolution(
 /** Convert a display label like "Internal Security" to the camelCase
  *  column key the JSON uses, "internalSecurity". */
 export function labelToColumnKey(label: string): string {
-  const trimmed = label.trim();
+  // Strip apostrophes (straight + curly) so "Ship's Troops" -> "shipsTroops"
+  // matches the JSON column key; splitting on them would yield "shipSTroops".
+  const trimmed = label.trim().replace(/['\u2019]/g, "");
   // Already lowercase camelCase?
   if (/^[a-z][a-zA-Z]*$/.test(trimmed)) return trimmed;
   const parts = trimmed.split(/[\s-]+/).filter((p) => p.length > 0);
@@ -145,5 +147,25 @@ export function applyStructuredDms(
   ch: Character,
 ): number {
   return sumPredicateDms(rules, buildPredicateContext(ch));
+}
+
+/** Sum the column-scoped skill-table DMs that apply to the character for a
+ *  1D roll on `column`. JSON skill tables print per-column DMs (e.g. navy
+ *  "DM +4 if O1+") whose `dm` entries carry a `column` filter; without adding
+ *  them the higher (die 7-10) rows are unreachable. Entries with no `column`
+ *  are general. Mirrors the merchantRollAssignment DM pattern. */
+export function columnDmFor(
+  dms: StructuredDm[] | undefined,
+  column: string,
+  ch: Character,
+): number {
+  if (!dms) return 0;
+  return dms
+    .filter((d) => !d.column || d.column === column)
+    .reduce((acc, d) => {
+      const rest: StructuredDm = { ...d };
+      delete rest.column;
+      return acc + applyStructuredDms([rest], ch);
+    }, 0);
 }
 

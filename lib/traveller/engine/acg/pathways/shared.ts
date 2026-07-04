@@ -290,6 +290,10 @@ export interface SkillColumnPolicy {
   enlistedNcoColumn: string;
   enlistedNcoMinRank: string;
   enlistedLowRankColumns: Record<string, string>;
+  /** Fallback low-rank column when the character's branch isn't keyed in
+   *  enlistedLowRankColumns (e.g. Navy, whose "Navy Life" column applies to
+   *  every branch). */
+  enlistedLowRankDefault?: string;
 }
 
 /** The skill-table column for the character under a pathway's
@@ -311,5 +315,6 @@ export function serviceSkillColumnFor(
   const branch = acg.branch ?? "";
   return pol?.enlistedLowRankColumns[branch]
     ?? pol?.enlistedLowRankColumns["army"]
+    ?? pol?.enlistedLowRankDefault
     ?? (branch === "Marines" ? "marineLife" : "armyLife");
 }

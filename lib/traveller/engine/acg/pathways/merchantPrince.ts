@@ -219,7 +219,9 @@ export function merchantEnlist(
   // not automatic. Interactive mode queues a yes/no choice; auto mode
   // skips the Academy unless ch.acgState.attemptMerchantAcademy was
   // pre-set by the UI/caller (defaults to false).
-  if (lineType === "Megacorp" || lineType === "Sector-wide") {
+  const merchantAcademy = getEdition(ch.editionId).data.advancedCharacterGeneration
+    ?.common?.preCareerOptions?.merchantAcademy as { requiresLineType?: string[] } | undefined;
+  if ((merchantAcademy?.requiresLineType ?? []).includes(lineType)) {
     offerMerchantAcademy(ch);
   }
 

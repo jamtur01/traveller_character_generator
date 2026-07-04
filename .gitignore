@@ -52,3 +52,8 @@ next-env.d.ts
 # Agent harness memory/state store (accidentally committed once; never track)
 /data/state_store.db/
 /stream_store/
+
+# Local PDF-extraction references + rendered page scans (derived from the
+# copyrighted rulebooks; audit aids only, not tracked). Also keeps ~120MB of
+# rendered PNGs out of git history.
+/reference/

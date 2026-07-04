@@ -45,10 +45,7 @@ export const RulesSchema = z.looseObject({
   reenlistment: z.object({
     mandatoryOnExactRoll: z.number().optional(),
     mandatoryRetireAfterTerm: z.number().optional(),
-    mandatoryRoll: z.number().optional(),
     voluntaryAnyTerms: z.boolean().optional(),
-    retireAfterCompletedTerm: z.number().optional(),
-    mandatoryRollNote: z.string().optional(),
   }).optional(),
   // Retirement / pension.
   retirement: z.object({
@@ -165,6 +162,20 @@ export const RulesSchema = z.looseObject({
     agingAutoSavesPerTerm: z.number().optional(),
     cashRollCap: z.number().optional(),
     retry: z.unknown().optional(),
+  }).optional(),
+  // Homeworld skill restrictions (MT p. 39) — consumed by
+  // engine/skillRestrictions.ts. Present only in editions with a homeworld
+  // block; modeled here so the consumer reads the validated `ed.rules` view
+  // rather than an unchecked raw `data.rules` cast.
+  homeworldSkillRestrictions: z.looseObject({
+    rule: z.string().optional(),
+    source: z.string().optional(),
+    overrideTarget: z.number(),
+    exemptServices: z.array(z.string()),
+    weaponLawLowerServices: z.array(z.string()).optional(),
+    vehicleSkillTech: z.record(z.string(), z.string()),
+    weaponSkillTech: z.record(z.string(), z.string()),
+    weaponSkillMaxLaw: z.record(z.string(), z.string()),
   }).optional(),
 });
 

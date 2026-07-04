@@ -24,7 +24,7 @@ export const survivalStep: StepFn = ({ ch, service, edition }) => {
     const reason = `injured in service — only ${short} years of this term served`;
     // doServiceTermStep already added the full term's years; rewind to the
     // short-term length.
-    ch.age -= (s?.fullTermYears ?? 4) - short;
+    ch.age -= ch.fullTermYears() - short;
     ch.enterShortTerm(reason);
     ch.log(ev.statusChange("shortTerm", reason));
     return;

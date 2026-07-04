@@ -25,7 +25,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { extendedHex } from "@/lib/traveller/formatting";
 import type { Rng } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
@@ -103,17 +102,53 @@ interface EducationSpec {
   roll: string;
   dms: Array<{ attribute: string; min: number; dm: number }>;
 }
-interface HonorsSpec extends ThrowSpec { benefit?: string }
+interface HonorsSpec extends ThrowSpec { benefit?: string; educationFloor?: number }
+interface OtcSpec {
+  target: number;
+  dms: Array<{ attribute: string; min: number; dm: number }>;
+  autoEnlist?: { pathway: AcgPathwayId; branchOptions: string[] };
+}
+/** A pre-career admission/attendance gate (Flight School). Each populated
+ *  list names prior schools that satisfy the gate under a given condition;
+ *  the gate passes if ANY clause matches. */
+interface PreCareerGateSpec {
+  /** Honors graduate of one of these schools AND currently commissioned. */
+  honorsWithCommission?: string[];
+  /** Honors graduate of one of these schools (commission irrelevant). */
+  honorsAny?: string[];
+  /** Graduate (honors or not) of one of these schools. */
+  gradAny?: string[];
+  /** Graduate of one of these schools AND currently commissioned. */
+  gradWithCommission?: string[];
+}
+/** One selectable service for a Medical School direct commission. */
+interface MedicalCommissionBranch {
+  label: string;
+  branch: PreCareerResult["branch"];
+  pathway: AcgPathwayId;
+}
 interface PreCareerSpec {
   displayName?: string;
   uiSummary?: string;
   eligibility?: { attribute: string; min: number };
   admission?: ThrowSpec;
   success?: ThrowSpec;
-  otc?: ThrowSpec;
+  otc?: OtcSpec;
   notc?: ThrowSpec;
   education?: EducationSpec;
   honors?: HonorsSpec;
+  /** Medical School: prior honors graduations that qualify entry (B5). */
+  honorsPrereq?: string[];
+  /** Flight School: gate for who may attend at all (B5). */
+  admissionPrereq?: PreCareerGateSpec;
+  /** Flight School: gate for automatic admission without a roll (B5). */
+  autoAdmit?: PreCareerGateSpec;
+  /** Merchant Academy: eligible enlistment line types (B6). */
+  requiresLineType?: string[];
+  /** Academy/school wash-out draft destination service (B8). */
+  washOutDraftedInto?: string;
+  /** Medical School: services that accept a direct O3 commission (B7). */
+  directCommissionBranches?: MedicalCommissionBranch[];
   [k: string]: unknown;
 }
 
@@ -145,29 +180,37 @@ interface PreCareerResult {
   notes: string[];
 }
 
-/** Honors gates: medical school requires honors from college, naval
- *  academy, or military academy. Flight school requires a commissioned
- *  college honors graduate (i.e. college honors + NOTC/OTC commission),
- *  any Naval Academy graduate (honors or not), or any character holding
- *  a NOTC/Merchant Academy commission (PM p. 47). */
+/** Honors gates for Medical / Flight School (PM p. 47), read from the
+ *  edition JSON. Medical School requires an honors graduation from one of
+ *  medicalSchool.honorsPrereq; Flight School attendance is gated by
+ *  flightSchool.admissionPrereq. */
 function honorsPrereqMet(ch: Character, opt: PreCareerOption): boolean {
-  const honors = ch.acgState?.honorsGraduations ?? [];
-  const schools = ch.acgState?.schoolsAttended ?? [];
+  const spec = specFor(ch.editionId, opt);
   if (opt === "medicalSchool") {
-    return honors.includes("college") || honors.includes("navalAcademy") ||
-      honors.includes("militaryAcademy");
+    const honors = ch.acgState?.honorsGraduations ?? [];
+    return (spec?.honorsPrereq ?? []).some((s) => honors.includes(s));
   }
   if (opt === "flightSchool") {
-    const hasCommission =
-      ch.acgState?.preCareerCommission === true || ch.commissioned;
-    const collegeHonorsCommissioned =
-      honors.includes("college") && hasCommission;
-    const naAnyGrad = schools.includes("navalAcademy");
-    const merchantAcademyCommissioned =
-      schools.includes("merchantAcademy") && hasCommission;
-    return collegeHonorsCommissioned || naAnyGrad || merchantAcademyCommissioned;
+    return evalPreCareerGate(ch, spec?.admissionPrereq);
   }
   return true;
+}
+
+/** Evaluate a pre-career gate spec (Flight School admission / auto-admit)
+ *  against the character's prior graduations and commission status. Each
+ *  populated list contributes an OR clause (PM p. 47 / mt-acg-common §1f). */
+function evalPreCareerGate(ch: Character, gate: PreCareerGateSpec | undefined): boolean {
+  if (!gate) return false;
+  const honors = ch.acgState?.honorsGraduations ?? [];
+  const schools = ch.acgState?.schoolsAttended ?? [];
+  const commissioned = ch.acgState?.preCareerCommission === true || ch.commissioned;
+  const anyOf = (list: string[] | undefined, set: string[]): boolean =>
+    (list ?? []).some((s) => set.includes(s));
+  if (anyOf(gate.honorsAny, honors)) return true;
+  if (anyOf(gate.gradAny, schools)) return true;
+  if (commissioned && anyOf(gate.honorsWithCommission, honors)) return true;
+  if (commissioned && anyOf(gate.gradWithCommission, schools)) return true;
+  return false;
 }
 
 function specFor(editionId: string, opt: PreCareerOption): PreCareerSpec | null {
@@ -230,7 +273,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Merchant Academy." Block admission if those conditions aren't met.
   if (opt === "merchantAcademy") {
     const lineType = ch.acgState?.lineType;
-    const allowed = lineType === "Megacorp" || lineType === "Sector-wide";
+    const allowed = (spec.requiresLineType ?? []).includes(lineType ?? "");
     if (!allowed) {
       out.notes.push(
         `Merchant Academy requires enlistment in a Megacorporation or Sector-wide line ` +
@@ -262,13 +305,8 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // with honors may attend flight school simply by applying"). Other
   // Naval Academy graduates (without honors) and commissioned Merchant
   // Academy graduates must roll for admission.
-  const flightAutoAdmit = opt === "flightSchool" && (() => {
-    const honors = ch.acgState?.honorsGraduations ?? [];
-    const hasCommission =
-      ch.acgState?.preCareerCommission === true || ch.commissioned;
-    return (honors.includes("college") && hasCommission) ||
-      honors.includes("navalAcademy");
-  })();
+  const flightAutoAdmit =
+    opt === "flightSchool" && evalPreCareerGate(ch, spec.autoAdmit);
 
   // Admission.
   if (spec.admission && !flightAutoAdmit) {
@@ -316,9 +354,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       //   Medical School: age 23, may enlist normally OR short term if academy grad.
       //   Flight School: age (varies), reports for duty in Navy/Marines (short).
       out.firstTermShort = true;
-      if (opt === "navalAcademy") out.draftedInto = "navy";
-      else if (opt === "militaryAcademy" || opt === "merchantAcademy") out.draftedInto = "army";
-      else if (opt === "flightSchool") out.draftedInto = "navy";
+      const drafted = spec.washOutDraftedInto;
+      if (drafted === "army" || drafted === "navy" || drafted === "marines") {
+        out.draftedInto = drafted;
+      }
       return out;
     }
     out.graduated = true;
@@ -342,18 +381,21 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       const r = ch.rng.roll(2);
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
-        out.autoEnlistPathway = "mercenary";
-        // F15 — PM p. 47 line 2782-2783: "A character in OTC is
-        // automatically enlisted in (and commissioned as an officer in)
-        // the Army or the Marines." Branch is a player choice. The
-        // promotion event is logged AFTER the branch is decided so the
-        // log line includes "(Army)" or "(Marines)" with no duplicate.
+        const auto = spec.otc.autoEnlist;
+        out.autoEnlistPathway = auto?.pathway ?? "mercenary";
+        const branchOptions = auto?.branchOptions ?? ["Army", "Marines"];
+        // PM p. 47 line 2782-2783: an OTC graduate is automatically
+        // enlisted in (and commissioned as an officer in) the Army or the
+        // Marines. Branch is a player choice; the promotion event is logged
+        // AFTER the branch is decided so the log line includes "(Army)" or
+        // "(Marines)". Pathway + branch options are read from
+        // college.otc.autoEnlist (B13).
         if (ch.choiceMode === "interactive") {
           ch.pickOrDefer({
             kind: "cascade",
             label: "OTC commission — choose your service branch",
-            options: ["Army", "Marines"],
-            preferred: ["Army"],
+            options: branchOptions,
+            preferred: [branchOptions[0] ?? "Army"],
             context: { source: "otcBranch" },
             onResolve: (ch, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
@@ -412,7 +454,13 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         // the honors bump are alternative paths to the same Edu value.
         // Take the larger of (existing roll, honors target) so honors
         // never makes the character worse off than the plain roll.
-        const target = Math.max(10, ch.attributes.education + 1);
+        const floor = spec.honors.educationFloor;
+        if (floor === undefined) {
+          throw new Error(
+            `Edition "${ch.editionId}" college.honors is missing educationFloor.`,
+          );
+        }
+        const target = Math.max(floor, ch.attributes.education + 1);
         const honorsDelta = target - ch.attributes.education;
         const rollDelta = out.attributeChanges.education ?? 0;
         out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
@@ -437,46 +485,35 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       out.autoEnlistPathway = auto.pathway;
     }
   } else if (opt === "medicalSchool" && out.graduated) {
-    // PM p. 47: "He may apply for a direct commission (which is granted
-    // automatically) as rank O3 in the Navy (Medical Branch), Army,
-    // Scouts, or Merchants (Purser Department Medic). Marines have no
-    // medical officers; they are treated by Navy doctors." Branch is
-    // a player choice; in interactive mode we queue a pendingChoice,
-    // in auto mode we default to Navy (Medical Branch).
+    // PM p. 47 / mt-acg-common §1e: a graduate may take an automatic O3
+    // direct commission in one of medicalSchool.directCommissionBranches
+    // (Navy Medical Branch, Army, Scouts, or Merchants Purser; Marines are
+    // excluded — they have no medical officers). Branch is a player choice;
+    // auto mode and the pending-choice default both use the first listed
+    // service (Navy). Branch/pathway mapping is data-driven (B7).
     out.commissioned = true;
     out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O3";
     out.medicalDirectCommission = true;
+    const branches =
+      (pco?.directCommissionBranches as MedicalCommissionBranch[] | undefined) ?? [];
+    const fallback = branches[0];
     if (ch.choiceMode === "interactive") {
       ch.pickOrDefer({
         kind: "cascade",
         label: "Medical School direct commission — choose service branch",
-        options: ["Navy (Medical Branch)", "Army", "Scouts", "Merchants (Purser)"],
-        preferred: ["Navy (Medical Branch)"],
+        options: branches.map((b) => b.label),
+        preferred: fallback ? [fallback.label] : [],
         context: { source: "medicalCommission" },
         onResolve: (ch, chosen) => {
-          if (chosen === "Army") {
-            ch.requireAcgState().preCareerBranch = "army";
-            ch.acgPathway = "mercenary";
-          } else if (chosen === "Scouts") {
-            // Scout branch isn't a value in the union — store separately.
-            ch.requireAcgState().preCareerBranch = null;
-            ch.acgPathway = "scout";
-          } else if (chosen === "Merchants (Purser)") {
-            ch.requireAcgState().preCareerBranch = "merchants";
-            ch.acgPathway = "merchantPrince";
-          } else {
-            ch.requireAcgState().preCareerBranch = "navy";
-            ch.acgPathway = "navy";
-          }
+          const picked = branches.find((b) => b.label === chosen) ?? fallback;
+          if (!picked) return;
+          ch.requireAcgState().preCareerBranch = picked.branch;
+          ch.acgPathway = picked.pathway;
         },
       });
-      // Default while choice is pending: navy.
-      out.branch = "navy";
-      out.autoEnlistPathway = "navy";
-    } else {
-      out.branch = "navy";
-      out.autoEnlistPathway = "navy";
     }
+    out.branch = fallback?.branch ?? "navy";
+    out.autoEnlistPathway = fallback?.pathway ?? "navy";
   }
 
   return out;
@@ -664,13 +701,10 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   ch.age += r.ageGainedYears;
   for (const [attr, delta] of Object.entries(r.attributeChanges)) {
     const a = attr as keyof Character["attributes"];
-    // Clamp both ends (PM caps Edu at 15; negative deltas shouldn't push
-    // attributes below 0 even though pre-career deltas are normally
-    // positive — be defensive in case a future option declares one).
-    ch.attributes[a] = Math.max(0, Math.min(15, ch.attributes[a] + delta));
-    ch.log(ev.attributeChange(
-      attr, delta, `now ${extendedHex(ch.attributes[a])}`,
-    ));
+    // Route through improveAttribute so the edition's rules.attributeCaps
+    // (max/min/socialMin) apply and the change is logged consistently,
+    // rather than a hardcoded 0..15 clamp that bypasses socialMin.
+    ch.improveAttribute(a, delta);
   }
   for (const [skill, lvl] of r.skills) {
     ch.addSkill(skill, lvl, preCareerLabel(opt, ch.editionId));

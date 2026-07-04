@@ -13,8 +13,11 @@ import { awardBrownie, bpAwardFor } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { event as ev } from "@/lib/traveller/history";
 import {
-  serviceSkillColumnFor, type SkillColumnPolicy,
+  serviceSkillColumnFor, clampedRoll, type SkillColumnPolicy,
 } from "@/lib/traveller/engine/acg/pathways/shared";
+import {
+  columnDmFor, type StructuredDm,
+} from "@/lib/traveller/engine/acg/tables";
 import {
   buildPredicateContext, evaluatePredicate, type Predicate,
 } from "@/lib/traveller/engine/predicate";
@@ -31,15 +34,15 @@ interface PathwayData {
   specialAssignmentDetails?: Record<string, SchoolSpec>;
   combatArms?: string[];
   branches?: string[];
-  mos?: { rows: Array<Record<string, unknown>> };
+  mos?: { rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   specialistSchool?: {
     rows: Array<Record<string, unknown>>;
     notes?: string[];
     schoolingThreshold?: number;
   };
-  serviceSkills?: { rows: Array<Record<string, unknown>> };
+  serviceSkills?: { rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   skillColumnPolicy?: SkillColumnPolicy;
-  branchSkills?: { rows: Array<Record<string, unknown>> };
+  branchSkills?: { rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   ranks?: { officer: Array<unknown[]> };
 }
 
@@ -226,7 +229,9 @@ function runSkillBatch(
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const armKey = (ch.acgState.combatArm ?? "Infantry").toLowerCase();
-  const r = ch.rng.roll(1);
+  const maxDie = Math.max(...data.mos.rows.map((row) => row.die as number));
+  const dm = columnDmFor(data.mos.dms, armKey, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = data.mos.rows.find((row) => row.die === r);
   const skill = row?.[armKey];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (MOS)`);
@@ -235,7 +240,9 @@ function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
 function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
   const branchKey = (ch.acgState.branch ?? "Line").toLowerCase();
-  const r = ch.rng.roll(1);
+  const maxDie = Math.max(...data.branchSkills.rows.map((row) => row.die as number));
+  const dm = columnDmFor(data.branchSkills.dms, branchKey, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = data.branchSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const candidates = [branchKey, branchKey === "line" ? "lineCrew" : branchKey,
@@ -268,10 +275,12 @@ function rollOnSpecialistSchool(
 
 function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.serviceSkills) return;
-  const r = ch.rng.roll(1);
+  const col = serviceSkillColumnFor(ch, data.skillColumnPolicy);
+  const maxDie = Math.max(...data.serviceSkills.rows.map((row) => row.die as number));
+  const dm = columnDmFor(data.serviceSkills.dms, col, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
-  const col = serviceSkillColumnFor(ch, data.skillColumnPolicy);
   const skill = row[col];
   if (typeof skill === "string") applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
 }

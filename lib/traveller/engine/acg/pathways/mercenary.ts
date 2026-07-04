@@ -25,7 +25,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyDmRules, labelToColumnKey, lookupResolution,
+  applyDmRules, columnDmFor, labelToColumnKey, lookupResolution,
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
@@ -85,7 +85,7 @@ export interface MercenaryData {
     marines?: { fromAssignments: string[]; toAssignment: string };
   };
   specialistSchool?: Record<string, unknown>;
-  serviceSkills: { columns: string[]; rows: Array<Record<string, unknown>> };
+  serviceSkills: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   mos: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   ranks: { enlisted: Array<[string, string]>; officer: Array<[string, string, number]> };
   reenlistment: {
@@ -371,7 +371,9 @@ function mercenaryAvailableSkillColumns(ch: Character): string[] {
 
 function rollMercenarySkillFromColumn(ch: Character, col: string): void {
   const data = dataFor(ch);
-  const r = ch.rng.roll(1);
+  const maxDie = Math.max(...data.serviceSkills.rows.map((row) => row.die as number));
+  const dm = columnDmFor(data.serviceSkills.dms, col, ch);
+  const r = clampedRoll(ch, 1, dm, 1, maxDie);
   const row = data.serviceSkills.rows.find((row) => row.die === r);
   if (!row) return;
   const skill = row[col] as string | undefined;
