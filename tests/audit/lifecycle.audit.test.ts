@@ -69,9 +69,12 @@ describe("MT lifecycle.terms (PM p. 17)", () => {
     expect(s?.config?.doubleBonusOvershoot).toBe(4);
   });
 
-  it("allocateSkills carries term1Bonus=true (PM p. 17: 2 skills for first term)", () => {
+  it("allocateSkills carries structured term1Bonus (PM p. 15/17: 2 skills for first term)", () => {
     const a = terms.find((t) => t.id === "allocateSkills");
-    expect(a?.config?.term1Bonus).toBe(true);
+    expect(a?.config?.term1Bonus).toMatchObject({
+      extraSkills: 1,
+      onlyForSkillsPerTerm: 1,
+    });
   });
 
   it("autoSkillTerm has no config (its trigger is rank/service from JSON)", () => {

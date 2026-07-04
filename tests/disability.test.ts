@@ -106,6 +106,8 @@ describe("F4/F17: drafted no OCS first term", () => {
     const acg = c.requireAcgState();
     acg.rankCode = "E5";
     acg.isOfficer = false;
+    // Enlistment is skipped in this fixture; set the arm it would set.
+    c.requireMercenaryAcg().combatArm = "Infantry";
     applyMercenarySchool(c, "OCS");
     expect(c.acgState?.isOfficer).toBe(false);
     expect(c.acgState?.rankCode).toBe("E5");
@@ -123,6 +125,8 @@ describe("F4/F17: drafted no OCS first term", () => {
     const acg = c.requireAcgState();
     acg.rankCode = "E5";
     acg.isOfficer = false;
+    // Enlistment is skipped in this fixture; set the arm it would set.
+    c.requireMercenaryAcg().combatArm = "Infantry";
     applyMercenarySchool(c, "OCS");
     expect(c.acgState?.isOfficer).toBe(true);
   });

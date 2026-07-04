@@ -7,7 +7,8 @@
 //   2. Else if rules.skillEligibility.perTermExceptions[serviceKey] is set,
 //      use that value.
 //   3. Else use subsequentTerm (default 1).
-//   4. On the first term, add config.term1Bonus = 1 extra skill point.
+//   4. On the first term, add config.term1Bonus.extraSkills for services
+//      granting exactly config.term1Bonus.onlyForSkillsPerTerm skills/term.
 //   5. Term-1 doubling for CT's "initialTerm": 2 is encoded by giving 1 by
 //      default + 1 first-term bonus.
 
@@ -18,6 +19,13 @@ interface SkillEligibility {
   initialTerm?: number;
   subsequentTerm?: number;
   perTermExceptions?: Record<string, number>;
+}
+
+/** Structured first-term bonus (PM p. 15/17), from
+ *  lifecycle.terms[allocateSkills].config.term1Bonus. */
+interface Term1Bonus {
+  extraSkills: number;
+  onlyForSkillsPerTerm: number;
 }
 
 export const allocateSkillsStep: StepFn = ({
@@ -36,7 +44,11 @@ export const allocateSkillsStep: StepFn = ({
   // 1. Explicit per-service skillsPerTerm from ServiceData wins.
   if (typeof service.skillsPerTerm === "number") {
     let n = service.skillsPerTerm;
-    if (config.term1Bonus && service.skillsPerTerm === 1 && ch.terms === 1) n += 1;
+    const bonus = config.term1Bonus as Term1Bonus | undefined;
+    if (bonus && ch.terms === 1 &&
+        service.skillsPerTerm === bonus.onlyForSkillsPerTerm) {
+      n += bonus.extraSkills;
+    }
     ch.skillPoints += n;
     return;
   }

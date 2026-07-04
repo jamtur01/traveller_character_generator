@@ -8,6 +8,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import type { PathwaySpec, ResolveContext } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
   buildPathwaySpecFromConfig, type PathwayCallbacks,
@@ -445,10 +446,13 @@ export interface SkillColumnPolicy {
   enlistedNcoColumn: string;
   enlistedNcoMinRank: string;
   enlistedLowRankColumns: Record<string, string>;
-  /** Fallback low-rank column when the character's branch isn't keyed in
+  /** Low-rank column when the character's branch isn't keyed in
    *  enlistedLowRankColumns (e.g. Navy, whose "Navy Life" column applies to
    *  every branch). */
   enlistedLowRankDefault?: string;
+  /** Mercenary only (PM p. 51): the Service Skills column Marines roll on
+   *  while assigned to Ship's Troops, regardless of rank. */
+  shipsTroopsColumn?: string;
 }
 
 /** The skill-table column for the character under a pathway's
@@ -459,17 +463,20 @@ export interface SkillColumnPolicy {
 export function serviceSkillColumnFor(
   ch: Character, pol: SkillColumnPolicy | undefined,
 ): string {
+  const policy = requireRule(
+    pol, "acg.<pathway>.skillColumnPolicy", "PM p. 51/55",
+  );
   const acg = ch.requireAcgState();
   if (acg.isOfficer) {
-    return acg.inCommand
-      ? pol?.officerInCommand ?? "commandSkills"
-      : pol?.officerStaff ?? "staffSkills";
+    return acg.inCommand ? policy.officerInCommand : policy.officerStaff;
   }
-  const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 3;
-  if (rankNum(acg.rankCode) >= ncoMin) return pol?.enlistedNcoColumn ?? "ncoSkills";
+  if (rankNum(acg.rankCode) >= rankNum(policy.enlistedNcoMinRank)) {
+    return policy.enlistedNcoColumn;
+  }
   const branch = branchOf(acg);
-  return pol?.enlistedLowRankColumns[branch]
-    ?? pol?.enlistedLowRankColumns["army"]
-    ?? pol?.enlistedLowRankDefault
-    ?? (branch === "Marines" ? "marineLife" : "armyLife");
+  return requireRule(
+    policy.enlistedLowRankColumns[branch] ?? policy.enlistedLowRankDefault,
+    `acg.<pathway>.skillColumnPolicy.enlistedLowRankColumns["${branch}"] ` +
+    "(or enlistedLowRankDefault)", "PM p. 51/55",
+  );
 }

@@ -230,6 +230,8 @@ describe("C2: Frozen Watch advances chronological age but not physical age", () 
   it("cold-sleep years pull apparent (physical) age behind chronological age", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.999); // aging saves all pass
     const c = acgChar("navy");
+    // Enlistment is skipped in this fixture; set the branch it would set.
+    c.requireNavyAcg().branch = "Line";
     c.age = 50;
 
     // Eight one-year Frozen Watch assignments (two four-year cold-sleep
@@ -311,5 +313,74 @@ describe("C4: Purser merchant rolls the purser column, not deck", () => {
     // Teeth: pre-fix always took the first column (deck[6]="Leader").
     expect(skillLevel(c, "Liaison")).toBe(1);
     expect(skillLevel(c, "Leader")).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rules-lock fix — garrison resolution now routes through the JSON-declared
+// assignmentResolution.garrisonDuty row (PM p. 49): survival automatic, no
+// decoration or skills, enlisted promotion on 7+. Pre-fix the code hardcoded
+// "automatic survival, no rewards" and DROPPED the enlisted 7+ promotion
+// throw entirely.
+// ---------------------------------------------------------------------------
+
+describe("garrison duty resolves via assignmentResolution.garrisonDuty (PM p. 49)", () => {
+  it("an enlisted mercenary on Garrison rolls the 7+ promotion throw and advances", () => {
+    // Constant die 6 -> 2D=12 >= 7: promotion passes. E1 -> E2.
+    vi.spyOn(Math, "random").mockReturnValue(d6(6));
+    const c = acgChar("mercenary");
+    const m = c.requireMercenaryAcg();
+    m.branch = "Army";
+    m.combatArm = "Infantry";
+    c.acgState!.rankCode = "E1";
+    c.acgState!.currentAssignment = "Garrison";
+
+    mercenaryResolveAssignment(c, "Garrison");
+
+    // Teeth: pre-fix garrison skipped resolution entirely — no Promotion
+    // roll fired and the rank stayed E1 forever on garrison years.
+    expect(c.acgState!.rankCode).toBe("E2");
+    const promoRolls = c.events.filter(
+      (e) => e.kind === "roll" && e.rollName === "Promotion",
+    );
+    expect(promoRolls.length).toBe(1);
+    // No decoration and no skill can be earned on garrison duty.
+    expect(c.acgState!.decorations.length).toBe(0);
+    expect(c.skills.length).toBe(0);
+    // The year is still recorded in the assignment history.
+    expect(c.acgState!.assignmentHistory).toContain("Garrison");
+  });
+
+  it("a failed 7+ throw (2D=6) leaves the rank unchanged", () => {
+    vi.spyOn(Math, "random").mockReturnValue(d6(3));
+    const c = acgChar("mercenary");
+    const m = c.requireMercenaryAcg();
+    m.branch = "Army";
+    m.combatArm = "Infantry";
+    c.acgState!.rankCode = "E1";
+    c.acgState!.currentAssignment = "Garrison";
+
+    mercenaryResolveAssignment(c, "Garrison");
+
+    expect(c.acgState!.rankCode).toBe("E1");
+  });
+
+  it("officers do not roll the enlisted-only garrison promotion", () => {
+    vi.spyOn(Math, "random").mockReturnValue(d6(6));
+    const c = acgChar("mercenary");
+    const m = c.requireMercenaryAcg();
+    m.branch = "Army";
+    m.combatArm = "Infantry";
+    c.acgState!.rankCode = "O1";
+    c.acgState!.isOfficer = true;
+    c.acgState!.currentAssignment = "Garrison";
+
+    mercenaryResolveAssignment(c, "Garrison");
+
+    expect(c.acgState!.rankCode).toBe("O1");
+    const promoRolls = c.events.filter(
+      (e) => e.kind === "roll" && e.rollName === "Promotion",
+    );
+    expect(promoRolls.length).toBe(0);
   });
 });

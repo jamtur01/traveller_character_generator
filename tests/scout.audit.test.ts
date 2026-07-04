@@ -42,6 +42,15 @@ describe("Scout PM audit — enlistment (PM p. 58)", () => {
     expect(admin[0]?.[0]).toBe("IS-10");
     expect(admin[8]?.[0]).toBe("IS-18");
   });
+
+  it("PM p. 56: college graduates and med-school commissions enter the Bureaucracy; others the Field", () => {
+    const scout = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.scout;
+    expect(scout?.divisionPlacement).toMatchObject({
+      collegeGraduate: "bureaucracy",
+      medSchoolCommission: "bureaucracy",
+      default: "field",
+    });
+  });
 });
 
 describe("Scout PM audit — reenlistment (PM p. 59)", () => {

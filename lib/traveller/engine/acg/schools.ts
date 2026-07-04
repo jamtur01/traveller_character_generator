@@ -251,17 +251,27 @@ function runSkillBatch(
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const acg = ch.acgState;
-  const combatArm = acg.pathway === "mercenary" ? acg.combatArm : "";
-  const armKey = (combatArm ?? "Infantry").toLowerCase();
-  rollSkillFromColumn(ch, data.mos, armKey, `${schoolName} (MOS)`);
+  const combatArm = acg.pathway === "mercenary" ? acg.combatArm : null;
+  if (!combatArm) {
+    throw new Error(
+      `${schoolName}: the MOS roll requires a mercenary combat arm — ` +
+      "enlistment must assign it first (PM p. 50)",
+    );
+  }
+  rollSkillFromColumn(ch, data.mos, combatArm.toLowerCase(), `${schoolName} (MOS)`);
 }
 
 function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
   const acg = ch.acgState;
   const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
-  const branchKey = (branch || "Line").toLowerCase();
-  const candidates = branchSkillCandidates(branchKey);
+  if (!branch) {
+    throw new Error(
+      `${schoolName}: the branch-skill roll requires a service branch — ` +
+      "enlistment must assign it first (PM p. 50/52)",
+    );
+  }
+  const candidates = branchSkillCandidates(branch.toLowerCase());
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
     `${schoolName} (branch skills)`);
 }

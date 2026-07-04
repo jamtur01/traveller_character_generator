@@ -34,6 +34,36 @@ describe("Navy PM audit — enlistment (PM p. 52)", () => {
   it("System Squadron requires homeworld tech Early Stellar+", () => {
     const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
     expect(navy?.enlistment.systemSquadron.requirement).toMatch(/Early Stellar/i);
+    // The enforced threshold is the structured techMinimum field.
+    expect(navy?.enlistment.systemSquadron.techMinimum).toBe("Early Stellar");
+  });
+
+  it("PM p. 52: subsector tech code floors at Early Stellar", () => {
+    const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
+    expect(navy?.enlistment.subsectorTechMinimum).toBe("Early Stellar");
+  });
+
+  it("PM p. 52/47: medical/flight school graduates join the Medical/Flight branch", () => {
+    const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
+    const bySchool = navy?.preCareerFleetAssignment?.bySchool;
+    expect(bySchool?.medicalSchool).toMatchObject({
+      fleet: "imperialNavy", branch: "Medical",
+    });
+    expect(bySchool?.flightSchool).toMatchObject({ branch: "Flight" });
+  });
+
+  it("every skillColumnPolicy column names a real serviceSkills column", () => {
+    const navy = getEdition("mt-megatraveller").data.advancedCharacterGeneration?.navy;
+    const pol = navy?.skillColumnPolicy;
+    const columns = navy?.serviceSkills?.columns ?? [];
+    expect(pol).toBeDefined();
+    const referenced = [
+      pol!.officerInCommand, pol!.officerStaff, pol!.enlistedNcoColumn,
+      pol!.enlistedLowRankDefault, ...Object.values(pol!.enlistedLowRankColumns),
+    ];
+    for (const col of referenced) {
+      expect(columns, `policy column "${col}"`).toContain(col);
+    }
   });
 
   it("Navy starts at E1", () => {

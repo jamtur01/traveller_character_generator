@@ -149,8 +149,15 @@ export function enlist(snap: ChargenSnapshot, opts: EnlistOptions): ChargenSnaps
   const ch = cloneCharacter(snap.character);
   ch.showHistory = opts.verbose ? "verbose" : "simple";
   if (ch.useAcg && ch.acgPathway) {
+    // PM p. 44: Merchant Academy may only be attempted after enlisting in a
+    // Megacorp or Sector-wide line — the eligible line types are read from
+    // acg.common.preCareerOptions.merchantAcademy.requiresLineType (the same
+    // read preCareer.ts's admission gate performs).
+    const merchantAcademy = getEdition(ch.editionId).data
+      .advancedCharacterGeneration?.common?.preCareerOptions?.merchantAcademy as
+      { requiresLineType?: string[] } | undefined;
     if (ch.acgPathway === "merchantPrince" &&
-        (opts.acgLineType === "Megacorp" || opts.acgLineType === "Sector-wide") &&
+        (merchantAcademy?.requiresLineType ?? []).includes(opts.acgLineType) &&
         opts.acgMerchantAcademy) {
       // Stash attemptMerchantAcademy on acgState before beginAcg
       // consumes it. Initialize acgState if it doesn't exist yet.

@@ -25,13 +25,13 @@
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyDmRules, labelToColumnKey, lookupResolution,
+  applyDmRules, labelToColumnKey, lookupResolution, parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
-import {
-  applyOnce, markComplete, resetIfComplete, alreadyApplied, markApplied,
-} from "@/lib/traveller/engine/acg/subStepCache";
+import { alreadyApplied, markApplied } from "@/lib/traveller/engine/acg/subStepCache";
+import { requireRule } from "@/lib/traveller/editions/strict";
+import type { AssignmentResolution } from "@/lib/traveller/engine/acg/state";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
@@ -76,7 +76,7 @@ export interface MercenaryData {
     rows: Array<Record<string, unknown>>;
     dms?: StructuredDm[];
     notes?: string[];
-  }>;
+  } | GarrisonResolution>;
   specialAssignments: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   specialAssignmentDetails?: Record<string, unknown>;
   combatAssignments?: string[];
@@ -265,28 +265,54 @@ const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
 export const validateMercenaryConfig = REGISTRY.validate;
 function getMercenarySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 
+/** PM p. 49 Garrison Duty resolution (assignmentResolution.garrisonDuty):
+ *  applies to assignments with no column on the combat-arm sub-table. */
+interface GarrisonResolution {
+  survival: string;
+  decoration: string;
+  skills: string;
+  enlistedPromotion: string;
+}
+
 /** Resolve one assignment via the JSON-driven phase runner. */
 export function mercenaryResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
   const acg = ch.requireMercenaryAcg();
   const arm = acg.combatArm!;
-  const resKey = data.combatArmResolution?.[arm] ?? "commando";
+  const resKey = requireRule(
+    data.combatArmResolution?.[arm],
+    `acg.mercenary.combatArmResolution["${arm}"]`, "PM p. 49",
+  );
   const resTable = data.assignmentResolution[resKey];
-  if (!resTable) throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
+  if (!resTable || !("columns" in resTable)) {
+    throw new Error(`Resolution sub-table "${resKey}" missing for mercenary`);
+  }
 
-  // Garrison-style escape: assignments not in resTable.columns survive
-  // with no decoration or skills.
+  // PM p. 49: assignments without a column on the combat-arm sub-table
+  // (e.g. Garrison, Training) resolve on the Garrison Duty row instead:
+  // automatic survival, no decoration or skills, enlisted promotion 7+.
   const assignmentCol = labelToColumnKey(assignment);
   if (!resTable.columns.includes(assignmentCol)) {
-    resetIfComplete(ch);
-    applyOnce(ch, "garrisonRecorded", () => {
-      ch.log(ev.raw(
-        `${assignment}: garrison-style — automatic survival, no rewards`,
-        "verbose",
-      ));
-      ch.requireAcgState().assignmentHistory.push(assignment);
+    const rawGarrison = data.assignmentResolution["garrisonDuty"];
+    const garrison = requireRule(
+      rawGarrison && !("columns" in rawGarrison) ? rawGarrison : undefined,
+      "acg.mercenary.assignmentResolution.garrisonDuty", "PM p. 49",
+    );
+    const res: AssignmentResolution = {
+      survival: parseResolutionTarget(garrison.survival).target,
+      decoration: parseResolutionTarget(garrison.decoration).target,
+      promotion: parseResolutionTarget(garrison.enlistedPromotion).target,
+      skills: parseResolutionTarget(garrison.skills).target,
+      // The garrison promotion throw is enlisted-only ("enlistedPromotion");
+      // the phase runner's officer gate enforces it.
+      promotionOfficersBarred: true,
+    };
+    // The garrisonDuty row declares no DM rules; decorationDmStrategy is
+    // moot (survival auto, decoration none) and promotion takes no DM.
+    runPhases(getMercenarySpec(ch), {
+      ch, assignment, resTable, res,
+      dms: { survival: 0, decoration: 0, promotion: 0, skills: 0 },
     });
-    markComplete(ch);
     return;
   }
   const res = lookupResolution(resTable, assignment);
@@ -307,13 +333,20 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 function rollMercenarySkill(ch: Character): void {
   // Ship's Troops takes precedence for Marines (manual: ship-troops column
   // is available to Marines on Ship's Troops assignment regardless of rank).
-  // The "Ship's Troops" label comes from JSON's assignmentReroutes.marines
-  // toAssignment so the string lives in one place.
+  // Both the assignment label and the column it maps to are strict-read
+  // from JSON (assignmentReroutes.marines.toAssignment /
+  // skillColumnPolicy.shipsTroopsColumn) so each lives in one place.
   const data = dataFor(ch);
-  const shipsTroopsLabel = data.assignmentReroutes?.marines?.toAssignment ?? "Ship's Troops";
+  const shipsTroopsLabel = requireRule(
+    data.assignmentReroutes?.marines?.toAssignment,
+    "acg.mercenary.assignmentReroutes.marines.toAssignment", "PM p. 48",
+  );
   if (ch.requireMercenaryAcg().branch === "Marines" &&
       ch.requireAcgState().currentAssignment === shipsTroopsLabel) {
-    rollMercenarySkillFromColumn(ch, "shipboard");
+    rollMercenarySkillFromColumn(ch, requireRule(
+      data.skillColumnPolicy?.shipsTroopsColumn,
+      "acg.mercenary.skillColumnPolicy.shipsTroopsColumn", "PM p. 51",
+    ));
     return;
   }
   if (ch.choiceMode === "interactive") {
@@ -339,19 +372,29 @@ function rollMercenarySkill(ch: Character): void {
 }
 
 function mercenaryAvailableSkillColumns(ch: Character): string[] {
-  const cols: string[] = [];
-  const lifeCol = ch.requireMercenaryAcg().branch === "Marines" ? "marineLife" : "armyLife";
-  cols.push(lifeCol);
+  const pol = requireRule(
+    dataFor(ch).skillColumnPolicy,
+    "acg.mercenary.skillColumnPolicy", "PM p. 51",
+  );
+  const branch = ch.requireMercenaryAcg().branch;
+  const cols: string[] = [requireRule(
+    pol.enlistedLowRankColumns[branch],
+    `acg.mercenary.skillColumnPolicy.enlistedLowRankColumns["${branch}"]`,
+    "PM p. 51",
+  )];
   const acg = ch.requireAcgState();
-  const rank = rankNum(acg.rankCode);
-  const pol = dataFor(ch).skillColumnPolicy;
-  const ncoMin = pol ? rankNum(pol.enlistedNcoMinRank) : 0;
-  if (!acg.isOfficer && rank >= ncoMin) cols.push("ncoSkills");
-  if (acg.isOfficer) {
-    if (acg.inCommand) cols.push("commandSkills");
-    else cols.push("staffSkills");
+  if (!acg.isOfficer && rankNum(acg.rankCode) >= rankNum(pol.enlistedNcoMinRank)) {
+    cols.push(pol.enlistedNcoColumn);
   }
-  if (ch.requireMercenaryAcg().branch === "Marines") cols.push("shipboard");
+  if (acg.isOfficer) {
+    cols.push(acg.inCommand ? pol.officerInCommand : pol.officerStaff);
+  }
+  if (branch === "Marines") {
+    cols.push(requireRule(
+      pol.shipsTroopsColumn,
+      "acg.mercenary.skillColumnPolicy.shipsTroopsColumn", "PM p. 51",
+    ));
+  }
   return cols;
 }
 
@@ -401,7 +444,13 @@ export function mercenaryReenlist(ch: Character): boolean {
 function offerArmChange(ch: Character, data: MercenaryData): void {
   const acg = ch.acgState;
   if (acg?.pathway !== "mercenary") return;
-  const current = acg.combatArm ?? "Infantry";
+  const current = acg.combatArm;
+  if (!current) {
+    throw new Error(
+      "Mercenary combat arm is unset — enlistment must assign it before " +
+      "a reenlistment arm change (PM p. 49)",
+    );
+  }
   const isOfficer = acg.isOfficer === true;
   const crossTrained = acg.crossTrainedArms ?? [];
   const honors = acg.honorsGraduations ?? [];

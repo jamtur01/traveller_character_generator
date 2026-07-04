@@ -20,6 +20,7 @@ import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
 import { merchantEnlist } from "@/lib/traveller/engine/acg/pathways/merchantPrince";
 import { freshAcgState } from "@/lib/traveller/engine/acg/state";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 /** Options for beginAcg — pathway-specific enlistment parameters. */
 export interface BeginAcgOptions {
@@ -100,19 +101,7 @@ export function beginAcg(
     ch.drafted = true;
     ch.log(ev.drafted(`${ch.service} (pre-career failure)`));
   }
-  // Navy: record subsector tech code (PM p. 52). Default: homeworld tech,
-  // clamped to Early Stellar minimum.
-  if (pathway === "navy") {
-    const homeworldTech = ch.homeworld?.tech;
-    const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder ?? [];
-    let subsectorTech = options.subsectorTechCode ?? homeworldTech;
-    const earlyIdx = order.indexOf("Early Stellar");
-    if (subsectorTech && order.length > 0 && earlyIdx >= 0) {
-      const idx = order.indexOf(subsectorTech);
-      if (idx < earlyIdx) subsectorTech = "Early Stellar";
-    }
-    if (subsectorTech) ch.acgState.subsectorTechCode = subsectorTech;
-  }
+  if (pathway === "navy") recordNavySubsectorTech(ch, options);
   // Interactive-mode enlistment may queue a player choice (Navy Soc 9+
   // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
   // the character's pendingChoices stand. The UI resolves them and the
@@ -134,6 +123,31 @@ export function beginAcg(
         break;
     }
   });
+}
+
+/** Navy: record the subsector tech code (PM p. 52). Default: homeworld
+ *  tech (or the caller-supplied code), floored at the JSON-declared
+ *  minimum (acg.navy.enlistment.subsectorTechMinimum). */
+function recordNavySubsectorTech(ch: Character, options: BeginAcgOptions): void {
+  const homeworldTech = ch.homeworld?.tech;
+  const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder ?? [];
+  let subsectorTech = options.subsectorTechCode ?? homeworldTech;
+  if (subsectorTech && order.length > 0) {
+    const minTech = requireRule(
+      getEdition(ch.editionId).data.advancedCharacterGeneration
+        ?.navy?.enlistment.subsectorTechMinimum,
+      "acg.navy.enlistment.subsectorTechMinimum", "PM p. 52",
+    );
+    const minIdx = order.indexOf(minTech);
+    if (minIdx < 0) {
+      throw new Error(
+        `homeworld.techCodeOrder does not contain "${minTech}" ` +
+        `(acg.navy.enlistment.subsectorTechMinimum) — fix the edition JSON`,
+      );
+    }
+    if (order.indexOf(subsectorTech) < minIdx) subsectorTech = minTech;
+  }
+  if (subsectorTech) ch.requireAcgState().subsectorTechCode = subsectorTech;
 }
 
 /** Apply the joined service's startAge from edition data. */

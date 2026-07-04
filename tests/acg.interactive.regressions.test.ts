@@ -34,6 +34,8 @@ function freshMtCharacter(): Character {
   c.acgPathway = "mercenary";
   c.acgState = freshAcgState("mercenary");
   c.requireMercenaryAcg().combatArm = "Infantry";
+  // Enlistment is skipped in this fixture; set the branch it would set.
+  c.requireMercenaryAcg().branch = "Army";
   c.service = "army";
   return c;
 }

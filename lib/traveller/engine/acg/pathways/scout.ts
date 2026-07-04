@@ -18,6 +18,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
@@ -60,6 +61,12 @@ export interface ScoutData {
     rows: Array<Record<string, unknown>>;
     dms?: StructuredDm[];
   }>;
+  /** PM p. 56: which division (field/bureaucracy) each entry route joins. */
+  divisionPlacement?: {
+    collegeGraduate: "field" | "bureaucracy";
+    medSchoolCommission: "field" | "bureaucracy";
+    default: "field" | "bureaucracy";
+  };
   schoolAssignment?: {
     columns: string[];
     rows: Array<Record<string, unknown>>;
@@ -91,11 +98,15 @@ export function scoutEnlist(ch: Character): void {
   const hasCollegeHonors = honors.includes("college");
 
   // PM p. 47 medical school direct commission: O3 carries into Scouts.
-  // The pre-career rank is already set; just record division and exit.
+  // The pre-career rank is already set; record the JSON-declared division
+  // (PM p. 56: the commission joins the Bureaucracy) and exit.
   if (ch.acgState?.preCareerCommission &&
       ch.acgState.schoolsAttended.includes("medicalSchool")) {
     ch.acgState.isOfficer = true;
-    ch.requireScoutAcg().division = "bureaucracy";
+    ch.requireScoutAcg().division = requireRule(
+      data.divisionPlacement?.medSchoolCommission,
+      "acg.scout.divisionPlacement.medSchoolCommission", "PM p. 56",
+    );
     ch.log(ev.enlistmentAttempt(
       `Imperial Scout Service Medical Branch (medical school direct commission, ${ch.acgState.rankCode})`,
       0, 0, 0, true,
@@ -114,7 +125,10 @@ export function scoutEnlist(ch: Character): void {
       ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
       : data.enlistment.startingRank;
     acg.isOfficer = false;
-    ch.requireScoutAcg().division = "bureaucracy";
+    ch.requireScoutAcg().division = requireRule(
+      data.divisionPlacement?.collegeGraduate,
+      "acg.scout.divisionPlacement.collegeGraduate", "PM p. 56",
+    );
   } else {
     const dm = evaluateDM(data.enlistment.dms, { attributes: ch.attributes, terms: ch.terms });
     const r = ch.rng.roll(2);
@@ -132,7 +146,10 @@ export function scoutEnlist(ch: Character): void {
       acg.rankCode = data.enlistment.startingRank;
       ch.log(ev.drafted("Scout Service"));
     }
-    ch.requireScoutAcg().division = "field";
+    ch.requireScoutAcg().division = requireRule(
+      data.divisionPlacement?.default,
+      "acg.scout.divisionPlacement.default", "PM p. 56",
+    );
   }
   scoutAssignOffice(ch);
 }
@@ -141,10 +158,29 @@ function scoutAssignOffice(ch: Character): void {
   const data = dataFor(ch);
   const division: "field" | "bureaucracy" = ch.requireScoutAcg().division;
   const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
-  if (!row) { ch.requireScoutAcg().office = "Survey"; return; }
-  const off = row[division];
-  ch.requireScoutAcg().office = typeof off === "string" ? off : "Survey";
+  const off = row?.[division];
+  if (typeof off !== "string") {
+    throw new Error(
+      `Scout officeAssignment table has no "${division}" cell for the ` +
+      `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
+    );
+  }
+  ch.requireScoutAcg().office = off;
   // acgState.office + acgState.division are read by subsequent assignment rolls.
+}
+
+/** The character's office assignment. scoutAssignOffice always sets it at
+ *  enlistment; a null office means an office-keyed read ran before
+ *  enlistment — fail loudly instead of silently defaulting to Survey. */
+function scoutOfficeOf(ch: Character): string {
+  const office = ch.requireScoutAcg().office;
+  if (!office) {
+    throw new Error(
+      "Scout office is unset — enlistment must assign an office before " +
+      "office-keyed rolls (PM p. 56)",
+    );
+  }
+  return office;
 }
 
 /** Scout initial training (PM p. 56): "The initial year of service in the
@@ -153,7 +189,7 @@ function scoutAssignOffice(ch: Character): void {
  *  receives the skill shown." */
 export function scoutInitialTraining(ch: Character): void {
   const data = dataFor(ch);
-  const office = ch.requireScoutAcg().office ?? "Survey";
+  const office = scoutOfficeOf(ch);
   const skill = (data.initialTraining as Record<string, string> | undefined)?.[office];
   if (typeof skill === "string") {
     ch.addSkill(skill, 1, `Initial Training (${office})`);
@@ -219,9 +255,14 @@ export function scoutRollAssignment(ch: Character): string {
   const dieKey = (forced !== undefined && baseRoll === forced)
     ? forced : Math.max(2, Math.min(12, baseRoll + dm));
   const row = data.dutyAssignment.rows.find((row) => row.die === dieKey);
-  if (!row) return "Routine";
-  const v = row[division];
-  return typeof v === "string" ? v : "Routine";
+  const v = row?.[division];
+  if (typeof v !== "string") {
+    throw new Error(
+      `Scout dutyAssignment table has no "${division}" cell for die=${dieKey} ` +
+      `(edition: ${ch.editionId}) — fix the edition JSON`,
+    );
+  }
+  return v;
 }
 
 export function scoutResolveAssignment(ch: Character, assignment: string): void {
@@ -254,7 +295,7 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
     return;
   }
   // Resolution sub-table keyed by office.
-  const officeKey = labelToColumnKey(ch.requireScoutAcg().office ?? "Survey");
+  const officeKey = labelToColumnKey(scoutOfficeOf(ch));
   const resTable = data.assignmentResolution[officeKey];
   if (!resTable) {
     throw new Error(
@@ -321,7 +362,7 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
-  const officeKey = labelToColumnKey(ch.requireScoutAcg().office ?? "Survey");
+  const officeKey = labelToColumnKey(scoutOfficeOf(ch));
   const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0 });
   if (!row) return;
   const school = row[officeKey];
@@ -369,8 +410,13 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
     // Reroll office assignment under the Bureaucracy division.
     const row = rollDieRow(ch, data.officeAssignment, { dice: 2, dm: 0, lo: 2, hi: 12 });
     const off = row?.bureaucracy;
-    const newOffice = typeof off === "string" ? off : "Technical";
-    acg.office = newOffice;
+    if (typeof off !== "string") {
+      throw new Error(
+        `Scout officeAssignment table has no "bureaucracy" cell for the ` +
+        `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
+      );
+    }
+    acg.office = off;
     // Bureaucracy has rank; ordinary rank becomes terms served, capped at
     // the top ordinary rank defined in JSON (PM p. 57: IS-9).
     const termsServed = Math.max(1, ch.terms);

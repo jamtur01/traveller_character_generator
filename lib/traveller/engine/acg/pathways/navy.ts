@@ -28,7 +28,7 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
-  rollDieRow, resolveCommandDuty, branchSkillCandidates,
+  rollDieRow, resolveCommandDuty, branchSkillCandidates, type SkillColumnPolicy,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { event as ev } from "@/lib/traveller/history";
@@ -40,8 +40,17 @@ export interface NavyData {
   enlistment: {
     imperialNavy: { target: number; dms: Array<{ attribute: string; min: number; dm: number }> };
     reserveFleet: { target: number; dms: Array<{ attribute: string; min: number; dm: number }> };
-    systemSquadron: { target: number; dms: Array<{ attribute: string; min: number; dm: number }>; requirement: string };
+    systemSquadron: {
+      target: number;
+      dms: Array<{ attribute: string; min: number; dm: number }>;
+      requirement: string;
+      /** PM p. 52: minimum homeworld tech code for System Squadron entry. */
+      techMinimum?: string;
+    };
     startingRank: string;
+    /** PM p. 52: the subsector tech code floor (homeworld tech, at minimum
+     *  this value). Read by beginAcg when recording subsectorTechCode. */
+    subsectorTechMinimum?: string;
     draft: { die: string; results: Record<string, string> };
     academyRanks?: Record<string, string>;
   };
@@ -88,6 +97,9 @@ export interface NavyData {
   combatAssignments?: string[];
   rankCaps?: Record<string, number>;
   specialistSchool?: Record<string, unknown>;
+  /** PM p. 55 rank-keyed Service Skills column policy (read by the
+   *  special-assignment service-skill roll via serviceSkillColumnFor). */
+  skillColumnPolicy?: SkillColumnPolicy;
   serviceSkills?: {
     columns: string[];
     rows: Array<Record<string, unknown>>;
@@ -117,18 +129,23 @@ export function navyEnlist(
   ch: Character,
   fleet: "imperialNavy" | "reserveFleet" | "systemSquadron",
 ): void {
-  // System Squadron requires homeworld tech Early Stellar+ (PM p. 52).
+  // System Squadron requires a minimum homeworld tech code (PM p. 52);
+  // the threshold is strict-read from JSON.
   if (fleet === "systemSquadron") {
     const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
     const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder
       ?? acg?.homeworld?.techCodeOrder;
     const hwTech = ch.homeworld?.tech;
     if (order && hwTech) {
+      const minTech = requireRule(
+        dataFor(ch).enlistment.systemSquadron.techMinimum,
+        "acg.navy.enlistment.systemSquadron.techMinimum", "PM p. 52",
+      );
       const idx = order.indexOf(hwTech);
-      const minIdx = order.indexOf("Early Stellar");
+      const minIdx = order.indexOf(minTech);
       if (idx < minIdx) {
         throw new Error(
-          `System Squadron requires homeworld tech Early Stellar+; this homeworld is ${hwTech}`,
+          `System Squadron requires homeworld tech ${minTech}+; this homeworld is ${hwTech}`,
         );
       }
     }
@@ -219,18 +236,18 @@ export function navyEnlist(
 
 function navyAssignBranch(ch: Character): void {
   const data = dataFor(ch);
-  // Medical/Flight School graduates: automatic branch (manual p. 52).
-  // Social 9+ characters may also pick any branch — that's a player choice
-  // exposed in pickOrDefer.
+  // Medical/Flight School graduates: automatic branch (PM p. 52/47) —
+  // read from preCareerFleetAssignment.bySchool so the school -> branch
+  // mapping lives only in JSON. Social 9+ characters may instead pick any
+  // branch — that's a player choice exposed in pickOrDefer.
   const acg = ch.requireAcgState();
-  const schools = acg.schoolsAttended;
-  if (schools.includes("medicalSchool")) {
-    ch.requireNavyAcg().branch = "Medical";
-    return;
-  }
-  if (schools.includes("flightSchool")) {
-    ch.requireNavyAcg().branch = "Flight";
-    return;
+  const bySchool = data.preCareerFleetAssignment?.bySchool ?? {};
+  for (const school of acg.schoolsAttended) {
+    const branch = bySchool[school]?.branch;
+    if (branch) {
+      ch.requireNavyAcg().branch = branch;
+      return;
+    }
   }
   if (ch.attributes.social >= data.branchChoiceSocialMin
     && data.branches && ch.choiceMode === "interactive") {
@@ -253,13 +270,26 @@ function navyAssignBranch(ch: Character): void {
   // multiple non-Tech-Services rows so re-roll converges quickly).
   for (let attempt = 0; attempt < 8; attempt++) {
     const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm });
-    const candidate = String(row?.[col] ?? "Line");
+    const cell = row?.[col];
+    if (cell === undefined || cell === null) {
+      throw new Error(
+        `Navy branchAssignment table has no "${col}" cell for the rolled ` +
+        `die (edition: ${ch.editionId}) — fix the edition JSON`,
+      );
+    }
+    const candidate = String(cell);
     if (isBranchAllowedForFleet(ch, candidate)) {
       rolled = candidate;
       break;
     }
   }
-  ch.requireNavyAcg().branch = rolled ?? (acg.isOfficer ? "Line" : "Crew");
+  if (!rolled) {
+    throw new Error(
+      "Navy branch assignment failed: 8 consecutive rolls yielded branches " +
+      `not allowed in the ${ch.requireNavyAcg().fleet} (branchFleetRestrictions)`,
+    );
+  }
+  ch.requireNavyAcg().branch = rolled;
   // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }
 
@@ -327,10 +357,24 @@ function navyServiceSkillRoll(ch: Character, column: string): void {
 function navyBranchSkillRoll(ch: Character): void {
   const data = dataFor(ch);
   if (!data.branchSkills) return;
-  const col = labelToColumnKey(ch.requireNavyAcg().branch || "Line");
-  const candidates = branchSkillCandidates(col);
+  const branch = navyBranchOf(ch);
+  const candidates = branchSkillCandidates(labelToColumnKey(branch));
   rollSkillFromColumn(ch, data.branchSkills, { candidates },
-    `Navy ${ch.requireNavyAcg().branch || "Line"} branch skills`);
+    `Navy ${branch} branch skills`);
+}
+
+/** The character's naval branch. Enlistment (navyAssignBranch) always sets
+ *  it; an empty branch means a branch-keyed roll ran before enlistment —
+ *  fail loudly instead of silently defaulting to Line. */
+function navyBranchOf(ch: Character): string {
+  const branch = ch.requireNavyAcg().branch;
+  if (!branch) {
+    throw new Error(
+      "Navy branch is unset — enlistment must assign a branch before " +
+      "branch-keyed rolls (PM p. 52)",
+    );
+  }
+  return branch;
 }
 
 /** Command Duty roll (officers only). */
@@ -371,7 +415,7 @@ function navyRollCommandDuty(ch: Character): void {
   const data = dataFor(ch);
   resolveCommandDuty(ch, {
     rows: data.commandDuty.rows,
-    role: ch.requireNavyAcg().branch || "Line",
+    role: navyBranchOf(ch),
     cellKey: "target",
     dm: applyStructuredDms(data.commandDuty.dms, ch),
   });
@@ -408,8 +452,11 @@ function getNavySpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
 /** Resolve assignment. Branch picks which resolution sub-table to use. */
 export function navyResolveAssignment(ch: Character, assignment: string): void {
   const data = dataFor(ch);
-  const branch = ch.requireNavyAcg().branch || "Line";
-  const resKey = data.branchResolution?.[branch] ?? "lineCrew";
+  const branch = navyBranchOf(ch);
+  const resKey = requireRule(
+    data.branchResolution?.[branch],
+    `acg.navy.branchResolution["${branch}"]`, "PM p. 53",
+  );
   const resTable = data.assignmentResolution[resKey];
   if (!resTable) {
     throw new Error(

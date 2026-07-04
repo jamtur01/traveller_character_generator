@@ -461,14 +461,21 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
   // Education increase.
   if (spec.education) {
     const dm = applyDms(spec.education.dms, ch);
-    // Parse "1D-2" / "1D-3" — the constant offset.
-    const m = spec.education.roll.match(/^1D([-+]\d+)$/);
-    const offset = m ? parseInt(m[1]!, 10) : 0;
+    // Parse "1D-2" / "1D-3" — die count AND constant offset are both used;
+    // an unparseable spec is broken edition data and fails loudly.
+    const m = spec.education.roll.match(/^(\d+)D([-+]\d+)?$/);
+    if (!m) {
+      throw new Error(
+        `Cannot parse pre-career education roll ${JSON.stringify(spec.education.roll)} ` +
+        `(expected "<n>D" with optional +/-k offset)`,
+      );
+    }
+    const offset = m[2] ? parseInt(m[2], 10) : 0;
     const floor = requireRule(
       getEdition(ch.editionId).rules.preCareer?.educationGainFloor,
       "rules.preCareer.educationGainFloor", "PM p. 44",
     );
-    const gain = Math.max(floor, ch.rng.roll(1) + offset + dm);
+    const gain = Math.max(floor, ch.rng.roll(parseInt(m[1]!, 10)) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
     // Applied by applyPreCareerResult via improveAttribute → ev.attributeChange.
   }
@@ -535,15 +542,23 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       "medicalSchool.commissionRank", "PM p. 47",
     );
     out.medicalDirectCommission = true;
-    const branches =
-      (pco?.directCommissionBranches as MedicalCommissionBranch[] | undefined) ?? [];
+    const branches = requireRule(
+      pco?.directCommissionBranches as MedicalCommissionBranch[] | undefined,
+      "medicalSchool.directCommissionBranches", "PM p. 47",
+    );
     const fallback = branches[0];
+    if (!fallback) {
+      throw new Error(
+        "medicalSchool.directCommissionBranches is empty (PM p. 47 names " +
+        "Navy/Army/Scouts/Merchants) — fix the edition JSON",
+      );
+    }
     if (ch.choiceMode === "interactive") {
       ch.pickOrDefer({
         kind: "cascade",
         label: "Medical School direct commission — choose service branch",
         options: branches.map((b) => b.label),
-        preferred: fallback ? [fallback.label] : [],
+        preferred: [fallback.label],
         context: { source: "medicalCommission" },
         onResolve: (ch, chosen) => {
           const picked = branches.find((b) => b.label === chosen) ?? fallback;
@@ -553,8 +568,8 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         },
       });
     }
-    out.branch = fallback?.branch ?? "navy";
-    out.autoEnlistPathway = fallback?.pathway ?? "navy";
+    out.branch = fallback.branch;
+    out.autoEnlistPathway = fallback.pathway;
   }
 
   return out;
@@ -651,7 +666,13 @@ function applyAutomaticSkills(out: PreCareerResult, raw: unknown): void {
 
 function parseSkillThrowTarget(throwStr: string): number {
   const m = throwStr.match(/(\d+)\+/);
-  return m ? parseInt(m[1]!, 10) : 4;
+  if (!m) {
+    throw new Error(
+      `Cannot parse pre-career skill throw ${JSON.stringify(throwStr)} ` +
+      `(expected a "<target>+" form, e.g. "4+ on 1D")`,
+    );
+  }
+  return parseInt(m[1]!, 10);
 }
 
 /** Detect (without side effect) whether a skill string contains an
@@ -664,14 +685,14 @@ function hasDieExpression(s: string): boolean {
 }
 
 /** Resolve embedded die expressions in skill strings (e.g. "1D-3"),
- *  rolling the die and returning the resulting numeric value. Side
- *  effect: consumes one roll(1). Returns null when no die expression is
- *  present. */
+ *  rolling the declared die count and returning the resulting numeric
+ *  value. Side effect: consumes one roll of the declared count. Returns
+ *  null when no die expression is present. */
 function parseDieExpression(s: string, rng: Rng): number | null {
   const m = s.match(/(\d+)D([-+]\d+)?/);
   if (!m) return null;
   const offset = m[2] ? parseInt(m[2], 10) : 0;
-  return rng.roll(1) + offset;
+  return rng.roll(parseInt(m[1]!, 10)) + offset;
 }
 
 /** Parse a dynamic skill spec like "1D-3 levels of Pilot, minimum 1". */

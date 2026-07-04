@@ -227,6 +227,8 @@ describe("MT ACG: each Run-term click after a paused choice must be a no-op", ()
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
     c.requireMercenaryAcg().combatArm = "Infantry";
+    // Enlistment is skipped in this fixture; set the branch it would set.
+    c.requireMercenaryAcg().branch = "Army";
     c.service = "army";
     let snap: session.ChargenSnapshot = { character: c, phase: "term" };
     snap = session.runTerm(snap);

@@ -5,6 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { auditAcg } from "./_audit";
+import { getEdition } from "../lib/traveller/editions";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -140,5 +141,36 @@ describe("Mercenary PM audit — draftees / OCS / SEH", () => {
     const { getEdition } = await import("../lib/traveller/editions");
     const draftRule = getEdition("mt-megatraveller").rules.draft;
     expect(draftRule?.noCommissionFirstTerm).toBe(true);
+  });
+});
+
+describe("Mercenary PM audit — skillColumnPolicy / garrisonDuty (PM pp. 49, 51)", () => {
+  it("every skillColumnPolicy column names a real serviceSkills column", () => {
+    // Anti-drift guard: shipsTroopsColumn once declared "shipboardSkills",
+    // which is not a serviceSkills column — the value had silently drifted
+    // from the table it indexes.
+    const merc = getEdition("mt-megatraveller").data
+      .advancedCharacterGeneration?.mercenary;
+    const pol = merc?.skillColumnPolicy;
+    const columns = merc?.serviceSkills.columns ?? [];
+    expect(pol).toBeDefined();
+    const referenced = [
+      pol!.officerInCommand, pol!.officerStaff, pol!.enlistedNcoColumn,
+      pol!.shipsTroopsColumn, ...Object.values(pol!.enlistedLowRankColumns),
+    ];
+    for (const col of referenced) {
+      expect(columns, `policy column "${col}"`).toContain(col);
+    }
+  });
+
+  it("PM p. 49: garrisonDuty declares auto survival, no rewards, enlisted 7+ promotion", () => {
+    const merc = getEdition("mt-megatraveller").data
+      .advancedCharacterGeneration?.mercenary;
+    expect(merc?.assignmentResolution.garrisonDuty).toMatchObject({
+      survival: "auto",
+      decoration: "none",
+      skills: "none",
+      enlistedPromotion: "7+",
+    });
   });
 });

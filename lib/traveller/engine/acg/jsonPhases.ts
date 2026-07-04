@@ -11,6 +11,8 @@
 // through a per-pathway callback registry.
 
 import type { Character } from "@/lib/traveller/character";
+import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import {
   awardDecoration, resolveDecorationTier, runCourtMartial,
 } from "./awards";
@@ -388,6 +390,21 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
   // thisYearOutcomes cache and is cleared at year boundary by the runner.
   if (alreadyApplied(ctx.ch, "decorationDmTradeoff-prompted")) return;
   markApplied(ctx.ch, "decorationDmTradeoff-prompted");
+  // PM p. 49 declares the tradeoff; the +/-2 option bounds are declared in
+  // acg.common.decorationDmTradeoff (a documented design choice — the book
+  // states no cap).
+  const bounds = requireRule(
+    getEdition(ctx.ch.editionId).data.advancedCharacterGeneration
+      ?.common?.decorationDmTradeoff,
+    "acg.common.decorationDmTradeoff", "PM p. 49",
+  );
+  const values: number[] = [];
+  for (let dm = bounds.min; dm <= bounds.max; dm += bounds.step) values.push(dm);
+  // Each value is the survival-roll delta; the decoration roll takes the
+  // opposite sign (combatResolutionDms applies +strategy / -strategy).
+  const options = values.map((dm) => dm === 0
+    ? "No tradeoff"
+    : `${dm > 0 ? "+" : ""}${dm} survival / ${dm < 0 ? "+" : ""}${-dm} decoration`);
   ctx.ch.pickOrDefer({
     kind: "decorationDmTradeoff",
     label:
@@ -395,15 +412,10 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
       "survival roll and the decoration roll: a negative survival DM " +
       "buys an equal positive decoration DM (or vice versa). Pick the " +
       "balance for this assignment.",
-    options: ["-2 survival / +2 decoration", "-1 survival / +1 decoration",
-      "No tradeoff", "+1 survival / -1 decoration", "+2 survival / -2 decoration"],
+    options,
     onResolve: (ch, choice) => {
-      const acg = ch.requireAcgState();
-      if (choice.startsWith("-2")) acg.decorationDmStrategy = -2;
-      else if (choice.startsWith("-1")) acg.decorationDmStrategy = -1;
-      else if (choice.startsWith("+1")) acg.decorationDmStrategy = 1;
-      else if (choice.startsWith("+2")) acg.decorationDmStrategy = 2;
-      else acg.decorationDmStrategy = 0;
+      const idx = options.indexOf(choice);
+      ch.requireAcgState().decorationDmStrategy = values[idx] ?? 0;
     },
   });
 });

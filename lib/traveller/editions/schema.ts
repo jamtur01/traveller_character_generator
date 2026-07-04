@@ -346,12 +346,29 @@ const ResolveAssignmentConfigSchema = z.looseObject({
   finalize: z.string().optional(),
 });
 
-// Sub-table for resolveAssignment rows. Garrison-style sub-tables omit
-// columns/rows entirely (the engine handles them as "automatic survival,
-// no skills"), so both fields are optional.
+// Sub-table for resolveAssignment rows. The garrisonDuty entry (PM p. 49)
+// is not column-based: it declares survival/decoration/skills targets and
+// an enlisted-only promotion throw instead of columns/rows.
 const AssignmentResolutionSubSchema = z.looseObject({
   columns: z.array(z.string()).optional(),
   rows: z.array(z.looseObject({})).optional(),
+  survival: z.string().optional(),
+  decoration: z.string().optional(),
+  skills: z.string().optional(),
+  enlistedPromotion: z.string().optional(),
+});
+
+// PM p. 51/55: rank-keyed Service Skills column policy. shipsTroopsColumn
+// is mercenary-only (Marines on Ship's Troops); enlistedLowRankDefault is
+// navy-only (Navy Life applies to every branch).
+const SkillColumnPolicySchema = z.looseObject({
+  officerInCommand: z.string(),
+  officerStaff: z.string(),
+  enlistedNcoColumn: z.string(),
+  enlistedNcoMinRank: z.string(),
+  enlistedLowRankColumns: z.record(z.string(), z.string()),
+  enlistedLowRankDefault: z.string().optional(),
+  shipsTroopsColumn: z.string().optional(),
 });
 
 const PathwayDataSchema = z.looseObject({
@@ -363,6 +380,13 @@ const PathwayDataSchema = z.looseObject({
   reenlistment: z.looseObject({}).optional(),
   combatAssignments: z.array(z.string()).optional(),
   resolveAssignment: ResolveAssignmentConfigSchema.optional(),
+  skillColumnPolicy: SkillColumnPolicySchema.optional(),
+  // PM p. 56: scout entry-route -> division placement.
+  divisionPlacement: z.looseObject({
+    collegeGraduate: z.enum(["field", "bureaucracy"]),
+    medSchoolCommission: z.enum(["field", "bureaucracy"]),
+    default: z.enum(["field", "bureaucracy"]),
+  }).optional(),
   assignmentResolution: z.record(
     z.string(),
     z.union([AssignmentResolutionSubSchema, z.string()]),
@@ -389,6 +413,12 @@ const AcgCommonSchema = z.looseObject({
       minMargin: z.number(),
       award: z.string(),
     })).optional(),
+  }).optional(),
+  // PM p. 49 survival <-> decoration DM tradeoff option bounds.
+  decorationDmTradeoff: z.looseObject({
+    min: z.number(),
+    max: z.number(),
+    step: z.number(),
   }).optional(),
 });
 

@@ -160,7 +160,11 @@
       {
         "id": "allocateSkills",
         "config": {
-          "term1Bonus": true
+          "term1Bonus": {
+            "$rule": "PM p. 15 / p. 17: careers granting one skill per term receive one extra skill in their first term (2 skills in term 1).",
+            "extraSkills": 1,
+            "onlyForSkillsPerTerm": 1
+          }
         }
       },
       {
@@ -3905,7 +3909,7 @@
             { "label": "Navy (Medical Branch)", "branch": "navy", "pathway": "navy" },
             { "label": "Army", "branch": "army", "pathway": "mercenary" },
             { "label": "Scouts", "branch": null, "pathway": "scout" },
-            { "label": "Merchants (Purser)", "branch": "merchants", "pathway": "merchantPrince" }
+            { "label": "Merchants (Purser)", "branch": "merchants", "pathway": "merchantPrince", "department": "Purser" }
           ],
           "$ruleDirectCommission": "PM p. 47 / mt-acg-common §1e: graduates may take an automatic O3 direct commission in the Navy (Medical Branch), Army, Scouts, or Merchants (Purser Department Medic). Marines have no medical officers and are excluded.",
           "courseYears": 4,
@@ -4137,6 +4141,13 @@
             "points": 0
           }
         ]
+      },
+      "decorationDmTradeoff": {
+        "$rule": "PM p. 49: a character may voluntarily take a negative DM on the survival throw as an equal positive DM on the decoration throw (heroism), or the reverse (poltroonery).",
+        "$comment": "The book states no cap on the traded DM; the +/-2 bound (step 1) is a design choice keeping the tradeoff prompt bounded.",
+        "min": -2,
+        "max": 2,
+        "step": 1
       }
     },
     "mercenary": {
@@ -4564,6 +4575,7 @@
           "notes": []
         },
         "garrisonDuty": {
+          "$rule": "PM p. 49: assignments without a column on the combat-arm resolution sub-table (e.g. Garrison, Training) resolve as Garrison Duty: survival is automatic, no decoration or skills are possible, and enlisted characters are promoted on a throw of 7+.",
           "survival": "auto",
           "decoration": "none",
           "skills": "none",
@@ -5005,7 +5017,7 @@
           "marines": "marineLife",
           "Marines": "marineLife"
         },
-        "shipsTroopsColumn": "shipboardSkills"
+        "shipsTroopsColumn": "shipboard"
       },
       "ocsAdvancement": {
         "$rule": "PM p. 51 line 3182-3187: 'OCS: Advance to rank O1 (rank E7 advances to rank O2) in current or cross-trained branch. Roll twice on the Service Skills table and once on the MOS table. Rank E8 and E9 are commissioned to Rank O3, adding no skills.'",
@@ -5222,9 +5234,13 @@
               "dm": 2
             }
           ],
-          "requirement": "Homeworld tech code Early Stellar+"
+          "requirement": "Homeworld tech code Early Stellar+",
+          "techMinimum": "Early Stellar",
+          "$ruleTechMinimum": "PM p. 52: only characters from a homeworld with tech code Early Stellar or higher may enlist in a System Squadron."
         },
         "startingRank": "E1",
+        "subsectorTechMinimum": "Early Stellar",
+        "$ruleSubsectorTechMinimum": "PM p. 52: the subsector tech code is the homeworld tech code, at minimum Early Stellar.",
         "draft": {
           "die": "1D",
           "results": {
@@ -5344,7 +5360,8 @@
         "$rule": "PM p. 52 line 3254-3256: 'Naval Academy graduates are commissioned with rank O1 in the Imperial Navy. NOTC graduates are commissioned with rank O1 in the Reserve Fleet.' Medical School direct commission joins the Imperial Navy Medical Branch.",
         "bySchool": {
           "medicalSchool": { "fleet": "imperialNavy", "branch": "Medical" },
-          "navalAcademy":  { "fleet": "imperialNavy" }
+          "navalAcademy":  { "fleet": "imperialNavy" },
+          "flightSchool":  { "branch": "Flight" }
         },
         "byPreCareerBranch": {
           "navy": { "fleet": "reserveFleet" }
@@ -6354,6 +6371,12 @@
             "4": "Scouts"
           }
         }
+      },
+      "divisionPlacement": {
+        "$rule": "PM p. 56: college graduates enter the Scout Bureaucracy; a medical-school direct commission also joins the Bureaucracy; all other entrants join the Field.",
+        "collegeGraduate": "bureaucracy",
+        "medSchoolCommission": "bureaucracy",
+        "default": "field"
       },
       "officeAssignment": {
         "columns": [

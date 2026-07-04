@@ -212,6 +212,9 @@ export interface AcgCommonData {
   preCareerOptions?: Record<string, unknown>;
   browniePoints?: { awards?: unknown[] };
   decorationTiers?: { tiers?: Array<Record<string, unknown>> };
+  /** PM p. 49 survival <-> decoration DM tradeoff option bounds. The book
+   *  states no cap; the declared bound is a documented design choice. */
+  decorationDmTradeoff?: { min: number; max: number; step: number };
   [k: string]: unknown;
 }
 

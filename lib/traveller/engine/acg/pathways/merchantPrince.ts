@@ -163,9 +163,29 @@ function freeTraderAssignmentFlags(ch: Character): Record<string, FreeTraderFlag
 
 function lineSizeFor(data: MerchantData, lineType: string): "Large" | "Small" | "FreeTrader" {
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
-  if (!row) return "Small";
+  if (!row) {
+    throw new Error(
+      `Merchant line type "${lineType}" has no enlistment row ` +
+      `(acg.merchantPrince.enlistment.rows) — fix the edition JSON`,
+    );
+  }
   if (row.lineSize === null) return "FreeTrader";
   return row.lineSize;
+}
+
+/** The character's merchant department. Enlistment always sets it (roll,
+ *  academy pick, or medical-school commission); a null department means a
+ *  department-keyed read ran before enlistment — fail loudly instead of
+ *  silently defaulting to Deck. */
+function merchantDepartmentOf(ch: Character): string {
+  const department = ch.requireMerchantAcg().department;
+  if (!department) {
+    throw new Error(
+      "Merchant department is unset — enlistment must assign a department " +
+      "before department-keyed rolls (PM p. 60)",
+    );
+  }
+  return department;
 }
 
 function assignmentColumnFor(lineSize: "Large" | "Small" | "FreeTrader"): string {
@@ -235,7 +255,20 @@ export function merchantEnlist(
     acg.rankCode = data.enlistment.startingRank;
     acg.isOfficer = false;
   } else if (acg.schoolsAttended.includes("medicalSchool")) {
-    ch.requireMerchantAcg().department = "Purser";
+    // PM p. 47: the medical-school direct commission serves as a Purser
+    // Department Medic — the department is strict-read from the school's
+    // directCommissionBranches entry for this pathway.
+    const medicalSchool = getEdition(ch.editionId).data
+      .advancedCharacterGeneration?.common?.preCareerOptions?.medicalSchool as
+      { directCommissionBranches?: Array<{ pathway?: string; department?: string }> }
+      | undefined;
+    const entry = medicalSchool?.directCommissionBranches
+      ?.find((b) => b.pathway === "merchantPrince");
+    ch.requireMerchantAcg().department = requireRule(
+      entry?.department,
+      "acg.common.preCareerOptions.medicalSchool.directCommissionBranches" +
+      '[pathway="merchantPrince"].department', "PM p. 47",
+    );
     ch.log(ev.enlistmentAttempt(
       `Merchants Purser Department Medic (medical school direct commission, ${acg.rankCode})`,
       0, 0, 0, true,
@@ -299,8 +332,14 @@ function merchantAssignDepartment(ch: Character): void {
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
   const row = rollDieRow(ch, data.departmentAssignment, { dice: 1, dm: 0 });
-  if (!row) { ch.requireMerchantAcg().department = "Purser"; return; }
-  ch.requireMerchantAcg().department = String(row[lineCol] ?? "Purser");
+  const dept = row?.[lineCol];
+  if (dept === undefined || dept === null) {
+    throw new Error(
+      `Merchant departmentAssignment table has no "${lineCol}" cell for the ` +
+      `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
+    );
+  }
+  ch.requireMerchantAcg().department = String(dept);
   // acgState.department is read by subsequent assignment / skill rolls.
 }
 
@@ -317,8 +356,14 @@ export function merchantRollAssignment(ch: Character): string {
   // specificAssignment table declares rows for die ∈ [2,13]; the clamp
   // range derives from those rows — do not truncate.
   const row = rollDieRow(ch, data.specificAssignment, { dice: 2, dm });
-  if (!row) return "Route";
-  return String(row[lineCol] ?? "Route");
+  const assignment = row?.[lineCol];
+  if (assignment === undefined || assignment === null) {
+    throw new Error(
+      `Merchant specificAssignment table has no "${lineCol}" cell for the ` +
+      `rolled row (edition: ${ch.editionId}) — fix the edition JSON`,
+    );
+  }
+  return String(assignment);
 }
 
 export function merchantResolveAssignment(ch: Character, assignment: string): void {
@@ -382,15 +427,17 @@ function selectMerchantResolutionTable(
 ): { table: MerchantResolutionTable; colKey: string } {
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
-  const deptKey = labelToColumnKey(acg.department ?? "Deck");
   const isFreeTrader = acg.lineType === "Free Trader";
   const isFreeTraderOther =
     isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
+  // The department key matters only off the Free Trader path (free traders
+  // resolve on the freeTraderTrade/freeTraderOther tables).
+  const deptKey = isFreeTrader ? null : labelToColumnKey(merchantDepartmentOf(ch));
   const table = isFreeTrader
     ? (isFreeTraderOther
         ? data.assignmentResolution.freeTraderOther
         : data.assignmentResolution.freeTraderTrade)
-    : data.assignmentResolution[deptKey];
+    : data.assignmentResolution[deptKey!];
   if (!table) {
     throw new Error(
       `Merchant: no resolution sub-table for department "${acg.department}" ` +
@@ -403,7 +450,7 @@ function selectMerchantResolutionTable(
   if (!table.columns.includes(colKey)) {
     throw new Error(
       `Merchant: assignment "${assignment}" → column "${colKey}" not in ` +
-      `department "${deptKey}" (available: ${table.columns.join(", ")}).`,
+      `department "${deptKey ?? acg.lineType}" (available: ${table.columns.join(", ")}).`,
     );
   }
   return { table, colKey };
@@ -810,6 +857,13 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 }
 
 export function merchantStartOfTerm(ch: Character): void {
+  // Interactive enlistment pauses on the Merchant Academy offer BEFORE the
+  // department assignment at the tail of merchantEnlist, and the resume path
+  // never re-enters that tail. Anchor the assignment here: this hook runs
+  // once all enlistment choices are resolved and before any department-keyed
+  // roll, using the same departmentAssignment table (PM p. 60). The old
+  // `?? "Deck"` fallback silently mis-filed these characters instead.
+  if (!ch.requireMerchantAcg().department) merchantAssignDepartment(ch);
   // PM p. 60: enlisted personnel advance one grade every four years —
   // declared in specialRules.enlistedAdvancement. Seniority numbering is
   // capped at rankMax to avoid emitting phantom ranks (e.g. E15) for
