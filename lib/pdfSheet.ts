@@ -89,6 +89,52 @@ function sectionBar(doc: jsPDF, x: number, y: number, w: number, h: number, titl
   doc.setFont(BOLD, "normal");
 }
 
+/** Draw wrapped `text` clamped to `maxLines` lines from (`x`,`y`), stepping
+ *  down by `lineH`. When `moreSuffix` is set and the text overflows, a
+ *  `+N moreSuffix` line follows. The caller owns the font. */
+function drawClampedLines(
+  doc: jsPDF, text: string,
+  opts: { x: number; y: number; w: number; maxLines: number; lineH: number; moreSuffix?: string },
+): void {
+  const lines = doc.splitTextToSize(text, opts.w) as string[];
+  let ly = opts.y;
+  const shown = Math.min(opts.maxLines, lines.length);
+  for (let i = 0; i < shown; i++) {
+    doc.text(lines[i]!, opts.x, ly);
+    ly += opts.lineH;
+  }
+  if (opts.moreSuffix !== undefined && lines.length > opts.maxLines) {
+    doc.text(`+${lines.length - opts.maxLines} ${opts.moreSuffix}`, opts.x, ly);
+  }
+}
+
+/** Run `body` with the monospace (courier) font at `size`, then restore the
+ *  sheet's default bold font. Every multi-line value block repeats this
+ *  courier/restore envelope. */
+function withMonoFont(doc: jsPDF, size: number, body: () => void): void {
+  doc.setFont("courier", "normal");
+  doc.setFontSize(size);
+  body();
+  doc.setFont(BOLD, "normal");
+}
+
+/** A Yes/No checkbox pair with labels. (`x`,`y`) is the Yes box; the No box
+ *  sits `gap` points right (default 40). Each label sits 12pt right of and 7pt
+ *  below its box. `yes`/`no` are the checked flags (both false leaves the pair
+ *  blank — a check that never ran). */
+function yesNoCheckboxes(
+  doc: jsPDF, x: number, y: number,
+  opts: { yes: boolean; no: boolean; gap?: number },
+): void {
+  const gap = opts.gap ?? 40;
+  drawCheckbox(doc, x, y, opts.yes);
+  doc.setFont(BOLD, "normal");
+  doc.setFontSize(8);
+  doc.text("Yes", x + 12, y + 7);
+  drawCheckbox(doc, x + gap, y, opts.no);
+  doc.text("No", x + gap + 12, y + 7);
+}
+
 export function splitSkills(skills: ReadonlyArray<readonly [string, number]>) {
   const sorted = [...skills].sort((a, b) => {
     if (b[1] !== a[1]) return b[1] - a[1];
@@ -152,14 +198,13 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   for (let i = 0; i < 6; i++) {
     doc.text(statNames[i]!, statX0 + i * statW + 4, y + 10);
   }
-  doc.setFont("courier", "normal");
-  doc.setFontSize(16);
-  for (let i = 0; i < 6; i++) {
-    const ch = upp[i] || "";
-    const cw = doc.getTextWidth(ch);
-    doc.text(ch, statX0 + i * statW + statW / 2 - cw / 2, y + 30);
-  }
-  doc.setFont(BOLD, "normal");
+  withMonoFont(doc, 16, () => {
+    for (let i = 0; i < 6; i++) {
+      const ch = upp[i] || "";
+      const cw = doc.getTextWidth(ch);
+      doc.text(ch, statX0 + i * statW + statW / 2 - cw / 2, y + 30);
+    }
+  });
   y += nameH;
 
   // Row: Noble Title | Military Rank | Birthdate
@@ -240,12 +285,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 260, y, 130, r3H);
   fieldLabel(doc, X0 + 264, y + 10, "14a. Retired?");
-  drawCheckbox(doc, X0 + 268, y + 20, c.retired);
-  doc.setFont(BOLD, "normal");
-  doc.setFontSize(8);
-  doc.text("Yes", X0 + 280, y + 27);
-  drawCheckbox(doc, X0 + 308, y + 20, !c.retired);
-  doc.text("No", X0 + 320, y + 27);
+  yesNoCheckboxes(doc, X0 + 268, y + 20, { yes: c.retired, no: !c.retired });
 
   doc.rect(X0 + 390, y, 150, r3H);
   fieldLabel(doc, X0 + 394, y + 10, "14b. Retirement Pay");
@@ -287,12 +327,8 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   if (c.useAcg && c.acgState) {
     const decs = c.acgState.decorations ?? [];
     if (decs.length > 0) {
-      const decLines = doc.splitTextToSize(decs.join(", "), W - 12) as string[];
-      let ly = y + 26;
-      for (const line of decLines.slice(0, 2)) {
-        doc.text(line, X0 + 6, ly);
-        ly += 11;
-      }
+      drawClampedLines(doc, decs.join(", "),
+        { x: X0 + 6, y: y + 26, w: W - 12, maxLines: 2, lineH: 11 });
     }
   }
   y += 50;
@@ -339,12 +375,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 405, y, 135, r19H);
   fieldLabel(doc, X0 + 409, y + 10, "20. Travellers' Member?");
-  drawCheckbox(doc, X0 + 413, y + 22, c.TAS);
-  doc.setFont(BOLD, "normal");
-  doc.setFontSize(8);
-  doc.text("Yes", X0 + 425, y + 29);
-  drawCheckbox(doc, X0 + 453, y + 22, !c.TAS);
-  doc.text("No", X0 + 465, y + 29);
+  yesNoCheckboxes(doc, X0 + 413, y + 22, { yes: c.TAS, no: !c.TAS });
   y += r19H;
 
   // ─── PSIONICS header row ───
@@ -376,12 +407,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   fieldLabel(doc, X0 + 274, y + 10, "23a. Trained?");
   // No psionics test is performed by the generator — leave both boxes blank
   // rather than asserting "No" on a test that never happened.
-  drawCheckbox(doc, X0 + 278, y + 20, false);
-  doc.setFont(BOLD, "normal");
-  doc.setFontSize(8);
-  doc.text("Yes", X0 + 290, y + 27);
-  drawCheckbox(doc, X0 + 320, y + 20, false);
-  doc.text("No", X0 + 332, y + 27);
+  yesNoCheckboxes(doc, X0 + 278, y + 20, { yes: false, no: false, gap: 42 });
 
   doc.rect(X0 + 405, y, 135, r3H);
   fieldLabel(doc, X0 + 409, y + 10, "23b. Date Completed");
@@ -471,27 +497,26 @@ function drawSupplement(doc: jsPDF, c: Character) {
     y += 28;
 
     doc.rect(X0, y, W, PAGE_H - MARGIN - y);
-    doc.setFont("courier", "normal");
-    doc.setFontSize(10);
-    const inner = W - 12;
-    const yLimit = PAGE_H - MARGIN - 8;
-    let cur = y + 14;
-    for (const line of c.history) {
-      const wrapped = doc.splitTextToSize(line, inner);
-      for (const w of wrapped) {
-        if (cur > yLimit) {
-          doc.addPage();
-          cur = MARGIN + 14;
-          doc.setLineWidth(LINE);
-          doc.rect(X0, MARGIN, W, PAGE_H - 2 * MARGIN);
-          doc.setFont("courier", "normal");
-          doc.setFontSize(10);
+    withMonoFont(doc, 10, () => {
+      const inner = W - 12;
+      const yLimit = PAGE_H - MARGIN - 8;
+      let cur = y + 14;
+      for (const line of c.history) {
+        const wrapped = doc.splitTextToSize(line, inner);
+        for (const w of wrapped) {
+          if (cur > yLimit) {
+            doc.addPage();
+            cur = MARGIN + 14;
+            doc.setLineWidth(LINE);
+            doc.rect(X0, MARGIN, W, PAGE_H - 2 * MARGIN);
+            doc.setFont("courier", "normal");
+            doc.setFontSize(10);
+          }
+          doc.text(w, X0 + 6, cur);
+          cur += 12;
         }
-        doc.text(w, X0 + 6, cur);
-        cur += 12;
       }
-    }
-    doc.setFont(BOLD, "normal");
+    });
   }
 }
 
@@ -569,103 +594,81 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
   const bpW = 180;
   doc.rect(X0, y, bpW, r3H);
   fieldLabel(doc, X0 + 4, y + 10, "7. Brownie Points");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(20);
-  doc.text(`${c.browniePoints}`, X0 + 10, y + 38);
-  doc.setFontSize(8);
-  doc.text(`spent: ${st?.browniePointsSpent ?? 0}`, X0 + 60, y + 38);
-  doc.setFont(BOLD, "normal");
+  withMonoFont(doc, 20, () => {
+    doc.text(`${c.browniePoints}`, X0 + 10, y + 38);
+    doc.setFontSize(8);
+    doc.text(`spent: ${st?.browniePointsSpent ?? 0}`, X0 + 60, y + 38);
+  });
 
   doc.rect(X0 + bpW, y, W - bpW, r3H);
   fieldLabel(doc, X0 + bpW + 4, y + 10, "8. Combat Service");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(10);
-  doc.text(`Combat Ribbons: ${st?.combatRibbons ?? 0}`, X0 + bpW + 6, y + 26);
-  doc.text(`Command Clusters: ${st?.commandClusters ?? 0}`, X0 + bpW + 6, y + 40);
-  doc.text(`Terms served: ${c.terms}`, X0 + bpW + 6, y + 54);
-  doc.setFont(BOLD, "normal");
+  withMonoFont(doc, 10, () => {
+    doc.text(`Combat Ribbons: ${st?.combatRibbons ?? 0}`, X0 + bpW + 6, y + 26);
+    doc.text(`Command Clusters: ${st?.commandClusters ?? 0}`, X0 + bpW + 6, y + 40);
+    doc.text(`Terms served: ${c.terms}`, X0 + bpW + 6, y + 54);
+  });
   y += r3H;
 
   // Row 4: Decorations
   const r4H = 44;
   doc.rect(X0, y, W, r4H);
   fieldLabel(doc, X0 + 4, y + 10, "9. Decorations and Awards");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(10);
-  const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
-  const decLines = doc.splitTextToSize(decorationsText, W - 12) as string[];
-  let dy = y + 26;
-  const decShown = Math.min(2, decLines.length);
-  for (let i = 0; i < decShown; i++) {
-    doc.text(decLines[i]!, X0 + 6, dy);
-    dy += 12;
-  }
-  if (decLines.length > 2) {
-    doc.text(`+${decLines.length - 2} more`, X0 + 6, dy);
-  }
-  doc.setFont(BOLD, "normal");
+  withMonoFont(doc, 10, () => {
+    const decorationsText = c.decorations.length > 0 ? c.decorations.join(", ") : "—";
+    drawClampedLines(doc, decorationsText,
+      { x: X0 + 6, y: y + 26, w: W - 12, maxLines: 2, lineH: 12, moreSuffix: "more" });
+  });
   y += r4H;
 
   // Row 5: Specialist Schools and Training
   const r5H = 90;
   doc.rect(X0, y, W, r5H);
   fieldLabel(doc, X0 + 4, y + 10, "10. Specialist Schools and Training");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(10);
-  const sy = y + 26;
-  const schoolLimit = y + r5H - 12;
-  if (c.schoolsAttended.length === 0) {
-    doc.text("—", X0 + 6, sy);
-  } else {
-    // Two-column layout for schools. Compute how many slots fit at the
-    // schoolLimit y, then reserve the last visible slot for "+N more"
-    // when there's overflow — this keeps the indicator in-bounds (the
-    // previous approach drew at the out-of-bounds rowY after the break).
-    const maxRows = Math.floor((schoolLimit - sy) / 12) + 1;
-    const maxSlots = maxRows * 2;
-    const total = c.schoolsAttended.length;
-    const overflow = total > maxSlots;
-    const visible = overflow ? maxSlots - 1 : total;
-    let col = 0;
-    let rowY = sy;
-    for (let i = 0; i < visible; i++) {
-      const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
-      doc.text(`• ${c.schoolsAttended[i]!}`, x, rowY);
-      col = (col + 1) % 2;
-      if (col === 0) rowY += 12;
+  withMonoFont(doc, 10, () => {
+    const sy = y + 26;
+    const schoolLimit = y + r5H - 12;
+    if (c.schoolsAttended.length === 0) {
+      doc.text("—", X0 + 6, sy);
+    } else {
+      // Two-column layout for schools. Compute how many slots fit at the
+      // schoolLimit y, then reserve the last visible slot for "+N more"
+      // when there's overflow — this keeps the indicator in-bounds (the
+      // previous approach drew at the out-of-bounds rowY after the break).
+      const maxRows = Math.floor((schoolLimit - sy) / 12) + 1;
+      const maxSlots = maxRows * 2;
+      const total = c.schoolsAttended.length;
+      const overflow = total > maxSlots;
+      const visible = overflow ? maxSlots - 1 : total;
+      let col = 0;
+      let rowY = sy;
+      for (let i = 0; i < visible; i++) {
+        const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
+        doc.text(`• ${c.schoolsAttended[i]!}`, x, rowY);
+        col = (col + 1) % 2;
+        if (col === 0) rowY += 12;
+      }
+      if (overflow) {
+        const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
+        doc.text(`+${total - visible} more`, x, rowY);
+      }
     }
-    if (overflow) {
-      const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
-      doc.text(`+${total - visible} more`, x, rowY);
-    }
-  }
-  doc.setFont(BOLD, "normal");
+  });
   y += r5H;
 
   // Row 6: Assignment History
   const r6H = 90;
   doc.rect(X0, y, W, r6H);
   fieldLabel(doc, X0 + 4, y + 10, "11. Assignment History");
-  doc.setFont("courier", "normal");
-  doc.setFontSize(9);
-  const ah = st?.assignmentHistory ?? [];
-  if (ah.length === 0) {
-    doc.text("—", X0 + 6, y + 26);
-  } else {
-    // Pack assignments comma-separated, wrapping.
-    const txt = ah.join(", ");
-    const wrapped = doc.splitTextToSize(txt, W - 12) as string[];
-    let ahY = y + 26;
-    const shown = Math.min(5, wrapped.length);
-    for (let i = 0; i < shown; i++) {
-      doc.text(wrapped[i]!, X0 + 6, ahY);
-      ahY += 11;
+  withMonoFont(doc, 9, () => {
+    const ah = st?.assignmentHistory ?? [];
+    if (ah.length === 0) {
+      doc.text("—", X0 + 6, y + 26);
+    } else {
+      // Pack assignments comma-separated, wrapping.
+      drawClampedLines(doc, ah.join(", "),
+        { x: X0 + 6, y: y + 26, w: W - 12, maxLines: 5, lineH: 11, moreSuffix: "more lines" });
     }
-    if (wrapped.length > 5) {
-      doc.text(`+${wrapped.length - 5} more lines`, X0 + 6, ahY);
-    }
-  }
-  doc.setFont(BOLD, "normal");
+  });
   y += r6H;
 
   // Row 7: Homeworld (also visible on TAS Form 2, repeated here for the
@@ -674,22 +677,21 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
     const r7H = 40;
     doc.rect(X0, y, W, r7H);
     fieldLabel(doc, X0 + 4, y + 10, "12. Homeworld");
-    doc.setFont("courier", "normal");
-    doc.setFontSize(9);
     const hw = c.homeworld;
-    doc.text(
-      `Starport ${hw.starport} · ${hw.size} · ${hw.atmosphere} atmosphere · ${hw.hydrosphere}`,
-      X0 + 6, y + 24,
-    );
-    // F18: include subsector tech code if recorded (Navy ACG characters
-    // capture it per PM p. 52).
-    const subsector = c.acgState?.subsectorTechCode;
-    const subsectorSuffix = subsector ? ` · Subsector tech ${subsector}` : "";
-    doc.text(
-      `${hw.population} · ${hw.law} · Tech ${hw.tech}${subsectorSuffix}`,
-      X0 + 6, y + 36,
-    );
-    doc.setFont(BOLD, "normal");
+    withMonoFont(doc, 9, () => {
+      doc.text(
+        `Starport ${hw.starport} · ${hw.size} · ${hw.atmosphere} atmosphere · ${hw.hydrosphere}`,
+        X0 + 6, y + 24,
+      );
+      // F18: include subsector tech code if recorded (Navy ACG characters
+      // capture it per PM p. 52).
+      const subsector = c.acgState?.subsectorTechCode;
+      const subsectorSuffix = subsector ? ` · Subsector tech ${subsector}` : "";
+      doc.text(
+        `${hw.population} · ${hw.law} · Tech ${hw.tech}${subsectorSuffix}`,
+        X0 + 6, y + 36,
+      );
+    });
   }
 }
 

@@ -15,6 +15,7 @@ import type {
 } from "@/lib/traveller/editions/types";
 import { applyCell } from "./cellResolver";
 import { evaluateDM } from "./dmEvaluator";
+import { anagathicsSurvivalDm } from "@/lib/traveller/chargen/anagathics";
 
 /** Skill-table key for the given table index (1-based). Order declared
  *  by the edition under `skillTableMeta.order`. */
@@ -30,6 +31,20 @@ function skillTableDisplayNameForKey(editionData: unknown, key: string): string 
     skillTableMeta?: { displayNames?: Record<string, string> };
   }).skillTableMeta;
   return meta?.displayNames?.[key] ?? key;
+}
+
+/** Roll 2D + `dm` against `target`, log via ev.roll under `label`, and return
+ *  the pass flag with the margin (roll + dm - target). The shared core of the
+ *  basic-chargen survival / commission / promotion checks; each caller sums
+ *  its own DMs (survival adds the anagathics penalty) and supplies the label. */
+function check2dVsTarget(
+  ch: Character, opts: { dm: number; target: number; label: string },
+): CheckResult {
+  const sv = ch.rng.roll(2);
+  const margin = sv + opts.dm - opts.target;
+  const succeeded = margin >= 0;
+  ch.log(ev.roll(opts.label, sv, opts.dm, opts.target, succeeded));
+  return { passed: succeeded, margin };
 }
 
 export function buildServiceDef(
@@ -74,24 +89,8 @@ export function buildServiceDef(
   const inverseReenlist = serviceData.checks.reenlistment.inverseToLeave;
 
   const checkSurvival = (ch: Character): boolean => {
-    let dm = evaluateDM(serviceData.checks.survival.dms, ch);
-    // PM p. 15: anagathics user takes a survival DM (a steeper one for
-    // the noble service, since "society generally frowns on nobles who
-    // take anagathics"). The DM applies for every term in which the
-    // character desires anagathics, whether or not the supply was
-    // secured. Magnitudes live in JSON (rules.anagathics).
-    if (ch.anagathics.anagathicsActiveThisTerm || ch.anagathics.wantsAnagathicsThisTerm) {
-      const anag = edition.rules.anagathics;
-      const noblePenalty = anag?.nobleSurvivalDm;
-      const standardPenalty = anag?.survivalDm ?? 0;
-      const nobleService = anag?.nobleService;
-      const isNoble = nobleService !== undefined && ch.service === nobleService;
-      dm += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
-    }
-    const sv = ch.rng.roll(2);
-    const succeeded = sv + dm >= survivalThrow;
-    ch.log(ev.roll("Survival", sv, dm, survivalThrow, succeeded));
-    return succeeded;
+    const dm = evaluateDM(serviceData.checks.survival.dms, ch) + anagathicsSurvivalDm(ch);
+    return check2dVsTarget(ch, { dm, target: survivalThrow, label: "Survival" }).passed;
   };
 
   const checkCommission = (ch: Character): CheckResult => {
@@ -99,11 +98,7 @@ export function buildServiceDef(
       return { passed: false, margin: 0 };
     }
     const dm = evaluateDM(serviceData.checks.position.dms, ch);
-    const sv = ch.rng.roll(2);
-    const margin = sv + dm - commissionThrow;
-    const succeeded = margin >= 0;
-    ch.log(ev.roll("Commission", sv, dm, commissionThrow, succeeded));
-    return { passed: succeeded, margin };
+    return check2dVsTarget(ch, { dm, target: commissionThrow, label: "Commission" });
   };
 
   const checkPromotion = (ch: Character): CheckResult => {
@@ -111,11 +106,7 @@ export function buildServiceDef(
       return { passed: false, margin: 0 };
     }
     const dm = evaluateDM(serviceData.checks.promotion.dms, ch);
-    const sv = ch.rng.roll(2);
-    const margin = sv + dm - promotionThrow;
-    const succeeded = margin >= 0;
-    ch.log(ev.roll("Promotion", sv, dm, promotionThrow, succeeded));
-    return { passed: succeeded, margin };
+    return check2dVsTarget(ch, { dm, target: promotionThrow, label: "Promotion" });
   };
 
   // --- doPromotion: walk automaticSkills + call edition hook ------------

@@ -9,7 +9,8 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { pauseGuard } from "@/lib/traveller/engine/choices";
+import { requireHook } from "@/lib/traveller/engine/registry";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
 import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
@@ -39,17 +40,12 @@ type PausableStep = YearStep | "initialTraining";
 function runStep(
   ch: Character, stepName: PausableStep, fn: () => void,
 ): boolean {
-  try {
-    fn();
-    return true;
-  } catch (err) {
-    if (err instanceof ChoicePendingError) {
-      // Preserve where we paused so resumption picks the right step.
-      ch.requireAcgState().perYear.pausedAtStep = stepName;
-      return false;
-    }
-    throw err;
+  if (pauseGuard(fn) === "paused") {
+    // Preserve where we paused so resumption picks the right step.
+    ch.requireAcgState().perYear.pausedAtStep = stepName;
+    return false;
   }
+  return true;
 }
 
 /** Clear all year-scoped state markers. Called when a year advances
@@ -66,14 +62,10 @@ function clearYearScopedState(acg: Character["acgState"]): void {
 function getPathwayImpl(ch: Character): AcgPathwayImpl {
   if (!ch.acgState) throw new Error("Character has no acgState; not on ACG path");
   const hooks = getEdition(ch.editionId).hooks;
-  const factory = hooks.acgPathways?.[ch.acgState.pathway];
-  if (!factory) {
-    throw new Error(
-      `No ACG pathway implementation for "${ch.acgState.pathway}" in edition "${ch.editionId}". ` +
-      `Register the factory in editions/${ch.editionId}/hooks.ts under acgPathways.`,
-    );
-  }
-  return factory();
+  const pathway = ch.acgState.pathway;
+  return requireHook(hooks.acgPathways, pathway, () =>
+    `No ACG pathway implementation for "${pathway}" in edition "${ch.editionId}". ` +
+    `Register the factory in editions/${ch.editionId}/hooks.ts under acgPathways.`)();
 }
 
 /** Run a single one-year assignment. Each term contains four such years.

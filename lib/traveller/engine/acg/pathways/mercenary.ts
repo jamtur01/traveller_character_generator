@@ -26,7 +26,6 @@ import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
 import {
   applyDmRules, labelToColumnKey, lookupResolution,
-  parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
@@ -40,10 +39,11 @@ import {
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, serviceSkillColumnFor, clearRetention,
   consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
-  type SkillColumnPolicy,
+  resolveCommandDuty, type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "mercenary";
 
@@ -149,11 +149,7 @@ export function mercenaryEnlist(
   }
 
   const enlistSpec = data.enlistment[service];
-  let dm = 0;
-  for (const d of enlistSpec.dms) {
-    const attr = d.attribute as keyof typeof ch.attributes;
-    if (ch.attributes[attr] >= d.min) dm += d.dm;
-  }
+  const dm = evaluateDM(enlistSpec.dms, { attributes: ch.attributes, terms: ch.terms });
   const r = ch.rng.roll(2);
   const succeeded = r + dm >= enlistSpec.target;
   ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
@@ -220,27 +216,12 @@ export function mercenaryCommandDuty(ch: Character): void {
   }
   const data = dataFor(ch);
   const acg = ch.requireMercenaryAcg();
-  const arm = acg.combatArm;
-  const svc = (acg.branch === "Marines" ? "marines" : "army");
-  const row = data.commandDuty.rows.find((r) => r.branch === arm);
-  if (!row) {
-    ch.requireAcgState().inCommand = false;
-    return;
-  }
-  const parsed = parseResolutionTarget(row[svc]);
-  if (parsed.target === "auto") {
-    ch.requireAcgState().inCommand = true;
-    return;
-  }
-  if (parsed.target === "none" || typeof parsed.target !== "number") {
-    ch.requireAcgState().inCommand = false;
-    return;
-  }
-  const dm = applyDmRules(data.commandDuty.dms, ch, "promotion"); // DMs apply by rule strings
-  const r = ch.rng.roll(2);
-  const success = r + dm >= parsed.target;
-  ch.log(ev.commandDuty(success, r, dm, parsed.target));
-  ch.requireAcgState().inCommand = success;
+  resolveCommandDuty(ch, {
+    rows: data.commandDuty.rows,
+    role: acg.combatArm,
+    cellKey: acg.branch === "Marines" ? "marines" : "army",
+    dm: applyDmRules(data.commandDuty.dms, ch, "promotion"),
+  });
 }
 
 /** Roll the year's assignment. Returns the assignment label (e.g., "Raid"). */

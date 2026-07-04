@@ -68,3 +68,20 @@ export class ChoicePendingError extends Error {
     this.name = "ChoicePendingError";
   }
 }
+
+/** Run `fn`, absorbing the ChoicePendingError that pickOrDefer throws in
+ *  interactive mode. Returns "paused" when a choice was queued (the caller
+ *  records its resume point or returns its paused phase) or "done" when `fn`
+ *  completed; any other error propagates. The one catch site for the
+ *  interactive pause/resume protocol — replaces the hand-written
+ *  `if (!(err instanceof ChoicePendingError)) throw err` at every engine and
+ *  session boundary. */
+export function pauseGuard(fn: () => void): "done" | "paused" {
+  try {
+    fn();
+    return "done";
+  } catch (err) {
+    if (err instanceof ChoicePendingError) return "paused";
+    throw err;
+  }
+}

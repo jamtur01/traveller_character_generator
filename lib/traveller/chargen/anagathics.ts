@@ -23,6 +23,23 @@ function getAnagathicsRules(ch: Character): AnagathicsRules | null {
   return (rules as AnagathicsRules) ?? null;
 }
 
+/** PM p. 15 survival DM for a character taking (or seeking) anagathics this
+ *  term: a steeper penalty for the noble service, else the standard penalty.
+ *  Returns 0 when the character neither has active anagathics nor wants them
+ *  this term. Magnitudes live in JSON (rules.anagathics). Shared by basic
+ *  chargen (serviceLoader.checkSurvival) and ACG (tables.applyDmRules). */
+export function anagathicsSurvivalDm(ch: Character): number {
+  if (!(ch.anagathics.anagathicsActiveThisTerm || ch.anagathics.wantsAnagathicsThisTerm)) {
+    return 0;
+  }
+  const anag = getEdition(ch.editionId).rules.anagathics;
+  const noblePenalty = anag?.nobleSurvivalDm;
+  const standardPenalty = anag?.survivalDm ?? 0;
+  const nobleService = anag?.nobleService;
+  const isNoble = nobleService !== undefined && ch.service === nobleService;
+  return isNoble && noblePenalty !== undefined ? noblePenalty : standardPenalty;
+}
+
 /** Try to obtain anagathics for the upcoming term. Eligibility = age ≥
  *  rules.eligibility.minAge (default 30) AND terms ≥ minTerms (default
  *  3). On availability failure with `allowRetry`, makes an extra

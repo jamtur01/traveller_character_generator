@@ -26,7 +26,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import {
-  applyDmRules, applyStructuredDms, labelToColumnKey,
+  applyDmRules, applyStructuredDms, columnDmFor, labelToColumnKey,
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
@@ -306,13 +306,7 @@ export function merchantRollAssignment(ch: Character): string {
   const size = lineSizeFor(data, acg.lineType);
   const lineCol = assignmentColumnFor(size);
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
-  const dm = (data.specificAssignment.dms ?? [])
-    .filter((d) => !d.column || d.column === lineCol)
-    .reduce((acc, d) => {
-      const rest: StructuredDm = { ...d };
-      delete rest.column;
-      return acc + applyStructuredDms([rest], ch);
-    }, 0);
+  const dm = columnDmFor(data.specificAssignment.dms, lineCol, ch);
   // Row 13 is reachable: a natural 12 plus a +1 DM hits 13. The
   // specificAssignment table includes rows for die ∈ [2,13]; do not truncate.
   const r = clampedRoll(ch, 2, dm, 2, 13);

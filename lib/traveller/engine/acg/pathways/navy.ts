@@ -15,7 +15,6 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import {
   applyStructuredDms, labelToColumnKey, lookupResolution,
-  parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applySpecialAssignment } from "@/lib/traveller/engine/acg/schools";
@@ -28,9 +27,11 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn, rollDieRow,
+  applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
+  rollDieRow, resolveCommandDuty,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "navy";
 
@@ -187,11 +188,7 @@ export function navyEnlist(
     return;
   }
 
-  let dm = 0;
-  for (const d of spec.dms) {
-    const attr = d.attribute as keyof typeof ch.attributes;
-    if (ch.attributes[attr] >= d.min) dm += d.dm;
-  }
+  const dm = evaluateDM(spec.dms, { attributes: ch.attributes, terms: ch.terms });
   const r = ch.rng.roll(2);
   const succeeded = r + dm >= spec.target;
   ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
@@ -366,17 +363,12 @@ export function navyCommandDuty(ch: Character): void {
 
 function navyRollCommandDuty(ch: Character): void {
   const data = dataFor(ch);
-  const branch = ch.requireNavyAcg().branch || "Line";
-  const row = data.commandDuty.rows.find((r) => r.branch === branch);
-  if (!row) { ch.requireAcgState().inCommand = false; return; }
-  const parsed = parseResolutionTarget(row.target);
-  if (parsed.target === "auto") { ch.requireAcgState().inCommand = true; return; }
-  if (typeof parsed.target !== "number") { ch.requireAcgState().inCommand = false; return; }
-  const dm = applyStructuredDms(data.commandDuty.dms, ch);
-  const r = ch.rng.roll(2);
-  const success = r + dm >= parsed.target;
-  ch.log(ev.commandDuty(success, r, dm, parsed.target));
-  ch.requireAcgState().inCommand = success;
+  resolveCommandDuty(ch, {
+    rows: data.commandDuty.rows,
+    role: ch.requireNavyAcg().branch || "Line",
+    cellKey: "target",
+    dm: applyStructuredDms(data.commandDuty.dms, ch),
+  });
 }
 
 /** Roll the year's assignment from the navy assignment table. */

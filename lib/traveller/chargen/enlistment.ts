@@ -14,7 +14,7 @@ import {
 import {
   applyHomeworldSkills, availableServicesForHomeworld,
 } from "@/lib/traveller/engine/homeworld";
-import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
 import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
@@ -117,7 +117,7 @@ export function beginAcg(
   // branch pick, scout admin DM, etc.); swallow ChoicePendingError so
   // the character's pendingChoices stand. The UI resolves them and the
   // pause-and-resume machinery in runAcgYear handles subsequent flow.
-  try {
+  pauseGuard(() => {
     switch (effPathway) {
       case "mercenary":
         mercenaryEnlist(ch, options.service ?? "army", options.combatArm ?? "Infantry");
@@ -133,10 +133,7 @@ export function beginAcg(
         merchantEnlist(ch, options.lineType ?? "Free Trader");
         break;
     }
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
-    // Pending choice queued — UI will resolve it.
-  }
+  });
 }
 
 /** Apply the joined service's startAge from edition data. */

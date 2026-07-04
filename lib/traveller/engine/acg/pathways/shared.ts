@@ -14,7 +14,8 @@ import {
   type ResolveAssignmentConfig,
 } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  applyDmRules, applyStructuredDms, columnDmFor, type StructuredDm,
+  applyDmRules, applyStructuredDms, columnDmFor, parseResolutionTarget,
+  type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
 import { event as ev } from "@/lib/traveller/history";
@@ -131,6 +132,27 @@ export function combatResolutionDms(
     promotion: applyDmRules(resTable.dms, ch, "promotion"),
     skills: applyDmRules(resTable.dms, ch, "skills"),
   };
+}
+
+/** Officer command-duty roll shared by the two combat pathways (mercenary,
+ *  navy): look up the character's role row, honor an "auto"/"none" cell, else
+ *  roll 2D + `dm` vs the parsed target, log it, and set inCommand. The caller
+ *  supplies the role value (combat arm / branch), the cell key (per-service
+ *  vs "target"), and the pre-summed DM (applyDmRules vs applyStructuredDms).
+ *  Missing row or non-numeric target → not in command. */
+export function resolveCommandDuty(
+  ch: Character,
+  opts: { rows: ReadonlyArray<Record<string, unknown>>; role: string; cellKey: string; dm: number },
+): void {
+  const row = opts.rows.find((r) => r.branch === opts.role);
+  if (!row) { ch.requireAcgState().inCommand = false; return; }
+  const parsed = parseResolutionTarget(row[opts.cellKey]);
+  if (parsed.target === "auto") { ch.requireAcgState().inCommand = true; return; }
+  if (typeof parsed.target !== "number") { ch.requireAcgState().inCommand = false; return; }
+  const r = ch.rng.roll(2);
+  const success = r + opts.dm >= parsed.target;
+  ch.log(ev.commandDuty(success, r, opts.dm, parsed.target));
+  ch.requireAcgState().inCommand = success;
 }
 
 /** One rank-ladder row: [code, title, ...extra]. */

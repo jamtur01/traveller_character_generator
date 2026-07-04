@@ -19,6 +19,7 @@ import {
   type ResolveContext,
 } from "./phaseRunner";
 import { alreadyApplied, markApplied } from "./subStepCache";
+import { requireHook } from "@/lib/traveller/engine/registry";
 import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 
@@ -132,22 +133,18 @@ export function buildPathwaySpecFromConfig(
   const phases = config.phases.map((p) => buildPhase(p, callbacks, build));
   const spec: PathwaySpec = { phases };
   if (config.preRun) {
-    const hook = PRERUN_HOOKS[config.preRun];
-    if (!hook) throw new Error(`Unknown preRun hook: ${config.preRun}`);
-    spec.preRun = hook;
+    spec.preRun = requireHook(PRERUN_HOOKS, config.preRun, () =>
+      `Unknown preRun hook: ${config.preRun}`);
   }
   if (config.finalize) {
-    const fn = callbacks[config.finalize];
-    if (!fn) throw new Error(`Unknown finalize callback: ${config.finalize}`);
-    spec.finalize = fn;
+    spec.finalize = requireHook(callbacks, config.finalize, () =>
+      `Unknown finalize callback: ${config.finalize}`);
   }
   return spec;
 }
 
 function lookupCallback(name: string, callbacks: PathwayCallbacks): (ctx: ResolveContext) => void {
-  const fn = callbacks[name];
-  if (!fn) throw new Error(`Unknown pathway callback: ${name}`);
-  return fn;
+  return requireHook(callbacks, name, () => `Unknown pathway callback: ${name}`);
 }
 
 function buildPhase(

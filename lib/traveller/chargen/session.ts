@@ -15,7 +15,7 @@
 // doesn't mutate the inputs.
 
 import { Character, cloneCharacter, type PreCareerOutcome } from "@/lib/traveller/character";
-import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { runAcgYear } from "@/lib/traveller/engine/runners/acg";
 import { getEditionServices } from "@/lib/traveller/services";
 import { getEdition } from "@/lib/traveller/editions";
@@ -113,13 +113,11 @@ export function applyPreCareer(
   if (opt === "skip") {
     return { snapshot: { character: ch, phase: ch.useAcg ? "acg_enlist" : "career" } };
   }
-  let r: PreCareerOutcome;
-  try {
-    r = ch.doPreCareer(opt);
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
+  let outcome: PreCareerOutcome | undefined;
+  if (pauseGuard(() => { outcome = ch.doPreCareer(opt); }) === "paused") {
     return { snapshot: { character: ch, phase: "pre_career" } };
   }
+  const r = outcome!;
   const hints: UiHints = {};
   if (r.autoEnlistPathway) {
     ch.acgPathway = r.autoEnlistPathway;
@@ -194,17 +192,9 @@ export function resolvePending(
 ): ChargenSnapshot {
   const ch = cloneCharacter(snap.character);
   const phase = snap.phase;
-  try {
-    ch.resolveChoice(choiceId, optionIdx);
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
-  }
+  pauseGuard(() => ch.resolveChoice(choiceId, optionIdx));
   if (ch.useAcg && ch.acgState?.perYear.pausedAtStep && ch.pendingChoices.length === 0) {
-    try {
-      runAcgYear(ch);
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
-    }
+    pauseGuard(() => runAcgYear(ch));
   }
   if (ch.pendingChoices.length > 0) {
     return { character: ch, phase };
@@ -266,10 +256,7 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
       ch.commissioned = true;
     }
   }
-  try {
-    ch.doServiceTermStep();
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
+  if (pauseGuard(() => ch.doServiceTermStep()) === "paused") {
     return { character: ch, phase: "term" };
   }
   if (ch.deceased) return { character: ch, phase: "end" };
@@ -277,10 +264,7 @@ export function runTerm(snap: ChargenSnapshot): ChargenSnapshot {
     return { character: ch, phase: pickSkillPhase(ch) };
   }
   if (!ch.useAcg) {
-    try {
-      ch.enforceSkillCap();
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
+    if (pauseGuard(() => ch.enforceSkillCap()) === "paused") {
       return { character: ch, phase: "term" };
     }
   }
@@ -302,10 +286,8 @@ export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot
     ch.muster.forceTableIndex = table;
   }
   ch.skillPoints -= 1;
-  try {
-    getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch);
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
+  const picked = pauseGuard(() => getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch));
+  if (picked === "paused") {
     return { character: ch, phase: pickSkillPhase(ch) };
   }
   if (ch.skillPoints > 0) {
@@ -317,19 +299,13 @@ export function pickSkill(snap: ChargenSnapshot, table: number): ChargenSnapshot
 /** End-of-term sequence — cap, aging, reenlistment, muster routing.
  *  Called once skillPoints reach 0 and no cascade choices remain. */
 function finishTerm(ch: Character): ChargenSnapshot {
-  try {
-    ch.enforceSkillCap();
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
+  if (pauseGuard(() => ch.enforceSkillCap()) === "paused") {
     return { character: ch, phase: "term" };
   }
   if (!ch.deceased) ch.doAging();
   if (ch.deceased) return { character: ch, phase: "end" };
   if (!ch.shortTermThisTerm && ch.activeDuty && !ch.deceased) {
-    try {
-      ch.doReenlistmentStep();
-    } catch (err) {
-      if (!(err instanceof ChoicePendingError)) throw err;
+    if (pauseGuard(() => ch.doReenlistmentStep()) === "paused") {
       return { character: ch, phase: "term" };
     }
   }
@@ -389,14 +365,11 @@ export function musterChoice(
   // paused cash roll wouldn't count toward maxCashRolls on resume — the
   // user could pick "cash" again past the cap.
   if (kind === "cash") ch.muster.musterCashUsed += 1;
-  try {
-    if (kind === "cash") {
-      ch.musterOutCash(cashDM);
-    } else {
-      ch.musterOutBenefit(benefitsDM);
-    }
-  } catch (err) {
-    if (!(err instanceof ChoicePendingError)) throw err;
+  const rolled = pauseGuard(() => {
+    if (kind === "cash") ch.musterOutCash(cashDM);
+    else ch.musterOutBenefit(benefitsDM);
+  });
+  if (rolled === "paused") {
     ch.muster.pendingMusterRoll = true;
     return { character: ch, phase: snap.phase };
   }

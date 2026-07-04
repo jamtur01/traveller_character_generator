@@ -9,6 +9,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { STEP_REGISTRY } from "@/lib/traveller/engine/steps";
+import { requireHook } from "@/lib/traveller/engine/registry";
 
 /** Validate that every lifecycle.terms[i].id in this edition resolves
  *  against STEP_REGISTRY. Throws on any unknown id so JSON↔code drift
@@ -53,12 +54,8 @@ export function runTermSteps(ch: Character): void {
     // — deceased / retired / mustered. Short-term status remains "active"-
     // ish so special-duty + skill steps still fire per PM p. 16.
     if (ch.isChargenEnded) return;
-    const fn = STEP_REGISTRY[step.id];
-    if (!fn) {
-      throw new Error(
-        `Edition ${edition.meta.id}: unknown lifecycle step "${step.id}"`,
-      );
-    }
+    const fn = requireHook(STEP_REGISTRY, step.id, () =>
+      `Edition ${edition.meta.id}: unknown lifecycle step "${step.id}"`);
     fn({
       ch: ch,
       edition,

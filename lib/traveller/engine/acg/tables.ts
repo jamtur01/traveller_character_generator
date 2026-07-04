@@ -3,7 +3,7 @@
 // pathway, so these helpers normalize the lookups.
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { anagathicsSurvivalDm } from "@/lib/traveller/chargen/anagathics";
 import type { AssignmentResolution, ResolutionTarget } from "./state";
 import {
   buildPredicateContext, sumPredicateDms, type Predicate,
@@ -116,17 +116,8 @@ export function applyDmRules(
   const filtered = dms.filter((r) => r.rollType === undefined || r.rollType === rollType);
   let total = sumPredicateDms(filtered, buildPredicateContext(ch));
   // PM p. 15: anagathics user takes a survival DM (a steeper one for the
-  // noble service). Magnitudes live in JSON (rules.anagathics); mirror the
-  // basic-chargen read in engine/serviceLoader.ts.
-  if (rollType === "survival" &&
-      (ch.anagathics.anagathicsActiveThisTerm || ch.anagathics.wantsAnagathicsThisTerm)) {
-    const anag = getEdition(ch.editionId).rules.anagathics;
-    const noblePenalty = anag?.nobleSurvivalDm;
-    const standardPenalty = anag?.survivalDm ?? 0;
-    const nobleService = anag?.nobleService;
-    const isNoble = nobleService !== undefined && ch.service === nobleService;
-    total += (isNoble && noblePenalty !== undefined) ? noblePenalty : standardPenalty;
-  }
+  // noble service). Shared with basic chargen via anagathicsSurvivalDm.
+  if (rollType === "survival") total += anagathicsSurvivalDm(ch);
   return total;
 }
 

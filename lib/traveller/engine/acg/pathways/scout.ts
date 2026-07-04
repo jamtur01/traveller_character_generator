@@ -32,6 +32,7 @@ import {
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
+import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "scout";
 
@@ -105,11 +106,7 @@ export function scoutEnlist(ch: Character): void {
     ch.requireAcgState().isOfficer = false;
     ch.requireScoutAcg().division = "bureaucracy";
   } else {
-    let dm = 0;
-    for (const d of data.enlistment.dms) {
-      const attr = d.attribute as keyof typeof ch.attributes;
-      if (ch.attributes[attr] >= d.min) dm += d.dm;
-    }
+    const dm = evaluateDM(data.enlistment.dms, { attributes: ch.attributes, terms: ch.terms });
     const r = ch.rng.roll(2);
     const succeeded = r + dm >= data.enlistment.target;
     ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
