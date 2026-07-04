@@ -104,6 +104,7 @@ export interface MerchantData {
     columns: string[];
     rows: Array<{
       typeOfLine: string;
+      noTransferInto?: boolean;
       minimumStarport: string;
       lineSize: "Large" | "Small" | null;
       target: string | number;
@@ -571,13 +572,18 @@ function merchantRollSkill(ch: Character): void {
 
 /** Columns of `table` available to the character this year, per the PM p. 63
  *  availability notes encoded in JSON (skillTables.*.columnAvailability). A
- *  column with no availability entry is treated as unavailable so the JSON
- *  stays the single source of truth; a table with no availability metadata at
- *  all falls back to its first non-die column (legacy shape). */
+ *  column with no availability entry is treated as unavailable, and a table
+ *  with no availability metadata at all is broken edition data — the JSON is
+ *  the single source of truth for who may roll which column. */
 function availableSkillColumns(ch: Character, table: MerchantSkillTable): string[] {
   const cols = table.columns.filter((c) => c !== "die");
   const avail = table.columnAvailability;
-  if (!avail) return cols.slice(0, 1);
+  if (!avail) {
+    throw new Error(
+      "Merchant skill table lacks columnAvailability metadata (PM p. 63) — " +
+      "declare it in the edition JSON; column access must not be guessed.",
+    );
+  }
   const dept = ch.requireMerchantAcg().department!;
   const pctx = buildPredicateContext(ch);
   return cols.filter((c) => columnAvailableForCharacter(avail[c], dept, pctx));
@@ -666,18 +672,15 @@ function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
   const order = data.enlistment.rows.map((r) => r.typeOfLine);
   const idx = order.indexOf(ch.requireMerchantAcg().lineType!);
   if (idx < 0) return;
-  // PM p. 60: "It is not possible to transfer up to a megacorporation."
-  // The enlistment table is ordered Megacorp → ... → Free Trader (index 0
-  // is Megacorp). Transfer-up lowers the index by 1; clamp at index 1 so
-  // Megacorp (index 0) is unreachable via transfer.
-  const lower = dir === "up" ? Math.max(1, idx - 1) : idx;
-  const upper = dir === "down" ? Math.min(order.length - 1, idx + 1) : idx;
-  const newIdx = dir === "up" ? lower : upper;
-  if (newIdx === idx) {
-    // Clamp: nothing changed (e.g., transfer-up from megacorp is blocked).
-    // Absence of an ev.transferred event records the no-op.
-    return;
-  }
+  // Transfer moves one row up/down the JSON enlistment table (PM p. 60).
+  // Rows flagged noTransferInto (Megacorp: "It is not possible to transfer
+  // up to a megacorporation") cannot be entered via transfer — the rule is
+  // the JSON row's flag, not an index clamp tied to implicit row order.
+  // An edge-of-table or blocked transfer is a no-op; absence of an
+  // ev.transferred event records it.
+  const newIdx = dir === "up" ? idx - 1 : idx + 1;
+  if (newIdx < 0 || newIdx >= order.length) return;
+  if (data.enlistment.rows[newIdx]?.noTransferInto === true) return;
   const from = order[idx]!;
   const to = order[newIdx]!;
   ch.requireMerchantAcg().lineType = to;

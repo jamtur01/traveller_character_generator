@@ -67,6 +67,11 @@ export interface ScoutData {
     medSchoolCommission: "field" | "bureaucracy";
     default: "field" | "bureaucracy";
   };
+  /** PM p. 57: which column the Special/War-Mission extra skill rolls on,
+   *  per division; null = the division's normal office column. */
+  specialWarMissionSkill?: {
+    columnByDivision: Record<string, string | null>;
+  };
   schoolAssignment?: {
     columns: string[];
     rows: Array<Record<string, unknown>>;
@@ -331,11 +336,24 @@ const SCOUT_CALLBACKS: PathwayCallbacks = {
   promoteScout: (ctx) => promoteScout(ctx.ch),
   scoutRollSkill: (ctx) => scoutRollSkill(ctx.ch),
   scoutFinalize: (ctx) => {
-    // Special/War mission → extra skill from the dedicated column (PM
-    // p. 57): "the extra training and preparation for the assignment
-    // results in an extra skill".
+    // PM p. 57: Special/War missions grant an extra skill. The column is
+    // JSON-declared per division — the printed Field table has a dedicated
+    // column; Bureaucracy's does not (null routes to the normal office
+    // column roll).
     if (ctx.assignment === "Special Mission" || ctx.assignment === "Wartime Mission") {
-      scoutRollSkillFromColumn(ctx.ch, "specialOrWarMission");
+      const spec = requireRule(
+        dataFor(ctx.ch).specialWarMissionSkill,
+        "acg.scout.specialWarMissionSkill", "PM p. 57",
+      );
+      const division = ctx.ch.requireScoutAcg().division;
+      const column = spec.columnByDivision[division];
+      if (column === undefined) {
+        throw new Error(
+          `acg.scout.specialWarMissionSkill.columnByDivision lacks "${division}" (PM p. 57)`,
+        );
+      }
+      if (column === null) scoutRollSkill(ctx.ch);
+      else scoutRollSkillFromColumn(ctx.ch, column);
     }
     ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
   },
@@ -354,10 +372,11 @@ function scoutRollSkillFromColumn(ch: Character, column: string): void {
   const division = ch.requireScoutAcg().division;
   const table = data.skillTables[division];
   if (!table.columns.includes(column)) {
-    // Fallback to the office's normal column if the manual column isn't
-    // present in JSON (defensive).
-    scoutRollSkill(ch);
-    return;
+    throw new Error(
+      `Scout ${division} skill table lacks column "${column}" (PM p. 57 ` +
+      "Special/Wartime Mission extra skill) — fix the edition JSON rather " +
+      "than silently substituting the normal column.",
+    );
   }
   rollSkillFromColumn(ch, table, column, `Scout ${column}`);
 }

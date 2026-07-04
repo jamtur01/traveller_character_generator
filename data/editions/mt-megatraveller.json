@@ -3343,6 +3343,7 @@
     },
     "starportXRoll": {
       "comment": "When starport rolls 12 (D-X), roll 1D to determine specific code.",
+      "triggerCell": "D-X",
       "die": "1D",
       "results": { "1": "D", "2": "D", "3": "D", "4": "E", "5": "E", "6": "X" }
     },
@@ -6382,6 +6383,10 @@
         "medSchoolCommission": "bureaucracy",
         "default": "field"
       },
+      "specialWarMissionSkill": {
+        "$rule": "PM p. 57: 'the extra training and preparation for the assignment results in an extra skill.' The printed Field skill table has a dedicated Special/War Mission column; the printed Bureaucracy table does not — a bureaucracy scout's extra skill rolls on the normal office column (null routes there).",
+        "columnByDivision": { "field": "specialOrWarMission", "bureaucracy": null }
+      },
       "officeAssignment": {
         "columns": [
           "die",
@@ -7412,6 +7417,8 @@
         "rows": [
           {
             "typeOfLine": "Megacorp",
+            "$transferRule": "PM p. 60: 'It is not possible to transfer up to a megacorporation.' Rows flagged noTransferInto cannot be entered via line transfer.",
+            "noTransferInto": true,
             "minimumStarport": "B",
             "lineSize": "Large",
             "target": "9+"

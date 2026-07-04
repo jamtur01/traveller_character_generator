@@ -19,3 +19,16 @@ export function requireRule<T>(
   }
   return value;
 }
+
+/** Parse a JSON die spec ("1D", "2D") to its die count. Unknown formats are
+ *  broken edition data and fail loudly — a silent default would quietly
+ *  change how many dice a declared throw rolls. */
+export function parseDieCount(spec: string, what: string): number {
+  const m = /^(\d+)D$/i.exec(spec.trim());
+  if (!m) {
+    throw new Error(
+      `${what}: unrecognized die spec "${spec}" — expected "<n>D" (e.g. "1D", "2D").`,
+    );
+  }
+  return parseInt(m[1]!, 10);
+}

@@ -413,15 +413,19 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         // AFTER the branch is decided so the log line includes "(Army)" or
         // "(Marines)". Pathway + branch options are read from
         // college.otc.autoEnlist (B13).
+        // Auto/default branch mirrors the first JSON-declared option
+        // (PM p. 47) — never a code literal.
+        const defaultBranchLabel = requireRule(
+          branchOptions[0], "college.otc.autoEnlist.branchOptions[0]", "PM p. 47",
+        );
+        const defaultBranch: "army" | "marines" =
+          defaultBranchLabel === "Marines" ? "marines" : "army";
         if (ch.choiceMode === "interactive") {
           ch.pickOrDefer({
             kind: "cascade",
             label: "OTC commission — choose your service branch",
             options: branchOptions,
-            preferred: [requireRule(
-              branchOptions[0],
-              "college.otc.autoEnlist.branchOptions[0]", "PM p. 47",
-            )],
+            preferred: [defaultBranchLabel],
             context: { source: "otcBranch" },
             onResolve: (ch, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
@@ -430,12 +434,15 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             },
           });
           // Pending choice — set a default so non-pause callers see something.
-          out.branch = "army";
+          out.branch = defaultBranch;
           out.notes.push("OTC commission earned (branch pending choice).");
         } else {
-          out.branch = "army";
-          ch.log(ev.promoted(rank, "OTC (Army)"));
-          out.notes.push("OTC commission earned (Army by default; player may select Army or Marines).");
+          out.branch = defaultBranch;
+          ch.log(ev.promoted(rank, `OTC (${defaultBranchLabel})`));
+          out.notes.push(
+            `OTC commission earned (${defaultBranchLabel} by default; ` +
+            `player may select ${branchOptions.join(" or ")}).`,
+          );
         }
       }
     }

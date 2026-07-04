@@ -224,14 +224,47 @@ export function navyEnlist(
       throw new Error("Navy draft rejection — choose another path");
     }
     ch.drafted = true;
-    ch.requireNavyAcg().fleet = "imperialNavy";
+    // Fleet + log label derive from the rolled JSON draft result (PM p. 52)
+    // rather than code literals that could silently diverge from the data.
+    ch.requireNavyAcg().fleet = navyFleetKeyOf(drafted);
     acg.rankCode = data.enlistment.startingRank;
     acg.isOfficer = false;
-    ch.log(ev.drafted("Imperial Navy"));
+    ch.log(ev.drafted(drafted));
   }
 
   // Branch assignment — different column for officers vs enlisted.
   navyAssignBranch(ch);
+}
+
+/** Map a printed fleet label ("Imperial Navy") to its fleet key, failing
+ *  loudly on unknown labels so JSON drift can't silently mis-file a draftee. */
+function navyFleetKeyOf(
+  label: string,
+): "imperialNavy" | "reserveFleet" | "systemSquadron" {
+  const key = labelToColumnKey(label);
+  if (key === "imperialNavy" || key === "reserveFleet" || key === "systemSquadron") {
+    return key;
+  }
+  throw new Error(`Navy draft result "${label}" is not a known fleet (PM p. 52)`);
+}
+
+/** The single fleet the JSON draft table names (PM p. 52). Used by the
+ *  pre-career wash-out draft default (chargen/enlistment.ts) so that code
+ *  cannot diverge from the declared draft destination. */
+export function navyDraftFleetKey(
+  editionId: string,
+): "imperialNavy" | "reserveFleet" | "systemSquadron" {
+  const results = requireRule(
+    getAcgPathway(editionId, "navy")?.enlistment?.draft?.results,
+    "acg.navy.enlistment.draft.results", "PM p. 52",
+  );
+  const labels = [...new Set(Object.values(results))];
+  if (labels.length !== 1 || typeof labels[0] !== "string") {
+    throw new Error(
+      "acg.navy.enlistment.draft.results must name exactly one fleet (PM p. 52)",
+    );
+  }
+  return navyFleetKeyOf(labels[0]);
 }
 
 function navyAssignBranch(ch: Character): void {

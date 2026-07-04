@@ -16,10 +16,11 @@ import {
 } from "@/lib/traveller/engine/homeworld";
 import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { mercenaryEnlist } from "@/lib/traveller/engine/acg/pathways/mercenary";
-import { navyEnlist } from "@/lib/traveller/engine/acg/pathways/navy";
+import { navyEnlist, navyDraftFleetKey } from "@/lib/traveller/engine/acg/pathways/navy";
 import { scoutEnlist } from "@/lib/traveller/engine/acg/pathways/scout";
 import { merchantEnlist } from "@/lib/traveller/engine/acg/pathways/merchantPrince";
 import { freshAcgState } from "@/lib/traveller/engine/acg/state";
+import { attrShort } from "@/lib/traveller/formatting";
 import { requireRule } from "@/lib/traveller/editions/strict";
 
 /** Options for beginAcg — pathway-specific enlistment parameters. */
@@ -54,7 +55,9 @@ export function beginAcg(
   const draft = prev?.preCareerDraftedInto;
   if (draft === "navy") {
     effPathway = "navy";
-    options = { ...options, fleet: options.fleet ?? "imperialNavy" };
+    // Wash-out draftees serve in the JSON-declared draft fleet (PM p. 47 +
+    // p. 52) — derived from acg.navy.enlistment.draft.results, not a literal.
+    options = { ...options, fleet: options.fleet ?? navyDraftFleetKey(ch.editionId) };
   } else if (draft === "army") {
     effPathway = "mercenary";
     options = { ...options, service: "army" };
@@ -215,7 +218,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     if (attrVal >= autoIf.min) {
       ch.log(ev.enlistmentAttempt(
         "Nobility", 0, 0, 0, true,
-        "distinguished by social standing (Soc 10+, auto-enrolled)",
+        `distinguished by social standing (${attrShort(autoIf.attribute as AttributeKey)} ${autoIf.min}+, auto-enrolled)`,
       ));
       applyServiceStartAge(ch, "nobles");
       ch.service = "nobles";

@@ -3,7 +3,7 @@
 // burn BPs to rescue failed rolls. Per MT Players' Manual pp. 46-47.
 
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import { requireRule } from "@/lib/traveller/editions/strict";
+import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import {
@@ -164,7 +164,10 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
         dm += getSkillLevel(ch, d.skill) * d.dm;
       }
     }
-    const dieN = o.die === "1D" ? 1 : 2;
+    const dieN = parseDieCount(
+      requireRule(o.die, "courtMartial.guilt.officer.die", "PM p. 47"),
+      "courtMartial.guilt.officer.die",
+    );
     const gr = ch.rng.roll(dieN);
     const baseTotal = gr + dm;
     let total = baseTotal;
@@ -195,7 +198,10 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   for (const d of cm.resultRoll?.dms ?? []) {
     if (resultDmWhenMatches(ch, d.when, assignment)) dm += d.dm;
   }
-  const dieN = cm.resultRoll?.die === "2D" ? 2 : 1;
+  const dieN = parseDieCount(
+    requireRule(cm.resultRoll?.die, "courtMartial.resultRoll.die", "PM p. 47"),
+    "courtMartial.resultRoll.die",
+  );
   const dieTotal = ch.rng.roll(dieN);
   let r = dieTotal + dm;
   // BP-spend gate matches tryMitigate: "manual" policy never auto-spends.
