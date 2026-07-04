@@ -70,7 +70,7 @@ export interface NavyData {
     defaultToRank?: string;
     ageLimit?: number;
   };
-  initialTraining?: string[];
+  initialTraining?: { rolls?: number; enlisted?: string; officer?: string };
   commandDuty: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   assignment: {
     columns: string[];
@@ -327,13 +327,16 @@ export function navyInitialTraining(ch: Character): void {
   const acg = ch.requireAcgState();
   const isAcademyOrNotcOfficer = acg.isOfficer &&
     acg.preCareerCommission === true;
+  const rolls = requireRule(
+    data.initialTraining?.rolls, "acg.navy.initialTraining.rolls", "PM p. 52",
+  );
   if (isAcademyOrNotcOfficer && ch.choiceMode === "interactive") {
     // Officers may choose Branch Skills or Officer Staff Skills for each
-    // of the two initial-training rolls. Expose as a player choice.
-    for (let i = 0; i < 2; i++) navyOfficerSkillChoice(ch);
+    // initial-training roll. Expose as a player choice.
+    for (let i = 0; i < rolls; i++) navyOfficerSkillChoice(ch);
     return;
   }
-  for (let i = 0; i < 2; i++) navyBranchSkillRoll(ch);
+  for (let i = 0; i < rolls; i++) navyBranchSkillRoll(ch);
 }
 
 function navyOfficerSkillChoice(ch: Character): void {

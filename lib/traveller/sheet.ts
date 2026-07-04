@@ -70,7 +70,11 @@ export function formatCharacterSheet(ch: Character): string {
   const def = ch.serviceDef();
   const memberPrefix = ch.service === "other" ? "" : def.memberName + " ";
   const rankPrefix = def.ranks[ch.rank] ? def.ranks[ch.rank] + " " : "";
-  const titlePrefix = ch.attributes.social > 10 ? `${ch.getNobleTitle()} ` : "";
+  // Title iff the edition's rules.nobleTitles declares one for this Social —
+  // getNobleTitle returns "" for socials with no entry, so the table's key
+  // domain (PM/CotI p. 8: Soc 11+) is the gate, not a code threshold.
+  const nobleTitle = ch.getNobleTitle();
+  const titlePrefix = nobleTitle ? `${nobleTitle} ` : "";
   const deceasedMark = ch.deceased ? "† " : "";
 
   const headerLeft = `${deceasedMark}${memberPrefix}${rankPrefix}${titlePrefix}${ch.name} ${ch.getAttrString()}`;

@@ -5312,6 +5312,8 @@
         ]
       },
       "initialTraining": {
+        "$rule": "PM p. 52: initial training grants two rolls on Branch Skills; academy/NOTC officers may take each roll on Branch Skills or Officer Staff Skills.",
+        "rolls": 2,
         "enlisted": "Two Branch Skills",
         "officer": "Two Branch Skills or Officer Staff Skills"
       },

@@ -3,6 +3,7 @@
 // term value matches the character's current term. MT Belter Zero-G
 // Environ-1 at term 3 is the canonical case.
 
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { applyCell } from "@/lib/traveller/engine/cellResolver";
 import type { StepFn } from "./types";
 
@@ -19,7 +20,14 @@ export const autoSkillTermStep: StepFn = ({ ch, edition }) => {
       continue;
     }
     if (entry.skill) {
-      ch.addSkill(entry.skill, entry.level ?? 1, source);
+      ch.addSkill(
+        entry.skill,
+        requireRule(
+          entry.level,
+          `automaticSkills level for "${entry.skill}"`, "TTB/PM service tables",
+        ),
+        source,
+      );
     }
   }
 };

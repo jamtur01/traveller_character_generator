@@ -221,27 +221,11 @@ const ALLOWLIST: AllowEntry[] = [
   },
   {
     file: "lib/traveller/engine/acg/preCareer.ts",
-    lineIncludes: 'branchOptions[0] ?? "Army"',
-    reason:
-      "REPORTED: candidate violation — pending round-3 audit. \"Army\" " +
-      "shadows college.otc.autoEnlist.branchOptions[0] (PM p. 47) when the " +
-      "JSON array is empty; strict form is requireRule(branchOptions[0], ...).",
-  },
-  {
-    file: "lib/traveller/engine/acg/preCareer.ts",
     lineIncludes: "parseDieExpression(s, rng) ?? 1",
     reason:
       "Dead narrowing, not a live default: every parseDynamicSkill caller " +
       "gates on hasDieExpression(skill) first, so parseDieExpression cannot " +
       "return null here; the 1 is unreachable type-narrowing.",
-  },
-  {
-    file: "lib/traveller/engine/acg/schools.ts",
-    lineIncludes: "meta?.rollsPerAttendance ?? 1",
-    reason:
-      "REPORTED: candidate violation — pending round-3 audit. All seven " +
-      "scout schools declare rollsPerAttendance in scout.schoolMeta " +
-      "(PM p. 57); the ?? 1 would silently mask a missing declaration.",
   },
   {
     file: "lib/traveller/engine/runners/acg.ts",
@@ -258,15 +242,6 @@ const ALLOWLIST: AllowEntry[] = [
       "Engine runtime state, not edition data: same 1-based year counter as " +
       "the resume-detection guard above, used to compute the loop restart " +
       "index when re-entering a paused term.",
-  },
-  {
-    file: "lib/traveller/engine/steps/autoSkillTerm.ts",
-    lineIncludes: "entry.level ?? 1",
-    reason:
-      "REPORTED: candidate violation — pending round-3 audit. The only " +
-      "trigger=\"term\" automaticSkills entry (MT Belter Zero-G Environ) " +
-      "declares level:1 in JSON; the ?? 1 would silently invent a level for " +
-      "a future entry that omits it. Strict form is requireRule(entry.level).",
   },
   {
     file: "lib/traveller/chargen/enlistment.ts",

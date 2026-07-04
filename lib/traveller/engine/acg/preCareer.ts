@@ -418,7 +418,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             kind: "cascade",
             label: "OTC commission — choose your service branch",
             options: branchOptions,
-            preferred: [branchOptions[0] ?? "Army"],
+            preferred: [requireRule(
+              branchOptions[0],
+              "college.otc.autoEnlist.branchOptions[0]", "PM p. 47",
+            )],
             context: { source: "otcBranch" },
             onResolve: (ch, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";

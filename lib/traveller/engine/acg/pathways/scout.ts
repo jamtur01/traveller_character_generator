@@ -122,7 +122,10 @@ export function scoutEnlist(ch: Character): void {
   if (hasCollege) {
     ch.log(ev.enlistmentAttempt("Imperial Scout Service (college graduate)", 0, 0, 0, true));
     acg.rankCode = hasCollegeHonors
-      ? (data.enlistment.collegeHonorsStartingRank ?? data.enlistment.startingRank)
+      ? requireRule(
+          data.enlistment.collegeHonorsStartingRank,
+          "acg.scout.enlistment.collegeHonorsStartingRank", "PM p. 56",
+        )
       : data.enlistment.startingRank;
     acg.isOfficer = false;
     ch.requireScoutAcg().division = requireRule(

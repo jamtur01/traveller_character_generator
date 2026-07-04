@@ -87,7 +87,7 @@ function tryMarineTradition(
   // received the umbrella expansion in a prior term still triggers the DM.
   const target = requireRule(
     rule.savingThrow?.target,
-    "rules.skillRestrictions savingThrow.target", "PM p. 15 homeworld override",
+    "rules.marineTradition.savingThrow.target", "PM p. 20 Marine Tradition",
   );
   let dm = 0;
   const tiers = (rule.dmIfAlreadySkillAtLeast ?? []).slice().sort(

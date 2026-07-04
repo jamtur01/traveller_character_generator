@@ -91,7 +91,7 @@ export function applyMercenarySchool(ch: Character, assignment: string): void {
  *  these on every effect that consumes them (PM pp. 50-59); a missing
  *  field is broken edition data, never a code default. */
 function requireEffectField(
-  effect: Effect, schoolName: string, field: "rolls" | "levels",
+  effect: Effect, schoolName: string, field: "rolls" | "levels" | "throwTarget",
 ): number {
   const v = effect[field];
   if (typeof v !== "number") {
@@ -179,7 +179,7 @@ function runEffect(
       return;
     }
     case "rollSkillBatch": {
-      const target = effect.throwTarget as number;
+      const target = requireEffectField(effect, schoolName, "throwTarget");
       const skills = effect.skills as string[];
       runSkillBatch(ch, schoolName, target, skills);
       return;
@@ -468,7 +468,10 @@ export function applyScoutSchool(ch: Character, school: string): void {
   if (!schools) return;
   const col = meta?.columnKey;
   if (!col) return;
-  const rolls = meta?.rollsPerAttendance ?? 1;
+  const rolls = requireRule(
+    meta?.rollsPerAttendance,
+    `acg.scout.schoolMeta.${school}.rollsPerAttendance`, "PM p. 57",
+  );
   for (let i = 0; i < rolls; i++) {
     const row = rollDieRow(ch, schools, { dice: 1, dm: 0 });
     if (!row) continue;
