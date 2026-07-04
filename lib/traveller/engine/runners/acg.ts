@@ -15,6 +15,7 @@ import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
 import { freshPerTerm, freshPerYear } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 /** Names for the sub-steps inside a single one-year assignment cycle.
  *  The runner walks these in order; the index is recorded in acgState.yearStep
@@ -230,11 +231,18 @@ export function runAcgTerm(ch: Character): void {
     ch.acgState.termStartYearsServed = ch.acgState.yearsServed ?? 0;
   }
   const yearsAtTermStart = ch.acgState.termStartYearsServed ?? 0;
-  // Rrev2: pre-career failure may force the first term to a short
-  // 3-year term (PM p. 47). The flag fires on the very first term only;
-  // we consume it here so subsequent terms run normally.
+  // Rrev2: pre-career failure may force the first term to a short term
+  // (rules.preCareer.shortFirstTermYears, PM p. 44) instead of the full
+  // rules.survival.fullTermYears term. The flag fires on the very first
+  // term only; we consume it here so subsequent terms run normally.
   const isFirstTerm = ch.terms === 0;
-  const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort) ? 3 : 4;
+  const fullTermYears = ch.fullTermYears();
+  const termLength = (isFirstTerm && ch.acgState.preCareerFirstTermShort)
+    ? requireRule(
+        getEdition(ch.editionId).rules.preCareer?.shortFirstTermYears,
+        "rules.preCareer.shortFirstTermYears", "PM p. 44",
+      )
+    : fullTermYears;
   if (!isResuming && isFirstTerm && ch.acgState.preCareerFirstTermShort) {
     // The shortTerm flag is recorded in ev.termBegin (emitted in
     // doServiceTermStep); consume the marker so subsequent terms run normally.
@@ -268,10 +276,10 @@ export function runAcgTerm(ch: Character): void {
     const termBp = bpAwardFor(ch, "Finish each 4-year term") ?? 0;
     awardBrownie(ch, termBp, `Completed ${termLength}-year term`);
     ch.terms += 1;
-    // Mark a 3-year first term as a partial (it doesn't count for full
+    // Mark a short first term as a partial (it doesn't count for full
     // muster benefits per PM short-term rule, matching basic-flow short
     // term accounting).
-    if (termLength === 3) {
+    if (termLength < fullTermYears) {
       ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
     }
   }

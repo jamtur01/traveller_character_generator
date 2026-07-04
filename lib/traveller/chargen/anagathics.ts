@@ -6,6 +6,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 interface AnagathicsRules {
   eligibility?: { minAge?: number; minTerms?: number };
@@ -34,7 +35,9 @@ export function anagathicsSurvivalDm(ch: Character): number {
   }
   const anag = getEdition(ch.editionId).rules.anagathics;
   const noblePenalty = anag?.nobleSurvivalDm;
-  const standardPenalty = anag?.survivalDm ?? 0;
+  const standardPenalty = requireRule(
+    anag?.survivalDm, "rules.anagathics.survivalDm", "PM p. 15",
+  );
   const nobleService = anag?.nobleService;
   const isNoble = nobleService !== undefined && ch.service === nobleService;
   return isNoble && noblePenalty !== undefined ? noblePenalty : standardPenalty;
@@ -46,8 +49,12 @@ export function anagathicsSurvivalDm(ch: Character): number {
  *  survival roll: pass → one retry; fail → forced short-term muster. */
 export function tryAnagathics(ch: Character, allowRetry = true): boolean {
   const rules = getAnagathicsRules(ch);
-  const minAge = rules?.eligibility?.minAge ?? 30;
-  const minTerms = rules?.eligibility?.minTerms ?? 3;
+  const minAge = requireRule(
+    rules?.eligibility?.minAge, "rules.anagathics.eligibility.minAge", "PM p. 15",
+  );
+  const minTerms = requireRule(
+    rules?.eligibility?.minTerms, "rules.anagathics.eligibility.minTerms", "PM p. 15",
+  );
   if (ch.age < minAge || ch.terms < minTerms) {
     ch.log(ev.anagathics("unavailable"));
     return false;
@@ -66,7 +73,9 @@ export function tryAnagathics(ch: Character, allowRetry = true): boolean {
  *  flag + clear onAnagathics). */
 function rollAnagathicsAvailability(ch: Character): boolean {
   const rules = getAnagathicsRules(ch);
-  const target = rules?.availability?.target ?? 12;
+  const target = requireRule(
+    rules?.availability?.target, "rules.anagathics.availability.target", "PM p. 15",
+  );
   const starportDms = rules?.availability?.dms?.byStarport ?? {};
   const techDms = rules?.availability?.dms?.byTech ?? {};
   let dm = 0;
@@ -112,8 +121,10 @@ function rollAnagathicsRetrySurvival(ch: Character): boolean {
     // the character served only rules.survival.shortTermYears — not a full
     // term. term.ts advanced age by fullTermYears at term start; rewind to
     // the short-term length, matching survival.ts short-term semantics.
-    const shortTermYears =
-      getEdition(ch.editionId).rules.survival?.shortTermYears ?? 2;
+    const shortTermYears = requireRule(
+      getEdition(ch.editionId).rules.survival?.shortTermYears,
+      "rules.survival.shortTermYears", "PM p. 16",
+    );
     ch.age -= ch.fullTermYears() - shortTermYears;
     ch.shortTermsCount += 1;
     ch.endChargenRetired("failed anagathics retry survival");
@@ -127,8 +138,12 @@ function rollAnagathicsRetrySurvival(ch: Character): boolean {
 export function preSurvivalAnagathicsHook(ch: Character): void {
   if (!ch.anagathics.anagathicsStandingOrder) return;
   const rules = getAnagathicsRules(ch);
-  const minAge = rules?.eligibility?.minAge ?? 30;
-  const minTerms = rules?.eligibility?.minTerms ?? 3;
+  const minAge = requireRule(
+    rules?.eligibility?.minAge, "rules.anagathics.eligibility.minAge", "PM p. 15",
+  );
+  const minTerms = requireRule(
+    rules?.eligibility?.minTerms, "rules.anagathics.eligibility.minTerms", "PM p. 15",
+  );
   if (ch.age < minAge || ch.terms < minTerms) return;
   ch.anagathics.wantsAnagathicsThisTerm = true;
   tryAnagathics(ch);

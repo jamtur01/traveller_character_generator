@@ -180,7 +180,7 @@
       { "age": 62, "endOfTerm": 11, "effects": { "strength": { "delta": -1, "save": 9 }, "dexterity": { "delta": -1, "save": 8 }, "endurance": { "delta": -1, "save": 9 } } },
       { "age": "66+", "endOfTerm": 12, "effects": { "strength": { "delta": -2, "save": 9 }, "dexterity": { "delta": -2, "save": 9 }, "endurance": { "delta": -2, "save": 9 }, "intelligence": { "delta": -1, "save": 9 } } }
     ],
-    "agingCrisis": { "whenAttributeReducedTo": 0, "save": 8, "dice": "2d6" }
+    "agingCrisis": { "$ruleRestoreTo": "TTB p. 24 (aging crisis) + TTB p. 17 characteristic floor ('values do not go below 1 except through calamitous injury or aging'): a survivor's reduced characteristic is restored to 1.", "whenAttributeReducedTo": 0, "save": 8, "dice": "2d6", "restoreTo": 1 }
   },
   "pdfExtraction": {
     "pdfFiles": [

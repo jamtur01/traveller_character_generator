@@ -188,7 +188,7 @@ export function rollSpecialAssignment(
   const dm = applyStructuredDms(table.dms, ch);
   const col = ch.requireAcgState().isOfficer ? "officer" : "enlisted";
   const rollOnce = (): string | null => {
-    const v = rollDieRow(ch, table, { dice: 1, dm, lo: 1, hi: 7 })?.[col];
+    const v = rollDieRow(ch, table, { dice: 1, dm })?.[col];
     return typeof v === "string" ? v : null;
   };
   let sa = rollOnce();
@@ -278,16 +278,39 @@ interface DieKeyedTable {
   rows: ReadonlyArray<Record<string, unknown>>;
 }
 
-/** Roll `dice`d6 + `dm`, clamp to [lo, hi], and return the row whose `die`
- *  equals the result (or undefined when the table has no such row). This is
- *  the one clampedRoll-plus-`rows.find(r => r.die === roll)` primitive that
- *  every die-keyed ACG table read repeats. Callers keep ownership of the DM
- *  source, the cell read, and the miss policy (silent / default / throw). */
+/** Die-row bounds of a die-keyed table: the min/max `die` its rows
+ *  declare. The clamp range for a table roll is a property of the JSON
+ *  table's shape, never a call-site literal — deriving it here keeps
+ *  the edition JSON the single source of truth for row spans. */
+export function dieRowBounds(table: DieKeyedTable): { lo: number; hi: number } {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const row of table.rows) {
+    const d = row.die;
+    if (typeof d !== "number") continue;
+    if (d < lo) lo = d;
+    if (d > hi) hi = d;
+  }
+  if (!Number.isFinite(lo)) {
+    throw new Error("die-keyed table declares no numeric die rows");
+  }
+  return { lo, hi };
+}
+
+/** Roll `dice`d6 + `dm`, clamp to the table's die-row bounds (or an explicit
+ *  [lo, hi] override for natural-range clamps like 2D 2..12), and return the
+ *  row whose `die` equals the result (or undefined when the table has no such
+ *  row). This is the one clampedRoll-plus-`rows.find(r => r.die === roll)`
+ *  primitive that every die-keyed ACG table read repeats. Callers keep
+ *  ownership of the DM source, the cell read, and the miss policy (silent /
+ *  default / throw). */
 export function rollDieRow(
   ch: Character, table: DieKeyedTable,
-  opts: { dice: number; dm: number; lo: number; hi: number },
+  opts: { dice: number; dm: number; lo?: number; hi?: number },
 ): Record<string, unknown> | undefined {
-  const r = clampedRoll(ch, opts.dice, opts.dm, opts.lo, opts.hi);
+  const bounds = opts.lo === undefined || opts.hi === undefined
+    ? dieRowBounds(table) : { lo: opts.lo, hi: opts.hi };
+  const r = clampedRoll(ch, opts.dice, opts.dm, bounds.lo, bounds.hi);
   return table.rows.find((row) => row.die === r);
 }
 
@@ -296,9 +319,11 @@ export function rollDieRow(
  *  (mercenary MOS + assignment, navy assignment). */
 export function rollDieRowOrThrow(
   ch: Character, table: DieKeyedTable,
-  opts: { dice: number; dm: number; lo: number; hi: number }, tableName: string,
+  opts: { dice: number; dm: number; lo?: number; hi?: number }, tableName: string,
 ): Record<string, unknown> {
-  const r = clampedRoll(ch, opts.dice, opts.dm, opts.lo, opts.hi);
+  const bounds = opts.lo === undefined || opts.hi === undefined
+    ? dieRowBounds(table) : { lo: opts.lo, hi: opts.hi };
+  const r = clampedRoll(ch, opts.dice, opts.dm, bounds.lo, bounds.hi);
   const row = table.rows.find((row) => row.die === r);
   if (!row) throw new Error(`${tableName} table missing row for die=${r}`);
   return row;
@@ -320,9 +345,9 @@ interface SkillRollTable extends DieKeyedTable {
 }
 
 /** The 1D-skill-roll-from-a-column ritual shared by every MT ACG pathway and
- *  the school module (PM pp. 50-59): compute the table's max die, sum the
- *  column-scoped DMs, roll 1D clamped to [1, maxDie], find the die row, and
- *  apply the resolved skill cell via applyAcgSkillCell. `column` selects the
+ *  the school module (PM pp. 50-59): sum the column-scoped DMs, roll 1D
+ *  clamped to the table's die-row bounds, find the die row, and apply the
+ *  resolved skill cell via applyAcgSkillCell. `column` selects the
  *  column-resolution shape; `source` is the history attribution — a fixed
  *  string, or a function of the matched column for tables whose label names
  *  the column that hit. A row miss or a non-string cell is a silent no-op,
@@ -335,9 +360,8 @@ export function rollSkillFromColumn(
     ? (table.columns ?? []).filter((c) => c !== "die")
     : typeof column === "string" ? [column] : column.candidates;
   const dmCol = candidates[0] ?? "";
-  const maxDie = Math.max(...table.rows.map((row) => row.die as number));
   const dm = columnDmFor(table.dms, dmCol, ch);
-  const row = rollDieRow(ch, table, { dice: 1, dm, lo: 1, hi: maxDie });
+  const row = rollDieRow(ch, table, { dice: 1, dm });
   if (!row) return;
   for (const c of candidates) {
     const v = row[c];

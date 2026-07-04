@@ -41,6 +41,12 @@ function acgChar(pathway: AcgPathwayId): Character {
   c.editionId = "mt-megatraveller";
   c.showHistory = "none";
   c.choiceMode = "auto";
+  // Mirror enlistment.ts's pathway->service mapping: production ACG always
+  // assigns a real edition service before any term (and thus any doAging)
+  // runs, and strict JSON reads reject the pre-enlistment "other" default.
+  c.service = ({
+    mercenary: "army", navy: "navy", scout: "scouts", merchantPrince: "merchants",
+  } as const)[pathway];
   c.acgState = freshAcgState(pathway);
   return c;
 }

@@ -30,6 +30,7 @@ import {
   applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
   rollDieRow, resolveCommandDuty, branchSkillCandidates,
 } from "./shared";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { event as ev } from "@/lib/traveller/history";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
@@ -73,7 +74,9 @@ export interface NavyData {
     dms?: StructuredDm[];
     notes?: string[];
   }>;
-  retention?: unknown;
+  /** PM p. 53: retention throw — roll `die`D; at/above `target` the next
+   *  assignment repeats the previous one. */
+  retention?: { throw?: { die: number; target: number }; rule?: string };
   specialAssignments?: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   specialAssignmentDetails?: Record<string, unknown>;
   specialAssignmentRules?: Record<string, {
@@ -83,7 +86,7 @@ export interface NavyData {
     historyLine?: string;
   }>;
   combatAssignments?: string[];
-  rankCaps?: { imperialNavy: number; reserveFleet: number; systemSquadron: number };
+  rankCaps?: Record<string, number>;
   specialistSchool?: Record<string, unknown>;
   serviceSkills?: {
     columns: string[];
@@ -249,7 +252,7 @@ function navyAssignBranch(ch: Character): void {
   // doesn't have it (cap at 8 attempts as a safety net — the table has
   // multiple non-Tech-Services rows so re-roll converges quickly).
   for (let attempt = 0; attempt < 8; attempt++) {
-    const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm, lo: 0, hi: 7 });
+    const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm });
     const candidate = String(row?.[col] ?? "Line");
     if (isBranchAllowedForFleet(ch, candidate)) {
       rolled = candidate;
@@ -466,7 +469,13 @@ function promoteNavy(ch: Character): void {
     );
   }
   const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
-  const opts = acg.isOfficer ? { cap: caps[acg.fleet] ?? 10 } : undefined;
+  const opts = acg.isOfficer
+    ? {
+        cap: requireRule(
+          caps[acg.fleet], `navy.rankCaps.${acg.fleet}`, "PM p. 55",
+        ),
+      }
+    : undefined;
   applyPromotion(ch, ladder, opts);
 }
 
@@ -477,14 +486,17 @@ export function navyRetention(ch: Character, assignment: string): void {
     return;
   }
   // Per manual p. 53: "no one can be retained in the same assignment more
-  // than once in succession". Retention roll: 1D=6 → same next year.
-  // Assignments flagged noRetention in navy.specialAssignmentRules are
-  // excluded (Frozen Watch / Special Duty).
+  // than once in succession". The retention throw (6+ on 1D) is declared
+  // in navy.retention.throw. Assignments flagged noRetention in
+  // navy.specialAssignmentRules are excluded (Frozen Watch / Special Duty).
   const data = dataFor(ch);
+  const spec = requireRule(
+    data.retention?.throw, "navy.retention.throw", "PM p. 53",
+  );
   const specials = (data.specialAssignmentRules ?? {}) as
     Record<string, { noRetention?: boolean }>;
-  const r = ch.rng.roll(1);
-  if (r === 6 && !specials[assignment]?.noRetention) {
+  const r = ch.rng.roll(spec.die);
+  if (r >= spec.target && !specials[assignment]?.noRetention) {
     acg.retainedAssignment = assignment;
     acg.justRetained = true;
   } else {

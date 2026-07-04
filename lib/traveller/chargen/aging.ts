@@ -6,6 +6,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { getEdition } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import { attrShort } from "@/lib/traveller/formatting";
 import type { AttributeKey } from "@/lib/traveller/types";
 
@@ -18,6 +19,7 @@ interface AgingRow {
 interface AgingCrisis {
   whenAttributeReducedTo?: number;
   save?: number;
+  restoreTo?: number;
 }
 
 /** Roll a single aging saving throw; on failure, apply the reduction. */
@@ -41,6 +43,7 @@ export function doAging(ch: Character): void {
   const aging = getEdition(ch.editionId).data.aging as {
     rows?: AgingRow[];
     agingCrisis?: AgingCrisis;
+    withdrawalDoubleSave?: boolean;
   } | undefined;
   if (!aging?.rows) return;
 
@@ -56,8 +59,10 @@ export function doAging(ch: Character): void {
   // offset (acgState.physicalAgeOffset, <= 0) likewise pulls the aging
   // basis back to physical age (PM p. 56), so cold-sleep years advance
   // chronological age without aging the body.
-  const serviceStartAge =
-    getEdition(ch.editionId).data.services[ch.service]?.startAge ?? 18;
+  const serviceStartAge = requireRule(
+    getEdition(ch.editionId).data.services[ch.service]?.startAge,
+    `services.${String(ch.service)}.startAge`, "TTB p. 18 / PM service tables",
+  );
   const physicalOffset = ch.acgState?.physicalAgeOffset ?? 0;
   const physicalAge = ch.apparentAge + physicalOffset;
   const usesAgeBasis = ch.anagathics.onAnagathics || physicalOffset !== 0;
@@ -71,15 +76,18 @@ export function doAging(ch: Character): void {
   if (!applicable) return;
 
   const withdrawal = ch.anagathics.anagathicsWithdrawalThisTerm;
-  // Anagathics benefit: auto-save N (default 2) highest-save attrs —
-  // most likely to fail, so the benefit lands where it helps most.
+  // Anagathics benefit: auto-save the N highest-save attrs (N =
+  // rules.anagathics.agingAutoSavesPerTerm) — most likely to fail, so
+  // the benefit lands where it helps most.
   const effects = Object.entries(applicable.effects) as
     [AttributeKey, { delta: number; save: number }][];
   const autoSaves = new Set<AttributeKey>();
   if (ch.anagathics.onAnagathics && !withdrawal && effects.length > 0) {
     const ranked = [...effects].sort((a, b) => b[1].save - a[1].save);
-    const autoSavesPerTerm =
-      getEdition(ch.editionId).rules.anagathics?.agingAutoSavesPerTerm ?? 2;
+    const autoSavesPerTerm = requireRule(
+      getEdition(ch.editionId).rules.anagathics?.agingAutoSavesPerTerm,
+      "rules.anagathics.agingAutoSavesPerTerm", "PM p. 15",
+    );
     const n = Math.min(autoSavesPerTerm, ranked.length);
     for (let i = 0; i < n; i++) autoSaves.add(ranked[i]![0]);
     for (const attr of autoSaves) ch.log(ev.agingSave(attr, "auto"));
@@ -87,8 +95,15 @@ export function doAging(ch: Character): void {
   for (const [attr, eff] of effects) {
     if (autoSaves.has(attr)) continue;
     if (withdrawal) {
+      // PM p. 15: withdrawal doubles each aging save — both throws must
+      // pass. The rule is declared by aging.withdrawalDoubleSave; a
+      // character can only be in withdrawal in an edition that has the
+      // anagathics rule, so the flag must be present.
+      const doubleSave = requireRule(
+        aging.withdrawalDoubleSave, "aging.withdrawalDoubleSave", "PM p. 15",
+      );
       const r1 = ch.rng.roll(2);
-      const r2 = ch.rng.roll(2);
+      const r2 = doubleSave ? ch.rng.roll(2) : r1;
       const failed = r1 < eff.save || r2 < eff.save;
       ch.log(ev.agingSave(
         attr, failed ? "failed" : "passed",
@@ -106,9 +121,19 @@ export function doAging(ch: Character): void {
   if (!ch.anagathics.onAnagathics) ch.anagathics.apparentAgeLine = ch.age + physicalOffset;
 
   // Aging crisis: any attribute at or below the configured threshold
-  // triggers a save against death. Pass → attribute clamped to 1.
-  const crisisThreshold = aging.agingCrisis?.whenAttributeReducedTo ?? 0;
-  const crisisSave = aging.agingCrisis?.save ?? 8;
+  // triggers a save against death. Pass → attribute restored to the
+  // JSON-declared restoreTo value (PM p. 47 / TTB p. 24).
+  const crisis = aging.agingCrisis;
+  const crisisThreshold = requireRule(
+    crisis?.whenAttributeReducedTo,
+    "aging.agingCrisis.whenAttributeReducedTo", "PM p. 47 / TTB p. 24",
+  );
+  const crisisSave = requireRule(
+    crisis?.save, "aging.agingCrisis.save", "PM p. 47 / TTB p. 24",
+  );
+  const restoreTo = requireRule(
+    crisis?.restoreTo, "aging.agingCrisis.restoreTo", "PM p. 47 / TTB p. 24",
+  );
   for (const a of Object.keys(ch.attributes) as AttributeKey[]) {
     if (ch.deceased) break;
     if (ch.attributes[a] <= crisisThreshold) {
@@ -117,7 +142,7 @@ export function doAging(ch: Character): void {
         `Aging crisis (${attrShort(a)})`, cr, 0, crisisSave, cr >= crisisSave,
       ));
       if (cr < crisisSave) ch.endChargenDeceased("aging crisis");
-      else ch.attributes[a] = 1;
+      else ch.attributes[a] = restoreTo;
     }
   }
 }

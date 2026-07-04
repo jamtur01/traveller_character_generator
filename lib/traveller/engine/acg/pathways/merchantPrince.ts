@@ -41,6 +41,7 @@ import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
   clearRetention, consumeRetainedAssignment, rollDieRow, rollSkillFromColumn,
 } from "./shared";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
 import { event as ev } from "@/lib/traveller/history";
@@ -91,6 +92,12 @@ export interface MerchantData {
     schoolTransfer?: { noTransferAtOrAboveOfficerRank?: number };
     reducedPassage?: unknown;
     freeTraderShip?: { minOfficerRank?: string };
+    /** PM p. 60 in-service Bonus: roll 1D on the named muster table and
+     *  receive the amount divided by `divisor` (the printed rule is half). */
+    inServiceBonus?: { fromTable?: string; divisor?: number };
+    /** PM p. 60: enlisted personnel are promoted every four years,
+     *  capped at rankMax (no titles exist above the starting grade). */
+    enlistedAdvancement?: { enlistedAutoAdvancePerTerm?: boolean; rankMax?: string };
     [k: string]: unknown;
   };
   enlistment: {
@@ -102,7 +109,6 @@ export interface MerchantData {
       target: string | number;
     }>;
     startingRank: string;
-    enlistedRankMax?: string;
     dms?: StructuredDm[];
   };
   departmentAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
@@ -292,7 +298,7 @@ function merchantAssignDepartment(ch: Character): void {
     return;
   }
   const lineCol = size === "Large" ? "largeMerchantLine" : "smallMerchantLine";
-  const row = rollDieRow(ch, data.departmentAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
+  const row = rollDieRow(ch, data.departmentAssignment, { dice: 1, dm: 0 });
   if (!row) { ch.requireMerchantAcg().department = "Purser"; return; }
   ch.requireMerchantAcg().department = String(row[lineCol] ?? "Purser");
   // acgState.department is read by subsequent assignment / skill rolls.
@@ -308,9 +314,9 @@ export function merchantRollAssignment(ch: Character): string {
   // DMs from JSON, filtered by column (largeLine/smallLine/freeTrader).
   const dm = columnDmFor(data.specificAssignment.dms, lineCol, ch);
   // Row 13 is reachable: a natural 12 plus a +1 DM hits 13. The
-  // specificAssignment table includes rows for die ∈ [2,13]; do not truncate.
-  const r = clampedRoll(ch, 2, dm, 2, 13);
-  const row = data.specificAssignment.rows.find((row) => row.die === r);
+  // specificAssignment table declares rows for die ∈ [2,13]; the clamp
+  // range derives from those rows — do not truncate.
+  const row = rollDieRow(ch, data.specificAssignment, { dice: 2, dm });
   if (!row) return "Route";
   return String(row[lineCol] ?? "Route");
 }
@@ -570,14 +576,30 @@ function rollMerchantSkillColumn(ch: Character, tableKey: string, column: string
 }
 
 function merchantAwardBonus(ch: Character): void {
-  // Bonus per manual p. 60: throw on the merchants Cash Mustering Out
-  // table, receive half the amount. Uses the basic merchants service's
-  // musterCash[] which is already the source-of-truth cash table.
+  // Bonus per PM p. 60: throw 1D on the merchants muster-out cash table
+  // and receive the amount divided by specialRules.inServiceBonus.divisor
+  // (the printed rule is half). Table choice + divisor live in JSON; the
+  // basic merchants service's musterCash[] is the source-of-truth table,
+  // and the roll's clamp range derives from its declared indices.
   const merchants = ch.editionService("merchants" as never);
   if (!merchants) return;
-  const rawRoll = clampedRoll(ch, 1, 0, 1, 7);
+  const bonus = requireRule(
+    dataFor(ch).specialRules?.inServiceBonus,
+    "merchantPrince.specialRules.inServiceBonus", "PM p. 60",
+  );
+  if (bonus.fromTable !== "musterCash") {
+    throw new Error(
+      `merchantPrince.specialRules.inServiceBonus.fromTable must be ` +
+      `"musterCash" (PM p. 60); got "${bonus.fromTable}".`,
+    );
+  }
+  const divisor = requireRule(
+    bonus.divisor, "merchantPrince.specialRules.inServiceBonus.divisor", "PM p. 60",
+  );
+  const indices = Object.keys(merchants.musterCash).map(Number);
+  const rawRoll = clampedRoll(ch, 1, 0, Math.min(...indices), Math.max(...indices));
   const fullAmount = merchants.musterCash[rawRoll] ?? 0;
-  const cash = Math.floor(fullAmount / 2);
+  const cash = Math.floor(fullAmount / divisor);
   if (cash <= 0) return;
   ch.credits += cash;
   ch.muster.musterLog.push(`Cr${cash} bonus (in-service)`);
@@ -621,7 +643,7 @@ export function merchantSpecialAssignment(ch: Character): void {
   const data = dataFor(ch);
   if (!data.specialDuty) return;
   const dm = applyStructuredDms(data.specialDuty.dms, ch);
-  const row = rollDieRow(ch, data.specialDuty, { dice: 1, dm, lo: 1, hi: 7 });
+  const row = rollDieRow(ch, data.specialDuty, { dice: 1, dm });
   if (!row) return;
   const acg = ch.requireAcgState();
   const col = acg.isOfficer ? "officers" : "deckHands";
@@ -643,15 +665,22 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
     if (!acg.isOfficer) {
       // PM p. 63 — rank-by-line-type, deadline-to-O1, and revert behavior
       // come from merchantPrince.specialRules.specialDutyCommission in JSON.
-      const rule = data.specialRules?.specialDutyCommission;
+      const rule = requireRule(
+        data.specialRules?.specialDutyCommission,
+        "merchantPrince.specialRules.specialDutyCommission", "PM p. 63",
+      );
+      const defaultRank = requireRule(
+        rule.defaultRank,
+        "merchantPrince.specialRules.specialDutyCommission.defaultRank", "PM p. 63",
+      );
       const lineType = ch.requireMerchantAcg().lineType!;
-      const rank = rule?.rankByLineType?.[lineType] ?? rule?.defaultRank ?? "O0";
+      const rank = rule.rankByLineType?.[lineType] ?? defaultRank;
       acg.isOfficer = true;
       acg.rankCode = rank;
       ch.commissioned = true;
       // O0 holders must pass exam for O1 within passO1DeadlineYears or
       // revert to enlisted (PM p. 63).
-      if (rank === (rule?.defaultRank ?? "O0") && rule?.passO1DeadlineYears) {
+      if (rank === defaultRank && rule.passO1DeadlineYears) {
         acg.commissionO0DeadlineYear =
           (acg.yearsServed ?? 0) + rule.passO1DeadlineYears;
       }
@@ -687,8 +716,11 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       // PM p. 61: school/training transfers do not take place for officers
       // at/above the JSON-declared rank (O5+), nor when already in the
       // target department.
-      const minBlockRank =
-        data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank ?? 5;
+      const minBlockRank = requireRule(
+        data.specialRules?.schoolTransfer?.noTransferAtOrAboveOfficerRank,
+        "merchantPrince.specialRules.schoolTransfer.noTransferAtOrAboveOfficerRank",
+        "PM p. 61",
+      );
       const from = acg.department;
       const to = transfer[1]!;
       const blockedByRank = officerRank >= minBlockRank;
@@ -738,7 +770,14 @@ export function applyReducedPassageBenefit(ch: Character): void {
     conditions?: string;
   } | undefined;
   if (!rp?.appliesAfterMuster) return;
-  const label = `Reduced Passage (${rp.passage ?? "Mid Psg"} at ${rp.pricePercent ?? 50}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
+  const passage = requireRule(
+    rp.passage, "merchantPrince.specialRules.reducedPassage.passage", "PM p. 61",
+  );
+  const pricePercent = requireRule(
+    rp.pricePercent, "merchantPrince.specialRules.reducedPassage.pricePercent",
+    "PM p. 61",
+  );
+  const label = `Reduced Passage (${passage} at ${pricePercent}%${rp.conditions ? `, ${rp.conditions}` : ""})`;
   if (ch.benefits.includes(label)) return;
   ch.log(ev.raw(label, "simple"));
   ch.addBenefit(label);
@@ -771,17 +810,25 @@ function offerMerchantDepartmentChange(ch: Character, data: MerchantData): void 
 }
 
 export function merchantStartOfTerm(ch: Character): void {
-  // PM p. 60: enlisted personnel advance one grade every four years. The
-  // merchant service defines no enlisted rank titles above the starting
-  // grade, so seniority numbering is capped at enlistedRankMax to avoid
-  // emitting phantom ranks (e.g. E15) for improbably long enlisted careers.
+  // PM p. 60: enlisted personnel advance one grade every four years —
+  // declared in specialRules.enlistedAdvancement. Seniority numbering is
+  // capped at rankMax to avoid emitting phantom ranks (e.g. E15) for
+  // improbably long enlisted careers (no titles above the starting grade).
   const acg = ch.requireAcgState();
   if (!acg.isOfficer && ch.terms > 0) {
+    const adv = requireRule(
+      dataFor(ch).specialRules?.enlistedAdvancement,
+      "merchantPrince.specialRules.enlistedAdvancement", "PM p. 60",
+    );
+    if (adv.enlistedAutoAdvancePerTerm !== true) return;
     const code = acg.rankCode;
     const m = code.match(/^E(\d+)$/);
     if (m) {
       const n = parseInt(m[1]!, 10);
-      const maxCode = dataFor(ch).enlistment.enlistedRankMax ?? code;
+      const maxCode = requireRule(
+        adv.rankMax,
+        "merchantPrince.specialRules.enlistedAdvancement.rankMax", "PM p. 60",
+      );
       const maxN = parseInt(maxCode.replace(/[^\d]/g, ""), 10) || n;
       if (n < maxN) ch.requireAcgState().rankCode = `E${n + 1}`;
     }
@@ -790,9 +837,19 @@ export function merchantStartOfTerm(ch: Character): void {
   // O0 holders revert to enlisted if they haven't passed O1 within the
   // commission deadline (PM p. 63). All thresholds in JSON.
   const data = dataFor(ch);
-  const rule = data.specialRules?.specialDutyCommission;
-  const o0Rank = rule?.defaultRank ?? "O0";
-  const revertRank = rule?.revertOnDeadlineToRank ?? "E1";
+  const rule = requireRule(
+    data.specialRules?.specialDutyCommission,
+    "merchantPrince.specialRules.specialDutyCommission", "PM p. 63",
+  );
+  const o0Rank = requireRule(
+    rule.defaultRank,
+    "merchantPrince.specialRules.specialDutyCommission.defaultRank", "PM p. 63",
+  );
+  const revertRank = requireRule(
+    rule.revertOnDeadlineToRank,
+    "merchantPrince.specialRules.specialDutyCommission.revertOnDeadlineToRank",
+    "PM p. 63",
+  );
   const deadline = ch.requireAcgState().commissionO0DeadlineYear;
   if (deadline !== undefined &&
       ch.requireAcgState().rankCode === o0Rank &&
@@ -873,7 +930,8 @@ function rollMerchantExam(
 }
 
 /** PM p. 61: enlisted characters serving a Route assignment may test for
- *  a commission. Passing the department's entry-officer exam grants O1. */
+ *  a commission. Passing the department's entry-officer exam grants the
+ *  ladder's entry-officer rank (the row whose code is rank 1). */
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireAcgState();
@@ -887,9 +945,9 @@ function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   );
   if (succeeded) {
     acg.isOfficer = true;
-    acg.rankCode = "O1";
+    acg.rankCode = entry[0];
     ch.commissioned = true;
-    ch.log(ev.promoted("O1", "Route-assignment promotion exam"));
+    ch.log(ev.promoted(entry[0], "Route-assignment promotion exam"));
   }
 }
 
@@ -947,8 +1005,17 @@ export function merchantFinalizeMuster(ch: Character): void {
   const m = acg.rankCode.match(/^O(\d+)$/);
   if (!m) return;
   const n = parseInt(m[1]!, 10);
-  const minRankCode = dataFor(ch).specialRules?.freeTraderShip?.minOfficerRank ?? "O5";
-  const minRank = parseInt(minRankCode.replace(/[^\d]/g, ""), 10) || 5;
+  const minRankCode = requireRule(
+    dataFor(ch).specialRules?.freeTraderShip?.minOfficerRank,
+    "merchantPrince.specialRules.freeTraderShip.minOfficerRank", "PM p. 61",
+  );
+  const minRank = parseInt(minRankCode.replace(/[^\d]/g, ""), 10);
+  if (Number.isNaN(minRank)) {
+    throw new Error(
+      `merchantPrince.specialRules.freeTraderShip.minOfficerRank ` +
+      `("${minRankCode}") does not name an officer rank (PM p. 61).`,
+    );
+  }
   if (n < minRank) return;
   if (acg.freeTraderShipEarned) return;
   acg.freeTraderShipEarned = true;

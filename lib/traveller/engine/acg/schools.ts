@@ -22,6 +22,7 @@ import {
 import {
   buildPredicateContext, evaluatePredicate, type Predicate,
 } from "@/lib/traveller/engine/predicate";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 type Effect = Record<string, unknown> & { type: string };
 
@@ -86,6 +87,22 @@ export function applyMercenarySchool(ch: Character, assignment: string): void {
   applySpecialAssignment(ch, "mercenary", assignment);
 }
 
+/** Numeric field of a school effect (rolls / levels). The JSON declares
+ *  these on every effect that consumes them (PM pp. 50-59); a missing
+ *  field is broken edition data, never a code default. */
+function requireEffectField(
+  effect: Effect, schoolName: string, field: "rolls" | "levels",
+): number {
+  const v = effect[field];
+  if (typeof v !== "number") {
+    throw new Error(
+      `${schoolName}: effect "${effect.type}" is missing numeric "${field}" ` +
+      `(PM pp. 50-59) — declare it in specialAssignmentDetails.`,
+    );
+  }
+  return v;
+}
+
 function runEffect(
   ch: Character,
   pathway: "mercenary" | "navy",
@@ -141,13 +158,13 @@ function runEffect(
     }
     case "rollOnMosTable": {
       if (!effectWhenMatches(ch, effect)) return;
-      const rolls = (effect.rolls as number) ?? 1;
+      const rolls = requireEffectField(effect, schoolName, "rolls");
       for (let i = 0; i < rolls; i++) rollOnMos(ch, data, schoolName);
       return;
     }
     case "rollOnBranchSkillsTable": {
       if (!effectWhenMatches(ch, effect)) return;
-      const rolls = (effect.rolls as number) ?? 1;
+      const rolls = requireEffectField(effect, schoolName, "rolls");
       for (let i = 0; i < rolls; i++) rollOnBranchSkills(ch, data, schoolName);
       return;
     }
@@ -157,7 +174,7 @@ function runEffect(
       return;
     case "rollOnServiceSkillsTable": {
       if (!effectWhenMatches(ch, effect)) return;
-      const rolls = (effect.rolls as number) ?? 1;
+      const rolls = requireEffectField(effect, schoolName, "rolls");
       for (let i = 0; i < rolls; i++) rollOnServiceSkills(ch, data, schoolName);
       return;
     }
@@ -169,7 +186,7 @@ function runEffect(
     }
     case "fixedSkill": {
       const skill = String(effect.skill);
-      const levels = (effect.levels as number) ?? 1;
+      const levels = requireEffectField(effect, schoolName, "levels");
       ch.addSkill(skill, levels, schoolName);
       return;
     }
@@ -253,9 +270,12 @@ function rollOnSpecialistSchool(
   ch: Character, data: PathwayData, schoolName: string,
 ): void {
   if (!ch.acgState || !data.specialistSchool) return;
-  const row = rollDieRow(ch, data.specialistSchool, { dice: 1, dm: 0, lo: 1, hi: 6 });
+  const row = rollDieRow(ch, data.specialistSchool, { dice: 1, dm: 0 });
   if (!row) return;
-  const threshold = data.specialistSchool.schoolingThreshold ?? 16;
+  const threshold = requireRule(
+    data.specialistSchool.schoolingThreshold,
+    "specialistSchool.schoolingThreshold", "PM p. 57",
+  );
   const useSchooling =
     (ch.attributes.intelligence + ch.attributes.education) > threshold;
   const col = useSchooling ? "schooling" : "training";
@@ -297,7 +317,12 @@ function ocsCommission(ch: Character): void {
       break;
     }
   }
-  if (!resolved) resolved = policy?.defaultToRank ?? "O1";
+  if (!resolved) {
+    resolved = requireRule(
+      policy?.defaultToRank, "ocsAdvancement.defaultToRank",
+      "PM p. 51 line 3182-3187",
+    );
+  }
   ch.acgState.isOfficer = true;
   ch.acgState.rankCode = resolved;
   ch.log(ev.promoted(resolved, skipsSkills ? "OCS (no skills, senior rank)" : "OCS"));
@@ -326,15 +351,23 @@ function attacheOrAide(
   if (!ch.acgState) return;
   const r = ch.rng.roll(1);
   const label = pathway === "navy" ? "Naval Attache" : "Military Attache";
-  // Promotion target comes from the assignment effect (PM p. 55/59:
-  // attache/aide promotes on 1D <= 4).
-  const promoteAtMost = (effect.promoteOnRollAtMost as number | undefined) ?? 4;
-  if (r <= promoteAtMost) {
-    promoteOfficer(ch, data, label);
-    ch.improveAttribute("social", 1);
-  } else {
-    ch.improveAttribute("social", 1);
-  }
+  // Promotion target and the social bonus both come from the assignment
+  // effect (PM p. 55/59: attache/aide promotes on 1D <= 4; +1 Social
+  // Standing is gained either way).
+  const promoteAtMost = requireRule(
+    effect.promoteOnRollAtMost as number | undefined,
+    "specialAssignmentDetails.<attache>.effects[].promoteOnRollAtMost",
+    "PM p. 55/59",
+  );
+  const socialBonus = requireRule(
+    effect.socialBonus as { attribute: string; delta: number } | undefined,
+    "specialAssignmentDetails.<attache>.effects[].socialBonus", "PM p. 55/59",
+  );
+  if (r <= promoteAtMost) promoteOfficer(ch, data, label);
+  ch.improveAttribute(
+    socialBonus.attribute as Parameters<Character["improveAttribute"]>[0],
+    socialBonus.delta,
+  );
 }
 
 function promoteOfficer(ch: Character, data: PathwayData, reason?: string): void {
@@ -427,7 +460,7 @@ export function applyScoutSchool(ch: Character, school: string): void {
   if (!col) return;
   const rolls = meta?.rollsPerAttendance ?? 1;
   for (let i = 0; i < rolls; i++) {
-    const row = rollDieRow(ch, schools, { dice: 1, dm: 0, lo: 1, hi: 6 });
+    const row = rollDieRow(ch, schools, { dice: 1, dm: 0 });
     if (!row) continue;
     const skill = row[col];
     if (typeof skill === "string") applyAcgSkillCell(ch, skill, `Scout ${school}`);

@@ -301,6 +301,12 @@
       "shortTermYears": 2,
       "fullTermYears": 4
     },
+    "preCareer": {
+      "$rule": "PM p. 44 (ACG pre-career options): a character whose pre-career course fails after admission is aged one year (washOutAgeYears) and serves a short three-year first term (shortFirstTermYears). The college Education gain is 1D-2 and 'a throw of less than one is treated as one' (educationGainFloor).",
+      "shortFirstTermYears": 3,
+      "washOutAgeYears": 1,
+      "educationGainFloor": 1
+    },
     "reenlistment": {
       "$rule": "MT PM p. 15 (basic reenlistment rule, echoed for ACG): a reenlistment throw is required at the end of every term; a roll of exactly 12 forces mandatory reenlistment. MT allows unlimited voluntary terms — there is no fixed retirement-term cap.",
       "mandatoryOnExactRoll": 12,
@@ -3421,6 +3427,8 @@
   },
   "aging": {
     "source": "MegaTraveller Players Manual enhanced character generation aging table, printed page 47",
+    "$ruleWithdrawalDoubleSave": "PM p. 15 (anagathics withdrawal): a character in withdrawal makes each aging saving throw twice and must succeed on both; failing either applies the reduction.",
+    "withdrawalDoubleSave": true,
     "rows": [
       {
         "age": 34,
@@ -3591,9 +3599,11 @@
     ],
     "agingCrisis": {
       "$rule": "PM p. 47 / TTB p. 24: 'If, as a result of aging, a characteristic is reduced to zero, the character has an aging crisis and becomes quite ill. A basic saving throw of 8+ applies to avoid death.'",
+      "$ruleRestoreTo": "PM p. 47 + PM/TTB p. 17 characteristic floor ('values do not go below 1 except through calamitous injury or aging'): a survivor's reduced characteristic is restored to 1.",
       "whenAttributeReducedTo": 0,
       "save": 8,
-      "dice": "2d6"
+      "dice": "2d6",
+      "restoreTo": 1
     }
   },
   "advancedCharacterGeneration": {
@@ -3653,6 +3663,8 @@
           },
           "otc": {
             "target": 8,
+            "commissionRank": "O1",
+            "$ruleCommissionRank": "PM p. 44/47: an OTC graduate is 'commissioned as an officer' in the Army or the Marines — the entry officer rank, O1 (2nd Lieutenant).",
             "autoEnlist": { "$rule": "PM p. 47: OTC graduates are automatically enlisted and commissioned as O1 in the Army or the Marines (mercenary pathway); the branch is a player choice.", "pathway": "mercenary", "branchOptions": ["Army", "Marines"] },
             "dms": [
               {
@@ -3664,6 +3676,8 @@
           },
           "notc": {
             "target": 9,
+            "commissionRank": "O1",
+            "$ruleCommissionRank": "PM p. 44/47: an NOTC graduate is 'commissioned as an officer' in the Navy — the entry officer rank, O1 (Ensign).",
             "autoEnlist": { "$rule": "PM p. 47: NOTC graduates auto-enlist as O1 in the Reserve Fleet (navy pathway).", "branch": "navy", "pathway": "navy" },
             "dms": [
               {
@@ -3694,7 +3708,9 @@
             ],
             "benefit": "Education becomes 10 or current Education +1, whichever is greater.",
             "$ruleEducationFloor": "PM p. 47: honors graduates receive Education 10 or current Edu +1, whichever is greater — the numeric floor is 10.",
-            "educationFloor": 10
+            "educationFloor": 10,
+            "$ruleEducationBump": "PM p. 44: honors raises Education to 10 or current Education +1, whichever is greater — the increment is +1.",
+            "educationBump": 1
           }
         },
         "navalAcademy": {
@@ -3983,7 +3999,7 @@
       "decorationTiers": {
         "$rule": "PM p. 49 line 3050-3056 (Mercenary), echoed on p. 53 for Navy. 'If a character rolls the indicated number or higher, he is awarded the MCUF. If at least three higher, MCG. If at least six higher, SEH.' Purple Heart is awarded on exact survival roll in a combat assignment (PM p. 49 line 3042-3046).",
         "tiers": [
-          { "minMargin": 6, "award": "SEH",  "sehPromotion": true },
+          { "minMargin": 6, "award": "SEH",  "sehPromotion": { "$rule": "PM p. 46: the SEH carries an automatic promotion of one rank, applied at muster-out. maxRank caps the bump at the highest officer grade any ACG ladder defines (PM pp. 50-63).", "rankBonus": 1, "maxRank": "O10" } },
           { "minMargin": 3, "award": "MCG"  },
           { "minMargin": 0, "award": "MCUF" }
         ],
@@ -3995,6 +4011,11 @@
       "courtMartial": {
         "trigger": {
           "rule": "Decoration roll fails by 6 or more (e.g., rolls a 4 when 10+ is required)."
+        },
+        "dishonorableDischarge": {
+          "$rule": "PM p. 47 (court-martial box): a dishonorable discharge costs the character three mustering-out rolls and forfeits any pension.",
+          "musterRollPenalty": 3,
+          "pensionForfeit": true
         },
         "guilt": {
           "enlisted": "Automatically guilty.",
@@ -4716,7 +4737,7 @@
         "Attache/Aide": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "note": "PM p. 55: attache promotes on 1D <= 4." }
+            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 55: attache promotes on 1D <= 4 and gains +1 Social Standing either way." }
           ]
         }
       },
@@ -5332,7 +5353,7 @@
       "decorationTiers": {
         "$rule": "PM p. 53 line 3311 'survival, decoration, promotion, and skills' — same tier structure as Mercenary (PM p. 49).",
         "tiers": [
-          { "minMargin": 6, "award": "SEH",  "sehPromotion": true },
+          { "minMargin": 6, "award": "SEH",  "sehPromotion": { "$rule": "PM p. 46: the SEH carries an automatic promotion of one rank, applied at muster-out. maxRank caps the bump at the highest officer grade any ACG ladder defines (PM pp. 50-63).", "rankBonus": 1, "maxRank": "O10" } },
           { "minMargin": 3, "award": "MCG"  },
           { "minMargin": 0, "award": "MCUF" }
         ],
@@ -5711,7 +5732,8 @@
         }
       },
       "retention": {
-        "throw": "6 on 1D",
+        "$rule": "PM p. 53: retention — throw 6 exactly on 1D and the next assignment repeats the previous assignment.",
+        "throw": { "die": 1, "target": 6 },
         "rule": "Next assignment repeats previous assignment; not more than once in succession; never involuntary after a four-year term; not on special assignments."
       },
       "specialAssignments": {
@@ -5843,7 +5865,7 @@
         "Naval Attache": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Naval Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "note": "PM p. 59: aide promotes on 1D <= 4." }
+            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 59: aide promotes on 1D <= 4 and gains +1 Social Standing either way." }
           ]
         },
         "Command College": {
@@ -6411,6 +6433,8 @@
         "Administration": "Admin"
       },
       "dutyAssignment": {
+        "$ruleForcedMission": "PM p. 57: a natural 2 on the duty-assignment roll always means a wartime mission, regardless of any DM taken.",
+        "forcedMissionOnNatural": 2,
         "columns": [
           "die",
           "field",
@@ -7243,8 +7267,9 @@
         ]
       },
       "reenlistment": {
-        "$rule": "PM p. 59: up-or-out — a character's ordinary rank must be at least equal to the number of terms served or reenlistment is not permitted (enforced in code as rankNum < terms).",
-        "target": 3
+        "$rule": "PM p. 57 (printed p. 59 checklist): up-or-out — a character's ordinary (enlisted-equivalent) rank must be at least equal to the number of terms served or reenlistment is not permitted.",
+        "target": 3,
+        "upOrOut": { "enlistedRankMinPerTerm": true }
       },
       "detachedDuty": {
         "$rule": "PM p. 57: Detached Duty scouts get permanent detached duty on a roll of 9+ (DM + terms served), with a Cr4000/yr stipend.",
@@ -7303,6 +7328,16 @@
         "freeTraderShip": {
           "$rule": "PM p. 61: a Free Trader Owner/Captain (rank O5+) musters out with a free trader ship as an automatic benefit.",
           "minOfficerRank": "O5"
+        },
+        "inServiceBonus": {
+          "$rule": "PM p. 60: 'Bonus: Throw the number shown or greater on 2D to receive a bonus. If it is received, throw 1D on the cash column of the merchants Mustering Out Table, and receive half the amount shown.'",
+          "fromTable": "musterCash",
+          "divisor": 2
+        },
+        "enlistedAdvancement": {
+          "$rule": "PM p. 60: 'Enlisted personnel are promoted every four years.' One grade per completed term; rankMax caps seniority numbering because no enlisted titles are defined above the starting grade (avoids phantom ranks for improbably long enlisted careers).",
+          "enlistedAutoAdvancePerTerm": true,
+          "rankMax": "E9"
         }
       },
       "assignmentColumnMap": {
@@ -7341,8 +7376,6 @@
       "enlistment": {
         "$rule": "PM p. 60: enlisted merchants start at rank E1.",
         "startingRank": "E1",
-        "$ruleEnlistedRankMax": "PM p. 60: enlisted advance one grade every four years; no titles are defined above the starting grade, so seniority numbering is capped here to avoid phantom ranks.",
-        "enlistedRankMax": "E9",
         "columns": [
           "typeOfLine",
           "minimumStarport",

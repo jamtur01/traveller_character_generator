@@ -51,6 +51,9 @@ export interface ScoutData {
     columns: string[];
     rows: Array<Record<string, unknown>>;
     dms?: StructuredDm[];
+    /** PM p. 57: this natural roll always forces a wartime mission,
+     *  regardless of any DM taken. */
+    forcedMissionOnNatural?: number;
   };
   assignmentResolution: Record<string, {
     columns: string[];
@@ -64,7 +67,13 @@ export interface ScoutData {
   schools?: { columns: string[]; rows: Array<Record<string, unknown>> };
   skillTables: { field: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] }; bureaucracy: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] } };
   ranks: { ordinary: Array<[string, string]>; administrator: Array<[string, string, number]> };
-  reenlistment: { target: number };
+  reenlistment: {
+    target: number;
+    /** PM p. 57 up-or-out gate: when enlistedRankMinPerTerm is set, an
+     *  ordinary-rank scout whose rank number is below terms served is
+     *  denied reenlistment. */
+    upOrOut?: { enlistedRankMinPerTerm?: boolean };
+  };
   detachedDuty: { musterTarget: number; stipendPerYear: number };
 }
 
@@ -170,10 +179,10 @@ export function scoutRollAssignment(ch: Character): string {
   if (retained) return retained;
   const division = ch.requireScoutAcg().division;
   // PM p. 57: administrators (rank ≥ the administrator floor) in the
-  // Bureaucracy may voluntarily take a +DM on the duty roll. Both the
-  // eligible-rank floor and the DM value come from JSON (the administrator
-  // ladder and the dutyAssignment.dms rankAtLeast gate). A natural 2 always
-  // forces a war mission regardless of the DM.
+  // Bureaucracy may voluntarily take a +DM on the duty roll. The
+  // eligible-rank floor, the DM value, and the forced-mission natural
+  // all come from JSON (the administrator ladder, the dutyAssignment.dms
+  // rankAtLeast gate, and dutyAssignment.forcedMissionOnNatural).
   const adminMin = Math.min(
     ...data.ranks.administrator.map((r) => rankNum(String(r[0]))),
   );
@@ -205,8 +214,10 @@ export function scoutRollAssignment(ch: Character): string {
   }
   const dm = useAdminDm ? adminDm : 0;
   const baseRoll = ch.rng.roll(2);
-  // Natural 2 always means war mission regardless of any DM.
-  const dieKey = baseRoll === 2 ? 2 : Math.max(2, Math.min(12, baseRoll + dm));
+  // The forced-mission natural (PM p. 57: 2) bypasses any DM.
+  const forced = data.dutyAssignment.forcedMissionOnNatural;
+  const dieKey = (forced !== undefined && baseRoll === forced)
+    ? forced : Math.max(2, Math.min(12, baseRoll + dm));
   const row = data.dutyAssignment.rows.find((row) => row.die === dieKey);
   if (!row) return "Routine";
   const v = row[division];
@@ -311,7 +322,7 @@ function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);
   if (!data.schoolAssignment) return;
   const officeKey = labelToColumnKey(ch.requireScoutAcg().office ?? "Survey");
-  const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0, lo: 1, hi: 6 });
+  const row = rollDieRow(ch, data.schoolAssignment, { dice: 1, dm: 0 });
   if (!row) return;
   const school = row[officeKey];
   if (typeof school !== "string") return;
@@ -424,9 +435,11 @@ export function scoutFinalizeMuster(ch: Character): void {
 
 export function scoutReenlist(ch: Character): boolean {
   const data = dataFor(ch);
-  // Up-or-out: ordinary rank must be ≥ terms served (PM p. 57).
+  // Up-or-out (PM p. 57): ordinary rank must be ≥ terms served. The gate
+  // is declared in scout.reenlistment.upOrOut.
   const acg = ch.requireAcgState();
-  if (!acg.isOfficer && rankNum(acg.rankCode) < ch.terms) {
+  if (data.reenlistment.upOrOut?.enlistedRankMinPerTerm === true &&
+      !acg.isOfficer && rankNum(acg.rankCode) < ch.terms) {
     acg.reenlistDenialReason = "up-or-out: insufficient rank";
     return false;
   }

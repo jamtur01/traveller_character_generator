@@ -3,6 +3,7 @@
 // burn BPs to rescue failed rolls. Per MT Players' Manual pp. 46-47.
 
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import {
@@ -54,22 +55,28 @@ export function awardDecoration(
   ch.log(ev.decoration(award));
   const bp = bpAwardFor(ch, `${award} received`) ?? 0;
   if (bp > 0) awardBrownie(ch, bp, `Decoration ${award}`);
-  // SEH carries an automatic +1 rank at muster-out. The flag comes from
+  // SEH carries an automatic promotion at muster-out. The spec comes from
   // decorationTiers[].sehPromotion in JSON — search the active edition's
   // decoration tiers for a matching award entry.
-  if (matchesDecorationFlag(ch, award, "sehPromotion")) {
+  if (sehPromotionSpec(ch, award)) {
     ch.acgState.sehPromotionPending = true;
   }
 }
 
-function matchesDecorationFlag(
-  ch: Character,
-  award: string,
-  flag: "sehPromotion",
-): boolean {
+/** SEH muster-out promotion (PM p. 46): rank bonus + rank cap, declared on
+ *  the decoration tier that carries it (decorationTiers[].sehPromotion). */
+export interface SehPromotionSpec {
+  rankBonus: number;
+  maxRank: string;
+}
+
+/** The `sehPromotion` spec attached to the named award's decoration tier,
+ *  or null when no tier declares one. Decoration tiers may live on the
+ *  pathway or in `common` (the shared PM block); pathway wins. */
+export function sehPromotionSpec(
+  ch: Character, award = "SEH",
+): SehPromotionSpec | null {
   const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
-  // Decoration tiers may live on the pathway or in `common` (the shared
-  // PM block). Check pathway first, then fall back to common.
   const sources = [
     getAcgPathway(ch.editionId, ch.acgState?.pathway),
     acg?.common,
@@ -78,9 +85,9 @@ function matchesDecorationFlag(
     const tiers = src?.decorationTiers?.tiers;
     if (!tiers) continue;
     const match = tiers.find((t) => t.award === award);
-    if (match) return match[flag] === true;
+    if (match) return (match.sehPromotion as SehPromotionSpec | undefined) ?? null;
   }
-  return false;
+  return null;
 }
 
 /** Resolve a decoration tier for the given margin from the active
@@ -130,6 +137,9 @@ interface CourtMartialSpec {
     };
   };
   resultRoll?: { die: string; dms: CourtMartialDm[] };
+  /** PM p. 47: dishonorable discharge costs muster-out rolls and the
+   *  pension. Consulted whenever a die result names a DD. */
+  dishonorableDischarge?: { musterRollPenalty: number; pensionForfeit: boolean };
   dieResults: CourtMartialOutcome[];
 }
 
@@ -267,28 +277,47 @@ function applyDisciplinaryResult(ch: Character, result: string, lc: string): voi
   const st = ch.acgState;
   if (!st) return;
 
-  // Reprimand: -N to next promotion. Manual p. 47 lists -1 and -3 variants.
+  // Reprimand: -N to next promotion. Manual p. 47 lists -1 and -3 variants;
+  // the magnitude is parsed from the JSON result string and must be present.
   if (lc.includes("reprimand")) {
     const m = result.match(/-(\d+)/);
+    if (!m) {
+      throw new Error(
+        `Court-martial result "${result}" names a reprimand without a numeric ` +
+        `promotion penalty (PM p. 47) — fix common.courtMartial.dieResults.`,
+      );
+    }
     st.nextPromotionPenalty =
-      (st.nextPromotionPenalty ?? 0) - (m ? parseInt(m[1]!, 10) : 1);
+      (st.nextPromotionPenalty ?? 0) - parseInt(m[1]!, 10);
   }
 
-  // Reduce rank by N.
+  // Reduce rank by N — magnitude parsed from the JSON result string.
   if (lc.includes("reduce rank")) {
     const m = result.match(/reduce rank\s*-?(\d+)/i);
-    reduceRank(ch, m ? parseInt(m[1]!, 10) : 1);
+    if (!m) {
+      throw new Error(
+        `Court-martial result "${result}" names a rank reduction without a ` +
+        `numeric magnitude (PM p. 47) — fix common.courtMartial.dieResults.`,
+      );
+    }
+    reduceRank(ch, parseInt(m[1]!, 10));
   }
 
-  // Dishonorable discharge — the character loses 3 mustering-out rolls and
-  // gets no pension (manual p. 47), captured as flags consulted at muster.
+  // Dishonorable discharge — the muster-roll penalty and pension forfeit
+  // are declared in common.courtMartial.dishonorableDischarge (PM p. 47)
+  // and captured as flags consulted at muster.
   const dishonorable = lc.includes("dishonorable") || /\bdd\b/i.test(result);
   if (dishonorable) {
-    st.musterRollPenalty = (st.musterRollPenalty ?? 0) - 3;
-    st.pensionForfeit = true;
+    const dd = requireRule(
+      (commonAcg(ch)?.courtMartial as CourtMartialSpec | undefined)
+        ?.dishonorableDischarge,
+      "common.courtMartial.dishonorableDischarge", "PM p. 47",
+    );
+    st.musterRollPenalty = (st.musterRollPenalty ?? 0) - dd.musterRollPenalty;
+    if (dd.pensionForfeit) st.pensionForfeit = true;
     ch.log(ev.statusChange(
       "dishonorablyDischarged",
-      "-3 mustering-out rolls, no pension",
+      `-${dd.musterRollPenalty} mustering-out rolls, no pension`,
     ));
   }
 

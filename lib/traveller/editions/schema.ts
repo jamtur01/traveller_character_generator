@@ -108,6 +108,15 @@ export const RulesSchema = z.looseObject({
     shortTermYears: z.number().optional(),
     fullTermYears: z.number().optional(),
   }).optional(),
+  // ACG pre-career consequences (PM p. 44): wash-out aging, the short
+  // three-year first term, and the college Education-gain floor. MT-only
+  // (editions without ACG omit the block); when present all three values
+  // are required so a partial declaration fails at load.
+  preCareer: z.looseObject({
+    shortFirstTermYears: z.number(),
+    washOutAgeYears: z.number(),
+    educationGainFloor: z.number(),
+  }).optional(),
   // Skill-eligibility table-row counts (CT/MT divergence).
   skillEligibility: z.object({
     initialTerm: z.number().optional(),
@@ -296,11 +305,17 @@ const AgingRowSchema = z.looseObject({
 
 const AgingSchema = z.looseObject({
   source: z.string().optional(),
+  // PM p. 15 anagathics withdrawal: each aging save is made twice and
+  // both must pass. Declared only by editions with the anagathics rule.
+  withdrawalDoubleSave: z.boolean().optional(),
   rows: z.array(AgingRowSchema),
   agingCrisis: z.looseObject({
     whenAttributeReducedTo: z.number().optional(),
     save: z.number().optional(),
     dice: z.string().optional(),
+    // PM p. 47 / TTB p. 24: value the reduced characteristic is restored
+    // to when the crisis save passes.
+    restoreTo: z.number().optional(),
   }).optional(),
 });
 

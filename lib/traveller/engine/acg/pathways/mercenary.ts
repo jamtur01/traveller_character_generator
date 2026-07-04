@@ -38,7 +38,7 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, serviceSkillColumnFor, clearRetention,
-  consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
+  consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
   resolveCommandDuty, type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
@@ -196,9 +196,7 @@ export function mercenaryInitialTraining(ch: Character): void {
   // PM p. 51: homeworld tech DM (+1 at Avg Stellar+) lives in data.mos.dms
   // as a StructuredDm (homeworldTechAtLeast); evaluate it here.
   const dm = applyDmRules(data.mos.dms, ch, "skills");
-  const r = clampedRoll(ch, 1, dm, 1, 7);
-  const row = data.mos.rows.find((row) => row.die === r);
-  if (!row) throw new Error(`MOS table missing row for die=${r}`);
+  const row = rollDieRowOrThrow(ch, data.mos, { dice: 1, dm }, "MOS");
   const mosSkill = row[armKey] as string | undefined;
   if (!mosSkill) {
     throw new Error(`MOS table missing column "${armKey}" for combat arm "${acg.combatArm}"`);

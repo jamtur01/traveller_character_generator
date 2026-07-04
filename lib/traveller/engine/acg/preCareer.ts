@@ -30,6 +30,7 @@ import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
 import { rollDieRow } from "@/lib/traveller/engine/acg/pathways/shared";
+import { requireRule } from "@/lib/traveller/editions/strict";
 
 export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
@@ -98,16 +99,24 @@ interface ThrowSpec {
   target: number;
   dms: Array<{ attribute: string; min: number; dm: number }>;
   autoEnlist?: AutoEnlistSpec;
+  /** NOTC: rank granted with the commission (PM p. 44/47). */
+  commissionRank?: string;
 }
 interface EducationSpec {
   roll: string;
   dms: Array<{ attribute: string; min: number; dm: number }>;
 }
-interface HonorsSpec extends ThrowSpec { benefit?: string; educationFloor?: number }
+interface HonorsSpec extends ThrowSpec {
+  benefit?: string;
+  educationFloor?: number;
+  educationBump?: number;
+}
 interface OtcSpec {
   target: number;
   dms: Array<{ attribute: string; min: number; dm: number }>;
   autoEnlist?: { pathway: AcgPathwayId; branchOptions: string[] };
+  /** Rank granted with the commission (PM p. 44/47). */
+  commissionRank?: string;
 }
 /** A pre-career admission/attendance gate (Flight School). Each populated
  *  list names prior schools that satisfy the gate under a given condition;
@@ -159,9 +168,10 @@ interface PreCareerResult {
   honors: boolean;
   commissioned: boolean;
   branch: "army" | "marines" | "navy" | "merchants" | null;
-  /** Rank granted by graduation (PM p. 47: academies grant O1; Medical
-   *  School graduates may take an automatic direct commission at O3). */
-  commissionRank?: "O1" | "O3";
+  /** Rank granted by graduation (PM p. 47: academies/OTC/NOTC grant O1;
+   *  Medical School graduates may take an automatic direct commission at
+   *  O3). Declared per option in JSON (commissionRank). */
+  commissionRank?: string;
   skills: Array<[string, number]>;
   attributeChanges: Record<string, number>;
   /** Pathways the character can subsequently enter without normal
@@ -347,7 +357,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     ));
     if (!succeeded) {
       out.notes.push("Did not complete the course.");
-      out.ageGainedYears += 1;
+      out.ageGainedYears += requireRule(
+        getEdition(ch.editionId).rules.preCareer?.washOutAgeYears,
+        "rules.preCareer.washOutAgeYears", "PM p. 44",
+      );
       // PM p. 47 success-failure outcomes:
       //   College: age 19, first term short.
       //   Naval Academy: age 19, drafted Navy, short term.
@@ -383,9 +396,17 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       const r = ch.rng.roll(2);
       if (r + dm >= spec.otc.target) {
         out.commissioned = true;
-        const auto = spec.otc.autoEnlist;
-        out.autoEnlistPathway = auto?.pathway ?? "mercenary";
-        const branchOptions = auto?.branchOptions ?? ["Army", "Marines"];
+        const rank = requireRule(
+          spec.otc.commissionRank, "college.otc.commissionRank", "PM p. 44/47",
+        );
+        out.commissionRank = rank;
+        const auto = requireRule(
+          spec.otc.autoEnlist, "college.otc.autoEnlist", "PM p. 47",
+        );
+        out.autoEnlistPathway = auto.pathway;
+        const branchOptions = requireRule(
+          auto.branchOptions, "college.otc.autoEnlist.branchOptions", "PM p. 47",
+        );
         // PM p. 47 line 2782-2783: an OTC graduate is automatically
         // enlisted in (and commissioned as an officer in) the Army or the
         // Marines. Branch is a player choice; the promotion event is logged
@@ -402,7 +423,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
             onResolve: (ch, chosen) => {
               const branch = chosen === "Marines" ? "marines" : "army";
               ch.requireAcgState().preCareerBranch = branch;
-              ch.log(ev.promoted("O1", `OTC (${chosen})`));
+              ch.log(ev.promoted(rank, `OTC (${chosen})`));
             },
           });
           // Pending choice — set a default so non-pause callers see something.
@@ -410,7 +431,7 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
           out.notes.push("OTC commission earned (branch pending choice).");
         } else {
           out.branch = "army";
-          ch.log(ev.promoted("O1", "OTC (Army)"));
+          ch.log(ev.promoted(rank, "OTC (Army)"));
           out.notes.push("OTC commission earned (Army by default; player may select Army or Marines).");
         }
       }
@@ -420,11 +441,19 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
       const r = ch.rng.roll(2);
       if (r + dm >= spec.notc.target) {
         out.commissioned = true;
-        const auto = spec.notc.autoEnlist;
-        out.branch = auto?.branch ?? "navy";
-        out.autoEnlistPathway = auto?.pathway ?? "navy";
+        const rank = requireRule(
+          spec.notc.commissionRank, "college.notc.commissionRank", "PM p. 44/47",
+        );
+        out.commissionRank = rank;
+        const auto = requireRule(
+          spec.notc.autoEnlist, "college.notc.autoEnlist", "PM p. 47",
+        );
+        out.branch = requireRule(
+          auto.branch, "college.notc.autoEnlist.branch", "PM p. 47",
+        );
+        out.autoEnlistPathway = auto.pathway;
         out.notes.push("NOTC commission earned (Navy).");
-        ch.log(ev.promoted("O1", "NOTC"));
+        ch.log(ev.promoted(rank, "NOTC"));
       }
     }
   }
@@ -435,7 +464,11 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     // Parse "1D-2" / "1D-3" — the constant offset.
     const m = spec.education.roll.match(/^1D([-+]\d+)$/);
     const offset = m ? parseInt(m[1]!, 10) : 0;
-    const gain = Math.max(1, ch.rng.roll(1) + offset + dm);
+    const floor = requireRule(
+      getEdition(ch.editionId).rules.preCareer?.educationGainFloor,
+      "rules.preCareer.educationGainFloor", "PM p. 44",
+    );
+    const gain = Math.max(floor, ch.rng.roll(1) + offset + dm);
     out.attributeChanges.education = (out.attributeChanges.education ?? 0) + gain;
     // Applied by applyPreCareerResult via improveAttribute → ev.attributeChange.
   }
@@ -456,13 +489,13 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
         // the honors bump are alternative paths to the same Edu value.
         // Take the larger of (existing roll, honors target) so honors
         // never makes the character worse off than the plain roll.
-        const floor = spec.honors.educationFloor;
-        if (floor === undefined) {
-          throw new Error(
-            `Edition "${ch.editionId}" college.honors is missing educationFloor.`,
-          );
-        }
-        const target = Math.max(floor, ch.attributes.education + 1);
+        const floor = requireRule(
+          spec.honors.educationFloor, "college.honors.educationFloor", "PM p. 44",
+        );
+        const bump = requireRule(
+          spec.honors.educationBump, "college.honors.educationBump", "PM p. 44",
+        );
+        const target = Math.max(floor, ch.attributes.education + bump);
         const honorsDelta = target - ch.attributes.education;
         const rollDelta = out.attributeChanges.education ?? 0;
         out.attributeChanges.education = Math.max(honorsDelta, rollDelta);
@@ -483,7 +516,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     if (auto) {
       out.commissioned = true;
       out.branch = auto.branch;
-      out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O1";
+      out.commissionRank = requireRule(
+        pco?.commissionRank as string | undefined,
+        `${opt}.commissionRank`, "PM p. 47",
+      );
       out.autoEnlistPathway = auto.pathway;
     }
   } else if (opt === "medicalSchool" && out.graduated) {
@@ -494,7 +530,10 @@ export function attemptPreCareer(ch: Character, opt: PreCareerOption): PreCareer
     // auto mode and the pending-choice default both use the first listed
     // service (Navy). Branch/pathway mapping is data-driven (B7).
     out.commissioned = true;
-    out.commissionRank = (pco?.commissionRank as "O1" | "O3" | undefined) ?? "O3";
+    out.commissionRank = requireRule(
+      pco?.commissionRank as string | undefined,
+      "medicalSchool.commissionRank", "PM p. 47",
+    );
     out.medicalDirectCommission = true;
     const branches =
       (pco?.directCommissionBranches as MedicalCommissionBranch[] | undefined) ?? [];
@@ -666,8 +705,12 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
   const pco = acg?.common?.preCareerOptions?.merchantAcademy as
     { skills?: { throwTarget?: number; rolls?: number } } | undefined;
   const skillsSpec = pco?.skills;
-  const skillsTarget = skillsSpec?.throwTarget ?? 4;
-  const skillsCount = skillsSpec?.rolls ?? 3;
+  const skillsTarget = requireRule(
+    skillsSpec?.throwTarget, "merchantAcademy.skills.throwTarget", "PM p. 47",
+  );
+  const skillsCount = requireRule(
+    skillsSpec?.rolls, "merchantAcademy.skills.rolls", "PM p. 47",
+  );
   const apply = (choice: string): void => {
     out.notes.push(`Merchant department: ${choice}`);
     // PM p. 47: "may select the department to which he will be assigned"
@@ -676,7 +719,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     if (ch.acgState?.pathway === "merchantPrince") ch.acgState.department = choice;
     for (let i = 0; i < skillsCount; i++) {
       if (ch.rng.roll(1) >= skillsTarget) {
-        const row = rollDieRow(ch, dept, { dice: 1, dm: 0, lo: 1, hi: 6 });
+        const row = rollDieRow(ch, dept, { dice: 1, dm: 0 });
         const skill = row?.[choice];
         if (typeof skill === "string") out.skills.push([skill, 1]);
       }
@@ -746,7 +789,9 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   // honors this rank by skipping the default E1 reset.
   if (r.commissioned && ch.acgState) {
     ch.acgState.isOfficer = true;
-    ch.acgState.rankCode = r.commissionRank ?? "O1";
+    ch.acgState.rankCode = requireRule(
+      r.commissionRank, "preCareerOptions.<option>.commissionRank", "PM p. 47",
+    );
     ch.acgState.preCareerCommission = true;
     ch.acgState.preCareerBranch = r.branch ?? null;
   }
