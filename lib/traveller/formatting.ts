@@ -74,3 +74,37 @@ const ATTR_SHORT: Record<AttributeKey, string> = {
   education: "Edu",
   social: "Soc",
 };
+
+// jsPDF's base-14 fonts and pdf-lib's StandardFonts use WinAnsi (CP1252). A
+// character outside that set makes jsPDF encode the whole string as UTF-16
+// (garbage on the sheet) and makes pdf-lib's drawText throw. Keep
+// WinAnsi-encodable chars, fold the symbols the engine can emit to ASCII, and
+// drop anything else so a stray glyph degrades gracefully.
+const CP1252_HIGH: Record<number, true> = {
+  0x20ac: true, 0x201a: true, 0x0192: true, 0x201e: true, 0x2026: true,
+  0x2020: true, 0x2021: true, 0x02c6: true, 0x2030: true, 0x0160: true,
+  0x2039: true, 0x0152: true, 0x017d: true, 0x2018: true, 0x2019: true,
+  0x201c: true, 0x201d: true, 0x2022: true, 0x2013: true, 0x2014: true,
+  0x02dc: true, 0x2122: true, 0x0161: true, 0x203a: true, 0x0153: true,
+  0x017e: true, 0x0178: true,
+};
+const GLYPH_FOLD: Record<string, string> = {
+  "\u2192": "->", "\u2190": "<-", "\u2194": "<->", "\u21d2": "=>",
+  "\u2264": "<=", "\u2265": ">=", "\u2212": "-", "\u2208": " in ",
+  "\u2248": "~", "\u2260": "!=",
+};
+
+/** Fold a string to WinAnsi (CP1252): keep encodable chars, map known symbols
+ *  to ASCII, drop the rest, so PDF text renders instead of breaking. */
+export function toWinAnsi(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const cp = ch.codePointAt(0) ?? 0;
+    if (cp <= 0x7e || (cp >= 0xa0 && cp <= 0xff) || CP1252_HIGH[cp]) {
+      out += ch;
+    } else {
+      out += GLYPH_FOLD[ch] ?? "?";
+    }
+  }
+  return out;
+}

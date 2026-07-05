@@ -3,7 +3,7 @@ import { Character } from "./traveller/character";
 import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
-import { numCommaSep, safeFilename } from "./traveller/formatting";
+import { numCommaSep, safeFilename, toWinAnsi } from "./traveller/formatting";
 import type { AttributeKey } from "./traveller/types";
 import {
   acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
@@ -49,39 +49,6 @@ const W = PAGE_W - 2 * MARGIN; // 540
 
 const LINE = 0.7;
 const BOLD = "helvetica";
-
-// jsPDF's base-14 fonts use WinAnsi (CP1252). A single character outside that
-// set makes jsPDF encode the whole string as UTF-16, which the non-embedded
-// font can't render — the line comes out as spread-out, clipped garbage on the
-// sheet. Keep WinAnsi-encodable chars, fold the symbols the engine can emit to
-// ASCII, and drop anything else so a stray glyph degrades gracefully instead of
-// nuking the line. (The engine already prefers prose/ASCII at the source; this
-// is the belt-and-suspenders guard at the PDF boundary.)
-const CP1252_HIGH: Record<number, true> = {
-  0x20ac: true, 0x201a: true, 0x0192: true, 0x201e: true, 0x2026: true,
-  0x2020: true, 0x2021: true, 0x02c6: true, 0x2030: true, 0x0160: true,
-  0x2039: true, 0x0152: true, 0x017d: true, 0x2018: true, 0x2019: true,
-  0x201c: true, 0x201d: true, 0x2022: true, 0x2013: true, 0x2014: true,
-  0x02dc: true, 0x2122: true, 0x0161: true, 0x203a: true, 0x0153: true,
-  0x017e: true, 0x0178: true,
-};
-const GLYPH_FOLD: Record<string, string> = {
-  "\u2192": "->", "\u2190": "<-", "\u2194": "<->", "\u21d2": "=>",
-  "\u2264": "<=", "\u2265": ">=", "\u2212": "-", "\u2208": " in ",
-  "\u2248": "~", "\u2260": "!=",
-};
-function toWinAnsi(s: string): string {
-  let out = "";
-  for (const ch of s) {
-    const cp = ch.codePointAt(0) ?? 0;
-    if (cp <= 0x7e || (cp >= 0xa0 && cp <= 0xff) || CP1252_HIGH[cp]) {
-      out += ch;
-    } else {
-      out += GLYPH_FOLD[ch] ?? "?";
-    }
-  }
-  return out;
-}
 
 function drawCheckbox(doc: jsPDF, x: number, y: number, checked: boolean) {
   doc.rect(x, y, 8, 8);

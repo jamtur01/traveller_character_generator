@@ -4,12 +4,12 @@
 // field names below come from the template's AcroForm (420 fields); the
 // skill-layout sets mirror the sheet's printed skill grid, not a game rule.
 
-import { PDFDocument, PDFName, PDFBool } from "pdf-lib";
+import { PDFDocument, PDFName, PDFBool, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { getEdition } from "@/lib/traveller/editions";
 import { characteristicDm } from "@/lib/traveller/core";
-import { numCommaSep, safeFilename } from "@/lib/traveller/formatting";
+import { numCommaSep, safeFilename, titleize, toWinAnsi } from "@/lib/traveller/formatting";
 import { careerLabel, assignmentLabel, rankTitleFor } from "@/lib/traveller/engine/mongoose/labels";
 
 /** Sheet skills laid out with three numbered specialty slots (`<Skill> N
@@ -72,7 +72,7 @@ function mapSkills(ch: Character, out: Record<string, string>): [string, number]
       if (slot > MAX_SKILL_SLOTS) { overflow.push([name, level]); continue; }
       slotUsed[field] = slot;
       out[`${field} ${slot} Modifier`] = String(level);
-      if (specialty) out[`${field} Specialism ${slot}`] = specialty;
+      if (specialty) out[`${field} Specialism ${slot}`] = titleize(specialty);
     } else if (SIMPLE_SKILLS.has(field)) {
       out[`${field} Modifier`] = String(level);
     } else {
@@ -103,7 +103,15 @@ function mapCareers(ch: Character, out: Record<string, string>): void {
   });
 }
 
-/** Allies / Contacts / Rivals / Enemies (note only; the engine tracks no name). */
+/** Turn a connection's engine source-note into a clean sheet note (the engine
+ *  tracks no name — the player fills that in). */
+function connectionNote(note: string): string {
+  if (note === "muster benefit") return "Gained while mustering out";
+  return note || "Gained during a career";
+}
+
+/** Allies / Contacts / Rivals / Enemies — every connection gets a visible row
+ *  (clean source note; the player supplies the name). */
 function mapConnections(ch: Character, out: Record<string, string>): void {
   const counts: Record<string, number> = {};
   for (const conn of ch.mongooseState?.connections ?? []) {
@@ -112,7 +120,7 @@ function mapConnections(ch: Character, out: Record<string, string>): void {
     const n = (counts[conn.relation] ?? 0) + 1;
     counts[conn.relation] = n;
     if (n > MAX_CONNECTION_ROWS) continue;
-    if (conn.note) out[`${label} Notes ${n}`] = conn.note;
+    out[`${label} Notes ${n}`] = connectionNote(conn.note);
   }
 }
 
@@ -134,6 +142,25 @@ function mapBenefits(ch: Character, out: Record<string, string>): void {
   if (shares.length > 0) out["Ship Shares"] = shares.join(", ");
 }
 
+/** A concise career outline for the History & Background box: one line per
+ *  career (assignment, terms, final rank) plus a muster-out summary — an
+ *  outline for the player to build on, not a step-by-step log. */
+function historyBackground(ch: Character): string {
+  const history = ch.mongooseState?.history ?? [];
+  if (history.length === 0) return "";
+  const lines = history.map((rec) => {
+    const career = careerLabel(ch, rec.career);
+    const asg = assignmentLabel(ch, rec.career, rec.assignment);
+    const terms = `${rec.terms} term${rec.terms === 1 ? "" : "s"}`;
+    const title = rankTitleFor(ch, rec.career, rec.assignment, rec.finalRank, rec.commissioned);
+    return `${career} (${asg}) - ${terms}${title ? `, rose to ${title}` : ""}.`;
+  });
+  const spoils = ch.credits > 0 ? [`Cr${numCommaSep(ch.credits)}`] : [];
+  spoils.push(...ch.benefits);
+  if (spoils.length > 0) lines.push(`Mustered out with ${spoils.join(", ")}.`);
+  return lines.join("\n");
+}
+
 /** Build the AcroForm text-field values for a Mongoose character. Pure: no PDF
  *  dependency, so the mapping is unit-testable on its own. */
 export function mongooseSheetFields(ch: Character): Record<string, string> {
@@ -150,7 +177,76 @@ export function mongooseSheetFields(ch: Character): Record<string, string> {
   mapCareers(ch, out);
   mapConnections(ch, out);
   mapBenefits(ch, out);
+  const background = historyBackground(ch);
+  if (background) out["History & Background"] = background;
   return out;
+}
+
+// The sheet's section-bar orange (#ec6607) + Arial Narrow / Bebas Neue titles,
+// sampled from the template. pdf-lib has no Arial Narrow, so Helvetica stands in.
+const SHEET_ORANGE = rgb(0.925, 0.4, 0.027);
+const HISTORY_INK = rgb(0.12, 0.12, 0.12);
+const HIST_MARGIN = 40;
+const HIST_BAR_H = 26;
+const HIST_BODY = 9;
+const HIST_LINE = 12.5;
+
+/** Wrap a line into pieces that fit maxW at the given font size. */
+function wrapText(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const out: string[] = [];
+  let cur = "";
+  for (const word of text.split(/\s+/)) {
+    const trial = cur ? `${cur} ${word}` : word;
+    if (cur && font.widthOfTextAtSize(trial, size) > maxW) {
+      out.push(cur);
+      cur = word;
+    } else {
+      cur = trial;
+    }
+  }
+  if (cur) out.push(cur);
+  return out.length > 0 ? out : [""];
+}
+
+/** Add a history page: the sheet's orange section bar + a bordered content box.
+ *  Returns the page and the first body baseline. */
+function addHistoryPage(
+  pdf: PDFDocument, size: { width: number; height: number }, bold: PDFFont, cont: boolean,
+): { page: PDFPage; top: number } {
+  const page = pdf.addPage([size.width, size.height]);
+  const innerW = size.width - HIST_MARGIN * 2;
+  const barY = size.height - HIST_MARGIN - HIST_BAR_H;
+  page.drawRectangle({ x: HIST_MARGIN, y: barY, width: innerW, height: HIST_BAR_H, color: SHEET_ORANGE });
+  page.drawText(cont ? "SERVICE HISTORY (CONTINUED)" : "SERVICE HISTORY", {
+    x: HIST_MARGIN + 10, y: barY + 8, size: 14, font: bold, color: rgb(1, 1, 1),
+  });
+  page.drawRectangle({
+    x: HIST_MARGIN, y: HIST_MARGIN, width: innerW, height: barY - HIST_MARGIN,
+    borderColor: rgb(0.72, 0.72, 0.72), borderWidth: 1,
+  });
+  return { page, top: barY - 16 };
+}
+
+/** Append the full service history on fresh landscape pages styled like the
+ *  sheet's blocks — the CT/MT-style history detail the fillable sheet lacks. */
+async function drawHistoryPages(pdf: PDFDocument, ch: Character): Promise<void> {
+  const raw = ch.renderHistory("verbose");
+  if (raw.length === 0) return;
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const size = pdf.getPage(0).getSize();
+  const maxW = size.width - HIST_MARGIN * 2 - 12;
+  const lines = raw.flatMap((line) => wrapText(toWinAnsi(line), font, HIST_BODY, maxW));
+  let cursor = addHistoryPage(pdf, size, bold, false);
+  let y = cursor.top;
+  for (const line of lines) {
+    if (y < HIST_MARGIN + HIST_LINE) {
+      cursor = addHistoryPage(pdf, size, bold, true);
+      y = cursor.top;
+    }
+    cursor.page.drawText(line, { x: HIST_MARGIN + 6, y, size: HIST_BODY, font, color: HISTORY_INK });
+    y -= HIST_LINE;
+  }
 }
 
 /** Fill the fillable template bytes with a Mongoose character's data and return
@@ -165,8 +261,11 @@ export async function fillMongooseSheet(
   const valid = new Set(form.getFields().map((f) => f.getName()));
   for (const [name, value] of Object.entries(mongooseSheetFields(ch))) {
     if (!valid.has(name) || value === "") continue;
-    form.getTextField(name).setText(value);
+    const field = form.getTextField(name);
+    if (value.includes("\n")) field.enableMultiline();
+    field.setText(value);
   }
+  await drawHistoryPages(pdf, ch);
   form.acroForm.dict.set(PDFName.of("NeedAppearances"), PDFBool.True);
   return pdf.save({ updateFieldAppearances: false });
 }

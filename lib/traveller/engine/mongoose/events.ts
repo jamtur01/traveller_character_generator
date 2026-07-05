@@ -16,5 +16,5 @@ export function rollEvent(ch: Character): void {
     career.events, roll, `mongoose.careers.${careerId}.events[${roll}]`, "MgT2 Core",
   );
   ch.log(ev.mongooseEvent(roll, row.text));
-  applyEffects(ch, row.effects);
+  applyEffects(ch, row.effects, row.text);
 }

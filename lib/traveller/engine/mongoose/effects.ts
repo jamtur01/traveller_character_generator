@@ -29,8 +29,10 @@ const CHARACTERISTIC_FULL_NAMES: Record<string, true> = {
 };
 
 /** Apply a list of effects in order. */
-export function applyEffects(ch: Character, effects: readonly MongooseEffect[]): void {
-  for (const e of effects) applyEffect(ch, e);
+export function applyEffects(
+  ch: Character, effects: readonly MongooseEffect[], source?: string,
+): void {
+  for (const e of effects) applyEffect(ch, e, source);
 }
 
 function grantOne(ch: Character, name: string, level: number | undefined): void {
@@ -143,7 +145,7 @@ export function resolveMishap(ch: Character, ejected: boolean): void {
     career.mishaps, roll, `mongoose.careers.${career.id}.mishaps[${roll}]`, "MgT2 Core",
   );
   ch.log(ev.mongooseMishap(roll, row.text));
-  applyEffects(ch, row.effects);
+  applyEffects(ch, row.effects, row.text);
   if (ejected && !state.perTerm.noEject) {
     state.perTerm.mustLeave = true;
     // A "you may keep your Benefit roll" branch (leaveCareer{keepBenefit:true})
@@ -161,14 +163,14 @@ export function resolveLifeEvent(ch: Character): void {
     data.lifeEvents, roll, `mongoose.lifeEvents[${roll}]`, "MgT2 Core p.46",
   );
   ch.log(ev.raw(`Life Event (${roll}): ${row.text}`));
-  applyEffects(ch, row.effects);
+  applyEffects(ch, row.effects, row.text);
   if (roll === data.lifeEventsUnusualTrigger) {
     const uRoll = ch.rng.roll(1);
     const uRow = findRollRow(
       data.lifeEventsUnusual, uRoll, `mongoose.lifeEventsUnusual[${uRoll}]`, "MgT2 Core p.46",
     );
     ch.log(ev.raw(`Unusual Event (${uRoll}): ${uRow.text}`));
-    applyEffects(ch, uRow.effects);
+    applyEffects(ch, uRow.effects, uRow.text);
   }
 }
 
@@ -247,7 +249,7 @@ export function describeEffectBundle(effects: readonly MongooseEffect[]): string
     .join(" + ");
 }
 
-function applyEffect(ch: Character, e: MongooseEffect): void {
+function applyEffect(ch: Character, e: MongooseEffect, source?: string): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
   switch (e.kind) {
     case "gainSkill":
@@ -285,7 +287,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     case "qualificationDm": state.pendingDms.qualification.push({ dm: e.dm, scope: e.scope }); return;
     case "gainRelation": {
       const n = rollCount(ch, e.count);
-      for (let i = 0; i < n; i++) state.connections.push({ relation: e.relation, note: "" });
+      for (let i = 0; i < n; i++) state.connections.push({ relation: e.relation, note: source ?? "" });
       ch.log(ev.mongooseConnection(e.relation, n > 1 ? `x${n}` : undefined));
       return;
     }
@@ -335,7 +337,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
         optionLabels: e.options.map(describeEffectBundle),
         onResolve: (c, chosen) => applyEffects(c, requireRule(
           e.options[labels.indexOf(chosen)], "mongoose chooseEffect option", "engine (mongoose)",
-        )),
+        ), source),
       });
       return;
     }
@@ -343,8 +345,8 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const dm = checkOptionsDm(ch, e.options);
       const r = rollCheck(ch.rng, [dm], e.target);
       ch.log(ev.roll(`Event check (${e.options.join("/")})`, r.roll, dm, e.target, r.success));
-      applyEffects(ch, r.success ? e.onSuccess : e.onFailure);
-      if (r.roll === getMongooseData(ch).survivalNaturalFail && e.onNatural2) applyEffects(ch, e.onNatural2);
+      applyEffects(ch, r.success ? e.onSuccess : e.onFailure, source);
+      if (r.roll === getMongooseData(ch).survivalNaturalFail && e.onNatural2) applyEffects(ch, e.onNatural2, source);
       return;
     }
     case "modifyParoleThreshold": {
@@ -368,7 +370,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const idx = ch.rng.roll(1);
       applyEffects(ch, requireRule(
         e.entries[idx - 1], `mongoose rollSubTable entry ${idx}`, "MgT2 Core",
-      ));
+      ), source);
       return;
     }
     default: {
