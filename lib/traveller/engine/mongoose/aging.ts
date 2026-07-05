@@ -22,7 +22,7 @@ export function agingBegun(ch: Character): boolean {
 /** Roll on the Ageing table for the current term (Core p.49). */
 export function rollAging(ch: Character): void {
   const data = getMongooseData(ch);
-  const dm = -ch.terms;
+  const dm = ch.terms * data.agingDmPerTerm;
   const roll = ch.rng.roll(2);
   const thresholds = data.aging.map((r) => r.threshold);
   const value = Math.max(Math.min(...thresholds), Math.min(Math.max(...thresholds), roll + dm));

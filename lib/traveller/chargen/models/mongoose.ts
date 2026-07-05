@@ -88,10 +88,11 @@ function enterViaDraftOrDrifter(ch: Character): void {
     rollDraftAndEnter(ch);
     return;
   }
-  const drifter = requireRule(
-    getMongooseData(ch).careers["drifter"], "mongoose.careers.drifter", "MgT2",
+  const fallbackId = getMongooseData(ch).draftFallbackCareer;
+  const fallback = requireRule(
+    getMongooseData(ch).careers[fallbackId], `mongoose.careers.${fallbackId}`, "MgT2 Core p.20",
   );
-  enterCareer(ch, "drifter", drifter.assignments[0]!.id);
+  enterCareer(ch, fallbackId, fallback.assignments[0]!.id);
 }
 
 /** The normal path: pick a career + assignment, roll qualification, and enter

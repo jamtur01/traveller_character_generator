@@ -9,7 +9,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, checkDm } from "@/lib/traveller/engine/mongoose/core";
+import { getCareer, getMongooseData, checkDm } from "@/lib/traveller/engine/mongoose/core";
 import { resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
 
 /** Roll survival for the current term. Returns whether the Traveller survived;
@@ -24,7 +24,7 @@ export function rollSurvival(ch: Character): boolean {
   );
   const dm = checkDm(ch, asg.survival) + consumePendingDm(state.pendingDms.survival);
   const r = rollCheck(ch.rng, [dm], asg.survival.target);
-  const survived = r.success && r.roll !== 2; // natural 2 always fails (Core p.18)
+  const survived = r.success && r.roll !== getMongooseData(ch).survivalNaturalFail; // natural fail (Core p.18)
   ch.log(ev.roll("Survival", r.roll, dm, asg.survival.target, survived));
   state.perTerm.survived = survived;
   if (!survived) resolveMishap(ch, true);

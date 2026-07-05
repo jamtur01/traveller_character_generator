@@ -38,7 +38,7 @@ export function rollAdvancement(ch: Character): boolean {
     const total = r.roll + dm;
     if (total > state.paroleThreshold) state.perTerm.mustLeave = true;
     else state.perTerm.mustContinue = true;
-  } else if (r.roll === 12) {
+  } else if (r.roll === getMongooseData(ch).advancementNaturalContinue) {
     state.perTerm.mustContinue = true;
   } else if (r.roll <= state.termsInCareer) {
     state.perTerm.mustLeave = true;
@@ -68,8 +68,8 @@ export function attemptCommission(ch: Character): boolean {
   const check = requireRule(
     career.commission, `mongoose.careers.${state.career}.commission`, "MgT2 Core",
   );
-  const termPenalty = Math.max(0, state.termsInCareer - 1); // DM-1 per term after the first
-  const dm = checkDm(ch, check) - termPenalty;
+  const termPenalty = Math.max(0, state.termsInCareer - 1); // terms after the first
+  const dm = checkDm(ch, check) + termPenalty * getMongooseData(ch).commissionDmPerTermAfterFirst;
   const r = rollCheck(ch.rng, [dm], check.target);
   ch.log(ev.roll("Commission", r.roll, dm, check.target, r.success));
   if (r.success) {

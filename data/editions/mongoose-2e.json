@@ -1194,9 +1194,11 @@
           "characteristics": [
             "education"
           ],
-          "target": 5
+          "target": 5,
+          "$qualification": "Core p.26 Qualification: EDU 5+; DM-1 for every previous career (standard, applied globally). No career-specific extra DM. Cross-checked vs Career Summary Table Core p.21."
         },
-        "$qualification": "Core p.26 Qualification: EDU 5+; DM-1 for every previous career (standard, applied globally). No career-specific extra DM.",
+        "basicTrainingFromAssignment": true,
+        "$basicTrainingFromAssignment": "Core p.18: Citizens and Drifters use their Assignment Skills for basic training.",
         "assignments": [
           {
             "id": "corporate",
@@ -1786,8 +1788,10 @@
         "qualification": {
           "characteristics": [],
           "target": 0,
-          "$qualification": "Automatic (no roll; always open). Drifter is always available regardless of number of previous careers; the standard DM-1-per-career qualification penalty does not gate entry (Core p.28; Career Summary Table Core p.20)."
+          "$qualification": "Automatic (no roll; always open). Drifter is always available regardless of number of previous careers; the standard DM-1-per-career qualification penalty does not gate entry (Core p.28; Career Summary Table Core p.21)."
         },
+        "basicTrainingFromAssignment": true,
+        "$basicTrainingFromAssignment": "Core p.18: Citizens and Drifters use their Assignment Skills for basic training.",
         "assignments": [
           {
             "id": "barbarian",
@@ -2147,6 +2151,7 @@
             ]
           }
         ],
+        "$events": "Core pp.28-29 Events (2D).",
         "mishaps": [
           {
             "roll": 1,
@@ -2233,6 +2238,7 @@
             "effects": []
           }
         ],
+        "$mishaps": "Core pp.28-29 Mishaps (1D).",
         "musterOut": [
           {
             "roll": 1,
@@ -2269,7 +2275,8 @@
             "cash": 8000,
             "benefit": "Two Ship Shares"
           }
-        ]
+        ],
+        "$musterOut": "Core pp.28-29 Mustering-Out Benefits."
       },
       "entertainer": {
         "id": "entertainer",
@@ -3412,7 +3419,7 @@
             "intelligence"
           ],
           "target": 4,
-          "$rule": "Core p.34; Career Summary Table p.20 - INT 4+; standard DM-1 for every previous career (applied globally by engine); no career-specific extra DM."
+          "$rule": "Core p.34; Career Summary Table p.21 - INT 4+; standard DM-1 for every previous career (applied globally by engine); no career-specific extra DM."
         },
         "assignments": [
           {
@@ -7056,7 +7063,7 @@
             "intelligence"
           ],
           "target": 5,
-          "$rule": "Core p.44 Qualification: INT 5+, DM-1 for every previous career (standard global rule; no career-specific extra). Cross-checked vs Career Summary Table Core pp.8-21."
+          "$rule": "Core p.44 Qualification: INT 5+, DM-1 for every previous career (standard global rule; no career-specific extra). Cross-checked vs Career Summary Table Core p.21."
         },
         "assignments": [
           {
@@ -8056,7 +8063,7 @@
     ],
     "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12).",
     "commissionAnyTermSocMin": 9,
-    "$commissionAnyTermSocMin": "Core p.18: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
+    "$commissionAnyTermSocMin": "Core p.19: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
     "skillLevelMax": 4,
     "$skillLevelMax": "Core p.19: a skill may never be increased beyond level 4 during creation; further increases are lost.",
     "skillTotalCap": {
@@ -8070,6 +8077,29 @@
     "connectionSkillCap": 2,
     "$connectionSkillCap": "Core p.19 Connections rule: a Traveller may gain a maximum of two free skills, each connection with a different Traveller.",
     "connectionSkillMaxLevel": 3,
-    "$connectionSkillMaxLevel": "Core p.19: a connection skill cannot be brought above level 3, nor may Jack-of-all-Trades be taken."
+    "$connectionSkillMaxLevel": "Core p.19: a connection skill cannot be brought above level 3, nor may Jack-of-all-Trades be taken.",
+    "cashBonusSkill": {
+      "skill": "Gambler",
+      "dm": 1,
+      "$rule": "Core p.46: Gambler skill grants DM+1 to Cash benefit rolls"
+    },
+    "connectionSkillExcluded": [
+      "Jack-of-all-Trades"
+    ],
+    "$connectionSkillExcluded": "Core p.19: a connection skill may never be Jack-of-all-Trades.",
+    "qualificationDmPerPriorCareer": -1,
+    "$qualificationDmPerPriorCareer": "Core p.18: Qualification takes DM-1 for every previous career.",
+    "commissionDmPerTermAfterFirst": -1,
+    "$commissionDmPerTermAfterFirst": "Core p.19: the Commission roll takes DM-1 for every term after the first.",
+    "agingDmPerTerm": -1,
+    "$agingDmPerTerm": "Core p.49: the Ageing roll is 2D minus the character's total number of terms.",
+    "lifeEventsUnusualTrigger": 12,
+    "$lifeEventsUnusualTrigger": "Core p.46: a Life Event roll of 12 triggers the Unusual Event sub-table.",
+    "draftFallbackCareer": "drifter",
+    "$draftFallbackCareer": "Core p.20: a Traveller who fails qualification after already being drafted becomes a Drifter.",
+    "survivalNaturalFail": 2,
+    "$survivalNaturalFail": "Core p.18: a natural 2 on the Survival roll always fails.",
+    "advancementNaturalContinue": 12,
+    "$advancementNaturalContinue": "Core p.18: a natural 12 on the Advancement roll forces the Traveller to continue in the career."
   }
 }

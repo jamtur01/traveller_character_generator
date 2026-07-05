@@ -482,6 +482,7 @@ const MongooseCareerSchema = z.looseObject({
   page: z.number(),
   qualification: MongooseCheckSchema,
   commission: MongooseCheckSchema.optional(),
+  basicTrainingFromAssignment: z.boolean().optional(),
   assignments: z.array(z.looseObject({
     id: z.string(),
     displayName: z.string(),
@@ -572,6 +573,15 @@ const MongooseDataSchema = z.looseObject({
   })),
   lifeEvents: z.array(MongooseTableRowSchema),
   lifeEventsUnusual: z.array(MongooseTableRowSchema),
+  cashBonusSkill: z.looseObject({ skill: z.string(), dm: z.number() }),
+  connectionSkillExcluded: z.array(z.string()),
+  qualificationDmPerPriorCareer: z.number(),
+  commissionDmPerTermAfterFirst: z.number(),
+  agingDmPerTerm: z.number(),
+  lifeEventsUnusualTrigger: z.number(),
+  draftFallbackCareer: z.string(),
+  survivalNaturalFail: z.number(),
+  advancementNaturalContinue: z.number(),
 });
 
 const CanonDataSchema = z.looseObject({

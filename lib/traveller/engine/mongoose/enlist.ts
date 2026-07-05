@@ -8,7 +8,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
+import { getCareer, getMongooseData, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
 
@@ -24,7 +24,8 @@ export function qualifyForCareer(ch: Character, careerId: string): boolean {
     ch.log(ev.raw(`Qualified for ${career.displayName} (automatic).`));
     return true;
   }
-  const dm = checkDm(ch, check) - state.careerCount
+  const dm = checkDm(ch, check)
+    + state.careerCount * getMongooseData(ch).qualificationDmPerPriorCareer
     + consumePendingDm(state.pendingDms.qualification);
   const r = rollCheck(ch.rng, [dm], check.target);
   ch.log(ev.roll(
@@ -64,7 +65,7 @@ export function applyBasicTraining(
   ch: Character, career: MongooseCareer, assignmentId: string,
 ): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const useAssignment = career.id === "citizen" || career.id === "drifter";
+  const useAssignment = career.basicTrainingFromAssignment === true;
   const table = useAssignment
     ? requireRule(
         career.assignments.find((a) => a.id === assignmentId),

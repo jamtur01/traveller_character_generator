@@ -19,7 +19,8 @@ const ATTR_ABBREV: Record<string, AttributeKey> = {
   INT: "intelligence", EDU: "education", SOC: "social",
 };
 
-const clampMuster = (n: number): number => Math.max(1, Math.min(7, n));
+const clampMuster = (career: MongooseCareer, n: number): number =>
+  Math.max(1, Math.min(career.musterOut.length, n));
 
 /** Split a compound benefit cell ("Melee, Recon or Streetwise", "Deception,
  *  Persuade and Stealth") into its parts on commas and the trailing conjunction. */
@@ -81,8 +82,9 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
     onResolve: (c, chosen) => {
       const st = c.mongooseState!;
       if (chosen === "Cash") {
-        const gambler = skillLevel(c, "Gambler") >= 0 ? 1 : 0;
-        const roll = clampMuster(c.rng.roll(1) + rankDm + gambler);
+        const cb = data.cashBonusSkill;
+        const gambler = skillLevel(c, cb.skill) >= 0 ? cb.dm : 0;
+        const roll = clampMuster(career, c.rng.roll(1) + rankDm + gambler);
         const row = requireRule(
           career.musterOut.find((r) => r.roll === roll),
           `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
@@ -91,7 +93,7 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
         st.cashRollsUsed += 1;
         c.log(ev.raw(`Muster benefit (Cash): Cr${row.cash} (roll ${roll}).`));
       } else {
-        const roll = clampMuster(c.rng.roll(1) + rankDm);
+        const roll = clampMuster(career, c.rng.roll(1) + rankDm);
         const row = requireRule(
           career.musterOut.find((r) => r.roll === roll),
           `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",

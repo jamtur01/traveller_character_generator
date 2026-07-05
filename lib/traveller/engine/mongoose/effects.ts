@@ -137,7 +137,7 @@ export function resolveLifeEvent(ch: Character): void {
   );
   ch.log(ev.raw(`Life Event (${roll}): ${row.text}`));
   applyEffects(ch, row.effects);
-  if (roll === 12) {
+  if (roll === data.lifeEventsUnusualTrigger) {
     const uRoll = ch.rng.roll(1);
     const uRow = requireRule(
       data.lifeEventsUnusual.find((r) => r.roll === uRoll),

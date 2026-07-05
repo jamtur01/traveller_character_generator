@@ -141,6 +141,9 @@ export interface MongooseCareer {
   /** Commission check target — Army / Navy / Marine only. */
   readonly commission?: MongooseCheck;
   readonly assignments: readonly MongooseAssignment[];
+  /** Citizen / Drifter only (Core p.18): basic training draws from the chosen
+   *  Assignment skill table instead of Service Skills. */
+  readonly basicTrainingFromAssignment?: boolean;
   readonly skillTables: MongooseSkillTables;
   readonly ranks: MongooseRanks;
   readonly events: readonly MongooseTableRow[];
@@ -255,4 +258,22 @@ export interface MongooseData {
   readonly lifeEvents: readonly MongooseTableRow[];
   /** Unusual Event sub-table (Core p.46, 1D on a Life Event of 12). */
   readonly lifeEventsUnusual: readonly MongooseTableRow[];
+  /** Cash-column Benefit-roll skill bonus (Core p.46: Gambler grants DM+1). */
+  readonly cashBonusSkill: { readonly skill: string; readonly dm: number };
+  /** Skills the Connections rule may never grant (Core p.19: Jack-of-all-Trades). */
+  readonly connectionSkillExcluded: readonly string[];
+  /** Qualification DM applied per previous career (Core p.18: -1). */
+  readonly qualificationDmPerPriorCareer: number;
+  /** Commission DM applied per term after the first (Core p.19: -1). */
+  readonly commissionDmPerTermAfterFirst: number;
+  /** Ageing DM applied per total term (Core p.49: -1; roll is 2D - total terms). */
+  readonly agingDmPerTerm: number;
+  /** Life Event roll that triggers the Unusual Event sub-table (Core p.46: 12). */
+  readonly lifeEventsUnusualTrigger: number;
+  /** Career a drafted-out Traveller falls back into (Core p.20: Drifter). */
+  readonly draftFallbackCareer: string;
+  /** Natural Survival roll that always fails (Core p.18: 2). */
+  readonly survivalNaturalFail: number;
+  /** Natural Advancement roll that forces continuing the career (Core p.18: 12). */
+  readonly advancementNaturalContinue: number;
 }

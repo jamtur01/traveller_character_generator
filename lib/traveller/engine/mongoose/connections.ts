@@ -16,7 +16,7 @@ export function applyConnections(ch: Character): void {
   const grants = Math.min(data.connectionSkillCap, state.connections.length);
   for (let i = 0; i < grants; i++) {
     const options = ch.skills
-      .filter(([n, l]) => n !== "Jack-of-all-Trades" && l < data.connectionSkillMaxLevel)
+      .filter(([n, l]) => !data.connectionSkillExcluded.includes(n) && l < data.connectionSkillMaxLevel)
       .map(([n]) => n);
     if (options.length === 0) return;
     ch.pickOrDefer({
