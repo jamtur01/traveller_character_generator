@@ -6,6 +6,7 @@ import { enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
 import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { getCareer } from "@/lib/traveller/engine/mongoose/core";
 import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
+import { resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
 
 // Math.random value that makes the next single die show face `v` (1-6).
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
@@ -135,5 +136,44 @@ describe("H2: compound muster benefit routes skills vs equipment (Core p.46)", (
     expect(skillLevel(c, "Deception")).toBe(1);
     expect(skillLevel(c, "Persuade")).toBe(1);
     expect(skillLevel(c, "Stealth")).toBe(1);
+  });
+});
+
+describe("b#11: mishap keep-benefit branch survives forced ejection (Core p.18)", () => {
+  function inCareer(career: string, assignment: string): Character {
+    const c = mkChar();
+    c.mongooseState!.career = career;
+    c.mongooseState!.assignment = assignment;
+    return c;
+  }
+
+  it("Agent mishap 3 with a successful Advocate check keeps the benefit roll", () => {
+    const c = inCareer("agent", "lawEnforcement");
+    // 1D mishap = 3; then the Advocate 8+ check rolls 2D = 12 (success).
+    mockRandom([d6(3), d6(6), d6(6)]);
+    resolveMishap(c, true);
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
+    expect(c.mongooseState!.perTerm.benefitKept).toBe(true);
+    expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(false);
+  });
+
+  it("Agent mishap 3 with a failed Advocate check loses the benefit as usual", () => {
+    const c = inCareer("agent", "lawEnforcement");
+    // 1D mishap = 3; Advocate check 2D = 2 (fail); onFailure rollForceCareer 2D = 8 (misses).
+    mockRandom([d6(3), d6(1), d6(1), d6(4), d6(4)]);
+    resolveMishap(c, true);
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
+    expect(c.mongooseState!.perTerm.benefitKept).toBe(false);
+    expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(true);
+  });
+
+  it("Army mishap 4 choosing the whitewash (keep-benefit) branch keeps the benefit", () => {
+    const c = inCareer("army", "infantry");
+    // 1D mishap = 4; chooseEffect auto-picks Option 2 (leaveCareer keepBenefit).
+    mockRandom([d6(4), d6(4)]);
+    resolveMishap(c, true);
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
+    expect(c.mongooseState!.perTerm.benefitKept).toBe(true);
+    expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(false);
   });
 });

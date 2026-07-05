@@ -48,6 +48,9 @@ export interface MongoosePerTerm {
   noEject: boolean;
   /** Lose this term's benefit roll (mishap / ejected leave). */
   loseBenefitThisTerm: boolean;
+  /** A leaveCareer{keepBenefit:true} fired this term (a "keep your benefit"
+   *  mishap/event branch): the mishap's forced benefit-loss must not clobber it. */
+  benefitKept: boolean;
 }
 
 /** Full Mongoose chargen state. */
@@ -104,6 +107,7 @@ function freshPerTerm(): MongoosePerTerm {
     advancedThisTerm: false,
     noEject: false,
     loseBenefitThisTerm: false,
+    benefitKept: false,
   };
 }
 

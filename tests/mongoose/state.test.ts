@@ -34,6 +34,7 @@ describe("resetMongoosePerTerm", () => {
       advancedThisTerm: true,
       noEject: true,
       loseBenefitThisTerm: true,
+      benefitKept: true,
     };
     resetMongoosePerTerm(s);
     expect(s.perTerm).toEqual({
@@ -44,6 +45,7 @@ describe("resetMongoosePerTerm", () => {
       advancedThisTerm: false,
       noEject: false,
       loseBenefitThisTerm: false,
+      benefitKept: false,
     });
   });
 });

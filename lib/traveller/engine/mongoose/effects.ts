@@ -123,7 +123,9 @@ export function resolveMishap(ch: Character, ejected: boolean): void {
   applyEffects(ch, row.effects);
   if (ejected && !state.perTerm.noEject) {
     state.perTerm.mustLeave = true;
-    state.perTerm.loseBenefitThisTerm = true;
+    // A "you may keep your Benefit roll" branch (leaveCareer{keepBenefit:true})
+    // fired this mishap -> the forced ejection must not strip that benefit.
+    if (!state.perTerm.benefitKept) state.perTerm.loseBenefitThisTerm = true;
   }
 }
 
@@ -200,7 +202,8 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       return;
     case "leaveCareer":
       state.perTerm.mustLeave = true;
-      if (!e.keepBenefit) state.perTerm.loseBenefitThisTerm = true;
+      if (e.keepBenefit) state.perTerm.benefitKept = true;
+      else state.perTerm.loseBenefitThisTerm = true;
       return;
     case "stayInCareer": state.perTerm.noEject = true; return;
     case "forceCareer":
