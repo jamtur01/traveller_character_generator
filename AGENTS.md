@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project conventions
 
-A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI) and MegaTraveller. ~15k lines of TypeScript across `lib/`, `app/`, with ~3480 tests in `tests/`.
+A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI), MegaTraveller, and Mongoose Traveller 2e (2022 Core Rulebook). ~16k lines of TypeScript across `lib/`, `app/`, with ~3650 tests in `tests/`. Character generation runs behind a per-edition **`ChargenModel`** (see "Pluggable chargen models" below), not edition `if`-branches.
 
 ## JSON is the source of truth
 
@@ -36,6 +36,16 @@ Every `Character` carries an `editionId`. Engine code that reads game data takes
 CT uses abbreviations like `"Stren"`. MT uses both abbreviations and full names (`"Strength"`, `"Str"`). Every edition declares its own `attributeAbbreviations` and `skillLabelRenames` blocks to normalize.
 
 The legacy `s` global (`lib/traveller/services`) binds to `DEFAULT_EDITION_ID` only. For edition-agnostic code, use `getEditionServices(ch.editionId)` instead.
+
+## Pluggable chargen models
+
+Character generation dispatches through a `ChargenModel` interface (`chargen/model.ts`); there is no `if (useAcg)` / edition branching in the flow. Each edition's `chargenModels` capability list names its available models, `startCareer` selects one, and the choice is recorded on `ch.chargenModelId`. Models self-register on import via `chargen/modelRegistry.ts`:
+
+- `classic` (`chargen/models/classic.ts`) — CT/MT basic service lifecycle (enlist → term → muster).
+- `acg` (`chargen/models/acg.ts`) — MT Advanced Character Generation (per-year assignment resolution; state on `ch.acgState`).
+- `mongoose` (`chargen/models/mongoose.ts`) — Mongoose 2e: 2D+DM task system, per-term qualification → survival(→mishap) → events → advancement/commission → skills → ageing, plus the solo Connections rule and mustering-out. Runtime sub-state on `ch.mongooseState` (`engine/mongoose/state.ts`).
+
+Shared per-term flow helpers live in `chargen/flow.ts`. A model owns its phase set (`entryPhase`, `flowStages`), so the UI (`app/page.tsx` → `MongoosePhase.tsx`, `TermPhase.tsx`, …) renders panels off `ch.chargenModelId`.
 
 ## State model
 
@@ -256,12 +266,20 @@ lib/traveller/
         navy.ts           — imperial/reserve/system squadron
         scout.ts          — field/bureaucracy divisions
         merchantPrince.ts — line types + departments
+    mongoose/             — Mongoose Traveller 2e engine (2022 Core Rulebook)
+      core.ts, state.ts   — MongooseState + characteristicDm / rollCheck primitives
+      enlist.ts, survival.ts, advancement.ts — qualification, survival/mishap, advance/commission
+      skills.ts, skillsTraining.ts, effects.ts — skill grants + caps, the MongooseEffect interpreter
+      events.ts, muster.ts, aging.ts, connections.ts, ranks.ts
   chargen/                — session, enlistment, term, muster, reenlist, aging,
                             anagathics, weaponBenefits, skillCap, replay
+    model.ts, modelRegistry.ts, flow.ts — ChargenModel interface + registry + shared per-term flow
+    models/               — classic.ts (CT/MT basic), acg.ts (MT ACG), mongoose.ts (Mongoose 2e)
 data/
   editions/
     ct-classic.json
     mt-megatraveller.json
+    mongoose-2e.json
   names.json              — shared name pools
 tests/
   *.test.ts               — engine behaviour
