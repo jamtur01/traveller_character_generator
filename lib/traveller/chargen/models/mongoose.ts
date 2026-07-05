@@ -209,9 +209,17 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   if (survived) {
     rollEvent(ch);
     if (ch.deceased) return { character: ch, phase: "end" };
-    resolveAdvancementPhase(ch);
-    rollSkillTraining(ch);
-    if (state.perTerm.advancedThisTerm) rollSkillTraining(ch);
+    // An IMMEDIATE leave this term — escape or a "leave this career" event that
+    // sets mustLeave WITHOUT a forced next career (Core p.57 escape: "you leave
+    // this career") — skips advancement and skills. A forced-NEXT-term transfer
+    // (arrest -> Prisoner: mustLeave + forcedNextCareer) completes this term
+    // first; and an advancement roll of <= terms ("leave after this term") still
+    // completes skills, since its mustLeave is set inside resolveAdvancementPhase.
+    if (!(state.perTerm.mustLeave && state.forcedNextCareer === null)) {
+      resolveAdvancementPhase(ch);
+      rollSkillTraining(ch);
+      if (state.perTerm.advancedThisTerm) rollSkillTraining(ch);
+    }
   }
   if (agingBegun(ch) && !ch.deceased) rollAging(ch);
   if (ch.deceased) return { character: ch, phase: "end" };

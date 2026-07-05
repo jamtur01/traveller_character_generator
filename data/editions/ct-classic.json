@@ -134,7 +134,7 @@
       "notes": "Per TTB p. 18: one roll per full term plus rank-band bonus (rank 1-2 +1, 3-4 +2, 5-6 +3). Gambling-1 grants +1 DM on the cash table."
     },
     "reenlistment": {
-      "$rule": "TTB p. 18, p. 25. mandatoryOnExactRoll: a reenlistment throw of exactly 12 forces another term regardless of player preference. mandatoryRetireAfterTerm: 'A character may serve up to seven terms of service voluntarily.' After term 7, mandatory retirement unless mandatory reenlistment is rolled.",
+      "$rule": "TTB pp. 18-19, p. 25. mandatoryOnExactRoll: a reenlistment throw of exactly 12 forces another term regardless of player preference (p. 18). mandatoryRetireAfterTerm: 'A character may serve up to seven terms of service voluntarily' (p. 19); after the 7th term retirement is mandatory UNLESS a mandatory reenlistment (natural 12) forces more (p. 19). Precedence: the natural-12 mandatory reenlist is therefore evaluated before the term-7 retirement cap.",
       "mandatoryOnExactRoll": 12,
       "mandatoryRetireAfterTerm": 7
     },
