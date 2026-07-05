@@ -165,13 +165,24 @@ describe("b#11: mishap keep-benefit branch survives forced ejection (Core p.18)"
     expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(false);
   });
 
-  it("Agent mishap 3 with a failed Advocate check loses the benefit as usual", () => {
+  it("Agent mishap 3 with a plain failed Advocate check loses the benefit, no Prisoner", () => {
     const c = inCareer("agent", "lawEnforcement");
-    // 1D mishap = 3; Advocate check 2D = 2 (fail); onFailure rollForceCareer 2D = 8 (misses).
-    mockRandom([d6(3), d6(1), d6(1), d6(4), d6(4)]);
+    // 1D mishap = 3; Advocate check 2D = 7 (fail, but NOT a natural 2).
+    mockRandom([d6(3), d6(3), d6(4)]);
     resolveMishap(c, true);
     expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
     expect(c.mongooseState!.perTerm.benefitKept).toBe(false);
+    expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(true);
+    expect(c.mongooseState!.forcedNextCareer).toBeNull();
+  });
+
+  it("b#12: a natural 2 on the Advocate check forces the Prisoner career (Core p.23)", () => {
+    const c = inCareer("agent", "lawEnforcement");
+    // 1D mishap = 3; Advocate check 2D = 2 (natural 2, also a failure).
+    mockRandom([d6(3), d6(1), d6(1)]);
+    resolveMishap(c, true);
+    expect(c.mongooseState!.forcedNextCareer).toBe("prisoner");
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
     expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(true);
   });
 

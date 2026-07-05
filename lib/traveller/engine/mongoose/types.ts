@@ -107,8 +107,11 @@ export type MongooseEffect =
   | { readonly kind: "chooseEffect"; readonly options: readonly (readonly MongooseEffect[])[] }
   // An embedded skill/characteristic check whose outcome branches into further
   // effects (e.g. Agent event 3: "Roll Investigate 8+ ... on success ...").
+  // `onNatural2` additionally fires when the natural 2D roll is exactly 2,
+  // independent of pass/fail (Agent mishap 3: "If you roll 2 ...", Core p.23).
   | { readonly kind: "check"; readonly options: readonly string[]; readonly target: number;
-      readonly onSuccess: readonly MongooseEffect[]; readonly onFailure: readonly MongooseEffect[] }
+      readonly onSuccess: readonly MongooseEffect[]; readonly onFailure: readonly MongooseEffect[];
+      readonly onNatural2?: readonly MongooseEffect[] }
   // --- Prisoner career (Core p.52) ---
   // Adjust the parole threshold by a fixed integer or a die-string delta
   // ("-1D", "+2D"): parsed sign + NdX, clamped to the career's parole.max.

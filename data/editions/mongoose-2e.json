@@ -566,13 +566,10 @@
                     "keepBenefit": true
                   }
                 ],
-                "onFailure": [
+                "onFailure": [],
+                "onNatural2": [
                   {
-                    "kind": "rollForceCareer",
-                    "dice": "2D",
-                    "results": [
-                      2
-                    ],
+                    "kind": "forceCareer",
                     "career": "prisoner"
                   }
                 ]

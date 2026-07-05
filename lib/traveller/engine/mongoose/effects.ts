@@ -249,6 +249,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const r = rollCheck(ch.rng, [dm], e.target);
       ch.log(ev.roll(`Event check (${e.options.join("/")})`, r.roll, dm, e.target, r.success));
       applyEffects(ch, r.success ? e.onSuccess : e.onFailure);
+      if (r.roll === 2 && e.onNatural2) applyEffects(ch, e.onNatural2);
       return;
     }
     case "modifyParoleThreshold": {
