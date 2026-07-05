@@ -94,7 +94,9 @@ export interface MongooseState {
   paroleThreshold: number | null;
 }
 
-function freshPendingDms(): MongoosePendingDms {
+/** A blank set of pending-DM buckets. Reset on entering a new career so a
+ *  career-scoped ("any") DM never leaks into the next career (Core p.52). */
+export function freshPendingDms(): MongoosePendingDms {
   return { qualification: [], survival: [], advancement: [], benefit: [] };
 }
 

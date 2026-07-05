@@ -7,7 +7,7 @@ import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
-import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
+import { consumePendingDm, freshPendingDms } from "@/lib/traveller/engine/mongoose/state";
 import { getCareer, getMongooseData, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit, currentLadder } from "@/lib/traveller/engine/mongoose/ranks";
@@ -51,6 +51,9 @@ export function enterCareer(
   state.rank = 0;
   state.commissioned = false;
   state.termsInCareer = 0;
+  // Drop any career-scoped ("any") DMs left over from the previous career so
+  // they cannot leak into this one (Core p.52 prisoner event 5, etc.).
+  state.pendingDms = freshPendingDms();
   // Prisoner (Core p.52): entering a parole career rolls the initial Parole
   // Threshold (1D+2, max 12); every other career has no threshold.
   state.paroleThreshold = career.parole ? rollParoleThreshold(ch, career.parole) : null;

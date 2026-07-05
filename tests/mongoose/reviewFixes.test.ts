@@ -233,3 +233,17 @@ describe("M1: check-option EDU DM + typo guard (Core p.61)", () => {
     expect(skillLevel(c, "Streetwise")).toBe(1);
   });
 });
+
+describe("M2: pending DMs reset on career entry (Core p.52)", () => {
+  it("a career-scoped ('any') survival DM does not leak into the next career", () => {
+    const c = mkChar();
+    c.mongooseState!.careerCount = 1; // subsequent career
+    c.mongooseState!.pendingDms.survival.push({ dm: 1, scope: "any" });
+    c.mongooseState!.pendingDms.advancement.push({ dm: 2, scope: "any" });
+    mockRandom([d6(3)]); // subsequent-career basic-training skill pick
+    enterCareer(c, "agent", "lawEnforcement");
+    expect(c.mongooseState!.pendingDms).toEqual({
+      qualification: [], survival: [], advancement: [], benefit: [],
+    });
+  });
+});
