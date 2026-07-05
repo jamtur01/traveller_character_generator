@@ -6,6 +6,13 @@
 // grants (level 0) never approach them.
 
 import type { Character } from "@/lib/traveller/character";
+import type { AttributeKey } from "@/lib/traveller/types";
+
+/** Printed characteristic abbreviations in skill/rank cells -> attribute keys. */
+const ATTR_ABBREV: Record<string, AttributeKey> = {
+  STR: "strength", DEX: "dexterity", END: "endurance",
+  INT: "intelligence", EDU: "education", SOC: "social",
+};
 
 /** Current level of a skill, or -1 if untrained (distinct from a trained 0). */
 export function skillLevel(ch: Character, name: string): number {
@@ -31,4 +38,23 @@ export function grantSkillFloor(
     ch.addSkill(name, level - cur, source);
   }
   // else: current level already meets or exceeds the floor — no change.
+}
+
+/** Apply a skill-table / rank-benefit cell string (Core p.19):
+ *  - "DEX +1" / "SOC +1" -> raise that characteristic (respecting attribute caps).
+ *  - "Streetwise 1" / "Gambler 0" -> raise the skill to that level floor.
+ *  - "Gun Combat" / "Electronics (comms)" -> gain at 1, or +1 if trained.
+ *  Speciality parentheses are preserved as part of the skill name. */
+export function applySkillCell(ch: Character, cell: string, source?: string): void {
+  const attr = cell.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
+  if (attr) {
+    ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
+    return;
+  }
+  const floor = cell.match(/^(.+?)\s+(\d+)$/);
+  if (floor) {
+    grantSkillFloor(ch, floor[1]!, Number(floor[2]), source);
+    return;
+  }
+  grantSkillIncrement(ch, cell, source);
 }

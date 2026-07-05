@@ -44,6 +44,10 @@ export interface MongoosePerTerm {
   survived: boolean;
   commissionedThisTerm: boolean;
   advancedThisTerm: boolean;
+  /** A mishap set stayInCareer — override the default ejection this term. */
+  noEject: boolean;
+  /** Lose this term's benefit roll (mishap / ejected leave). */
+  loseBenefitThisTerm: boolean;
 }
 
 /** Full Mongoose chargen state. */
@@ -73,6 +77,13 @@ export interface MongooseState {
   pendingDms: MongoosePendingDms;
   connections: MongooseConnection[];
   perTerm: MongoosePerTerm;
+  /** Career the character is forced into next term (event/mishap/life event);
+   *  the model routes on it and clears it. */
+  forcedNextCareer: string | null;
+  /** Career offered without a qualification roll next term (optional switch). */
+  offeredNextCareer: string | null;
+  /** Must roll on the Draft next term (event). */
+  mustDraft: boolean;
 }
 
 function freshPendingDms(): MongoosePendingDms {
@@ -86,6 +97,8 @@ function freshPerTerm(): MongoosePerTerm {
     survived: false,
     commissionedThisTerm: false,
     advancedThisTerm: false,
+    noEject: false,
+    loseBenefitThisTerm: false,
   };
 }
 
@@ -105,6 +118,9 @@ export function freshMongooseState(): MongooseState {
     pendingDms: freshPendingDms(),
     connections: [],
     perTerm: freshPerTerm(),
+    forcedNextCareer: null,
+    offeredNextCareer: null,
+    mustDraft: false,
   };
 }
 

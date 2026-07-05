@@ -20,7 +20,14 @@
     ]
   },
   "services": {},
-  "rules": {},
+  "rules": {
+    "attributeCaps": {
+      "max": 15,
+      "min": 0,
+      "socialMin": 0
+    },
+    "$attributeCaps": "Core p.9: characteristics roll 2D (2-12), assigned 0-15; human maximum 15. Floor 0 (a characteristic reduced to 0 triggers an ageing crisis / death, Core p.49)."
+  },
   "mongoose": {
     "startAge": 18,
     "$startAge": "Core p.8: creation begins at age 18.",

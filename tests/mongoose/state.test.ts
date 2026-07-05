@@ -32,6 +32,8 @@ describe("resetMongoosePerTerm", () => {
       survived: true,
       commissionedThisTerm: true,
       advancedThisTerm: true,
+      noEject: true,
+      loseBenefitThisTerm: true,
     };
     resetMongoosePerTerm(s);
     expect(s.perTerm).toEqual({
@@ -40,6 +42,8 @@ describe("resetMongoosePerTerm", () => {
       survived: false,
       commissionedThisTerm: false,
       advancedThisTerm: false,
+      noEject: false,
+      loseBenefitThisTerm: false,
     });
   });
 });
