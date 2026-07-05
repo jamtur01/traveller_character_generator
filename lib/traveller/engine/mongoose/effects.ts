@@ -14,6 +14,7 @@ import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
+import { titleize } from "@/lib/traveller/formatting";
 import { characteristicDm, rollCheck } from "@/lib/traveller/core";
 import { getMongooseData, getCareer, currentCareer, findRollRow, rollParoleThreshold, mongooseSkillNames, skillBaseName, ATTR_ABBREV } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
@@ -197,7 +198,9 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       return;
     case "modifyCharacteristicChoice":
       ch.pickOrDefer({
-        kind: "mongooseSkillChoice", label: "Choose a characteristic", options: e.characteristics,
+        kind: "mongooseSkillChoice", label: "Choose a characteristic",
+        options: e.characteristics,
+        optionLabels: e.characteristics.map(titleize),
         onResolve: (c, chosen) => c.improveAttribute(chosen as AttributeKey, e.delta),
       });
       return;

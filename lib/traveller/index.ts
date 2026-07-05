@@ -39,7 +39,10 @@ export type {
 export {
   benefitDmFor, cashDmFor, maxCashRolls,
 } from "./engine/musterDm";
-export { anagathicsEligible, termLengthYears } from "./view";
+export {
+  anagathicsEligible, termLengthYears,
+  currentCareerLabel, currentAssignmentLabel, currentRankTitle,
+} from "./view";
 export {
   isPreCareerEligible, preCareerLabel, preCareerUiSummary,
 } from "./engine/acg/preCareer";

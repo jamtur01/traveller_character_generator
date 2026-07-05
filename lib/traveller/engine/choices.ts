@@ -49,6 +49,15 @@ export interface ChoiceRequest<T = string> {
   label: string;
   options: readonly T[];
   /**
+   * Optional display labels parallel to `options` (same order + length). The
+   * UI renders these instead of the raw option values, which are often engine
+   * ids (career / assignment / department keys, attribute keys). DISPLAY-ONLY:
+   * resolution, `preferred`, and the decision-cursor/replay contract all use
+   * the raw `options` values and the chosen INDEX, so labels never affect
+   * re-execution.
+   */
+  optionLabels?: readonly string[];
+  /**
    * Subset of options to pick from in auto mode (typically: weapons the
    * character already has skill in, so blade-cascades stack onto the same
    * blade). When empty or absent, auto mode picks from all options. The UI

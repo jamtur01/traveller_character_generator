@@ -31,6 +31,7 @@ import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
 import { rollDieRow } from "@/lib/traveller/engine/acg/pathways/shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
+import { titleize } from "@/lib/traveller/formatting";
 
 export type PreCareerOption =
   | "college" | "navalAcademy" | "militaryAcademy" | "merchantAcademy"
@@ -765,6 +766,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
       kind: "merchantDepartment",
       label: "Merchant Academy: choose your department.",
       options: departments,
+      optionLabels: departments.map(titleize),
       onResolve: (_c, choice) => apply(choice),
     });
     return;

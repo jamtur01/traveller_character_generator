@@ -33,7 +33,7 @@ export function PendingChoicesPanel({
                 : "border-zinc-300 bg-white hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800")
             }
           >
-            {opt}
+            {first.optionLabels?.[i] ?? String(opt)}
           </button>
         ))}
       </div>

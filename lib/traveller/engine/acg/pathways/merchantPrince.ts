@@ -42,6 +42,7 @@ import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
 import { event as ev } from "@/lib/traveller/history";
+import { titleize } from "@/lib/traveller/formatting";
 import {
   rankNum, evaluatePredicate, buildPredicateContext,
   type PredicateContext,
@@ -540,6 +541,7 @@ function merchantRollSkill(ch: Character): void {
       kind: "merchantSkillTable",
       label: "Merchant: choose which skill table to roll on this year.",
       options: tables,
+      optionLabels: tables.map(titleize),
       onResolve: (ch, key) => merchantRollFromTable(ch, key),
     });
     return;
@@ -593,6 +595,7 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
       kind: "merchantSkillColumn",
       label: `Merchant: choose a skill column from the ${tableKey} table.`,
       options: columns,
+      optionLabels: columns.map(titleize),
       onResolve: (ch, col) => rollMerchantSkillColumn(ch, tableKey, col),
     });
     return;

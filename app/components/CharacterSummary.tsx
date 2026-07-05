@@ -6,6 +6,7 @@ import { aggregateBenefits } from "@/lib/traveller/sheet";
 import { extendedHex, numCommaSep } from "@/lib/traveller/formatting";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { CARD, SECTION_LABEL, Field } from "./ui";
+import { currentCareerLabel, currentRankTitle } from "@/lib/traveller";
 
 const ATTR_LABELS: { key: AttributeKey; short: string }[] = [
   { key: "strength", short: "Str" },
@@ -18,14 +19,14 @@ const ATTR_LABELS: { key: AttributeKey; short: string }[] = [
 
 export function CharacterSummary({ character }: { character: Character }) {
   const isMongoose = character.chargenModelId === "mongoose";
-  const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   const def = getEditionServices(character.editionId)[character.service];
   let subtitleParts: string[];
   if (isMongoose) {
     const st = character.mongooseState;
-    const career = st?.career ?? st?.history.at(-1)?.career ?? "";
-    subtitleParts = career
-      ? [`${cap(career)} (rank ${st?.rank ?? 0}${st?.commissioned ? ", officer" : ""})`]
+    const careerName = currentCareerLabel(character);
+    const rankStr = currentRankTitle(character) ?? `rank ${st?.rank ?? 0}`;
+    subtitleParts = careerName
+      ? [`${careerName} (${rankStr}${st?.commissioned ? ", officer" : ""})`]
       : [];
   } else {
     const rankText = def?.ranks[character.rank] || "";
@@ -72,7 +73,7 @@ export function CharacterSummary({ character }: { character: Character }) {
           value={
             isMongoose
               ? (character.mongooseState?.career
-                  ? cap(character.mongooseState.career)
+                  ? currentCareerLabel(character)
                   : `${character.mongooseState?.careerCount ?? 0} career(s)`)
               : (def?.serviceName ?? "")
           }

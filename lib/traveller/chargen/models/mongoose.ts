@@ -74,6 +74,7 @@ function enterCareerWithAssignmentChoice(ch: Character, careerId: string): void 
     kind: "mongooseAssignment",
     label: `Choose an assignment for ${career.displayName}`,
     options: career.assignments.map((a) => a.id),
+    optionLabels: career.assignments.map((a) => a.displayName),
     onResolve: (c, asgId) => enterCareer(c, careerId, asgId),
   });
 }
@@ -114,16 +115,19 @@ function enterViaDraftOrDrifter(ch: Character): void {
  *  (or draft/drift on failure). */
 function pickCareerNormally(ch: Character): void {
   const data = getMongooseData(ch);
+  const careerIds = Object.keys(data.careers).filter((id) => !getCareer(ch, id).forcedOnly);
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",
-    options: Object.keys(data.careers).filter((id) => !getCareer(ch, id).forcedOnly),
+    options: careerIds,
+    optionLabels: careerIds.map((id) => data.careers[id]!.displayName),
     onResolve: (c, careerId) => {
       const career = getCareer(c, careerId);
       c.pickOrDefer({
         kind: "mongooseAssignment",
         label: "Choose an assignment",
         options: career.assignments.map((a) => a.id),
+        optionLabels: career.assignments.map((a) => a.displayName),
         onResolve: (cc, asgId) => {
           if (qualifyForCareer(cc, careerId)) enterCareer(cc, careerId, asgId);
           else enterViaDraftOrDrifter(cc);
@@ -198,6 +202,7 @@ function doRunTerm(ch: Character): ChargenSnapshot {
       kind: "mongooseAssignment",
       label: "Prisoner: choose this term's assignment",
       options: currentCareer.assignments.map((a) => a.id),
+      optionLabels: currentCareer.assignments.map((a) => a.displayName),
       preferred: [current],
       onResolve: (c, asgId) => { c.mongooseState!.assignment = asgId; },
     });
@@ -205,6 +210,12 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   state.termsInCareer += 1;
   ch.terms += 1;
   ch.age = data.startAge + ch.terms * data.termLengthYears;
+  // Term-boundary marker so the service-history reads in clean four-year
+  // blocks like CT/MT (term.ts), instead of one undifferentiated stream. The
+  // career header (enlist.ts) already opens each career; this divides the
+  // terms within it. ch.terms is the running total across careers.
+  ch.log(ev.section("--------------------------------------------"));
+  ch.log(ev.termBegin(ch.terms, ch.age));
 
   const survived = rollSurvival(ch);
   if (ch.deceased) return { character: ch, phase: "end" };

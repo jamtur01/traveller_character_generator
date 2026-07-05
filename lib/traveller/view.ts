@@ -143,3 +143,15 @@ export function acgRankTitle(c: Character): string | null {
   }
   return null;
 }
+
+// ---------- Mongoose display labels ----------------------------------------
+// Surfaced for the UI (app/** cannot import engine/** directly): the sheet,
+// summary, and phase views render career/assignment display names and the
+// rank-ladder title rather than raw ids / rank numbers.
+export {
+  careerLabel,
+  assignmentLabel,
+  currentCareerLabel,
+  currentAssignmentLabel,
+  currentRankTitle,
+} from "@/lib/traveller/engine/mongoose/labels";

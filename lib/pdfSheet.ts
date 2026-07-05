@@ -8,6 +8,7 @@ import type { AttributeKey } from "./traveller/types";
 import {
   acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
 } from "./traveller/view";
+import { currentCareerLabel, currentRankTitle } from "./traveller/engine/mongoose/labels";
 
 const MONGOOSE_ATTRS: readonly AttributeKey[] = [
   "strength", "dexterity", "endurance", "intelligence", "education", "social",
@@ -15,9 +16,7 @@ const MONGOOSE_ATTRS: readonly AttributeKey[] = [
 const isMongoose = (c: Character): boolean => c.chargenModelId === "mongoose";
 /** Career label for a mongoose character's Service field. */
 function mongooseCareerLabel(c: Character): string {
-  const st = c.mongooseState;
-  const id = st?.career ?? st?.history.at(-1)?.career ?? "";
-  return id ? id.charAt(0).toUpperCase() + id.slice(1) : "Mongoose Traveller";
+  return currentCareerLabel(c) || "Mongoose Traveller";
 }
 
 /** Skills that populate the sheet's "Equipment Qualified On" box: the
@@ -282,7 +281,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // back to the basic service ranks (covers O1-O6 universally) and
   // finally to the raw rank code if no title is registered.
   const rankText = isMongoose(c)
-    ? `Rank ${c.mongooseState?.rank ?? 0}${c.mongooseState?.commissioned ? " (officer)" : ""}`
+    ? (currentRankTitle(c) ?? `Rank ${c.mongooseState?.rank ?? 0}`)
     : c.useAcg && c.acgState?.rankCode
       ? acgRankTitle(c) ?? c.acgState.rankCode
       : (c.serviceDef().ranks[c.rank] || "");

@@ -32,6 +32,21 @@ export function extendedHex(val: number): string {
   return "?";
 }
 
+/** Turn a bare engine id/key into a display label: split camelCase and
+ *  snake/kebab boundaries, then capitalize each word ("freeTrader" ->
+ *  "Free Trader", "serviceSkills" -> "Service Skills", "strength" ->
+ *  "Strength"). Fallback for options that have no JSON displayName; prefer a
+ *  declared displayName where one exists. */
+export function titleize(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function attrShort(k: AttributeKey): string {
   return ATTR_SHORT[k];
 }

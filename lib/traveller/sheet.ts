@@ -6,11 +6,11 @@ import { numCommaSep } from "./formatting";
 import type { Character } from "./character";
 import type { AttributeKey } from "./types";
 import { getEdition } from "./editions";
+import { currentCareerLabel, currentRankTitle } from "./engine/mongoose/labels";
 
 const CHAR_ORDER: readonly AttributeKey[] = [
   "strength", "dexterity", "endurance", "intelligence", "education", "social",
 ];
-const capWord = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** Header prefix + attribute string for the sheet, per chargen model. Mongoose
  *  uses career/rank and decimal characteristics (no service, no hex UPP). */
@@ -18,8 +18,9 @@ function sheetHeaderLeft(ch: Character): string {
   const deceasedMark = ch.deceased ? "\u2020 " : "";
   if (ch.chargenModelId === "mongoose") {
     const st = ch.mongooseState;
-    const career = st?.career ?? st?.history.at(-1)?.career ?? "";
-    const prefix = career ? `${capWord(career)} rank ${st?.rank ?? 0} ` : "";
+    const careerName = currentCareerLabel(ch);
+    const rankStr = currentRankTitle(ch) ?? (st ? `rank ${st.rank}` : "");
+    const prefix = careerName ? `${careerName}${rankStr ? ` ${rankStr}` : ""} ` : "";
     const attrs = CHAR_ORDER.map((k) => ch.attributes[k]).join(" ");
     return `${deceasedMark}${prefix}${ch.name} ${attrs}`;
   }
