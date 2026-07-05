@@ -385,7 +385,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -919,7 +919,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -1505,7 +1505,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -1550,7 +1550,7 @@
                     {
                       "kind": "benefitDm",
                       "dm": 1,
-                      "scope": "any"
+                      "scope": "next"
                     },
                     {
                       "kind": "chooseEffect",
@@ -2067,7 +2067,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -2606,7 +2606,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -3813,7 +3813,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -4244,7 +4244,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -4901,7 +4901,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -5524,7 +5524,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 2,
-                "scope": "any"
+                "scope": "next"
               },
               {
                 "kind": "gainRelation",
@@ -6740,7 +6740,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -6792,7 +6792,7 @@
                         {
                           "kind": "benefitDm",
                           "dm": 2,
-                          "scope": "any"
+                          "scope": "next"
                         },
                         {
                           "kind": "chooseEffect",
@@ -7304,7 +7304,7 @@
               {
                 "kind": "benefitDm",
                 "dm": 1,
-                "scope": "any"
+                "scope": "next"
               }
             ]
           },
@@ -7983,7 +7983,7 @@
           {
             "kind": "benefitDm",
             "dm": 2,
-            "scope": "any"
+            "scope": "next"
           }
         ]
       },

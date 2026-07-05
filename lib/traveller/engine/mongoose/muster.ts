@@ -12,6 +12,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
 import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
+import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
 
 const ATTR_ABBREV: Record<string, AttributeKey> = {
@@ -81,10 +82,13 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
     options,
     onResolve: (c, chosen) => {
       const st = c.mongooseState!;
+      // Event-granted "DM+1 to any one Benefit roll" (Core p.46) is consumed on
+      // the first roll taken (scope "next"); persistent ("any") DMs remain.
+      const benefitDm = consumePendingDm(st.pendingDms.benefit);
       if (chosen === "Cash") {
         const cb = data.cashBonusSkill;
         const gambler = skillLevel(c, cb.skill) >= 0 ? cb.dm : 0;
-        const roll = clampMuster(career, c.rng.roll(1) + rankDm + gambler);
+        const roll = clampMuster(career, c.rng.roll(1) + rankDm + gambler + benefitDm);
         const row = requireRule(
           career.musterOut.find((r) => r.roll === roll),
           `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
@@ -93,7 +97,7 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
         st.cashRollsUsed += 1;
         c.log(ev.raw(`Muster benefit (Cash): Cr${row.cash} (roll ${roll}).`));
       } else {
-        const roll = clampMuster(career, c.rng.roll(1) + rankDm);
+        const roll = clampMuster(career, c.rng.roll(1) + rankDm + benefitDm);
         const row = requireRule(
           career.musterOut.find((r) => r.roll === roll),
           `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",

@@ -5,6 +5,7 @@ import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 import { enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
 import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
 
 // Math.random value that makes the next single die show face `v` (1-6).
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
@@ -61,5 +62,38 @@ describe("F1: rank-0 ladder benefit granted on career entry (Core p.19)", () => 
     );
     expect(c.skills.length).toBe(before + svc.size);
     expect(c.skills.every(([, l]) => l === 0)).toBe(true);
+  });
+});
+
+describe("H1: pending benefit DM consumed on one muster roll (Core p.46)", () => {
+  it("raises exactly the first Benefit roll, then is consumed", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    c.mongooseState!.termsInCareer = 2; // rank 0 -> no bonus rolls/DM: exactly 2 rolls
+    c.mongooseState!.pendingDms.benefit.push({ dm: 1, scope: "next" });
+    // per roll: draw1 = column pick (Cash, index 0); draw2 = 1D face 3.
+    mockRandom([d6(1), d6(3), d6(1), d6(3)]);
+    musterOut(c);
+    const cash: string[] = [];
+    for (const e of c.events) {
+      if (e.kind === "raw" && /Muster benefit \(Cash\)/.test(e.text)) cash.push(e.text);
+    }
+    expect(cash).toHaveLength(2);
+    expect(cash[0]!).toMatch(/roll 4\)/); // 3 + benefit DM 1
+    expect(cash[1]!).toMatch(/roll 3\)/); // 3 + 0 (DM already consumed)
+    expect(c.credits).toBe(7500 + 5000); // row 4 + row 3
+    expect(c.mongooseState!.pendingDms.benefit).toEqual([]);
+  });
+
+  it("a persistent (scope 'any') benefit DM survives after a roll", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    c.mongooseState!.termsInCareer = 1;
+    c.mongooseState!.pendingDms.benefit.push({ dm: 1, scope: "any" });
+    mockRandom([d6(1), d6(3)]);
+    musterOut(c);
+    expect(c.mongooseState!.pendingDms.benefit).toEqual([{ dm: 1, scope: "any" }]);
   });
 });
