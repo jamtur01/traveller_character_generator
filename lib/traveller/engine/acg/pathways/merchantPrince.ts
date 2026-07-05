@@ -1023,7 +1023,7 @@ function attemptMerchantPromotionExam(ch: Character): void {
   if (penalty < 0) acg.nextPromotionPenalty = 0;
   const succeeded = rollMerchantExam(
     ch, target, dm, "Promotion",
-    `Merchant exam (${acg.rankCode}→${nextRow[0]})`
+    `Merchant exam (${acg.rankCode} to ${nextRow[0]})`
     + (penalty ? `, reprimand penalty ${penalty}` : ""),
   );
   if (!succeeded) return;

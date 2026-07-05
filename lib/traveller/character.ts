@@ -848,19 +848,19 @@ export class Character implements CharacterState {
     const physical = (d.physicalAttributes ?? []) as AttributeKey[];
     const reasons: string[] = [];
     if (d.atAgeLine !== undefined && this.age >= d.atAgeLine) {
-      reasons.push(`age ≥ ${d.atAgeLine}`);
+      reasons.push(`age ${d.atAgeLine}+`);
     }
     if (d.physicalAttributeAtMost !== undefined) {
       for (const a of physical) {
         if (this.attributes[a] <= d.physicalAttributeAtMost) {
-          reasons.push(`${a} ≤ ${d.physicalAttributeAtMost}`);
+          reasons.push(`${a} at most ${d.physicalAttributeAtMost}`);
         }
       }
     }
     if (d.sumPhysicalAttributesAtMost !== undefined) {
       const sum = physical.reduce((acc, a) => acc + this.attributes[a], 0);
       if (sum <= d.sumPhysicalAttributesAtMost) {
-        reasons.push(`sum of ${physical.join("+")} = ${sum} ≤ ${d.sumPhysicalAttributesAtMost}`);
+        reasons.push(`sum of ${physical.join("+")} = ${sum}, at most ${d.sumPhysicalAttributesAtMost}`);
       }
     }
     return { disabled: reasons.length > 0, reasons };
