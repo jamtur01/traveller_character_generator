@@ -25,15 +25,14 @@
 // identical up to the frontier (proven by tests/equivalence.property.test.ts).
 
 import { Character, cloneCharacter } from "@/lib/traveller/character";
-import { ChoicePendingError, pauseGuard } from "@/lib/traveller/engine/choices";
-import { getEditionServices } from "@/lib/traveller/services";
+import { pauseGuard } from "@/lib/traveller/engine/choices";
 import { getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { editionHasAcg } from "@/lib/traveller/engine/acg";
-import { freshAcgState } from "@/lib/traveller/engine/acg/state";
-import { event as ev } from "@/lib/traveller/history";
-import { cashDmFor, benefitDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
-import { intToOrdinal } from "@/lib/traveller/formatting";
+import { getChargenModel } from "@/lib/traveller/chargen/modelRegistry";
+// Register the built-in chargen models (they self-register at module load).
+import "@/lib/traveller/chargen/models/classic";
+import "@/lib/traveller/chargen/models/acg";
 
 export type ChargenPhase =
   | "start"
@@ -106,14 +105,6 @@ export interface ChargenResult {
   hints?: UiHints;
 }
 
-/** Which skill-picker phase to enter based on the character's pending
- *  picker context. */
-function pickSkillPhase(ch: Character): ChargenPhase {
-  // The phase distinction is for the UI's stepper / progress bar only;
-  // the engine treats the two identically.
-  return ch.muster.forceTableIndex >= 3 ? "skill_adv" : "skill_basic";
-}
-
 export interface StartCareerOptions {
   edition: string;
   verbose: boolean;
@@ -154,9 +145,8 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
       getEdition(opts.edition).data.advancedCharacterGeneration?.common?.startAge,
       "advancedCharacterGeneration.common.startAge", "PM p. 44",
     );
-    return { character: ch, phase: "pre_career" };
   }
-  return { character: ch, phase: "career" };
+  return { character: ch, phase: getChargenModel(ch.chargenModelId).entryPhase(ch) };
 }
 
 // ---------------------------------------------------------------------------
@@ -165,38 +155,6 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
 // through, and either returns the completed routing or a paused snapshot
 // carrying the frontier.
 // ---------------------------------------------------------------------------
-
-/** The phase a paused snapshot renders in, per action kind. Panels are
- *  hidden while a choice is pending, so this mainly keeps the stepper
- *  anchored where the action was issued from. */
-function pausedPhaseFor(
-  action: FrontierAction, ch: Character, base: Character,
-): ChargenPhase {
-  switch (action.kind) {
-    case "preCareer": return "pre_career";
-    case "enlist": return "term";
-    case "runTerm": return "term";
-    case "attemptMusterOut": return "term";
-    case "pickSkill": return pickSkillPhase(ch);
-    case "musterChoice":
-      // Derive from the pre-action base (pre-increment cash accounting) so
-      // the paused snapshot stays in the phase the roll was issued from.
-      return base.muster.musterCashUsed >= maxCashRolls(base)
-        ? "muster_no_cash"
-        : "muster";
-  }
-}
-
-function executeAction(ch: Character, action: FrontierAction): ChargenResult {
-  switch (action.kind) {
-    case "preCareer": return doApplyPreCareer(ch, action.opt);
-    case "enlist": return { snapshot: doEnlist(ch, action.opts) };
-    case "runTerm": return { snapshot: doRunTerm(ch) };
-    case "pickSkill": return { snapshot: doPickSkill(ch, action.table) };
-    case "attemptMusterOut": return { snapshot: doAttemptMusterOut(ch) };
-    case "musterChoice": return { snapshot: doMusterChoice(ch, action.choice) };
-  }
-}
 
 /** Run one action from `prev` with the given recorded decisions. The ONLY
  *  ChoicePendingError boundary in the session: a pause here means the
@@ -216,13 +174,15 @@ function runAction(
   const ch = cloneCharacter(prev);
   ch.decisionCursor = { resolutions, pos: 0 };
   let result: ChargenResult | undefined;
-  const outcome = pauseGuard(() => { result = executeAction(ch, action); });
+  const outcome = pauseGuard(() => {
+    result = getChargenModel(ch.chargenModelId).execute(ch, action);
+  });
   ch.decisionCursor = null;
   if (outcome === "paused") {
     return {
       snapshot: {
         character: ch,
-        phase: pausedPhaseFor(action, ch, base),
+        phase: getChargenModel(ch.chargenModelId).pausedPhase(action, ch, base),
         frontier: { action, base, resolutions },
       },
     };
@@ -337,182 +297,4 @@ export function setVerbose(snap: ChargenSnapshot, verbose: boolean): ChargenSnap
     phase: snap.phase,
     frontier: { ...snap.frontier, base },
   };
-}
-
-// ---------------------------------------------------------------------------
-// Action bodies. Straight-through flows on the working copy — no pauseGuard
-// here; ChoicePendingError propagates to runAction's boundary.
-// ---------------------------------------------------------------------------
-
-function doApplyPreCareer(ch: Character, opt: PreCareerOption): ChargenResult {
-  if (opt === "skip") {
-    return { snapshot: { character: ch, phase: ch.useAcg ? "acg_enlist" : "career" } };
-  }
-  const r = ch.doPreCareer(opt);
-  const hints: UiHints = {};
-  if (r.autoEnlistPathway) {
-    ch.acgPathway = r.autoEnlistPathway;
-    hints.acgPathway = r.autoEnlistPathway;
-    const branch = ch.acgState?.preCareerBranch;
-    if (branch === "army" || branch === "marines") hints.acgService = branch;
-    if (r.autoEnlistPathway === "navy" && opt === "navalAcademy") {
-      hints.acgFleet = "imperialNavy";
-    }
-  }
-  return { snapshot: { character: ch, phase: "pre_career" }, hints };
-}
-
-function doEnlist(ch: Character, opts: EnlistOptions): ChargenSnapshot {
-  ch.showHistory = opts.verbose ? "verbose" : "simple";
-  if (ch.useAcg && ch.acgPathway) {
-    // PM p. 44: Merchant Academy may only be attempted after enlisting in a
-    // Megacorp or Sector-wide line — the eligible line types are read from
-    // acg.common.preCareerOptions.merchantAcademy.requiresLineType (the same
-    // read preCareer.ts's admission gate performs).
-    const merchantAcademy = getEdition(ch.editionId).data
-      .advancedCharacterGeneration?.common?.preCareerOptions?.merchantAcademy as
-      { requiresLineType?: string[] } | undefined;
-    if (ch.acgPathway === "merchantPrince" &&
-        (merchantAcademy?.requiresLineType ?? []).includes(opts.acgLineType) &&
-        opts.acgMerchantAcademy) {
-      // Stash attemptMerchantAcademy on acgState before beginAcg
-      // consumes it. Initialize acgState if it doesn't exist yet.
-      if (!ch.acgState) ch.acgState = freshAcgState("merchantPrince");
-      ch.acgState.attemptMerchantAcademy = true;
-    }
-    try {
-      ch.beginAcg(ch.acgPathway as "mercenary" | "navy" | "scout" | "merchantPrince", {
-        service: opts.acgService,
-        combatArm: opts.acgCombatArm,
-        fleet: opts.acgFleet,
-        division: opts.acgDivision,
-        lineType: opts.acgLineType,
-        ...(opts.acgSubsectorTech ? { subsectorTechCode: opts.acgSubsectorTech } : {}),
-      });
-    } catch (err) {
-      // A pause is not a failure — let it unwind to the session boundary.
-      if (err instanceof ChoicePendingError) throw err;
-      ch.log(ev.endGeneration(
-        "retired",
-        `ACG enlistment failed: ${(err as Error).message}`,
-      ));
-      return { character: ch, phase: "end" };
-    }
-  } else {
-    ch.service = ch.doEnlistment(
-      opts.preferredService === "random" ? "" : opts.preferredService,
-    );
-  }
-  return { character: ch, phase: "term" };
-}
-
-function doRunTerm(ch: Character): ChargenSnapshot {
-  // Some services (CoTI nobles) derive starting rank from social standing
-  // each term rather than by a promotion roll. The rule lives in the
-  // service's JSON rankBySocial block; absent for services promoted by roll
-  // (e.g. MT nobles use a Position check, so their rank is untouched here).
-  const rankRule = getEdition(ch.editionId).data.services[ch.service]?.rankBySocial;
-  if (rankRule) {
-    if (ch.attributes.social < rankRule.socialFloor) {
-      ch.attributes.social = rankRule.socialFloor;
-    }
-    const startingRank = ch.attributes.social + rankRule.rankOffset;
-    if (ch.rank < startingRank && startingRank >= 1 && startingRank <= rankRule.maxRank) {
-      ch.rank = startingRank;
-      ch.commissioned = true;
-    }
-  }
-  ch.doServiceTermStep();
-  if (ch.deceased) return { character: ch, phase: "end" };
-  if (ch.skillPoints > 0) {
-    return { character: ch, phase: pickSkillPhase(ch) };
-  }
-  if (!ch.useAcg) {
-    ch.enforceSkillCap();
-    if (!ch.deceased) ch.doAging();
-  }
-  if (ch.deceased) return { character: ch, phase: "end" };
-  if (!ch.activeDuty) return enterMuster(ch);
-  return { character: ch, phase: "term" };
-}
-
-function doPickSkill(ch: Character, table: number): ChargenSnapshot {
-  if (table === 0) {
-    ch.muster.forceTable = false;
-  } else {
-    ch.muster.forceTable = true;
-    ch.muster.forceTableIndex = table;
-  }
-  ch.skillPoints -= 1;
-  getEditionServices(ch.editionId)[ch.service]!.acquireSkill(ch);
-  if (ch.skillPoints > 0) {
-    return { character: ch, phase: pickSkillPhase(ch) };
-  }
-  return finishTerm(ch);
-}
-
-/** End-of-term sequence — cap, aging, reenlistment, muster routing.
- *  Called once skillPoints reach 0. */
-function finishTerm(ch: Character): ChargenSnapshot {
-  ch.enforceSkillCap();
-  if (!ch.deceased) ch.doAging();
-  if (ch.deceased) return { character: ch, phase: "end" };
-  if (!ch.shortTermThisTerm && ch.activeDuty && !ch.deceased) {
-    ch.doReenlistmentStep();
-  }
-  if (ch.deceased) return { character: ch, phase: "end" };
-  if (!ch.activeDuty) return enterMuster(ch);
-  return { character: ch, phase: "term" };
-}
-
-function doAttemptMusterOut(ch: Character): ChargenSnapshot {
-  // Only stamp "voluntary muster" if chargen hasn't already ended with
-  // a more specific reason (deceased, court-martial discharge, etc.).
-  // Otherwise the original reason would be overwritten by the generic
-  // voluntary-muster string.
-  if (!ch.isChargenEnded) {
-    ch.endChargenRetired(`voluntary muster after ${intToOrdinal(ch.terms)} term of service`);
-  }
-  return enterMuster(ch);
-}
-
-/** Shared muster-out entry: enters the mustered status, computes roll
- *  count, and routes to end (no rolls) or muster (rolls pending). */
-function enterMuster(ch: Character): ChargenSnapshot {
-  // Already entered muster — don't reset musterRolls (would discard
-  // already-spent rolls if the UI dispatches enterMuster twice).
-  if (ch.musteredOut) {
-    if (ch.muster.musterRolls === 0) return { character: ch, phase: "end" };
-    if (ch.muster.musterCashUsed >= maxCashRolls(ch)) return { character: ch, phase: "muster_no_cash" };
-    return { character: ch, phase: "muster" };
-  }
-  ch.enterMustered();
-  ch.muster.musterRolls = ch.musterOutRolls();
-  if (ch.muster.musterRolls === 0) {
-    ch.musterOutPay();
-    ch.markMustered();
-    return { character: ch, phase: "end" };
-  }
-  return { character: ch, phase: "muster" };
-}
-
-function doMusterChoice(ch: Character, kind: "cash" | "benefit"): ChargenSnapshot {
-  const cashDM = cashDmFor(ch);
-  const benefitsDM = benefitDmFor(ch);
-  if (kind === "cash") {
-    ch.muster.musterCashUsed += 1;
-    ch.musterOutCash(cashDM);
-  } else {
-    ch.musterOutBenefit(benefitsDM);
-  }
-  ch.muster.musterRolls -= 1;
-  if (ch.muster.musterRolls === 0) {
-    ch.musterOutPay();
-    ch.markMustered();
-    return { character: ch, phase: "end" };
-  }
-  if (ch.muster.musterCashUsed >= maxCashRolls(ch)) {
-    return { character: ch, phase: "muster_no_cash" };
-  }
-  return { character: ch, phase: "muster" };
 }
