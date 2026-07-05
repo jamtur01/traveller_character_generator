@@ -12,6 +12,9 @@ import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 import { getCareer, mongooseSkillNames } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit } from "@/lib/traveller/engine/mongoose/ranks";
+import { applyEffects } from "@/lib/traveller/engine/mongoose/effects";
+import { getEdition } from "@/lib/traveller/editions";
+import type { MongooseEffect } from "@/lib/traveller/engine/mongoose/types";
 
 // Math.random value that makes the next single die / pick land on face `v`.
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
@@ -110,5 +113,44 @@ describe("A5: the gainAnySkill catalog holds atomic skill names, not merged", ()
     expect(names.has("Vacc Suit")).toBe(true);
     expect(names.has("Drive or Flyer")).toBe(false);
     expect(names.has("Drive or Vacc Suit")).toBe(false);
+  });
+});
+
+describe("F1: Noble event 6 uses the real skill 'Diplomat', not phantom 'Diplomacy'", () => {
+  const noble = getEdition("mongoose-2e").data.mongoose!.careers.noble!;
+  const ev6 = noble.events.find((e) => e.roll === 6)!;
+
+  it("the event-6 choice lists 'Diplomat' and never 'Diplomacy'", () => {
+    const choice = ev6.effects.find((e) => e.kind === "gainSkillChoice");
+    const options = choice && choice.kind === "gainSkillChoice" ? choice.options : [];
+    expect(options).toContain("Diplomat");
+    expect(options).not.toContain("Diplomacy");
+  });
+
+  it("no gainSkill / gainSkillChoice token 'Diplomacy' survives in any career", () => {
+    const tokens: string[] = [];
+    const walk = (effs: readonly MongooseEffect[]): void => {
+      for (const e of effs) {
+        if (e.kind === "gainSkill") tokens.push(e.skill);
+        else if (e.kind === "gainSkillChoice") tokens.push(...e.options);
+        else if (e.kind === "chooseEffect") for (const b of e.options) walk(b);
+        else if (e.kind === "check") { walk(e.onSuccess); walk(e.onFailure); walk(e.onNatural2 ?? []); }
+        else if (e.kind === "rollSubTable") for (const en of e.entries) walk(en);
+      }
+    };
+    for (const car of Object.values(getEdition("mongoose-2e").data.mongoose!.careers)) {
+      for (const r of [...car.events, ...car.mishaps]) walk(r.effects);
+    }
+    expect(tokens).not.toContain("Diplomacy");
+  });
+
+  it("applying event 6 with the pick landing on Diplomat grants Diplomat 1", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "noble";
+    c.mongooseState!.assignment = "dilettante";
+    mockRandom([0.6]); // rng.pick index 2 of 4 -> "Diplomat"
+    applyEffects(c, ev6.effects);
+    expect(skillLevel(c, "Diplomat")).toBe(1);
+    expect(skillLevel(c, "Diplomacy")).toBe(-1);
   });
 });

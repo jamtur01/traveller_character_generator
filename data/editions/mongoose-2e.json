@@ -4999,7 +4999,7 @@
                 "options": [
                   "Advocate",
                   "Admin",
-                  "Diplomacy",
+                  "Diplomat",
                   "Persuade"
                 ],
                 "level": 1
@@ -5009,7 +5009,8 @@
                 "relation": "rival",
                 "count": "1"
               }
-            ]
+            ],
+            "$comment": "Core p.39 Noble event 6 prints the skill option 'Diplomacy', which is not a Mongoose skill (the intended skill is 'Diplomat', as correctly listed in Noble event 10); corrected to 'Diplomat'. The narrative text preserves the printed wording."
           },
           {
             "roll": 7,
