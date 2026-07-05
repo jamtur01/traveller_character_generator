@@ -10,7 +10,7 @@ import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
-import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, getCareer, mongooseSkillNames, skillBaseName } from "@/lib/traveller/engine/mongoose/core";
 import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
@@ -50,22 +50,29 @@ function applySingleBenefit(ch: Character, benefit: string): void {
   ch.log(ev.raw(`Benefit: ${benefit}.`));
 }
 
-/** Apply a Material Benefit cell. A compound skill/attribute cell resolves via
- *  applySkillCell: " or " (Prisoner, Core p.57) is a player choice of one part;
- *  " and " grants every part. A single token keeps the attr/relation/item
- *  handling (a bare "Blade"/"Ship Share" is equipment, not a skill). */
+/** Apply a Material Benefit cell. Compound cells split into parts on commas and
+ *  the trailing conjunction: " or " (Core p.57) is a player choice of one part,
+ *  " and " grants every part. Each part is routed by kind — a skill (present in
+ *  mongooseSkillNames) via applySkillCell, otherwise (equipment, attribute,
+ *  relationship: "Ship Share", "END +1", "Ally") via applySingleBenefit. A
+ *  single (non-compound) token is always material/attr/relation, never a skill. */
 function applyMaterialBenefit(ch: Character, benefit: string): void {
+  const skills = mongooseSkillNames(ch);
+  const routePart = (c: Character, part: string): void => {
+    if (skills.has(part) || skills.has(skillBaseName(part))) applySkillCell(c, part, "Muster benefit");
+    else applySingleBenefit(c, part);
+  };
   if (benefit.includes(" or ")) {
     ch.pickOrDefer({
       kind: "mongooseMusterBenefit",
       label: `Choose a benefit: ${benefit}`,
       options: splitBenefitParts(benefit, "or"),
-      onResolve: (c, chosen) => applySkillCell(c, chosen, "Muster benefit"),
+      onResolve: routePart,
     });
     return;
   }
   if (benefit.includes(" and ")) {
-    for (const part of splitBenefitParts(benefit, "and")) applySkillCell(ch, part, "Muster benefit");
+    for (const part of splitBenefitParts(benefit, "and")) routePart(ch, part);
     return;
   }
   applySingleBenefit(ch, benefit);

@@ -97,3 +97,43 @@ describe("H1: pending benefit DM consumed on one muster roll (Core p.46)", () =>
     expect(c.mongooseState!.pendingDms.benefit).toEqual([{ dm: 1, scope: "any" }]);
   });
 });
+
+describe("H2: compound muster benefit routes skills vs equipment (Core p.46)", () => {
+  function inCareer(career: string, assignment: string): Character {
+    const c = mkChar();
+    c.mongooseState!.career = career;
+    c.mongooseState!.assignment = assignment;
+    c.mongooseState!.termsInCareer = 1; // rank 0 -> exactly one benefit roll
+    return c;
+  }
+
+  it("Navy 'Personal Vehicle or Ship Share' records equipment, not a skill", () => {
+    const c = inCareer("navy", "lineCrew");
+    // column pick -> Material (idx 1); 1D=1 -> muster row 1; " or " pick -> idx 0
+    mockRandom([d6(4), d6(1), d6(1)]);
+    musterOut(c);
+    expect(c.benefits).toContain("Personal Vehicle");
+    expect(skillLevel(c, "Personal Vehicle")).toBe(-1); // never recorded as a skill
+    expect(skillLevel(c, "Ship Share")).toBe(-1);
+  });
+
+  it("Prisoner 'Deception, Persuade or Stealth' grants the chosen skill", () => {
+    const c = inCareer("prisoner", "inmate");
+    // column -> Material; 1D=3 -> muster row 3; " or " pick -> idx 0 (Deception)
+    mockRandom([d6(4), d6(3), d6(1)]);
+    musterOut(c);
+    expect(skillLevel(c, "Deception")).toBe(1);
+    expect(c.benefits).not.toContain("Deception");
+  });
+
+  it("Prisoner 'Deception, Persuade and Stealth' grants every listed skill", () => {
+    const c = inCareer("prisoner", "inmate");
+    c.mongooseState!.pendingDms.benefit.push({ dm: 1, scope: "next" }); // 6 + 1 -> row 7
+    // column -> Material; 1D=6 (+1 DM) -> muster row 7 (the " and " row)
+    mockRandom([d6(4), d6(6)]);
+    musterOut(c);
+    expect(skillLevel(c, "Deception")).toBe(1);
+    expect(skillLevel(c, "Persuade")).toBe(1);
+    expect(skillLevel(c, "Stealth")).toBe(1);
+  });
+});

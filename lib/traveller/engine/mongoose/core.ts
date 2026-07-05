@@ -46,3 +46,38 @@ export function rollParoleThreshold(
   const count = parseDieCount(parole.dice, "mongoose career parole.dice (Core p.52)");
   return Math.min(parole.max, ch.rng.roll(count) + parole.plus);
 }
+
+/** A characteristic-boost cell ("DEX +1", "SOC -1"): an attribute change, not a
+ *  skill. */
+const ATTR_CELL = /^(STR|DEX|END|INT|EDU|SOC)\s*[+-]\d+$/;
+
+/** Strip a trailing level from a skill/benefit cell ("Streetwise 1" ->
+ *  "Streetwise"), leaving the bare skill name. */
+export function skillBaseName(cell: string): string {
+  return cell.replace(/\s+[+-]?\d+$/, "");
+}
+
+/** Every skill NAME the Mongoose data can grant: the union of all careers'
+ *  Personal Development / Service / Advanced Education tables, each assignment's
+ *  specialist table, and the background-skills list — each stored as both the
+ *  full cell and its level-stripped base name. Characteristic cells ("DEX +1")
+ *  are excluded (they are attribute boosts). Used to tell a compound muster
+ *  benefit's skill parts from its equipment/attribute parts (Core p.46). */
+export function mongooseSkillNames(ch: Character): Set<string> {
+  const data = getMongooseData(ch);
+  const names = new Set<string>();
+  const add = (cell: string | null): void => {
+    if (cell === null || ATTR_CELL.test(cell)) return;
+    names.add(cell);
+    names.add(skillBaseName(cell));
+  };
+  for (const career of Object.values(data.careers)) {
+    const t = career.skillTables;
+    for (const col of [t.personalDevelopment, t.serviceSkills, t.advancedEducation]) {
+      if (col) for (const cell of col) add(cell);
+    }
+    for (const asg of career.assignments) for (const cell of asg.skills) add(cell);
+  }
+  for (const skill of data.backgroundSkills) add(skill);
+  return names;
+}
