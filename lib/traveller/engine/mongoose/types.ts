@@ -222,6 +222,10 @@ export interface MongooseData {
   /** Total skill-level cap: multiplier x sum of the named attributes (Core
    *  p.19: 3 x (INT + EDU)). */
   readonly skillTotalCap: { readonly multiplier: number; readonly attributes: readonly string[] };
+  /** Max free skills from the Connections rule (Core p.19: 2). */
+  readonly connectionSkillCap: number;
+  /** A connection skill may not be raised above this level (Core p.19: 3). */
+  readonly connectionSkillMaxLevel: number;
   /** Benefits of Rank bonus-roll bands (Core p.46). */
   readonly benefitsOfRank: readonly MongooseRankBonus[];
   /** Pension schedule (Core p.49). */

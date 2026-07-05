@@ -7329,6 +7329,10 @@
         "education"
       ]
     },
-    "$skillTotalCap": "Core p.19: total skill levels may never exceed 3 x (INT + EDU)."
+    "$skillTotalCap": "Core p.19: total skill levels may never exceed 3 x (INT + EDU).",
+    "connectionSkillCap": 2,
+    "$connectionSkillCap": "Core p.19 Connections rule: a Traveller may gain a maximum of two free skills, each connection with a different Traveller.",
+    "connectionSkillMaxLevel": 3,
+    "$connectionSkillMaxLevel": "Core p.19: a connection skill cannot be brought above level 3, nor may Jack-of-all-Trades be taken."
   }
 }
