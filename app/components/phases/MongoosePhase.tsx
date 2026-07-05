@@ -52,6 +52,7 @@ export function MongooseTermPhase({
   const assignment = cap(st?.assignment ?? "");
   const rank = st?.rank ?? 0;
   const mustContinue = st?.perTerm.mustContinue ?? false;
+  const isPrisoner = (st?.paroleThreshold ?? null) !== null;
   return (
     <PhaseCard
       title={`${career} — ${assignment}`}
@@ -64,12 +65,14 @@ export function MongooseTermPhase({
       </dl>
       {mustContinue && (
         <p className="text-sm text-amber-700 dark:text-amber-400">
-          You rolled a natural 12 on advancement — you must serve at least one more term in this career.
+          {isPrisoner
+            ? "You were not paroled this term — you must serve another term in this career."
+            : "You rolled a natural 12 on advancement — you must serve at least one more term in this career."}
         </p>
       )}
       <div className="flex flex-wrap gap-2 pt-1">
         <PrimaryButton onClick={onRunTerm}>Run term</PrimaryButton>
-        {!mustContinue && (
+        {!mustContinue && !isPrisoner && (
           <SecondaryButton onClick={onMusterOut}>Muster out of this career</SecondaryButton>
         )}
       </div>

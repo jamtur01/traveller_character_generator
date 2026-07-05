@@ -137,19 +137,22 @@ function pickCareerNormally(ch: Character): void {
 function pickCareerAndEnter(ch: Character): void {
   const state = ensureState(ch);
   const data = getMongooseData(ch);
+  // Capture and clear all routing flags up front so an un-taken sibling flag
+  // (e.g. forceCareer set alongside offerCareer) never survives to a later term.
   const forced = state.forcedNextCareer;
+  const mustDraft = state.mustDraft;
+  const offered = state.offeredNextCareer;
   state.forcedNextCareer = null;
+  state.mustDraft = false;
+  state.offeredNextCareer = null;
   if (forced && data.careers[forced]) {
     enterCareerWithAssignmentChoice(ch, forced);
     return;
   }
-  if (state.mustDraft) {
-    state.mustDraft = false;
+  if (mustDraft) {
     rollDraftAndEnter(ch);
     return;
   }
-  const offered = state.offeredNextCareer;
-  state.offeredNextCareer = null;
   if (offered && data.careers[offered]) {
     ch.pickOrDefer({
       kind: "mongooseOfferedCareer",

@@ -246,7 +246,9 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const labels = e.options.map((_, i) => `Option ${i + 1}`);
       ch.pickOrDefer({
         kind: "mongooseEventChoice", label: "Choose an outcome", options: labels,
-        onResolve: (c, chosen) => applyEffects(c, e.options[labels.indexOf(chosen)] ?? []),
+        onResolve: (c, chosen) => applyEffects(c, requireRule(
+          e.options[labels.indexOf(chosen)], "mongoose chooseEffect option", "engine (mongoose)",
+        )),
       });
       return;
     }
@@ -277,7 +279,9 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     }
     case "rollSubTable": {
       const idx = ch.rng.roll(1);
-      applyEffects(ch, e.entries[idx - 1] ?? []);
+      applyEffects(ch, requireRule(
+        e.entries[idx - 1], `mongoose rollSubTable entry ${idx}`, "MgT2 Core",
+      ));
       return;
     }
     default: {

@@ -6,11 +6,10 @@
 //      may be attempted via a 2D 7+ override roll; failure forfeits the
 //      skill roll entirely.
 //   2. Weapon skills are limited by homeworld tech code AND law code.
-//      (The PM's legal-weapons-per-law-code table is currently not mapped
-//      into JSON — the inverse "what law codes does this weapon need?"
-//      mapping requires additional rule clarification. The data block in
-//      mt-megatraveller.json leaves weaponSkillTech / weaponSkillMaxLaw
-//      empty; the engine reads them when populated.)
+//      (The PM's legal-weapons-per-law-code table is mapped into JSON:
+//      weaponSkillTech gives per-weapon tech minimums and weaponSkillMaxLaw
+//      the maximum law code at which each weapon skill stays unrestricted;
+//      the engine reads both to gate weapon skills by tech and law.)
 //
 // Noble service is exempt from all homeworld skill limitations.
 //
