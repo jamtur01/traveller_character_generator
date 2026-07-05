@@ -17,13 +17,22 @@ const ATTR_LABELS: { key: AttributeKey; short: string }[] = [
 ];
 
 export function CharacterSummary({ character }: { character: Character }) {
+  const isMongoose = character.chargenModelId === "mongoose";
+  const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   const def = getEditionServices(character.editionId)[character.service];
-  const rankText = def?.ranks[character.rank] || "";
-  const titleText =
-    character.attributes.social > 10 ? character.getNobleTitle() : "";
-  const memberText =
-    !def || character.service === "other" ? "" : def.memberName;
-  const subtitleParts = [memberText, rankText, titleText].filter(Boolean);
+  let subtitleParts: string[];
+  if (isMongoose) {
+    const st = character.mongooseState;
+    const career = st?.career ?? st?.history.at(-1)?.career ?? "";
+    subtitleParts = career
+      ? [`${cap(career)} (rank ${st?.rank ?? 0}${st?.commissioned ? ", officer" : ""})`]
+      : [];
+  } else {
+    const rankText = def?.ranks[character.rank] || "";
+    const titleText = character.attributes.social > 10 ? character.getNobleTitle() : "";
+    const memberText = !def || character.service === "other" ? "" : def.memberName;
+    subtitleParts = [memberText, rankText, titleText].filter(Boolean);
+  }
 
   return (
     <div className={CARD + " space-y-4"}>
@@ -42,7 +51,7 @@ export function CharacterSummary({ character }: { character: Character }) {
       </div>
 
       <div>
-        <div className={SECTION_LABEL}>UPP</div>
+        <div className={SECTION_LABEL}>{isMongoose ? "Characteristics" : "UPP"}</div>
         <div className="mt-2 grid grid-cols-6 gap-1 text-center">
           {ATTR_LABELS.map(({ key, short }) => (
             <div key={key}>
@@ -50,7 +59,7 @@ export function CharacterSummary({ character }: { character: Character }) {
                 {short}
               </div>
               <div className="rounded-md bg-zinc-50 py-1 font-mono text-base font-semibold text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
-                {extendedHex(character.attributes[key])}
+                {isMongoose ? character.attributes[key] : extendedHex(character.attributes[key])}
               </div>
             </div>
           ))}
@@ -58,7 +67,16 @@ export function CharacterSummary({ character }: { character: Character }) {
       </div>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <Field label="Service" value={def?.serviceName ?? ""} />
+        <Field
+          label={isMongoose ? "Career" : "Service"}
+          value={
+            isMongoose
+              ? (character.mongooseState?.career
+                  ? cap(character.mongooseState.career)
+                  : `${character.mongooseState?.careerCount ?? 0} career(s)`)
+              : (def?.serviceName ?? "")
+          }
+        />
         <Field label="Age" value={String(character.age)} />
         <Field label="Terms" value={String(character.terms)} />
         <Field

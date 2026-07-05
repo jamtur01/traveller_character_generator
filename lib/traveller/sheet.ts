@@ -4,7 +4,32 @@
 
 import { numCommaSep } from "./formatting";
 import type { Character } from "./character";
+import type { AttributeKey } from "./types";
 import { getEdition } from "./editions";
+
+const CHAR_ORDER: readonly AttributeKey[] = [
+  "strength", "dexterity", "endurance", "intelligence", "education", "social",
+];
+const capWord = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+/** Header prefix + attribute string for the sheet, per chargen model. Mongoose
+ *  uses career/rank and decimal characteristics (no service, no hex UPP). */
+function sheetHeaderLeft(ch: Character): string {
+  const deceasedMark = ch.deceased ? "\u2020 " : "";
+  if (ch.chargenModelId === "mongoose") {
+    const st = ch.mongooseState;
+    const career = st?.career ?? st?.history.at(-1)?.career ?? "";
+    const prefix = career ? `${capWord(career)} rank ${st?.rank ?? 0} ` : "";
+    const attrs = CHAR_ORDER.map((k) => ch.attributes[k]).join(" ");
+    return `${deceasedMark}${prefix}${ch.name} ${attrs}`;
+  }
+  const def = ch.serviceDef();
+  const memberPrefix = ch.service === "other" ? "" : def.memberName + " ";
+  const rankPrefix = def.ranks[ch.rank] ? def.ranks[ch.rank] + " " : "";
+  const nobleTitle = ch.getNobleTitle();
+  const titlePrefix = nobleTitle ? `${nobleTitle} ` : "";
+  return `${deceasedMark}${memberPrefix}${rankPrefix}${titlePrefix}${ch.name} ${ch.getAttrString()}`;
+}
 
 const SHEET_WIDTH = 60;
 
@@ -38,7 +63,7 @@ function wrapList(items: string[], width: number, indent = ""): string {
  *  mortgage status appended. */
 export function formatBenefit(b: string, ch: Character): string {
   const details = getEdition(ch.editionId).data.benefitDetails;
-  const entry = details[b];
+  const entry = details?.[b];
   if (!entry) return b;
   const display = entry.displayName ?? b;
   // Mortgage suffix for any ship whose entry declares
@@ -67,17 +92,7 @@ export function aggregateBenefits(ch: Character): string[] {
 
 /** The TTB-style canonical character sheet text (no service history). */
 export function formatCharacterSheet(ch: Character): string {
-  const def = ch.serviceDef();
-  const memberPrefix = ch.service === "other" ? "" : def.memberName + " ";
-  const rankPrefix = def.ranks[ch.rank] ? def.ranks[ch.rank] + " " : "";
-  // Title iff the edition's rules.nobleTitles declares one for this Social —
-  // getNobleTitle returns "" for socials with no entry, so the table's key
-  // domain (PM/CotI p. 8: Soc 11+) is the gate, not a code threshold.
-  const nobleTitle = ch.getNobleTitle();
-  const titlePrefix = nobleTitle ? `${nobleTitle} ` : "";
-  const deceasedMark = ch.deceased ? "† " : "";
-
-  const headerLeft = `${deceasedMark}${memberPrefix}${rankPrefix}${titlePrefix}${ch.name} ${ch.getAttrString()}`;
+  const headerLeft = sheetHeaderLeft(ch);
   const headerRight = `Age ${ch.age}`;
   const line1 = padBetween(headerLeft, headerRight, SHEET_WIDTH);
 

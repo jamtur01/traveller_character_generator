@@ -67,6 +67,7 @@ export function expandIncludes(editionId: string, name: string): string[] {
  *  it alongside the pistols), including any Includes-skill constituents. */
 export function pistolSkills(editionId: string): Set<string> {
   const out = new Set<string>();
+  if (!getEdition(editionId).data.cascadeSkills?.["gunCombat"]) return out;
   const guns = cascadePoolByKey("gunCombat", editionId);
   for (const g of guns) {
     if (g.endsWith("Pistol") || g === "Revolver") out.add(g);
@@ -81,8 +82,10 @@ export function pistolSkills(editionId: string): Set<string> {
  *  blade-combat cascade plus each umbrella's Includes-skill constituents
  *  (so a Marine's expanded Cutlass-1 is still recognised as a blade). */
 export function bladeSkills(editionId: string): Set<string> {
-  const out = new Set<string>(cascadePoolByKey("bladeCombat", editionId));
+  const out = new Set<string>();
+  if (!getEdition(editionId).data.cascadeSkills?.["bladeCombat"]) return out;
   for (const name of cascadePoolByKey("bladeCombat", editionId)) {
+    out.add(name);
     for (const inner of expandIncludes(editionId, name)) out.add(inner);
   }
   return out;

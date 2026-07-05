@@ -5,9 +5,21 @@ import { getEdition } from "./traveller/editions";
 import { requireRule } from "./traveller/editions/strict";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
+import type { AttributeKey } from "./traveller/types";
 import {
   acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
 } from "./traveller/view";
+
+const MONGOOSE_ATTRS: readonly AttributeKey[] = [
+  "strength", "dexterity", "endurance", "intelligence", "education", "social",
+];
+const isMongoose = (c: Character): boolean => c.chargenModelId === "mongoose";
+/** Career label for a mongoose character's Service field. */
+function mongooseCareerLabel(c: Character): string {
+  const st = c.mongooseState;
+  const id = st?.career ?? st?.history.at(-1)?.career ?? "";
+  return id ? id.charAt(0).toUpperCase() + id.slice(1) : "Mongoose Traveller";
+}
 
 /** Skills that populate the sheet's "Equipment Qualified On" box: the
  *  edition's vehicle cascade (its umbrella of vehicle / aircraft /
@@ -17,10 +29,11 @@ import {
  *  Wing" and MT "Lighter-Than-Air Craft" are kept rather than dropped by
  *  a hardcoded substring filter. */
 export function equipmentQualifiedOn(c: Character): string[] {
-  const equipSkills = new Set<string>(requireRule(
-    getEdition(c.editionId).data.sheet?.equipmentSkills,
-    "sheet.equipmentSkills", "TAS Form 2 box 17 (presentation metadata)",
-  ));
+  const data = getEdition(c.editionId).data;
+  // Editions without the presentation sheet block (e.g. Mongoose — a careers
+  // model with no CT/MT vehicle cascade) list nothing in this box.
+  if (!data.sheet?.equipmentSkills) return [];
+  const equipSkills = new Set<string>(data.sheet.equipmentSkills);
   for (const name of cascadePoolByKey("vehicle", c.editionId)) {
     equipSkills.add(name);
     for (const inner of expandIncludes(c.editionId, name)) equipSkills.add(inner);
@@ -235,7 +248,9 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 280, y, 260, nameH);
   fieldLabel(doc, X0 + 284, y + 10, "3. UPP");
-  const upp = c.getAttrString();
+  const upp = isMongoose(c)
+    ? MONGOOSE_ATTRS.map((k) => c.attributes[k]).join("-")
+    : c.getAttrString();
   const statNames = ["Stren", "Dext", "Endur", "Intel", "Educ", "Soc"];
   const uppLabelW = 50;
   const statW = (260 - uppLabelW) / 6;
@@ -267,9 +282,11 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // blank. Try the ACG pathway's rank ladder for a printed title; fall
   // back to the basic service ranks (covers O1-O6 universally) and
   // finally to the raw rank code if no title is registered.
-  const rankText = c.useAcg && c.acgState?.rankCode
-    ? acgRankTitle(c) ?? c.acgState.rankCode
-    : (c.serviceDef().ranks[c.rank] || "");
+  const rankText = isMongoose(c)
+    ? `Rank ${c.mongooseState?.rank ?? 0}${c.mongooseState?.commissioned ? " (officer)" : ""}`
+    : c.useAcg && c.acgState?.rankCode
+      ? acgRankTitle(c) ?? c.acgState.rankCode
+      : (c.serviceDef().ranks[c.rank] || "");
   fieldValue(doc, X0 + 166, y + 26, rankText, 152);
 
   doc.rect(X0 + 320, y, 220, r3H);
@@ -309,7 +326,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // Row: Service | Branch | Dischargeworld
   doc.rect(X0, y, 180, r3H);
   fieldLabel(doc, X0 + 4, y + 10, "9. Service");
-  fieldValue(doc, X0 + 6, y + 26, c.serviceDef().serviceName, 172);
+  fieldValue(doc, X0 + 6, y + 26, isMongoose(c) ? mongooseCareerLabel(c) : c.serviceDef().serviceName, 172);
 
   doc.rect(X0 + 180, y, 140, r3H);
   fieldLabel(doc, X0 + 184, y + 10, "10. Branch");
