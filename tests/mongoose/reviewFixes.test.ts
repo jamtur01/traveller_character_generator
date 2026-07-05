@@ -7,12 +7,20 @@ import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { getCareer } from "@/lib/traveller/engine/mongoose/core";
 import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
 import { applyEffects, resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
+import { mongooseModel } from "@/lib/traveller/chargen/models/mongoose";
+import type { EnlistOptions } from "@/lib/traveller/chargen/session";
 
 // Math.random value that makes the next single die show face `v` (1-6).
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
 
 const BASE: Attributes = {
   strength: 7, dexterity: 7, endurance: 7, intelligence: 7, education: 7, social: 7,
+};
+
+const ENLIST: EnlistOptions = {
+  verbose: false, preferredService: "random", acgService: "army", acgCombatArm: "",
+  acgFleet: "imperialNavy", acgDivision: "field", acgLineType: "", acgSubsectorTech: "",
+  acgMerchantAcademy: false,
 };
 
 function mkChar(over: Partial<Attributes> = {}): Character {
@@ -245,5 +253,28 @@ describe("M2: pending DMs reset on career entry (Core p.52)", () => {
     expect(c.mongooseState!.pendingDms).toEqual({
       qualification: [], survival: [], advancement: [], benefit: [],
     });
+  });
+});
+
+describe("any-assignment prompt on draft/forced/offered entry (Core p.20)", () => {
+  it("a drafted 'any' row prompts for the assignment (auto picks a non-default index)", () => {
+    const c = mkChar();
+    c.mongooseState!.careerCount = 1; // between careers -> skip background skills
+    c.mongooseState!.mustDraft = true;
+    // draft 1D = 2 -> Army/any; assignment pick idx 2 -> "cavalry" (proves a real prompt)
+    mockRandom([d6(2), d6(6)]);
+    mongooseModel.execute(c, { kind: "enlist", opts: ENLIST });
+    expect(c.mongooseState!.career).toBe("army");
+    expect(c.mongooseState!.assignment).toBe("cavalry"); // not assignments[0] ("support")
+  });
+
+  it("a forced career prompts for the assignment (auto picks a non-default index)", () => {
+    const c = mkChar();
+    c.mongooseState!.careerCount = 1;
+    c.mongooseState!.forcedNextCareer = "prisoner";
+    mockRandom([d6(6)]); // assignment pick idx 2 -> "fixer"
+    mongooseModel.execute(c, { kind: "enlist", opts: ENLIST });
+    expect(c.mongooseState!.career).toBe("prisoner");
+    expect(c.mongooseState!.assignment).toBe("fixer"); // not assignments[0] ("inmate")
   });
 });

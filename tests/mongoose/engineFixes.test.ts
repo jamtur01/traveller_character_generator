@@ -67,7 +67,7 @@ describe("offerCareer routing (H3)", () => {
     const c = mkChar({ dexterity: 4 }); // Rogue is DEX 6+: would fail if a roll happened
     c.mongooseState!.careerCount = 1;
     c.mongooseState!.offeredNextCareer = "rogue";
-    mockRandom([d6(1)]); // Accept/Decline pick -> index 0 = "Accept"
+    mockRandom([d6(1), d6(1)]); // Accept (idx 0), then assignment pick (idx 0)
     mongooseModel.execute(c, { kind: "enlist", opts: ENLIST });
     expect(c.mongooseState!.career).toBe("rogue");
     expect(c.mongooseState!.assignment).toBe(getCareer(c, "rogue").assignments[0]!.id);
@@ -111,7 +111,7 @@ describe("forced-career effects & routing (H1, M1, Core p.52)", () => {
     const c = mkChar();
     c.mongooseState!.careerCount = 1; // between careers
     c.mongooseState!.forcedNextCareer = "prisoner"; // Prisoner is forcedOnly
-    mockRandom([]); // parole-threshold + basic-skill picks draw from the fallback
+    mockRandom([d6(1)]); // assignment pick (idx 0); parole + basic-skill use the fallback
     mongooseModel.execute(c, { kind: "enlist", opts: ENLIST });
     expect(c.mongooseState!.career).toBe("prisoner");
     expect(c.mongooseState!.assignment).toBe(getCareer(c, "prisoner").assignments[0]!.id);

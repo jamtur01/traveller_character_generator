@@ -65,6 +65,19 @@ function applyBackgroundSkills(ch: Character): void {
   }
 }
 
+/** Enter `careerId`, prompting for the assignment when it is not predetermined
+ *  — a drafted "any" row, a forced career, or an offered career (Core p.20).
+ *  Auto mode picks an assignment as usual. */
+function enterCareerWithAssignmentChoice(ch: Character, careerId: string): void {
+  const career = getMongooseData(ch).careers[careerId]!;
+  ch.pickOrDefer({
+    kind: "mongooseAssignment",
+    label: `Choose an assignment for ${career.displayName}`,
+    options: career.assignments.map((a) => a.id),
+    onResolve: (c, asgId) => enterCareer(c, careerId, asgId),
+  });
+}
+
 /** Roll on the Draft table (Core p.20) and enter the resulting career. */
 function rollDraftAndEnter(ch: Character): void {
   const data = getMongooseData(ch);
@@ -74,9 +87,9 @@ function rollDraftAndEnter(ch: Character): void {
     `mongoose.draft[${draftRoll}]`, "MgT2 Core p.20",
   );
   const career = requireRule(data.careers[row.career], `mongoose.careers.${row.career}`, "MgT2");
-  const asg = row.assignment === "any" ? career.assignments[0]!.id : row.assignment;
   ch.log(ev.drafted(career.displayName));
-  enterCareer(ch, row.career, asg);
+  if (row.assignment === "any") enterCareerWithAssignmentChoice(ch, row.career);
+  else enterCareer(ch, row.career, row.assignment);
 }
 
 /** Enter a career after a failed qualification: submit to the Draft once per
@@ -127,7 +140,7 @@ function pickCareerAndEnter(ch: Character): void {
   const forced = state.forcedNextCareer;
   state.forcedNextCareer = null;
   if (forced && data.careers[forced]) {
-    enterCareer(ch, forced, data.careers[forced]!.assignments[0]!.id);
+    enterCareerWithAssignmentChoice(ch, forced);
     return;
   }
   if (state.mustDraft) {
@@ -144,7 +157,7 @@ function pickCareerAndEnter(ch: Character): void {
       options: ["Accept", "Decline"],
       onResolve: (c, choice) => {
         if (choice === "Accept") {
-          enterCareer(c, offered, getMongooseData(c).careers[offered]!.assignments[0]!.id);
+          enterCareerWithAssignmentChoice(c, offered);
         } else {
           pickCareerNormally(c);
         }
