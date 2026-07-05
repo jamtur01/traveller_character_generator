@@ -457,6 +457,79 @@ const EditionMetaSchema = z.looseObject({
   description: z.string().optional(),
 });
 
+// --- Mongoose Traveller 2e data (loose objects preserve $rule citations) ----
+const MongooseCheckSchema = z.looseObject({
+  characteristics: z.array(z.string()),
+  target: z.number(),
+});
+const MongooseSkillColumnSchema = z.array(z.string().nullable());
+const MongooseRankSchema = z.looseObject({
+  rank: z.number(),
+  title: z.string().nullable(),
+  benefit: z.string().nullable(),
+});
+// Effects are validated structurally (kind present); the engine's exhaustive
+// switch is the semantic validator and throws on an unknown kind.
+const MongooseEffectSchema = z.looseObject({ kind: z.string() });
+const MongooseTableRowSchema = z.looseObject({
+  roll: z.number(),
+  text: z.string(),
+  effects: z.array(MongooseEffectSchema),
+});
+const MongooseCareerSchema = z.looseObject({
+  id: z.string(),
+  displayName: z.string(),
+  page: z.number(),
+  qualification: MongooseCheckSchema,
+  commission: MongooseCheckSchema.optional(),
+  assignments: z.array(z.looseObject({
+    id: z.string(),
+    displayName: z.string(),
+    survival: MongooseCheckSchema,
+    advancement: MongooseCheckSchema,
+    skills: MongooseSkillColumnSchema,
+  })),
+  skillTables: z.looseObject({
+    personalDevelopment: MongooseSkillColumnSchema,
+    serviceSkills: MongooseSkillColumnSchema,
+    advancedEducation: MongooseSkillColumnSchema,
+    advancedEducationEduMin: z.number(),
+    officer: MongooseSkillColumnSchema.optional(),
+  }),
+  ranks: z.looseObject({
+    enlisted: z.array(MongooseRankSchema),
+    officer: z.array(MongooseRankSchema).optional(),
+  }),
+  events: z.array(MongooseTableRowSchema),
+  mishaps: z.array(MongooseTableRowSchema),
+  musterOut: z.array(z.looseObject({
+    roll: z.number(),
+    cash: z.number(),
+    benefit: z.string(),
+  })),
+});
+const MongooseDataSchema = z.looseObject({
+  startAge: z.number(),
+  termLengthYears: z.number(),
+  characteristicDmBands: z.array(
+    z.looseObject({ min: z.number(), max: z.number(), dm: z.number() }),
+  ),
+  defaultTaskTarget: z.number(),
+  backgroundSkillCount: z.string(),
+  backgroundSkills: z.array(z.string()),
+  preCareer: z.array(z.looseObject({
+    id: z.string(),
+    displayName: z.string(),
+    qualification: MongooseCheckSchema,
+  })),
+  draft: z.array(z.looseObject({
+    roll: z.number(),
+    career: z.string(),
+    assignment: z.string(),
+  })),
+  careers: z.record(z.string(), MongooseCareerSchema),
+});
+
 const CanonDataSchema = z.looseObject({
   edition: EditionMetaSchema.optional(),
   services: z.record(z.string(), ServiceDataSchema),
@@ -473,6 +546,7 @@ const CanonDataSchema = z.looseObject({
   sheet: strictCitations({
     equipmentSkills: z.array(z.string()),
   }).optional(),
+  mongoose: MongooseDataSchema.optional(),
 });
 
 export type CanonDataValidated = z.infer<typeof CanonDataSchema>;
