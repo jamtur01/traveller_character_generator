@@ -5190,21 +5190,46 @@
         ]
       },
       "rogue": {
-        "id": "agent",
-        "displayName": "Agent",
-        "page": 22,
-        "$page": "Core pp.22-23 (career begins p.22)",
+        "id": "rogue",
+        "displayName": "Rogue",
+        "page": 40,
+        "$page": "Core pp.40-41 (career begins p.40)",
         "qualification": {
           "characteristics": [
-            "intelligence"
+            "dexterity"
           ],
           "target": 6,
-          "$qualification": "Core p.22: INT 6+. DM-1 for every previous career (standard rule; no career-specific extra)."
+          "$qualification": "Core p.40: DEX 6+. DM-1 for every previous career (standard rule; no career-specific extra)."
         },
         "assignments": [
           {
-            "id": "lawEnforcement",
-            "displayName": "Law Enforcement",
+            "id": "thief",
+            "displayName": "Thief",
+            "survival": {
+              "characteristics": [
+                "intelligence"
+              ],
+              "target": 6
+            },
+            "advancement": {
+              "characteristics": [
+                "dexterity"
+              ],
+              "target": 6
+            },
+            "skills": [
+              null,
+              "Stealth",
+              "Electronics",
+              "Recon",
+              "Streetwise",
+              "Deception",
+              "Athletics"
+            ]
+          },
+          {
+            "id": "enforcer",
+            "displayName": "Enforcer",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -5213,186 +5238,198 @@
             },
             "advancement": {
               "characteristics": [
+                "strength"
+              ],
+              "target": 6
+            },
+            "skills": [
+              null,
+              "Gun Combat",
+              "Melee",
+              "Streetwise",
+              "Persuade",
+              "Athletics",
+              "Drive"
+            ]
+          },
+          {
+            "id": "pirate",
+            "displayName": "Pirate",
+            "survival": {
+              "characteristics": [
+                "dexterity"
+              ],
+              "target": 6
+            },
+            "advancement": {
+              "characteristics": [
                 "intelligence"
               ],
               "target": 6
             },
             "skills": [
               null,
-              "Investigate",
-              "Recon",
-              "Streetwise",
-              "Stealth",
-              "Melee",
-              "Advocate"
-            ]
-          },
-          {
-            "id": "intelligence",
-            "displayName": "Intelligence",
-            "survival": {
-              "characteristics": [
-                "intelligence"
-              ],
-              "target": 7
-            },
-            "advancement": {
-              "characteristics": [
-                "intelligence"
-              ],
-              "target": 5
-            },
-            "skills": [
-              null,
-              "Investigate",
-              "Recon",
-              "Electronics (comms)",
-              "Stealth",
-              "Persuade",
-              "Deception"
-            ]
-          },
-          {
-            "id": "corporate",
-            "displayName": "Corporate",
-            "survival": {
-              "characteristics": [
-                "intelligence"
-              ],
-              "target": 5
-            },
-            "advancement": {
-              "characteristics": [
-                "intelligence"
-              ],
-              "target": 7
-            },
-            "skills": [
-              null,
-              "Investigate",
-              "Electronics (computers)",
-              "Stealth",
-              "Carouse",
-              "Deception",
-              "Streetwise"
+              "Pilot",
+              "Astrogation",
+              "Gunner",
+              "Engineer",
+              "Vacc Suit",
+              "Melee"
             ]
           }
         ],
-        "$assignments": "Core p.22 Survival & Advancement (by assignment) + assignment specialist 1D skill columns.",
+        "$assignments": "Core p.40 Survival & Advancement (by assignment) + assignment specialist 1D skill columns (Thief/Enforcer/Pirate).",
         "skillTables": {
           "personalDevelopment": [
             null,
-            "Gun Combat",
+            "Carouse",
             "DEX +1",
             "END +1",
+            "Gambler",
             "Melee",
-            "INT +1",
-            "Athletics"
+            "Gun Combat"
           ],
           "serviceSkills": [
             null,
-            "Streetwise",
-            "Drive",
-            "Investigate",
-            "Flyer",
+            "Deception",
             "Recon",
-            "Gun Combat"
+            "Athletics",
+            "Gun Combat",
+            "Stealth",
+            "Streetwise"
           ],
           "advancedEducation": [
             null,
-            "Advocate",
-            "Language",
-            "Explosives",
+            "Electronics",
+            "Navigation",
             "Medic",
-            "Vacc Suit",
-            "Electronics"
+            "Investigate",
+            "Broker",
+            "Advocate"
           ],
-          "advancedEducationEduMin": 8,
-          "$rule": "Core p.22 Skills and Training tables"
+          "advancedEducationEduMin": 10,
+          "$rule": "Core pp.40-41 Skills and Training tables (Advanced Education printed min. EDU 10)."
         },
         "ranks": {
           "enlisted": {
-            "lawEnforcement": [
+            "thief": [
               {
                 "rank": 0,
-                "title": "Rookie",
+                "title": null,
                 "benefit": null
               },
               {
                 "rank": 1,
-                "title": "Corporal",
-                "benefit": "Streetwise 1"
+                "title": null,
+                "benefit": "Stealth 1"
               },
               {
                 "rank": 2,
-                "title": "Sergeant",
+                "title": null,
                 "benefit": null
               },
               {
                 "rank": 3,
-                "title": "Detective",
+                "title": null,
+                "benefit": "Streetwise 1"
+              },
+              {
+                "rank": 4,
+                "title": null,
                 "benefit": null
+              },
+              {
+                "rank": 5,
+                "title": null,
+                "benefit": "Recon 1"
+              },
+              {
+                "rank": 6,
+                "title": null,
+                "benefit": null
+              }
+            ],
+            "enforcer": [
+              {
+                "rank": 0,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 1,
+                "title": null,
+                "benefit": "Persuade 1"
+              },
+              {
+                "rank": 2,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 3,
+                "title": null,
+                "benefit": "Gun Combat 1 or Melee 1"
+              },
+              {
+                "rank": 4,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 5,
+                "title": null,
+                "benefit": "Streetwise 1"
+              },
+              {
+                "rank": 6,
+                "title": null,
+                "benefit": null
+              }
+            ],
+            "pirate": [
+              {
+                "rank": 0,
+                "title": "Lackey",
+                "benefit": null
+              },
+              {
+                "rank": 1,
+                "title": "Henchman",
+                "benefit": "Pilot 1 or Gunner 1"
+              },
+              {
+                "rank": 2,
+                "title": "Corporal",
+                "benefit": null
+              },
+              {
+                "rank": 3,
+                "title": "Sergeant",
+                "benefit": "Gun Combat 1 or Melee 1"
               },
               {
                 "rank": 4,
                 "title": "Lieutenant",
-                "benefit": "Investigate 1"
+                "benefit": null
               },
               {
                 "rank": 5,
-                "title": "Chief",
-                "benefit": "Admin 1"
+                "title": "Leader",
+                "benefit": "Leadership 1"
               },
               {
                 "rank": 6,
-                "title": "Commissioner",
-                "benefit": "SOC +1"
-              }
-            ],
-            "intelligenceCorporate": [
-              {
-                "rank": 0,
-                "title": null,
-                "benefit": null
-              },
-              {
-                "rank": 1,
-                "title": "Agent",
-                "benefit": "Deception 1"
-              },
-              {
-                "rank": 2,
-                "title": "Field Agent",
-                "benefit": "Investigate 1"
-              },
-              {
-                "rank": 3,
-                "title": null,
-                "benefit": null
-              },
-              {
-                "rank": 4,
-                "title": "Special Agent",
-                "benefit": "Gun Combat 1"
-              },
-              {
-                "rank": 5,
-                "title": "Assistant Director",
-                "benefit": null
-              },
-              {
-                "rank": 6,
-                "title": "Director",
+                "title": "Captain",
                 "benefit": null
               }
             ]
           },
           "enlistedByAssignment": {
-            "lawEnforcement": "lawEnforcement",
-            "intelligence": "intelligenceCorporate",
-            "corporate": "intelligenceCorporate"
+            "thief": "thief",
+            "enforcer": "enforcer",
+            "pirate": "pirate"
           },
-          "$rule": "Core p.22 Ranks and Bonuses. Agent has two ladders: 'Law Enforcement' and shared 'Intelligence/Corporate'. Civilian career - no officer ladder."
+          "$rule": "Core pp.40-41 Ranks and Bonuses. Thief and Enforcer have title-less ladders; Pirate has a titled ladder (Lackey to Captain). Civilian career - no officer ladder."
         },
         "events": [
           {
@@ -5407,7 +5444,7 @@
           },
           {
             "roll": 3,
-            "text": "An investigation takes on a dangerous turn. Roll Investigate 8+ or Streetwise 8+. If you fail, roll on the Mishap table. If you succeed, increase one of these skills by one level: Deception, Jack-of-all-Trades, Persuade or Tactics.",
+            "text": "You are arrested and charged with a crime. You may defend yourself in court by rolling Advocate 8+: if you succeed the charges are dropped, but if you fail you gain an Enemy and must take the Prisoner career in your next term. Alternatively, you may hire a lawyer, gaining them as a Contact but losing one Benefit roll.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5450,29 +5487,48 @@
           },
           {
             "roll": 4,
-            "text": "You complete a mission for your superiors and are suitably rewarded. Gain DM+1 to any one Benefit roll from this career.",
+            "text": "You are involved in planning an impressive heist. Gain one of Electronics 1 or Mechanic 1.",
             "effects": [
               {
-                "kind": "benefitDm",
-                "dm": 1,
-                "scope": "any"
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Electronics",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Mechanic",
+                      "level": 1
+                    }
+                  ]
+                ]
               }
             ]
           },
           {
             "roll": 5,
-            "text": "You establish a network of contacts. Gain D3 Contacts.",
+            "text": "One of your crimes pays off handsomely. Gain DM+2 to any one Benefit roll from this career, but you gain your victim as an Enemy.",
             "effects": [
               {
+                "kind": "benefitDm",
+                "dm": 2,
+                "scope": "any"
+              },
+              {
                 "kind": "gainRelation",
-                "relation": "contact",
-                "count": "D3"
+                "relation": "enemy",
+                "count": "1"
               }
             ]
           },
           {
             "roll": 6,
-            "text": "You are given advanced training in a specialist field. Roll EDU 8+ to increase any one skill you already have by one level.",
+            "text": "You have the opportunity to backstab a fellow rogue. If you take it, gain DM+4 to your next advancement roll. If you refuse, you gain them as an Ally.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5506,22 +5562,46 @@
           },
           {
             "roll": 8,
-            "text": "You go undercover to investigate an enemy. Roll Deception 8+. If you succeed, roll immediately on the Rogue or Citizen Events table and make one roll on any Specialist skill table for that career. If you fail, roll immediately on the Rogue or Citizen Mishap table.",
+            "text": "You spend months immersed in the criminal underworld. Gain one of Streetwise 1, Stealth 1, Melee 1 or Gun Combat 1.",
             "effects": [
               {
-                "kind": "check",
+                "kind": "chooseEffect",
                 "options": [
-                  "Deception"
-                ],
-                "target": 8,
-                "onSuccess": [],
-                "onFailure": []
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Streetwise",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Stealth",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Melee",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Gun Combat",
+                      "level": 1
+                    }
+                  ]
+                ]
               }
             ]
           },
           {
             "roll": 9,
-            "text": "You go above and beyond the call of duty. Gain DM+2 to your next advancement roll.",
+            "text": "You become embroiled in a feud with a rival criminal organisation. Roll Stealth 8+ or Gun Combat 8+. If you fail, roll on the Injury table. If you succeed, gain an extra Benefit roll.",
             "effects": [
               {
                 "kind": "check",
@@ -5547,23 +5627,18 @@
           },
           {
             "roll": 10,
-            "text": "You are given specialist training in vehicles. Gain one of Drive 1, Flyer 1, Pilot 1 or Gunner 1.",
+            "text": "You get involved in a gambling ring. Gain Gambler 1. You may wager any number of your Benefit rolls and roll Gambler 8+; if you fail you lose the wagered Benefit rolls, but if you succeed you gain half the number wagered, rounding up.",
             "effects": [
               {
-                "kind": "gainSkillChoice",
-                "options": [
-                  "Drive",
-                  "Flyer",
-                  "Pilot",
-                  "Gunner"
-                ],
+                "kind": "gainSkill",
+                "skill": "Gambler",
                 "level": 1
               }
             ]
           },
           {
             "roll": 11,
-            "text": "You are befriended by a senior agent. Either increase Investigate by one level or DM+4 to an advancement roll thanks to their aid.",
+            "text": "A local crime lord takes you on as his prot\u00e9g\u00e9. Either gain Tactics (military) 1 or DM+4 to your next advancement roll thanks to his aid.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5588,7 +5663,7 @@
           },
           {
             "roll": 12,
-            "text": "Your efforts uncover a major conspiracy against your employers. You are automatically promoted.",
+            "text": "You commit a crime that becomes the stuff of legend. You are automatically promoted.",
             "effects": [
               {
                 "kind": "autoPromote"
@@ -5596,7 +5671,7 @@
             ]
           }
         ],
-        "$events": "Core p.23 Events (2D).",
+        "$events": "Core p.41 Events (2D).",
         "mishaps": [
           {
             "roll": 1,
@@ -5610,19 +5685,22 @@
           },
           {
             "roll": 2,
-            "text": "A criminal or other figure under investigation offers you a deal. Accept and you leave this career without further penalty (although you lose the Benefit roll as normal). Refuse and you must roll twice on the Injury table and take the lower result. You gain an Enemy and one level in any skill you choose.",
+            "text": "You are arrested. You must take the Prisoner career in your next term.",
             "effects": [
               {
-                "kind": "gainRelation",
-                "relation": "enemy",
-                "count": "1"
+                "kind": "forceCareer",
+                "career": "prisoner"
               }
             ]
           },
           {
             "roll": 3,
-            "text": "An investigation goes critically wrong or leads to the top, ruining your career. Roll Advocate 8+. If you succeed, you may keep the Benefit roll from this term. If you roll 2, you must take the Prisoner career in your next term.",
+            "text": "Betrayed by a friend, ending your career. One of your Contacts or Allies betrays you and becomes a Rival or Enemy; if you have no Contacts or Allies you are betrayed by someone you never saw coming and still gain a Rival or Enemy. In addition, roll 2D; if you roll 2, you must take the Prisoner career in your next term.",
             "effects": [
+              {
+                "kind": "leaveCareer",
+                "keepBenefit": false
+              },
               {
                 "kind": "chooseEffect",
                 "options": [
@@ -5644,7 +5722,7 @@
               },
               {
                 "kind": "rollForceCareer",
-                "dice": "2D",
+                "dice": 2,
                 "results": [
                   2
                 ],
@@ -5654,24 +5732,53 @@
           },
           {
             "roll": 4,
-            "text": "You learn something you should not know and people want to kill you for it. Gain an Enemy and Deception 1.",
+            "text": "A job goes wrong and you must flee off-planet. Gain one of Deception 1, Pilot (small craft or spacecraft) 1, Athletics (dexterity) 1 or Gunner 1.",
             "effects": [
               {
-                "kind": "gainRelation",
-                "relation": "enemy",
-                "count": "1"
-              },
-              {
-                "kind": "gainSkill",
-                "skill": "Deception",
-                "level": 1
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Deception",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Pilot (small craft or spacecraft)",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Athletics (dexterity)",
+                      "level": 1
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainSkill",
+                      "skill": "Gunner",
+                      "level": 1
+                    }
+                  ]
+                ]
               }
             ]
           },
           {
             "roll": 5,
-            "text": "Your work ends up coming home with you and someone gets hurt. Choose one of your Contacts, Allies or family members and roll twice on the Injury table for them, taking the lower result.",
-            "effects": []
+            "text": "A police detective or rival criminal forces you to flee your usual haunts and vows to hunt you down. Gain an Enemy.",
+            "effects": [
+              {
+                "kind": "gainRelation",
+                "relation": "enemy",
+                "count": "1"
+              }
+            ]
           },
           {
             "roll": 6,
@@ -5684,45 +5791,45 @@
             ]
           }
         ],
-        "$mishaps": "Core p.23 Mishaps (1D).",
+        "$mishaps": "Core p.41 Mishaps (1D).",
         "musterOut": [
           {
             "roll": 1,
-            "cash": 1000,
-            "benefit": "Scientific Equipment"
-          },
-          {
-            "roll": 2,
-            "cash": 2000,
-            "benefit": "INT +1"
-          },
-          {
-            "roll": 3,
-            "cash": 5000,
+            "cash": 0,
             "benefit": "Ship Share"
           },
           {
-            "roll": 4,
-            "cash": 7500,
+            "roll": 2,
+            "cash": 0,
             "benefit": "Weapon"
           },
           {
-            "roll": 5,
+            "roll": 3,
             "cash": 10000,
-            "benefit": "Cybernetic Implant"
+            "benefit": "INT +1"
+          },
+          {
+            "roll": 4,
+            "cash": 10000,
+            "benefit": "1D Ship Shares"
+          },
+          {
+            "roll": 5,
+            "cash": 50000,
+            "benefit": "Armour"
           },
           {
             "roll": 6,
-            "cash": 25000,
-            "benefit": "SOC +1 or Cybernetic Implant"
+            "cash": 100000,
+            "benefit": "DEX +1"
           },
           {
             "roll": 7,
-            "cash": 50000,
-            "benefit": "TAS Membership"
+            "cash": 100000,
+            "benefit": "2D Ship Shares"
           }
         ],
-        "$musterOut": "Core p.23 Mustering-Out Benefits."
+        "$musterOut": "Core p.41 Mustering-Out Benefits."
       },
       "scholar": {
         "id": "scholar",
