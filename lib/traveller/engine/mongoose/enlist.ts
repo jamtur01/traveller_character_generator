@@ -9,7 +9,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm, freshPendingDms } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, getMongooseData, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
+import { getCareer, getMongooseData, checkDm, rollParoleThreshold, splitTopLevelOr } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit, currentLadder } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
@@ -78,7 +78,8 @@ export function enterCareer(
 /** Basic training (Core p.19): the FIRST career grants every skill on the
  *  training table at level 0; a SUBSEQUENT career grants ONE chosen skill at
  *  level 0. Citizen and Drifter draw from the chosen Assignment skill table;
- *  every other career draws from Service Skills. */
+ *  every other career draws from Service Skills. A first-career cell carrying a
+ *  top-level " or " ("Drive or Vacc Suit") is a player choice of one skill. */
 export function applyBasicTraining(
   ch: Character, career: MongooseCareer, assignmentId: string,
 ): void {
@@ -92,7 +93,19 @@ export function applyBasicTraining(
     : career.skillTables.serviceSkills;
   const names = table.filter((c): c is string => typeof c === "string");
   if (state.careerCount === 0) {
-    for (const name of names) grantSkillFloor(ch, name, 0, "Basic Training");
+    for (const name of names) {
+      const parts = splitTopLevelOr(name);
+      if (parts.length > 1) {
+        ch.pickOrDefer({
+          kind: "mongooseSkillChoice",
+          label: `Basic training: choose one of ${name} (gained at level 0)`,
+          options: parts,
+          onResolve: (c, chosen) => grantSkillFloor(c, chosen, 0, "Basic Training"),
+        });
+      } else {
+        grantSkillFloor(ch, name, 0, "Basic Training");
+      }
+    }
     return;
   }
   ch.pickOrDefer({

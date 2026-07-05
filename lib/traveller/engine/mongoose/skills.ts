@@ -7,7 +7,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
-import { getMongooseData } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, splitTopLevelOr } from "@/lib/traveller/engine/mongoose/core";
 
 /** Printed characteristic abbreviations in skill/rank cells -> attribute keys. */
 const ATTR_ABBREV: Record<string, AttributeKey> = {
@@ -68,12 +68,38 @@ export function grantSkillFloor(
   }
 }
 
-/** Apply a skill-table / rank-benefit cell string (Core p.19):
- *  - "DEX +1" / "SOC +1" -> raise that characteristic (respecting attribute caps).
- *  - "Streetwise 1" / "Gambler 0" -> raise the skill to that level floor.
- *  - "Gun Combat" / "Electronics (comms)" -> gain at 1, or +1 if trained.
- *  Speciality parentheses are preserved as part of the skill name. */
+/** Apply a skill-table / rank-benefit cell string (Core p.19), in order:
+ *  1. "SOC 10 or SOC +1, whichever is higher" (officer ranks, Core p.25/32/36):
+ *     set the characteristic to max(floor, current + delta) via improveAttribute
+ *     of the difference, respecting attribute caps.
+ *  2. A top-level "X or Y" cell ("Drive or Vacc Suit", "Gun Combat 1 or Melee 1"):
+ *     a player choice of one part, each re-parsed through applySkillCell. A
+ *     specialty parenthesis ("Pilot (small craft or spacecraft)") is NOT a choice.
+ *  3. "DEX +1" / "SOC +1" -> raise that characteristic (respecting attribute caps).
+ *  4. "Streetwise 1" / "Gambler 0" -> raise the skill to that level floor.
+ *  5. "Gun Combat" / "Electronics (comms)" -> gain at 1, or +1 if trained
+ *     (speciality parentheses preserved as part of the skill name). */
 export function applySkillCell(ch: Character, cell: string, source?: string): void {
+  const higher = cell.match(
+    /^(STR|DEX|END|INT|EDU|SOC)\s+(\d+)\s+or\s+\1\s*\+(\d+),?\s*whichever is higher$/i,
+  );
+  if (higher) {
+    const key = ATTR_ABBREV[higher[1]!.toUpperCase()]!;
+    const target = Math.max(Number(higher[2]), ch.attributes[key] + Number(higher[3]));
+    const diff = target - ch.attributes[key];
+    if (diff > 0) ch.improveAttribute(key, diff);
+    return;
+  }
+  const parts = splitTopLevelOr(cell);
+  if (parts.length > 1) {
+    ch.pickOrDefer({
+      kind: "mongooseSkillChoice",
+      label: `Choose one: ${cell}`,
+      options: parts,
+      onResolve: (c, chosen) => applySkillCell(c, chosen, source),
+    });
+    return;
+  }
   const attr = cell.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
   if (attr) {
     ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));

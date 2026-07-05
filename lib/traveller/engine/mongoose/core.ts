@@ -57,19 +57,47 @@ export function skillBaseName(cell: string): string {
   return cell.replace(/\s+[+-]?\d+$/, "");
 }
 
+/** Split a skill/benefit cell on top-level " or " (parenthesis depth 0 only):
+ *  "Drive or Vacc Suit" -> ["Drive", "Vacc Suit"], but a specialty parenthesis
+ *  is preserved ("Pilot (small craft or spacecraft)" stays a single part). A
+ *  cell with no top-level " or " returns as a one-element list. */
+export function splitTopLevelOr(cell: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < cell.length; i++) {
+    const c = cell[i]!;
+    if (c === "(") depth += 1;
+    else if (c === ")") depth = Math.max(0, depth - 1);
+    else if (depth === 0 && cell.startsWith(" or ", i)) {
+      parts.push(cell.slice(start, i).trim());
+      i += 3;
+      start = i + 1;
+    }
+  }
+  parts.push(cell.slice(start).trim());
+  return parts.filter((p) => p.length > 0);
+}
+
 /** Every skill NAME the Mongoose data can grant: the union of all careers'
  *  Personal Development / Service / Advanced Education tables, each assignment's
  *  specialist table, and the background-skills list — each stored as both the
- *  full cell and its level-stripped base name. Characteristic cells ("DEX +1")
- *  are excluded (they are attribute boosts). Used to tell a compound muster
- *  benefit's skill parts from its equipment/attribute parts (Core p.46). */
+ *  full cell and its level-stripped base name. A "X or Y" cell is split on its
+ *  top-level " or " so the catalog holds the atomic skill names ("Drive or
+ *  Flyer" contributes "Drive" and "Flyer", never the merged string).
+ *  Characteristic cells ("DEX +1") are excluded (they are attribute boosts).
+ *  Used to tell a compound muster benefit's skill parts from its equipment/
+ *  attribute parts (Core p.46). */
 export function mongooseSkillNames(ch: Character): Set<string> {
   const data = getMongooseData(ch);
   const names = new Set<string>();
   const add = (cell: string | null): void => {
-    if (cell === null || ATTR_CELL.test(cell)) return;
-    names.add(cell);
-    names.add(skillBaseName(cell));
+    if (cell === null) return;
+    for (const part of splitTopLevelOr(cell)) {
+      if (ATTR_CELL.test(part)) continue;
+      names.add(part);
+      names.add(skillBaseName(part));
+    }
   };
   for (const career of Object.values(data.careers)) {
     const t = career.skillTables;
