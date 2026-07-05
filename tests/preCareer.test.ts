@@ -19,7 +19,7 @@ function freshAcgCandidate(attrs = 12): Character {
     strength: attrs, dexterity: attrs, endurance: attrs,
     intelligence: attrs, education: attrs, social: attrs,
   };
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   return c;
 }
 
@@ -378,7 +378,7 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
   it("preCareerDraftedInto=navy overrides chosen pathway to navy", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "auto";
     c.acgState = {
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
@@ -403,7 +403,7 @@ describe("Rrev2: pre-career draft & short-term flags are consumed by beginAcg", 
   it("preCareerDraftedInto=army overrides to mercenary/army", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "auto";
     c.acgState = {
       pathway: "navy", fleet: "imperialNavy", branch: "",
@@ -427,7 +427,7 @@ describe("Rrev6: service is set even when beginAcg pathway queues a choice", () 
   it("interactive Navy enlistment pause still leaves service=navy", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "interactive";
     c.attributes.social = 9; // triggers navy branch choice
     vi.spyOn(Math, "random").mockReturnValue(0.999);

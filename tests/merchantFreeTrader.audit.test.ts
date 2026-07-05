@@ -21,7 +21,7 @@ function walkSmuggling() {
     },
   });
   c.editionId = "mt-megatraveller";
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   c.choiceMode = "auto";
   c.acgPathway = "merchantPrince";
   c.acgState = freshAcgState("merchantPrince");

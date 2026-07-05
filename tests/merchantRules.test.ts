@@ -53,7 +53,7 @@ function merchantOfficer(opts: {
   c.editionId = "mt-megatraveller";
   c.showHistory = "none";
   c.choiceMode = "auto";
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   c.acgPathway = "merchantPrince";
   const acg = freshAcgState("merchantPrince");
   assertPathway(acg, "merchantPrince");

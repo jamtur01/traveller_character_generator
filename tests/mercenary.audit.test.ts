@@ -54,7 +54,7 @@ describe("Mercenary PM audit — initial activities", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
     c.service = "army";

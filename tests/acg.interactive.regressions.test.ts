@@ -29,7 +29,7 @@ function freshMtCharacter(): Character {
     },
   });
   c.editionId = "mt-megatraveller";
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   c.choiceMode = "interactive";
   c.acgPathway = "mercenary";
   c.acgState = freshAcgState("mercenary");

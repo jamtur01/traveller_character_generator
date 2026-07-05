@@ -26,7 +26,7 @@ function makeMt(): Character {
   c.editionId = "mt-megatraveller";
   c.showHistory = "none";
   c.choiceMode = "auto";
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   c.attributes = {
     strength: 10, dexterity: 10, endurance: 10,
     intelligence: 10, education: 10, social: 10,

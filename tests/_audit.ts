@@ -35,7 +35,7 @@ export function auditAcg(opts: {
     },
   });
   c.editionId = "mt-megatraveller";
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   c.choiceMode = "auto";
   c.acgPathway = opts.pathway;
   c.acgState = freshAcgState(opts.pathway);

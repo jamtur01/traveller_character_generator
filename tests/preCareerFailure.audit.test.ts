@@ -24,7 +24,7 @@ function freshAcgCandidate(attrs = 12): Character {
     strength: attrs, dexterity: attrs, endurance: attrs,
     intelligence: attrs, education: attrs, social: attrs,
   };
-  c.useAcg = true;
+  c.chargenModelId = "acg";
   return c;
 }
 
@@ -32,7 +32,7 @@ describe("beginAcg consumes draft flag (PM p. 47 Rrev2)", () => {
   function drafted(into: "army" | "navy" | "marines"): Character {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "auto";
     c.acgState = {
       pathway: "mercenary", combatArm: "", branch: "", mos: "",
@@ -85,7 +85,7 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
   it("3-year first term: yearsServed = 3, partialTerms = 1, flag consumed", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "auto";
     c.showHistory = "none";
     c.acgState = {
@@ -114,7 +114,7 @@ describe("First term runs at 3 years with preCareerFirstTermShort (PM p. 47)", (
   it("Second term (no flag) runs 4 years", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "auto";
     c.showHistory = "none";
     c.acgState = {

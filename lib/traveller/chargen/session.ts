@@ -145,7 +145,7 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
     : "auto";
   ch.generateHomeworld();
   if (opts.useAcg && editionHasAcg(opts.edition) && opts.acgPathway) {
-    ch.useAcg = true;
+    ch.chargenModelId = "acg";
     ch.acgPathway = opts.acgPathway;
     // PM p. 44: ACG characters (and pre-career at 18) begin at age 18 —
     // declared in acg.common.startAge rather than inherited from the

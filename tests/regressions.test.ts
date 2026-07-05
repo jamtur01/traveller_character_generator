@@ -268,7 +268,7 @@ describe("Bug #7: honors education bonus does not stack on top of education roll
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
     c.choiceMode = "auto";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.attributes = {
       strength: 12, dexterity: 12, endurance: 12,
       intelligence: 12, education: eduStart, social: 12,
@@ -403,7 +403,7 @@ describe("Minor: pre-career attributeChanges clamp lower bound at 0", () => {
     const c = new Character();
     c.editionId = "mt-megatraveller";
     c.showHistory = "none";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.attributes = {
       strength: 2, dexterity: 5, endurance: 5,
       intelligence: 5, education: 5, social: 5,

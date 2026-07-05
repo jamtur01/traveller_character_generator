@@ -75,7 +75,7 @@ describe("Navy PM audit — enlistment (PM p. 52)", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgPathway = "navy";
     c.acgState = freshAcgState("navy");
     c.service = "navy";
@@ -164,7 +164,7 @@ describe("Navy PM audit — initial training (PM p. 52)", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgPathway = "navy";
     c.acgState = freshAcgState("navy");
     c.service = "navy";

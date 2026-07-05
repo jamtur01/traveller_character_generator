@@ -82,7 +82,7 @@ describe("Scout PM audit — Bureaucracy vs Field auto-rank (PM p. 59)", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgPathway = "scout";
     c.acgState = freshAcgState("scout");
     c.requireScoutAcg().division = "bureaucracy";

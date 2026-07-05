@@ -440,7 +440,9 @@ export class Character implements CharacterState {
    * (branch, MOS, decorations, schools) that doesn't fit the basic sheet.
    * The PDF renderer branches on this to draw the ACG record sheet.
    */
-  useAcg = false;
+  get useAcg(): boolean {
+    return this.chargenModelId === "acg";
+  }
   /** Pathway name within the edition's ACG block (mercenary/navy/scout/
    *  merchantPrince for MT). Null when useAcg is false. */
   acgPathway: string | null = null;

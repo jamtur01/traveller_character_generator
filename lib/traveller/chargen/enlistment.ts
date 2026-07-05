@@ -43,7 +43,7 @@ export function beginAcg(
   pathway: "mercenary" | "navy" | "scout" | "merchantPrince",
   options: BeginAcgOptions = {},
 ): void {
-  ch.useAcg = true;
+  ch.chargenModelId = "acg";
   const prev = ch.acgState;
   const hasCommission = prev?.preCareerCommission === true;
 

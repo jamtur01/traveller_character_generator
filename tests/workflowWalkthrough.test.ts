@@ -159,7 +159,7 @@ describe("Pre-career interactive walkthroughs", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "interactive";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
@@ -195,7 +195,7 @@ describe("Pre-career interactive walkthroughs", () => {
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "interactive";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
@@ -222,7 +222,7 @@ describe("MT ACG: each Run-term click after a paused choice must be a no-op", ()
       },
     });
     c.editionId = "mt-megatraveller";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.choiceMode = "interactive";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");

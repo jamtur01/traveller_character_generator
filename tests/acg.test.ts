@@ -101,7 +101,7 @@ describe("ACG PDF renderer", () => {
     c.terms = 4;
     c.rank = 5;
     c.commissioned = true;
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgPathway = "mercenary";
     c.acgState = freshAcgState("mercenary");
     c.requireMercenaryAcg().branch = "Marines";
@@ -263,7 +263,7 @@ describe("ACG PDF renderer", () => {
   it("ACG character produces one more page than the same character without ACG", () => {
     const acg = freshAcgChar();
     const basic = freshAcgChar();
-    basic.useAcg = false;
+    basic.chargenModelId = "classic";
     expect(buildCharacterSheetPdf(acg).getNumberOfPages())
       .toBeGreaterThan(buildCharacterSheetPdf(basic).getNumberOfPages());
   });
@@ -276,7 +276,7 @@ describe("ACG PDF renderer", () => {
     // caller (typically the UI), not the renderer.
     const ct = new Character();
     ct.editionId = "ct-classic";
-    ct.useAcg = true; // caller error: CT has no ACG
+    ct.chargenModelId = "acg"; // caller error: CT has no ACG
     ct.service = "navy";
     expect(editionHasAcg(ct.editionId)).toBe(false);
     // The renderer still produces output (it doesn't crash); upstream

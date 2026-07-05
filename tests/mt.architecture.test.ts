@@ -21,7 +21,7 @@ describe("Structured DM arrays evaluate correctly", () => {
       intelligence: 7, education: 7, social: 7,
     };
     if (withAcgState) {
-      c.useAcg = true;
+      c.chargenModelId = "acg";
       c.acgState = freshAcgState("mercenary");
     }
     return c;
@@ -115,7 +115,7 @@ describe("Dynamic pathway factory registry via EditionHooks", () => {
   it("Runner throws a clear error for unregistered pathway", () => {
     const c = new Character();
     c.editionId = "ct-classic";
-    c.useAcg = true;
+    c.chargenModelId = "acg";
     c.acgState = freshAcgState("mercenary");
     expect(() => c.doServiceTermStep()).toThrow(
       /No ACG pathway implementation for "mercenary"/,
