@@ -46,6 +46,11 @@ next-env.d.ts
 # copy may have them locally.)
 *.pdf
 
+# Exception: the official Mongoose Traveller fillable character sheet is a
+# runtime asset (fetched from /public to render Mongoose characters) and is
+# licensed for online use, so it is tracked despite the *.pdf rule above.
+!public/mongoose-character-sheet.pdf
+
 # Local agent state (Claude Code scheduled tasks, etc.)
 /.claude/
 
