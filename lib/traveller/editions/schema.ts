@@ -445,7 +445,20 @@ const SkillTableMetaSchema = strictCitations({
   advancedEducationEduMin: z.number(),
 });
 
+const EditionMetaSchema = z.looseObject({
+  id: z.string(),
+  name: z.string(),
+  displayName: z.string(),
+  rulebooks: z.array(z.string()),
+  chargenModels: z.array(z.string()).min(1),
+  status: z.enum(["active", "data-only"]).optional(),
+  supportsInteractive: z.boolean().optional(),
+  year: z.number().optional(),
+  description: z.string().optional(),
+});
+
 const CanonDataSchema = z.looseObject({
+  edition: EditionMetaSchema.optional(),
   services: z.record(z.string(), ServiceDataSchema),
   cascadeSkills: CascadeSkillsSchema.optional(),
   attributeAbbreviations: AttributeAbbreviationsSchema.optional(),

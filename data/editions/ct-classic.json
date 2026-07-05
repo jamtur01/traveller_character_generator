@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "edition": {
     "id": "ct-classic",
+    "chargenModels": ["classic"],
     "name": "Classic Traveller",
     "displayName": "Classic Traveller (TTB + CotI)",
     "rulebooks": ["The Traveller Book", "Citizens of the Imperium"],

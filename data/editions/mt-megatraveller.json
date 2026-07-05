@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "edition": {
     "id": "mt-megatraveller",
+    "chargenModels": ["classic", "acg"],
     "name": "MegaTraveller",
     "displayName": "MegaTraveller",
     "rulebooks": [

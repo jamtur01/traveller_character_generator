@@ -14,6 +14,13 @@ export interface EditionMeta {
   /** Player-facing edition summary shown on the Start screen. */
   description?: string;
   rulebooks: string[];
+  /**
+   * Chargen model ids this edition offers, in display order (registry keys:
+   * "classic" | "acg" | "mongoose"). The Start screen offers a chooser when
+   * there is more than one; the session dispatches through the selected model.
+   * Every id must resolve in the chargen-model registry.
+   */
+  chargenModels: string[];
   year?: number;
   /**
    * "active" = engine fully supports this edition.
