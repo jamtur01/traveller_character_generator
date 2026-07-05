@@ -16,6 +16,8 @@
     "test:audit": "vitest run tests/audit"
   },
   "dependencies": {
+    "@emnapi/core": "^1.11.2",
+    "@emnapi/runtime": "^1.11.2",
     "jspdf": "4.2.1",
     "next": "16.2.10",
     "pdf-lib": "^1.17.1",
