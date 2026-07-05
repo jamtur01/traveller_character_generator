@@ -97,44 +97,6 @@
       ]
     }
   },
-  "attributes": [
-    {
-      "key": "strength",
-      "label": "Strength",
-      "uppPosition": 1,
-      "initialRoll": "2d6"
-    },
-    {
-      "key": "dexterity",
-      "label": "Dexterity",
-      "uppPosition": 2,
-      "initialRoll": "2d6"
-    },
-    {
-      "key": "endurance",
-      "label": "Endurance",
-      "uppPosition": 3,
-      "initialRoll": "2d6"
-    },
-    {
-      "key": "intelligence",
-      "label": "Intelligence",
-      "uppPosition": 4,
-      "initialRoll": "2d6"
-    },
-    {
-      "key": "education",
-      "label": "Education",
-      "uppPosition": 5,
-      "initialRoll": "2d6"
-    },
-    {
-      "key": "social",
-      "label": "Social Standing",
-      "uppPosition": 6,
-      "initialRoll": "2d6"
-    }
-  ],
   "lifecycle": {
     "terms": [
       {
