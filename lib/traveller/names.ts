@@ -8,6 +8,7 @@ import type { Gender } from "./types";
 interface NameData {
   femaleNames: string[];
   maleNames: string[];
+  nonbinaryNames: string[];
   familyNames: string[];
 }
 
