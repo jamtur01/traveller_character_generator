@@ -1,27 +1,26 @@
-// The single seam the session and UI drive character generation through.
+// The single seam the session drives character generation through.
 //
-// A ChargenModel owns one edition-style flow (classic / acg / mongoose). The
-// session is a thin dispatcher over the registered model for the character's
-// editionId + chosen model; it contains no edition names and no `if (useAcg)`.
-// Edition-specific behaviour lives in (a) the edition JSON and (b) that
-// edition's model — never in shared code.
+// A ChargenModel owns one edition-style flow (classic / acg / mongoose): the
+// per-action state transitions and the phase routing. The session owns the
+// GENERIC, shared re-execution protocol (runAction: clone the pre-action base,
+// arm the decision cursor, run straight through, catch the frontier pause) and
+// the public action wrappers. So a model never re-implements pausing, and the
+// session contains no edition names and no `if (useAcg)` — it dispatches to
+// getChargenModel(ch.chargenModelId).
 //
-// Runtime dependency direction is session -> modelRegistry -> models -> core.
-// This module only depends on session/character types, imported with
-// `import type` so they are erased at runtime (no import cycle).
+// Shared, edition-agnostic step mechanics (muster rolls, term-end, cascade/
+// cell resolution) live in core/ and chargen/flow, called by the models.
+//
+// Runtime dependency direction: session -> modelRegistry -> models -> core.
+// This module imports session/character types with `import type` only, so it
+// is erased at runtime (no import cycle).
 
 import type { Character } from "@/lib/traveller/character";
 import type {
-  ChargenSnapshot,
-  EnlistOptions,
-  PreCareerOption,
-  UiHints,
+  ChargenPhase,
+  ChargenResult,
+  FrontierAction,
 } from "@/lib/traveller/chargen/session";
-
-/** A phase id is opaque to the session/UI; each model owns its own phase
- *  vocabulary. Existing models reuse the ChargenPhase strings; new models
- *  (Mongoose) introduce their own. */
-export type PhaseId = string;
 
 /** UI descriptor for a phase: which panel component to render + stepper label.
  *  Lets `app/page.tsx` map phase -> component without a hard-coded switch. */
@@ -30,34 +29,22 @@ export interface PhaseDescriptor {
   stepperLabel: string;
 }
 
-/** The superset of player actions the session can dispatch. Each model handles
- *  the subset valid in its phases and throws on the rest (the session only
- *  dispatches actions valid for the current phase). */
-export type ModelAction =
-  | { kind: "chooseCareerOrService"; value: string }
-  | { kind: "enlist"; opts: EnlistOptions }
-  | { kind: "runTerm" }
-  | { kind: "pickSkillTable"; table: number | string }
-  | { kind: "musterChoice"; choice: "cash" | "benefit" }
-  | { kind: "resolvePending"; choiceId: string; optionIdx: number }
-  | { kind: "preCareer"; option: PreCareerOption };
-
-export interface ModelActionResult {
-  snapshot: ChargenSnapshot;
-  hints?: UiHints;
-}
-
 /** One edition-style chargen flow. */
 export interface ChargenModel {
   /** Registry key: "classic" | "acg" | "mongoose". */
   readonly id: string;
   /** Player-facing label (model selector UI). */
   readonly label: string;
-  /** Phase to show immediately after the model is selected / attributes rolled. */
-  entryPhase(ch: Character): PhaseId;
-  /** Advance the flow: apply `action` in `snap.phase`, return the next snapshot
-   *  (possibly paused on a frontier choice). */
-  advance(snap: ChargenSnapshot, action: ModelAction): ModelActionResult;
-  /** UI descriptor for a phase. */
-  describePhase(phase: PhaseId, ch: Character): PhaseDescriptor;
+  /** Phase to show immediately after the model is selected at startCareer. */
+  entryPhase(ch: Character): ChargenPhase;
+  /** Execute one action on the already-cloned, decision-cursor-armed working
+   *  character. Mutates `ch` and returns the routing (+ optional UI hints).
+   *  May throw ChoicePendingError — caught by the session's runAction
+   *  boundary, never by the model. */
+  execute(ch: Character, action: FrontierAction): ChargenResult;
+  /** Phase to render if `action` pauses on a frontier choice (the base is the
+   *  pristine pre-action character, for pre-increment accounting). */
+  pausedPhase(action: FrontierAction, ch: Character, base: Character): ChargenPhase;
+  /** UI panel key + stepper label for a phase. */
+  describePhase(phase: ChargenPhase, ch: Character): PhaseDescriptor;
 }

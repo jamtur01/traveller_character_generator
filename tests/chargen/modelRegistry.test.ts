@@ -11,7 +11,8 @@ const fake: ChargenModel = {
   id: "fake-test-model",
   label: "Fake",
   entryPhase: () => "start",
-  advance: (snap) => ({ snapshot: snap }),
+  execute: (ch) => ({ snapshot: { character: ch, phase: "end" } }),
+  pausedPhase: () => "term",
   describePhase: () => ({ panel: "x", stepperLabel: "X" }),
 };
 
