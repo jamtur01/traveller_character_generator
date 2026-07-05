@@ -152,6 +152,7 @@ export interface CharacterState {
   editionId: string;
   homeworld: Homeworld | null;
   choiceMode: ChoiceMode;
+  chargenModelId: string;
   pendingChoices: PendingChoice<string>[];
   useAcg: boolean;
   acgPathway: string | null;
@@ -409,6 +410,13 @@ export class Character implements CharacterState {
    * selection defer to the UI via pendingChoices.
    */
   choiceMode: ChoiceMode = "auto";
+  /**
+   * Which chargen model drives this character: "classic" (CT / MT-basic),
+   * "acg" (MT Advanced Character Generation), or an edition-specific id
+   * (e.g. "mongoose"). The session dispatches every phase transition through
+   * the model registered under this id. Cloned by cloneCharacter's Object.assign.
+   */
+  chargenModelId = "classic";
   /**
    * Choices waiting for user resolution. Each entry holds the apply-on-pick
    * closure; the session resolves it by re-running the paused action with
