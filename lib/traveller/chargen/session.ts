@@ -33,6 +33,8 @@ import { getChargenModel } from "@/lib/traveller/chargen/modelRegistry";
 // Register the built-in chargen models (they self-register at module load).
 import "@/lib/traveller/chargen/models/classic";
 import "@/lib/traveller/chargen/models/acg";
+import "@/lib/traveller/chargen/models/mongoose";
+import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 
 export type ChargenPhase =
   | "start"
@@ -145,6 +147,9 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
       getEdition(opts.edition).data.advancedCharacterGeneration?.common?.startAge,
       "advancedCharacterGeneration.common.startAge", "PM p. 44",
     );
+  } else if (getEdition(opts.edition).meta.chargenModels.includes("mongoose")) {
+    ch.chargenModelId = "mongoose";
+    ch.mongooseState = freshMongooseState();
   }
   return { character: ch, phase: getChargenModel(ch.chargenModelId).entryPhase(ch) };
 }

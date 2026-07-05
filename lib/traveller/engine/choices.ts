@@ -35,6 +35,7 @@ export type ChoiceKind =
   | "bpSpend"
   // Mongoose 2e player decision points.
   | "mongooseAssignment"   // pick an assignment on entering a career
+  | "mongooseCareer"       // pick a career to attempt to enter
   | "mongooseSkillTable"   // pick which skill table to roll on this term
   | "mongooseBasicSkill"   // subsequent-career basic training: one service skill
   | "mongooseSkillChoice"  // event/rank gainSkillChoice: pick among skills
