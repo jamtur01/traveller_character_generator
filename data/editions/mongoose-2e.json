@@ -3329,7 +3329,7 @@
                   [
                     {
                       "kind": "leaveCareer",
-                      "keepBenefit": true
+                      "keepBenefit": false
                     }
                   ],
                   [
@@ -6090,7 +6090,7 @@
                 "kind": "check",
                 "options": [
                   "Persuade",
-                  "Melee (unarmed)"
+                  "Melee"
                 ],
                 "target": 8,
                 "onSuccess": [
