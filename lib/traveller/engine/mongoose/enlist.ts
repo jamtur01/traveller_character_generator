@@ -1,0 +1,82 @@
+// Mongoose 2e career entry: Qualification, career commitment, and Basic
+// Training (Core pp.18-19). Assignment selection and the failure -> draft /
+// Drifter routing are the model's responsibility (engine/mongoose model, T27);
+// these are the atomic mechanics it composes.
+
+import type { Character } from "@/lib/traveller/character";
+import { event as ev } from "@/lib/traveller/history";
+import { rollCheck } from "@/lib/traveller/core";
+import { requireRule } from "@/lib/traveller/editions/strict";
+import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
+import { getCareer, checkDm } from "@/lib/traveller/engine/mongoose/core";
+import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
+import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
+
+/** Attempt to qualify for a career (Core p.18): roll 2D + best-characteristic
+ *  DM - 1 per previous career + pending qualification DMs, vs the target.
+ *  Drifter (empty characteristics) qualifies automatically with no roll.
+ *  Returns whether qualification succeeded; the caller commits via enterCareer. */
+export function qualifyForCareer(ch: Character, careerId: string): boolean {
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const career = getCareer(ch, careerId);
+  const check = career.qualification;
+  if (check.characteristics.length === 0) {
+    ch.log(ev.raw(`Qualified for ${career.displayName} (automatic).`));
+    return true;
+  }
+  const dm = checkDm(ch, check) - state.careerCount
+    + consumePendingDm(state.pendingDms.qualification);
+  const r = rollCheck(ch.rng, [dm], check.target);
+  ch.log(ev.roll(
+    `Qualification (${career.displayName})`, r.roll, dm, check.target, r.success,
+  ));
+  return r.success;
+}
+
+/** Commit entry into a career + assignment: reset the career-scoped state to
+ *  rank 0 and apply basic training (Core pp.18-19). */
+export function enterCareer(
+  ch: Character, careerId: string, assignmentId: string,
+): void {
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const career = getCareer(ch, careerId);
+  const asg = requireRule(
+    career.assignments.find((a) => a.id === assignmentId),
+    `mongoose.careers.${careerId}.assignments.${assignmentId}`, "MgT2 Core",
+  );
+  state.career = careerId;
+  state.assignment = assignmentId;
+  state.rank = 0;
+  state.commissioned = false;
+  state.termsInCareer = 0;
+  ch.log(ev.section(`${career.displayName} - ${asg.displayName}`));
+  applyBasicTraining(ch, career, assignmentId);
+}
+
+/** Basic training (Core p.19): the FIRST career grants every skill on the
+ *  training table at level 0; a SUBSEQUENT career grants ONE chosen skill at
+ *  level 0. Citizen and Drifter draw from the chosen Assignment skill table;
+ *  every other career draws from Service Skills. */
+export function applyBasicTraining(
+  ch: Character, career: MongooseCareer, assignmentId: string,
+): void {
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const useAssignment = career.id === "citizen" || career.id === "drifter";
+  const table = useAssignment
+    ? requireRule(
+        career.assignments.find((a) => a.id === assignmentId),
+        `mongoose.careers.${career.id}.assignments.${assignmentId}`, "MgT2 Core",
+      ).skills
+    : career.skillTables.serviceSkills;
+  const names = table.filter((c): c is string => typeof c === "string");
+  if (state.careerCount === 0) {
+    for (const name of names) grantSkillFloor(ch, name, 0, "Basic Training");
+    return;
+  }
+  ch.pickOrDefer({
+    kind: "mongooseBasicSkill",
+    label: "Basic training: choose a service skill (gained at level 0)",
+    options: names,
+    onResolve: (c, chosen) => grantSkillFloor(c, chosen, 0, "Basic Training"),
+  });
+}

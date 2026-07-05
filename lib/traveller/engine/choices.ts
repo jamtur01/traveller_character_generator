@@ -32,7 +32,13 @@ export type ChoiceKind =
   | "merchantSkillColumn"   // Merchant: pick an available skill column in the chosen table
   | "reduceSkill"           // Int+Edu skill cap: pick a skill to reduce by 1
   | "repeatWeaponBenefit"   // Repeated weapon benefit (PM p. 20): same/different/category
-  | "bpSpend";              // Brownie-point spend prompt (PM p. 46)
+  | "bpSpend"
+  // Mongoose 2e player decision points.
+  | "mongooseAssignment"   // pick an assignment on entering a career
+  | "mongooseSkillTable"   // pick which skill table to roll on this term
+  | "mongooseBasicSkill"   // subsequent-career basic training: one service skill
+  | "mongooseSkillChoice"  // event/rank gainSkillChoice: pick among skills
+  | "mongooseEventChoice"; // event chooseEffect: pick a branch
 
 export interface ChoiceRequest<T = string> {
   kind: ChoiceKind;
