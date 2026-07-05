@@ -19,5 +19,8 @@ export function generateName(gender: Gender, rng: Rng): string {
 }
 
 export function generateGender(rng: Rng): Gender {
-  return rng.roll(1) <= 2 ? "female" : "male";
+  // No Traveller rule specifies a sex-determination roll (it's player choice
+  // and has no mechanical effect), so use an even 50/50 split. One 1D draw
+  // keeps the seeded-construction footprint unchanged (gender then name).
+  return rng.roll(1) <= 3 ? "female" : "male";
 }
