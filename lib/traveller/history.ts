@@ -255,7 +255,15 @@ export type HistoryEvent =
       from?: string; to: string;
       kind_: "department" | "division" | "line" | "fleet" | "branch" | "combatArm";
       reason?: string;
-    };
+    }
+  // Mongoose 2e career event (2D table) / mishap (1D table) — the printed
+  // row text, logged verbatim.
+  | { kind: "mongooseEvent"; level: HistoryLevel; roll: number; text: string }
+  | { kind: "mongooseMishap"; level: HistoryLevel; roll: number; text: string }
+  // A person gained during a career (Contacts/Allies/Rivals/Enemies).
+  | { kind: "mongooseConnection"; level: HistoryLevel; relation: "contact" | "ally" | "rival" | "enemy"; note?: string }
+  // A rank attained (advancement) or a commission.
+  | { kind: "mongooseRank"; level: HistoryLevel; rank: number; title: string | null; commission: boolean };
 
 /** Constructors for the most common events. UI / engine emit via these
  *  to keep callsites uncluttered. */
@@ -459,6 +467,19 @@ export const event = {
     ...(from !== undefined ? { from } : {}),
     ...(reason !== undefined ? { reason } : {}),
   }),
+  mongooseEvent: (roll: number, text: string): HistoryEvent =>
+    ({ kind: "mongooseEvent", level: "simple", roll, text }),
+  mongooseMishap: (roll: number, text: string): HistoryEvent =>
+    ({ kind: "mongooseMishap", level: "simple", roll, text }),
+  mongooseConnection: (
+    relation: "contact" | "ally" | "rival" | "enemy", note?: string,
+  ): HistoryEvent => ({
+    kind: "mongooseConnection", level: "simple", relation,
+    ...(note !== undefined ? { note } : {}),
+  }),
+  mongooseRank: (
+    rank: number, title: string | null, commission: boolean,
+  ): HistoryEvent => ({ kind: "mongooseRank", level: "simple", rank, title, commission }),
 };
 
 /** Render a HistoryEvent to a display string. Used by the HistoryPanel
@@ -668,6 +689,25 @@ export function formatEvent(e: HistoryEvent): string {
       const reasonTxt = e.reason ? ` (${e.reason})` : "";
       const label = e.kind_ === "combatArm" ? "combat arm" : e.kind_;
       return `Transferred${fromTxt} to ${e.to} ${label}${reasonTxt}.`;
+    }
+    case "mongooseEvent":
+      return `Event (${e.roll}): ${e.text}`;
+    case "mongooseMishap":
+      return `Mishap (${e.roll}): ${e.text}`;
+    case "mongooseConnection": {
+      const rel = e.relation.charAt(0).toUpperCase() + e.relation.slice(1);
+      const article = /^[aeiou]/i.test(e.relation) ? "an" : "a";
+      return `Gained ${article} ${rel}${e.note ? ` (${e.note})` : ""}.`;
+    }
+    case "mongooseRank": {
+      if (e.commission) {
+        return e.title
+          ? `Commissioned as ${e.title} (officer rank ${e.rank}).`
+          : `Commissioned (officer rank ${e.rank}).`;
+      }
+      return e.title
+        ? `Promoted to ${e.title} (rank ${e.rank}).`
+        : `Advanced to rank ${e.rank}.`;
     }
     default: {
       // Exhaustiveness check — if a new HistoryEvent kind is added
