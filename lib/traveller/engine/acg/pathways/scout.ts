@@ -30,6 +30,7 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, applyPromotion, runReenlist,
   clearRetention, consumeRetainedAssignment, rollSkillFromColumn, rollDieRow,
+  EnlistmentValidationError,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
@@ -148,7 +149,7 @@ export function scoutEnlist(ch: Character): void {
     } else {
       const dr = ch.rng.roll(1);
       if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
-        throw new Error("Scout draft rejection — choose another path");
+        throw new EnlistmentValidationError("Scout draft rejection — choose another path");
       }
       ch.drafted = true;
       acg.rankCode = data.enlistment.startingRank;

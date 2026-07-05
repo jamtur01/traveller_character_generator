@@ -23,8 +23,9 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, consumeRetainedAssignment, clampedRoll, rollSkillFromColumn,
-  rollDieRow, resolveCommandDuty, branchSkillCandidates, type SkillColumnPolicy,
+  applyPromotion, consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
+  rollDieRow, resolveCommandDuty, branchSkillCandidates, EnlistmentValidationError,
+  type SkillColumnPolicy,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { event as ev } from "@/lib/traveller/history";
@@ -140,7 +141,7 @@ export function navyEnlist(
       const idx = order.indexOf(hwTech);
       const minIdx = order.indexOf(minTech);
       if (idx < minIdx) {
-        throw new Error(
+        throw new EnlistmentValidationError(
           `System Squadron requires homeworld tech ${minTech}+; this homeworld is ${hwTech}`,
         );
       }
@@ -217,7 +218,7 @@ export function navyEnlist(
     const dr = ch.rng.roll(1);
     const drafted = data.enlistment.draft.results[String(dr)];
     if (!drafted) {
-      throw new Error("Navy draft rejection — choose another path");
+      throw new EnlistmentValidationError("Navy draft rejection — choose another path");
     }
     ch.drafted = true;
     // Fleet + log label derive from the rolled JSON draft result (PM p. 52)
@@ -453,9 +454,7 @@ export function navyRollAssignment(ch: Character): string {
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
   const dm = applyStructuredDms(data.assignment.dms, ch);
-  const r = clampedRoll(ch, 2, dm, 2, 12);
-  const row = data.assignment.rows.find((row) => row.die === r);
-  if (!row) throw new Error(`Navy assignment table missing row for die=${r}`);
+  const row = rollDieRowOrThrow(ch, data.assignment, { dice: 2, dm, lo: 2, hi: 12 }, "Navy assignment");
   return String(row.assignment);
 }
 

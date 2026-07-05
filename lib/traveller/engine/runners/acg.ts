@@ -144,21 +144,26 @@ export function runAcgTerm(ch: Character): void {
   // Reset year so the next runAcgTerm call starts a fresh term cycle.
   ch.acgState.year = 1;
   const yearsThisTerm = (ch.acgState.yearsServed ?? 0) - yearsAtTermStart;
-  // Always advance terms by 1 if the character started the term, even if
-  // they didn't complete all four years — the term counter records terms
-  // entered. A short term (< 4 years) is observable via yearsServed and
-  // is not counted toward muster benefits (handled in musterOutRolls).
-  if (yearsThisTerm > 0 && yearsThisTerm < termLength) {
-    ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
+  // Advance terms by 1 whenever the character started (served ≥1 year of)
+  // the term — the counter records terms entered, per the ACG rules. This
+  // fires even when the character ended the term non-active (discharge or
+  // death) in its FINAL year: serving the full termLength then being
+  // discharged must still count one term, exactly as a mid-term exit does
+  // (BUG-3 — the old "=== termLength && activeDuty" branch dropped this
+  // case, so a year-4 discharge silently lost a muster-out roll while a
+  // year-3 discharge kept it).
+  if (yearsThisTerm > 0) {
     ch.terms += 1;
-  } else if (yearsThisTerm === termLength && !ch.deceased && ch.activeDuty) {
-    const termBp = bpAwardFor(ch, "Finish each 4-year term") ?? 0;
-    awardBrownie(ch, termBp, `Completed ${termLength}-year term`);
-    ch.terms += 1;
-    // Mark a short first term as a partial (it doesn't count for full
-    // muster benefits per PM short-term rule, matching basic-flow short
-    // term accounting).
-    if (termLength < fullTermYears) {
+    // The brownie point is awarded only for a genuinely completed full
+    // term (alive and still serving at term's end).
+    if (yearsThisTerm === termLength && !ch.deceased && ch.activeDuty) {
+      const termBp = bpAwardFor(ch, "Finish each 4-year term") ?? 0;
+      awardBrownie(ch, termBp, `Completed ${termLength}-year term`);
+    }
+    // A term shorter than a full term — cut short mid-term, or a short
+    // first term — is a partial term: it doesn't count toward full muster
+    // benefits (handled in musterOutRolls), matching basic-flow accounting.
+    if (yearsThisTerm < fullTermYears) {
       ch.acgState.partialTerms = (ch.acgState.partialTerms ?? 0) + 1;
     }
   }

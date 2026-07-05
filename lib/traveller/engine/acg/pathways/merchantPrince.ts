@@ -36,6 +36,7 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
   clearRetention, consumeRetainedAssignment, rollDieRow, rollSkillFromColumn,
+  EnlistmentValidationError,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
@@ -224,14 +225,14 @@ export function merchantEnlist(
   ch.requireMerchantAcg().lineType = lineType;
   const row = data.enlistment.rows.find((r) => r.typeOfLine === lineType);
   if (!row) {
-    throw new Error(`Unknown merchant line type "${lineType}"`);
+    throw new EnlistmentValidationError(`Unknown merchant line type "${lineType}"`);
   }
   // Starport restriction (PM p. 60): "If the character's homeworld has a
   // starport type less than that shown, the individual may not enlist in
   // that merchant line."
   if (row.minimumStarport && row.minimumStarport.toLowerCase() !== "any") {
     if (!starportMeets(ch, ch.homeworld?.starport, row.minimumStarport)) {
-      throw new Error(
+      throw new EnlistmentValidationError(
         `Merchant line "${lineType}" requires homeworld starport ${row.minimumStarport}+; ` +
         `this character's homeworld starport is ${ch.homeworld?.starport ?? "unset"}.`,
       );
@@ -246,7 +247,7 @@ export function merchantEnlist(
     const succeeded = r + dm >= parsed.target;
     ch.log(ev.enlistmentAttempt(`Merchant ${lineType}`, r, dm, parsed.target, succeeded));
     if (!succeeded) {
-      throw new Error(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
+      throw new EnlistmentValidationError(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
     }
   }
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
@@ -415,7 +416,7 @@ function selectMerchantResolutionTable(
 ): { table: MerchantResolutionTable; colKey: string } {
   const data = dataFor(ch);
   const acg = ch.requireMerchantAcg();
-  const isFreeTrader = acg.lineType === "Free Trader";
+  const isFreeTrader = lineSizeFor(data, acg.lineType!) === "FreeTrader";
   const isFreeTraderOther =
     isFreeTrader && freeTraderAssignmentFlags(ch)[assignment]?.other === true;
   // The department key matters only off the Free Trader path (free traders
@@ -744,7 +745,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
   if (res.effect) {
     const acg = ch.requireMerchantAcg();
     const officerRank = acg.isOfficer ? rankNum(acg.rankCode) : 0;
-    const transfer = res.effect.match(/Transfer to (\w+)/i);
+    const transfer = res.effect.match(/Transfer to ([^.;]+)/i);
     if (transfer) {
       // PM p. 61: school/training transfers do not take place for officers
       // at/above the JSON-declared rank (O5+), nor when already in the
@@ -755,7 +756,7 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
         "PM p. 61",
       );
       const from = acg.department;
-      const to = transfer[1]!;
+      const to = transfer[1]!.trim();
       const blockedByRank = officerRank >= minBlockRank;
       const alreadyThere = from !== null && to.toLowerCase() === from.toLowerCase();
       if (!blockedByRank && !alreadyThere) {
@@ -764,12 +765,15 @@ function applyMerchantSpecialDutyResult(ch: Character, sa: string): void {
       }
     }
     // PM p. 65: the exam DM applies only at/above the rank named in the
-    // effect ("for O6+"); an unqualified "DM +1 on exam" applies always.
-    const examMatch = res.effect.match(/DM \+1 on (?:the )?exam(?: for O(\d+)\+)?/i);
+    // effect ("for O6+"); an unqualified "DM +N on exam" applies always.
+    // Read the magnitude from the prose rather than assuming +1, so a JSON
+    // change to "DM +2" is honored instead of silently dropped (MT-F7).
+    const examMatch = res.effect.match(/DM \+(\d+) on (?:the )?exam(?: for O(\d+)\+)?/i);
     if (examMatch) {
-      const minExamRank = examMatch[1] ? parseInt(examMatch[1], 10) : 0;
+      const magnitude = parseInt(examMatch[1]!, 10);
+      const minExamRank = examMatch[2] ? parseInt(examMatch[2], 10) : 0;
       if (officerRank >= minExamRank) {
-        acg.perTerm.examDm = (acg.perTerm.examDm ?? 0) + 1;
+        acg.perTerm.examDm = (acg.perTerm.examDm ?? 0) + magnitude;
       }
     }
   }
@@ -1041,7 +1045,8 @@ function attemptMerchantPromotionExam(ch: Character): void {
  *  free trader ship as an automatic benefit (manual p. 61). */
 export function merchantFinalizeMuster(ch: Character): void {
   const acg = ch.acgState;
-  if (acg?.pathway !== "merchantPrince" || acg.lineType !== "Free Trader") return;
+  if (acg?.pathway !== "merchantPrince"
+    || lineSizeFor(dataFor(ch), acg.lineType!) !== "FreeTrader") return;
   const m = acg.rankCode.match(/^O(\d+)$/);
   if (!m) return;
   const n = parseInt(m[1]!, 10);

@@ -25,6 +25,20 @@ import type { AcgState } from "@/lib/traveller/engine/acg/state";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 import type { DMRule } from "@/lib/traveller/editions/types";
 
+/** Thrown by a pathway enlistment gate when the character cannot enlist on
+ *  the chosen path for a rules/config reason the player can act on — a
+ *  disallowed combat arm, an unmet starport/tech gate, an unknown line type,
+ *  or a rejected draft. The ACG model (chargen/models/acg.ts) catches ONLY
+ *  this, routing it to a failed-enlistment "retired" outcome; requireRule
+ *  failures and unexpected engine errors propagate so broken edition JSON and
+ *  bugs fail loudly instead of masquerading as a normally retired character. */
+export class EnlistmentValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EnlistmentValidationError";
+  }
+}
+
 interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
    *  ("mercenary", "navy", "scout", "merchantPrince"). */

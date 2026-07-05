@@ -9,6 +9,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import { freshAcgState } from "@/lib/traveller/engine/acg/state";
+import { EnlistmentValidationError } from "@/lib/traveller/engine/acg/pathways/shared";
 import { event as ev } from "@/lib/traveller/history";
 import { maxCashRolls } from "@/lib/traveller/core";
 import type { ChargenModel, FlowStage } from "@/lib/traveller/chargen/model";
@@ -78,10 +79,17 @@ function doEnlist(ch: Character, opts: EnlistOptions): ChargenSnapshot {
   } catch (err) {
     // A pause is not a failure — let it unwind to the session boundary.
     if (err instanceof ChoicePendingError) throw err;
-    ch.log(
-      ev.endGeneration("retired", `ACG enlistment failed: ${(err as Error).message}`),
-    );
-    return { character: ch, phase: "end" };
+    // Only a genuine enlistment/config gate (bad combat arm, unmet
+    // starport/tech gate, rejected draft) retires the character. Broken
+    // edition JSON (requireRule) and unexpected engine errors must fail
+    // loudly, not masquerade as a normally retired character (BUG-2).
+    if (err instanceof EnlistmentValidationError) {
+      ch.log(
+        ev.endGeneration("retired", `ACG enlistment failed: ${err.message}`),
+      );
+      return { character: ch, phase: "end" };
+    }
+    throw err;
   }
   return { character: ch, phase: "term" };
 }

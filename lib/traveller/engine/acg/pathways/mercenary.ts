@@ -38,7 +38,7 @@ import {
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   applyPromotion, serviceSkillColumnFor, clearRetention,
   consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
-  resolveCommandDuty, type SkillColumnPolicy,
+  resolveCommandDuty, EnlistmentValidationError, type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
@@ -122,14 +122,14 @@ export function mercenaryEnlist(
     if (armGate?.honorsGraduateOf) {
       const honors = ch.requireAcgState().honorsGraduations ?? [];
       if (!honors.includes(armGate.honorsGraduateOf)) {
-        throw new Error(
+        throw new EnlistmentValidationError(
           armGate.errorMessage ?? `Combat arm "${combatArm}" gated by ${armGate.honorsGraduateOf} honors.`,
         );
       }
     } else {
       const allowedByService = elig[service as "army" | "marines"] ?? null;
       if (allowedByService && !allowedByService.includes(combatArm)) {
-        throw new Error(
+        throw new EnlistmentValidationError(
           `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
           `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
         );
@@ -167,7 +167,7 @@ export function mercenaryEnlist(
       "mercenary", 0, 0, 0, false,
       "draft did not assign mercenary service",
     ));
-    throw new Error("Mercenary draft rejection — choose another path");
+    throw new EnlistmentValidationError("Mercenary draft rejection — choose another path");
   }
   ch.drafted = true;
   const draftedService = drafted.toLowerCase() as "army" | "marines";
@@ -229,9 +229,7 @@ export function mercenaryRollAssignment(ch: Character): string {
   const retained = consumeRetainedAssignment(acg);
   if (retained) return retained;
   const armKey = labelToColumnKey(acg.combatArm!);
-  const r = ch.rng.roll(2);
-  const row = data.assignment.rows.find((row) => row.die === r);
-  if (!row) throw new Error(`Mercenary assignment table missing row for die=${r}`);
+  const row = rollDieRowOrThrow(ch, data.assignment, { dice: 2, dm: 0 }, "Mercenary assignment");
   let assignment = row[armKey] as string | undefined;
   if (!assignment) {
     throw new Error(`Mercenary assignment column "${armKey}" missing for combat arm`);
