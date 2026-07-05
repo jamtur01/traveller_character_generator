@@ -30,7 +30,6 @@ const CHARACTERISTIC_FULL_NAMES: Record<string, true> = {
   strength: true, dexterity: true, endurance: true,
   intelligence: true, education: true, social: true,
 };
-const PHYSICAL: readonly AttributeKey[] = ["strength", "dexterity", "endurance"];
 
 /** Apply a list of effects in order. */
 export function applyEffects(ch: Character, effects: readonly MongooseEffect[]): void {
@@ -93,13 +92,13 @@ function checkOptionsDm(ch: Character, options: readonly string[]): number {
 }
 
 /** Apply characteristic reductions (injury / ageing): for each reduction pick
- *  `count` distinct characteristics from its pool (default physical), reducing
+ *  `count` distinct characteristics from its pool, reducing
  *  the highest-scoring ones first to avoid a crisis. Distinct across the whole
  *  reduction set (injury row 1: "one physical by 1D, two OTHER by 2"). */
 export function applyReductions(ch: Character, reductions: readonly MongooseReduction[]): void {
   const used = new Set<string>();
   for (const red of reductions) {
-    const pool = (red.pool ?? PHYSICAL).filter((a) => !used.has(a));
+    const pool = red.pool.filter((a) => !used.has(a));
     const ordered = [...pool].sort((a, b) => ch.attributes[b as AttributeKey] - ch.attributes[a as AttributeKey]);
     for (let i = 0; i < red.count && i < ordered.length; i++) {
       const attr = ordered[i]!;

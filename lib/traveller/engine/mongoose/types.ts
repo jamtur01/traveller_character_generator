@@ -166,12 +166,12 @@ export interface MongoosePreCareer {
 }
 
 /** A characteristic reduction (ageing / injury): reduce `count` characteristics
- *  drawn from `pool` (default the three physical characteristics) by `amount`
- *  — a fixed number or a die string like "1D". */
+ *  drawn from `pool` by `amount` — a fixed number or a die string like "1D".
+ *  Every JSON row names its pool explicitly (usually the three physical). */
 export interface MongooseReduction {
   readonly count: number;
   readonly amount: number | string;
-  readonly pool?: readonly string[];
+  readonly pool: readonly string[];
 }
 
 /** Injury table row (Core p.49, 1D). */
@@ -217,8 +217,6 @@ export interface MongooseData {
   readonly termLengthYears: number;
   /** Characteristic Modifiers table (Core p.9): score bands -> DM. */
   readonly characteristicDmBands: readonly { readonly min: number; readonly max: number; readonly dm: number }[];
-  /** Default task target when a check lists no difficulty (Core p.61: 8). */
-  readonly defaultTaskTarget: number;
   /** Background skills granted from adolescence (Core p.10): the count is this
    *  base plus the character's EDU DM, so background skill count = base + EDU
    *  DM (base 3 gives the printed 0-6 range). */

@@ -519,7 +519,7 @@ const MongooseCareerSchema = z.looseObject({
 const MongooseReductionSchema = z.looseObject({
   count: z.number(),
   amount: z.union([z.number(), z.string()]),
-  pool: z.array(z.string()).optional(),
+  pool: z.array(z.string()),
 });
 const MongooseDataSchema = z.looseObject({
   startAge: z.number(),
@@ -527,7 +527,6 @@ const MongooseDataSchema = z.looseObject({
   characteristicDmBands: z.array(
     z.looseObject({ min: z.number(), max: z.number(), dm: z.number() }),
   ),
-  defaultTaskTarget: z.number(),
   backgroundSkillBase: z.number(),
   backgroundSkills: z.array(z.string()),
   preCareer: z.array(z.looseObject({

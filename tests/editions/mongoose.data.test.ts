@@ -34,10 +34,9 @@ describe("mongoose-2e core data", () => {
     expect(draft.find((d) => d.roll === 6)?.assignment).toBe("lawEnforcement");
   });
 
-  it("sets the Mongoose defaults: age 18, 4-year terms, target 8", () => {
+  it("sets the Mongoose defaults: age 18, 4-year terms", () => {
     expect(data.mongoose!.startAge).toBe(18);
     expect(data.mongoose!.termLengthYears).toBe(4);
-    expect(data.mongoose!.defaultTaskTarget).toBe(8);
   });
 });
 

@@ -32,8 +32,6 @@
     "$startAge": "Core p.8: creation begins at age 18.",
     "termLengthYears": 4,
     "$termLengthYears": "Core p.11-12: each career term lasts four years.",
-    "defaultTaskTarget": 8,
-    "$defaultTaskTarget": "Core p.61: if no difficulty is listed, assume Average (8+).",
     "characteristicDmBands": [
       {
         "min": 0,
@@ -73,7 +71,7 @@
     ],
     "$characteristicDmBands": "Core p.9 Characteristic Modifiers table: 0 -> -3, 1-2 -> -2, 3-5 -> -1, 6-8 -> +0, 9-11 -> +1, 12-14 -> +2, 15+ -> +3. Top band open-ended (encoded max 99).",
     "backgroundSkillBase": 3,
-    "$backgroundSkillBase": "Core p.10: background skills = EDU DM + 3 (0-6). Base 3; engine adds the EDU characteristic DM.",
+    "$backgroundSkillBase": "Core p.9: background skills = EDU DM + 3 (0-6). Base 3; engine adds the EDU characteristic DM.",
     "backgroundSkills": [
       "Admin",
       "Animals",
@@ -93,7 +91,7 @@
       "Survival",
       "Vacc Suit"
     ],
-    "$backgroundSkills": "Core p.10 background skill list (17 skills), all gained at level 0.",
+    "$backgroundSkills": "Core p.9 background skill list (17 skills), all gained at level 0.",
     "preCareer": [],
     "$preCareer": "Core pp.16-17 University / Military Academy. Populated with entry checks and graduation benefits in the pre-career task.",
     "draft": [
@@ -7583,7 +7581,7 @@
     },
     "$careers": "Core pp.22-45 twelve careers (Agent, Army, Citizen, Drifter, Entertainer, Marine, Merchant, Navy, Noble, Rogue, Scholar, Scout). Populated per-career in subsequent tasks.",
     "agingStartTerm": 4,
-    "$agingStartTerm": "Core p.49: ageing rolls begin at the end of the fourth term (age 34).",
+    "$agingStartTerm": "Core p.48: ageing rolls begin at the end of the fourth term (age 34).",
     "cashRollCap": 3,
     "$cashRollCap": "Core p.46: may roll on the Cash column at most three times across all careers.",
     "benefitsOfRank": [
@@ -7633,7 +7631,7 @@
       ],
       "beyondTerm": 8,
       "perTermPay": 2000,
-      "$rule": "Core p.49 Pensions: leaving after 5+ terms (except Scout/Rogue/Prisoner/Drifter) retires on a pension; Cr2000 per term beyond 8."
+      "$rule": "Core p.48 Pensions: leaving after 5+ terms (except Scout/Rogue/Prisoner/Drifter) retires on a pension; Cr2000 per term beyond 8."
     },
     "injury": [
       {
@@ -8064,7 +8062,7 @@
     "commissionAnyTermSocMin": 9,
     "$commissionAnyTermSocMin": "Core p.19: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
     "skillLevelMax": 4,
-    "$skillLevelMax": "Core p.19: a skill may never be increased beyond level 4 during creation; further increases are lost.",
+    "$skillLevelMax": "Core p.18: a skill may never be increased beyond level 4 during creation; further increases are lost.",
     "skillTotalCap": {
       "multiplier": 3,
       "attributes": [
@@ -8072,7 +8070,7 @@
         "education"
       ]
     },
-    "$skillTotalCap": "Core p.19: total skill levels may never exceed 3 x (INT + EDU).",
+    "$skillTotalCap": "Core p.18: total skill levels may never exceed 3 x (INT + EDU).",
     "connectionSkillCap": 2,
     "$connectionSkillCap": "Core p.19 Connections rule: a Traveller may gain a maximum of two free skills, each connection with a different Traveller.",
     "connectionSkillMaxLevel": 3,
