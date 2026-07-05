@@ -210,12 +210,15 @@ function doRunTerm(ch: Character): ChargenSnapshot {
     rollEvent(ch);
     if (ch.deceased) return { character: ch, phase: "end" };
     // An IMMEDIATE leave this term — escape or a "leave this career" event that
-    // sets mustLeave WITHOUT a forced next career (Core p.57 escape: "you leave
-    // this career") — skips advancement and skills. A forced-NEXT-term transfer
-    // (arrest -> Prisoner: mustLeave + forcedNextCareer) completes this term
-    // first; and an advancement roll of <= terms ("leave after this term") still
-    // completes skills, since its mustLeave is set inside resolveAdvancementPhase.
-    if (!(state.perTerm.mustLeave && state.forcedNextCareer === null)) {
+    // sets mustLeave WITHOUT a forced/drafted next career (Core p.57 escape:
+    // "you leave this career") — skips advancement and skills. A forced-NEXT-
+    // term transfer (arrest -> Prisoner: mustLeave + forcedNextCareer; forcibly
+    // drafted: mustLeave + mustDraft) completes this term first; and an
+    // advancement roll of <= terms ("leave after this term") still completes
+    // skills, since its mustLeave is set inside resolveAdvancementPhase.
+    const immediateLeave = state.perTerm.mustLeave
+      && state.forcedNextCareer === null && !state.mustDraft;
+    if (!immediateLeave) {
       resolveAdvancementPhase(ch);
       rollSkillTraining(ch);
       if (state.perTerm.advancedThisTerm) rollSkillTraining(ch);
@@ -256,6 +259,13 @@ function doMusterAction(ch: Character): ChargenSnapshot {
     state.career = null;
     state.paroleThreshold = null;
     return { character: ch, phase: "career" };
+  }
+  // A mandatory forced-career transfer (e.g. a forced Prisoner arrest) that is
+  // still pending must not be dropped by finishing: route into it instead of
+  // ending generation (Core p.52).
+  if (state.forcedNextCareer && getMongooseData(ch).careers[state.forcedNextCareer]) {
+    pickCareerAndEnter(ch);
+    return { character: ch, phase: "term" };
   }
   applyConnections(ch);
   ch.log(ev.endGeneration("mustered", "Mongoose character generation complete"));

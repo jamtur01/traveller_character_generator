@@ -218,6 +218,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     case "benefitRoll": state.benefitRolls = Math.max(0, state.benefitRolls + e.delta); return;
     case "forfeitBenefits":
       state.benefitRolls = 0;
+      state.benefitsForfeited = true;
       ch.log(ev.raw("Forfeited all benefits from this career."));
       return;
     case "leaveCareer":
@@ -232,7 +233,12 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       ch.log(ev.raw(`Forced into the ${e.career} career next term.`));
       return;
     case "offerCareer": state.offeredNextCareer = e.career; return;
-    case "rollDraft": state.mustDraft = true; return;
+    case "rollDraft":
+      // A "forcibly drafted" event (Drifter event 11) leaves the current career
+      // this term and drafts into the next; mustLeave routes the departure.
+      state.mustDraft = true;
+      state.perTerm.mustLeave = true;
+      return;
     case "rollForceCareer": {
       const r = ch.rng.roll(parseDieCount(e.dice, "mongoose rollForceCareer.dice"));
       if (e.results.includes(r)) {

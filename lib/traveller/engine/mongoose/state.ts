@@ -92,6 +92,11 @@ export interface MongooseState {
    *  non-null, the advancement roll total (2D+DM) governs release: > threshold
    *  releases, otherwise the Traveller must serve another term. */
   paroleThreshold: number | null;
+  /** A mishap forfeited ALL Benefit rolls from the current career (Core p.34
+   *  merchant mishap 2, p.52 prisoner mishap 3, p.44 scholar mishap 5). Unlike
+   *  benefitRolls (event bonuses only), this zeroes the term/rank rolls at
+   *  muster. Career-scoped: reset on entering the next career. */
+  benefitsForfeited: boolean;
 }
 
 /** A blank set of pending-DM buckets. Reset on entering a new career so a
@@ -133,6 +138,7 @@ export function freshMongooseState(): MongooseState {
     offeredNextCareer: null,
     mustDraft: false,
     paroleThreshold: null,
+    benefitsForfeited: false,
   };
 }
 

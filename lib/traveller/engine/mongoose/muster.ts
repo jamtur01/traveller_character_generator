@@ -139,6 +139,9 @@ export function musterOut(ch: Character): void {
   let rolls = state.termsInCareer + (band?.bonusRolls ?? 0) + state.benefitRolls;
   if (state.perTerm.loseBenefitThisTerm) rolls -= 1;
   rolls = Math.max(0, rolls);
+  // A mishap forfeited ALL Benefit rolls from this career (Core p.34/44/52):
+  // no benefit rolls at all, not just the lost event bonuses.
+  if (state.benefitsForfeited) rolls = 0;
   ch.log(ev.section(`Mustering out of ${career.displayName} (${rolls} benefit roll${rolls === 1 ? "" : "s"})`));
   for (let i = 0; i < rolls; i++) resolveBenefitRoll(ch, career, data, rankDm);
   applyPension(ch, career, data);

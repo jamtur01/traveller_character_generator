@@ -15,6 +15,9 @@ import { applyRankBenefit } from "@/lib/traveller/engine/mongoose/ranks";
 import { applyEffects } from "@/lib/traveller/engine/mongoose/effects";
 import { getEdition } from "@/lib/traveller/editions";
 import type { MongooseEffect } from "@/lib/traveller/engine/mongoose/types";
+import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
+import { mongooseModel } from "@/lib/traveller/chargen/models/mongoose";
+import { enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
 
 // Math.random value that makes the next single die / pick land on face `v`.
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
@@ -152,5 +155,84 @@ describe("F1: Noble event 6 uses the real skill 'Diplomat', not phantom 'Diploma
     applyEffects(c, ev6.effects);
     expect(skillLevel(c, "Diplomat")).toBe(1);
     expect(skillLevel(c, "Diplomacy")).toBe(-1);
+  });
+});
+
+describe("M2: forfeitBenefits zeroes ALL muster benefit rolls (Core p.34/44/52)", () => {
+  function setup(): Character {
+    const c = mkChar();
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    c.mongooseState!.termsInCareer = 3;
+    c.mongooseState!.benefitRolls = 2; // event-granted bonus rolls
+    return c;
+  }
+
+  it("without forfeit, muster grants termsInCareer + bonus rolls (contrast)", () => {
+    const c = setup();
+    mockRandom([]); // all draws fall back to face 3
+    musterOut(c);
+    expect(c.events.some(
+      (e) => e.kind === "section" && /Mustering out.*\(5 benefit rolls\)/.test(e.label),
+    )).toBe(true);
+  });
+
+  it("forfeitBenefits -> exactly 0 muster benefit rolls, no cash gained", () => {
+    const c = setup();
+    applyEffects(c, [{ kind: "forfeitBenefits" }]);
+    expect(c.mongooseState!.benefitsForfeited).toBe(true);
+    expect(c.mongooseState!.benefitRolls).toBe(0);
+    const creditsBefore = c.credits;
+    musterOut(c);
+    expect(c.mongooseState!.cashRollsUsed).toBe(0);
+    expect(c.credits).toBe(creditsBefore);
+    expect(c.events.some(
+      (e) => e.kind === "section" && /Mustering out.*\(0 benefit rolls\)/.test(e.label),
+    )).toBe(true);
+  });
+
+  it("the flag is career-scoped: entering the next career clears it", () => {
+    const c = setup();
+    applyEffects(c, [{ kind: "forfeitBenefits" }]);
+    expect(c.mongooseState!.benefitsForfeited).toBe(true);
+    c.mongooseState!.careerCount = 1; // subsequent career -> basic training is a pick
+    mockRandom([d6(3)]); // basic-skill pick (agent has no parole roll on entry)
+    enterCareer(c, "agent", "lawEnforcement");
+    expect(c.mongooseState!.benefitsForfeited).toBe(false);
+  });
+});
+
+describe("M3: rollDraft leaves the current career and drafts next term", () => {
+  it("sets mustLeave (leave now) and mustDraft (draft next term)", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "drifter";
+    c.mongooseState!.assignment = "wanderer";
+    applyEffects(c, [{ kind: "rollDraft" }]);
+    expect(c.mongooseState!.mustDraft).toBe(true);
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
+  });
+});
+
+describe("L2: attemptMusterOut honours a pending forced career (Core p.52)", () => {
+  it("routes into the forced career instead of finishing generation", () => {
+    const c = mkChar();
+    c.mongooseState!.career = null; // between careers (already mustered out)
+    c.mongooseState!.careerCount = 1;
+    c.mongooseState!.forcedNextCareer = "prisoner"; // a mandatory arrest transfer
+    mockRandom([d6(3)]); // assignment pick, parole-threshold roll, basic-skill pick
+    const snap = mongooseModel.execute(c, { kind: "attemptMusterOut" }).snapshot;
+    expect(snap.phase).toBe("term");
+    expect(c.mongooseState!.career).toBe("prisoner");
+    expect(c.mongooseState!.forcedNextCareer).toBe(null); // consumed, not dropped
+    expect(c.events.some((e) => e.kind === "endGeneration")).toBe(false);
+  });
+
+  it("with no pending forced career, finishes generation as before", () => {
+    const c = mkChar();
+    c.mongooseState!.career = null;
+    c.mongooseState!.careerCount = 1;
+    const snap = mongooseModel.execute(c, { kind: "attemptMusterOut" }).snapshot;
+    expect(snap.phase).toBe("end");
+    expect(c.events.some((e) => e.kind === "endGeneration")).toBe(true);
   });
 });

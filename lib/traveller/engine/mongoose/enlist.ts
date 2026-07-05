@@ -61,6 +61,8 @@ export function enterCareer(
   state.rank = 0;
   state.commissioned = false;
   state.termsInCareer = 0;
+  // A forfeit-benefits mishap is scoped to the career it fired in.
+  state.benefitsForfeited = false;
   // Drop any career-scoped ("any") DMs left over from the previous career so
   // they cannot leak into this one (Core p.52 prisoner event 5, etc.).
   state.pendingDms = freshPendingDms();
