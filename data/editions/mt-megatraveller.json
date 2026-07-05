@@ -7098,6 +7098,7 @@
         }
       },
       "ranks": {
+        "$comment": "administrator IS-17 and IS-18 both read 'Senior Scout Leader' (a likely name-exhaustion artifact). Scout rank NAMES are not printed on any available PM page (mt_scout_merch p058/p060 give only IS-N grades + the IS-10..IS-18=O1..O9 mapping; the p066 checklist has no names), so the duplicate cannot be verified or corrected against the source and is left as-is. Mechanics use the IS-N grade + tier number, both correct.",
         "ordinary": [
           [
             "IS-1",
