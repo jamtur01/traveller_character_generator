@@ -92,8 +92,10 @@
       "Vacc Suit"
     ],
     "$backgroundSkills": "Core p.9 background skill list (17 skills), all gained at level 0.",
-    "preCareer": [],
-    "$preCareer": "Core pp.16-17 University / Military Academy pre-career education is intentionally NOT modeled in this edition: the array is empty and the mongoose chargen flow enters careers directly. Left as an explicit empty list rather than removed so the omission is documented.",
+    "$preCareer": "Core pp.16-17 University / Military Academy pre-career education is intentionally NOT modeled in this edition; the mongoose chargen flow enters careers directly. Documented here for coverage awareness (no preCareer data or type).",
+    "$anagathics": "Core p.49 anagathics (start via SOC 10+; natural 2 -> Prisoner; cost 1D x Cr25000 per term; two Survival checks per term while dosed) are intentionally NOT modeled for this edition. Documented for coverage awareness (the shared anagathics module is MT/PM-oriented and is not wired into the mongoose chargen flow).",
+    "$medicalBills": "Core p.49 Medical Bills table (each career pays a percentage share of injury medical costs; e.g. Army/Navy/Marine 75/100/100%) is intentionally NOT modeled for this edition. Documented for coverage awareness.",
+    "$nobleTitles": "Core p.12 Noble Titles (SOC 11 Knight, 12 Baron, 13 Marquis, 14 Count, 15 Duke) are display/flavour only and intentionally NOT modeled: no chargen mechanic depends on them (SOC affects rolls solely via characteristicDmBands). Documented for coverage awareness.",
     "draft": [
       {
         "roll": 1,
@@ -126,12 +128,11 @@
         "assignment": "lawEnforcement"
       }
     ],
-    "$draft": "Core p.20 Draft table (1D): 1 Navy (any), 2 Army (any), 3 Marine (any), 4 Merchant (merchant marine), 5 Scout (any), 6 Agent (law enforcement).",
+    "$draft": "Core p.19 Draft table (1D): 1 Navy (any), 2 Army (any), 3 Marine (any), 4 Merchant (merchant marine), 5 Scout (any), 6 Agent (law enforcement).",
     "careers": {
       "agent": {
         "id": "agent",
         "displayName": "Agent",
-        "page": 22,
         "$page": "Core pp.22-23 (career begins p.22)",
         "qualification": {
           "characteristics": [
@@ -666,7 +667,6 @@
       "army": {
         "id": "army",
         "displayName": "Army",
-        "page": 24,
         "$page": "Core p.24",
         "qualification": {
           "characteristics": [
@@ -904,7 +904,8 @@
                 "options": [
                   "Vacc Suit",
                   "Engineer",
-                  "Animals (riding or training)",
+                  "Animals (riding)",
+                  "Animals (training)",
                   "Recon"
                 ],
                 "level": 1
@@ -1216,7 +1217,6 @@
       "citizen": {
         "id": "citizen",
         "displayName": "Citizen",
-        "page": 26,
         "$page": "Core p.26",
         "qualification": {
           "characteristics": [
@@ -1304,7 +1304,7 @@
             ]
           }
         ],
-        "$assignments": "Core p.26 Assignments (Corporate/Worker/Colonist); Survival & Advancement cross-checked vs Career Summary Table (Core pp.20-21).",
+        "$assignments": "Core p.26 Assignments (Corporate/Worker/Colonist); Survival & Advancement cross-checked vs Career Summary Table (Core p.21).",
         "skillTables": {
           "personalDevelopment": [
             null,
@@ -1824,7 +1824,6 @@
       "drifter": {
         "id": "drifter",
         "displayName": "Drifter",
-        "page": 28,
         "$page": "Core p.28",
         "qualification": {
           "characteristics": [],
@@ -1855,7 +1854,7 @@
               "Carouse",
               "Melee (blade)",
               "Stealth",
-              "Seafarer (personal or sail)",
+              "Seafarer (personal) or Seafarer (sail)",
               "Survival"
             ]
           },
@@ -1932,7 +1931,7 @@
           "advancedEducation": null,
           "advancedEducationEduMin": null,
           "$rule": "Core p.28 Skills and Training tables",
-          "$note": "Drifter has NO Advanced Education table (advancedEducation is null; advancedEducationEduMin is null). Basic-training exception: a Drifter's first-career basic training grants the chosen Assignment skill table's skills at level 0, NOT the Service Skills (Core p.28; recap Core p.20)."
+          "$note": "Drifter has NO Advanced Education table (advancedEducation is null; advancedEducationEduMin is null). Basic-training exception: a Drifter's first-career basic training grants the chosen Assignment skill table's skills at level 0, NOT the Service Skills (Core p.28; recap Core p.21)."
         },
         "ranks": {
           "enlisted": {
@@ -2404,7 +2403,6 @@
       "entertainer": {
         "id": "entertainer",
         "displayName": "Entertainer",
-        "page": 30,
         "$page": "Core p.30",
         "qualification": {
           "characteristics": [
@@ -2457,7 +2455,7 @@
             },
             "skills": [
               null,
-              "Art (holography or write)",
+              "Art (holography) or Art (write)",
               "Electronics",
               "Drive",
               "Investigate",
@@ -2482,7 +2480,7 @@
             },
             "skills": [
               null,
-              "Art (performer or instrument)",
+              "Art (performer) or Art (instrument)",
               "Athletics",
               "Carouse",
               "Deception",
@@ -2491,7 +2489,7 @@
             ]
           }
         ],
-        "$assignments": "Core p.30 Assignments + Survival & Advancement (cross-checked Career Summary Table p.14, ref lines 302-304).",
+        "$assignments": "Core p.30 Assignments + Survival & Advancement (cross-checked Career Summary Table Core p.21).",
         "skillTables": {
           "personalDevelopment": [
             null,
@@ -2986,7 +2984,6 @@
       "marine": {
         "id": "marine",
         "displayName": "Marine",
-        "page": 32,
         "$page": "Core p.32",
         "qualification": {
           "characteristics": [
@@ -3566,7 +3563,6 @@
       "merchant": {
         "id": "merchant",
         "displayName": "Merchant",
-        "page": 34,
         "$page": "Core p.34 (printed pp.34-35)",
         "qualification": {
           "characteristics": [
@@ -3652,7 +3648,7 @@
             ]
           }
         ],
-        "$assignments": "Core p.34; Career Summary Table p.20 - Survival/Advancement cross-checked (Merchant Marine EDU 5+/INT 7+, Free Trader DEX 6+/INT 6+, Broker EDU 5+/INT 7+).",
+        "$assignments": "Core p.34; Career Summary Table Core p.21 - Survival/Advancement cross-checked (Merchant Marine EDU 5+/INT 7+, Free Trader DEX 6+/INT 6+, Broker EDU 5+/INT 7+).",
         "skillTables": {
           "personalDevelopment": [
             null,
@@ -4140,7 +4136,6 @@
       "navy": {
         "id": "navy",
         "displayName": "Navy",
-        "page": 36,
         "$page": "Core p.36",
         "qualification": {
           "characteristics": [
@@ -4637,7 +4632,8 @@
                   "Gunner",
                   "Mechanic",
                   "Vacc Suit",
-                  "Pilot (small craft or spacecraft)",
+                  "Pilot (small craft)",
+                  "Pilot (spacecraft)",
                   "Tactics (naval)"
                 ],
                 "target": 8,
@@ -4751,7 +4747,6 @@
       "noble": {
         "id": "noble",
         "displayName": "Noble",
-        "page": 38,
         "$page": "Core p.38",
         "qualification": {
           "characteristics": [
@@ -5406,7 +5401,6 @@
       "rogue": {
         "id": "rogue",
         "displayName": "Rogue",
-        "page": 40,
         "$page": "Core pp.40-41 (career begins p.40)",
         "qualification": {
           "characteristics": [
@@ -5658,7 +5652,7 @@
           },
           {
             "roll": 3,
-            "text": "You are arrested and charged with a crime. You may defend yourself in court by rolling Advocate 8+: if you succeed the charges are dropped, but if you fail you gain an Enemy and must take the Prisoner career in your next term. Alternatively, you may hire a lawyer, gaining them as a Contact but losing one Benefit roll.",
+            "text": "You are arrested and charged. You can choose to defend yourself or hire a lawyer. If you defend yourself, roll Advocate 8+. If you succeed, the charges are dropped. If you fail, gain an Enemy and take the Prisoner career in your next term. If you hired a lawyer, gain the lawyer as a Contact and lose a Benefit roll.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5701,7 +5695,7 @@
           },
           {
             "roll": 4,
-            "text": "You are involved in planning an impressive heist. Gain one of Electronics 1 or Mechanic 1.",
+            "text": "You are involved in the planning of an impressive heist. Gain Electronics 1 or Mechanic 1.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5726,7 +5720,7 @@
           },
           {
             "roll": 5,
-            "text": "One of your crimes pays off handsomely. Gain DM+2 to any one Benefit roll from this career, but you gain your victim as an Enemy.",
+            "text": "One of your crimes pays off. Gain DM+2 to any one Benefit roll and gain your victim as an Enemy.",
             "effects": [
               {
                 "kind": "benefitDm",
@@ -5742,7 +5736,7 @@
           },
           {
             "roll": 6,
-            "text": "You have the opportunity to backstab a fellow rogue. If you take it, gain DM+4 to your next advancement roll. If you refuse, you gain them as an Ally.",
+            "text": "You have the opportunity to backstab a fellow rogue for personal gain. If you do so, gain DM+4 to your next advancement roll. If you refuse, gain them as an Ally.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5776,7 +5770,7 @@
           },
           {
             "roll": 8,
-            "text": "You spend months immersed in the criminal underworld. Gain one of Streetwise 1, Stealth 1, Melee 1 or Gun Combat 1.",
+            "text": "You spend months in the dangerous criminal underworld. Gain one of Streetwise 1, Stealth 1, Melee 1 or Gun Combat 1.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5815,7 +5809,7 @@
           },
           {
             "roll": 9,
-            "text": "You become embroiled in a feud with a rival criminal organisation. Roll Stealth 8+ or Gun Combat 8+. If you fail, roll on the Injury table. If you succeed, gain an extra Benefit roll.",
+            "text": "You become involved in a feud with a rival criminal organisation. Roll Stealth or Gun Combat 8+. If you fail, roll on the Injury Table. If you succeed, gain an extra Benefit roll.",
             "effects": [
               {
                 "kind": "check",
@@ -5841,7 +5835,7 @@
           },
           {
             "roll": 10,
-            "text": "You get involved in a gambling ring. Gain Gambler 1. You may wager any number of your Benefit rolls and roll Gambler 8+; if you fail you lose the wagered Benefit rolls, but if you succeed you gain half the number wagered, rounding up.",
+            "text": "You are involved in a gambling ring. Gain Gambler 1. You may wager any number of Benefit rolls. Roll Gambler 8+; if you fail, lose all the wagered Benefit rolls. If you succeed, gain half as many Benefit rolls as you wagered (round up).",
             "effects": [
               {
                 "kind": "gainSkill",
@@ -5853,7 +5847,7 @@
           },
           {
             "roll": 11,
-            "text": "A local crime lord takes you on as his prot\u00e9g\u00e9. Either gain Tactics (military) 1 or DM+4 to your next advancement roll thanks to his aid.",
+            "text": "A crime lord considers you his prot\u00e9g\u00e9. Either gain Tactics (military) 1 or DM+4 to your next advancement roll thanks to their aid.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5878,7 +5872,7 @@
           },
           {
             "roll": 12,
-            "text": "You commit a crime that becomes the stuff of legend. You are automatically promoted.",
+            "text": "You commit a legendary crime. You are automatically promoted.",
             "effects": [
               {
                 "kind": "autoPromote"
@@ -5913,7 +5907,7 @@
           },
           {
             "roll": 2,
-            "text": "You are arrested. You must take the Prisoner career in your next term.",
+            "text": "Arrested. You must take the Prisoner career in your next term.",
             "effects": [
               {
                 "kind": "forceCareer",
@@ -5923,7 +5917,7 @@
           },
           {
             "roll": 3,
-            "text": "Betrayed by a friend, ending your career. One of your Contacts or Allies betrays you and becomes a Rival or Enemy; if you have no Contacts or Allies you are betrayed by someone you never saw coming and still gain a Rival or Enemy. In addition, roll 2D; if you roll 2, you must take the Prisoner career in your next term.",
+            "text": "Betrayed by a friend. One of your Contacts or Allies betrays you, ending your career. That Contact or Ally becomes a Rival or Enemy. If you have no Contacts or Allies, then you are betrayed by someone you never saw coming and still gain a Rival or Enemy. In addition, roll 2D. If you roll 2, you must take the Prisoner career in your next term.",
             "effects": [
               {
                 "kind": "leaveCareer",
@@ -5960,7 +5954,7 @@
           },
           {
             "roll": 4,
-            "text": "A job goes wrong and you must flee off-planet. Gain one of Deception 1, Pilot (small craft or spacecraft) 1, Athletics (dexterity) 1 or Gunner 1.",
+            "text": "A job goes wrong, forcing you to flee off-planet. Gain one of Deception 1, Pilot (small craft or spacecraft) 1, Athletics (dexterity) 1 or Gunner 1.",
             "effects": [
               {
                 "kind": "chooseEffect",
@@ -5974,8 +5968,11 @@
                   ],
                   [
                     {
-                      "kind": "gainSkill",
-                      "skill": "Pilot (small craft or spacecraft)",
+                      "kind": "gainSkillChoice",
+                      "options": [
+                        "Pilot (small craft)",
+                        "Pilot (spacecraft)"
+                      ],
                       "level": 1
                     }
                   ],
@@ -5999,7 +5996,7 @@
           },
           {
             "roll": 5,
-            "text": "A police detective or rival criminal forces you to flee your usual haunts and vows to hunt you down. Gain an Enemy.",
+            "text": "A police detective or rival criminal forces you to flee and vows to hunt you down. Gain an Enemy.",
             "effects": [
               {
                 "kind": "gainRelation",
@@ -6062,7 +6059,6 @@
       "prisoner": {
         "id": "prisoner",
         "displayName": "Prisoner",
-        "page": 56,
         "$page": "Core p.52 (special rules), pp.56-57 (tables).",
         "forcedOnly": true,
         "$forcedOnly": "Core p.52: the Prisoner career cannot be chosen; it is entered only when a mishap/event forces it. Excluded from the normal career-choice list.",
@@ -6708,7 +6704,6 @@
       "scholar": {
         "id": "scholar",
         "displayName": "Scholar",
-        "page": 42,
         "$page": "Core pp.42-43",
         "qualification": {
           "characteristics": [
@@ -6717,7 +6712,7 @@
           "target": 6,
           "$qualification": "Core p.42 - INT 6+; DM-1 for every previous career"
         },
-        "$assignments": "Core p.42 Assignments; Survival & Advancement table (cross-checked Career Summary Table p.42)",
+        "$assignments": "Core p.42 Assignments; Survival & Advancement table (cross-checked Career Summary Table Core p.21)",
         "assignments": [
           {
             "id": "fieldResearcher",
@@ -7217,7 +7212,8 @@
                 "kind": "gainSkillChoice",
                 "options": [
                   "Survival",
-                  "Athletics (dexterity or endurance)"
+                  "Athletics (dexterity)",
+                  "Athletics (endurance)"
                 ],
                 "level": 1
               }
@@ -7305,7 +7301,6 @@
       "scout": {
         "id": "scout",
         "displayName": "Scout",
-        "page": 44,
         "$page": "Core p.44 (career printed pp.44-45)",
         "qualification": {
           "characteristics": [
@@ -7391,7 +7386,7 @@
             ]
           }
         ],
-        "$assignments": "Core p.44 Assignments (Courier/Surveyor/Explorer) and Survival & Advancement table; cross-checked vs Career Summary Table Core pp.8-21.",
+        "$assignments": "Core p.44 Assignments (Courier/Surveyor/Explorer) and Survival & Advancement table; cross-checked vs Career Summary Table Core p.21.",
         "skillTables": {
           "personalDevelopment": [
             null,
@@ -7404,7 +7399,7 @@
           ],
           "serviceSkills": [
             null,
-            "Pilot (small craft or spacecraft)",
+            "Pilot (small craft) or Pilot (spacecraft)",
             "Survival",
             "Mechanic",
             "Astrogation",
@@ -7539,7 +7534,8 @@
               {
                 "kind": "gainSkillChoice",
                 "options": [
-                  "Animals (riding or training)",
+                  "Animals (riding)",
+                  "Animals (training)",
                   "Survival",
                   "Recon",
                   "Science"
@@ -8351,7 +8347,7 @@
     ],
     "$connectionSkillExcluded": "Core p.19: a connection skill may never be Jack-of-all-Trades.",
     "qualificationDmPerPriorCareer": -1,
-    "$qualificationDmPerPriorCareer": "Core p.18: Qualification takes DM-1 for every previous career.",
+    "$qualificationDmPerPriorCareer": "Core p.22 (Agent) and every other career page: 'DM-1 for every previous career' is printed on each individual career page, not the p.18 Qualification section.",
     "commissionDmPerTermAfterFirst": -1,
     "$commissionDmPerTermAfterFirst": "Core p.19: the Commission roll takes DM-1 for every term after the first.",
     "agingDmPerTerm": -1,
