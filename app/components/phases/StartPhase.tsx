@@ -199,35 +199,26 @@ export function StartPhase({
         <EditionWorkflow editionId={edition} useAcg={useAcg && hasAcg} />
 
         <div className="space-y-3">
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={interactiveMode && selected?.supportsInteractive === true}
-              disabled={selected?.supportsInteractive !== true}
-              onChange={(e) => setInteractiveMode(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              <span
-                className={
-                  "font-semibold " +
-                  (selected?.supportsInteractive
-                    ? "text-zinc-700 dark:text-zinc-300"
-                    : "text-zinc-400 dark:text-zinc-600")
-                }
-              >
-                Interactive choices{" "}
-                {selected?.supportsInteractive
-                  ? ""
-                  : "(unsupported in this edition)"}
+          {selected?.supportsInteractive && (
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={interactiveMode}
+                onChange={(e) => setInteractiveMode(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                  Interactive choices
+                </span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                  Pause for player decisions — which blade or gun a weapon
+                  benefit becomes, which specific item a cascade resolves to,
+                  etc. Off = the original auto-everything flow.
+                </span>
               </span>
-              <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-                {selected?.supportsInteractive
-                  ? "Pause for player decisions — which blade or gun a weapon benefit becomes, which specific item a cascade resolves to, etc. Off = the original auto-everything flow."
-                  : "Classic Traveller chargen runs procedurally per the rulebook. Only MegaTraveller opts into interactive choices today."}
-              </span>
-            </span>
-          </label>
+            </label>
+          )}
 
           {hasAcg && (
             <label className="flex items-start gap-2 text-sm">
