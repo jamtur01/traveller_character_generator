@@ -512,8 +512,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -1065,8 +1078,21 @@
             "text": "Severely injured in action (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -1657,8 +1683,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -2228,8 +2267,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -2803,8 +2855,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -3356,8 +3421,21 @@
             "text": "Severely injured in action (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -3939,8 +4017,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -4497,8 +4588,21 @@
             "text": "Severely injured in action (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -5156,8 +5260,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -5771,8 +5888,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -6423,8 +6553,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -6992,8 +7135,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },
@@ -7562,8 +7718,21 @@
             "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
             "effects": [
               {
-                "kind": "rollInjury",
-                "twiceTakeLower": true
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "applyInjury",
+                      "roll": 2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rollInjury",
+                      "twiceTakeLower": true
+                    }
+                  ]
+                ]
               }
             ]
           },

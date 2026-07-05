@@ -12,7 +12,7 @@ import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 import { getCareer, mongooseSkillNames } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit } from "@/lib/traveller/engine/mongoose/ranks";
-import { applyEffects } from "@/lib/traveller/engine/mongoose/effects";
+import { applyEffects, resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
 import { getEdition } from "@/lib/traveller/editions";
 import type { MongooseEffect } from "@/lib/traveller/engine/mongoose/types";
 import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
@@ -234,5 +234,29 @@ describe("L2: attemptMusterOut honours a pending forced career (Core p.52)", () 
     const snap = mongooseModel.execute(c, { kind: "attemptMusterOut" }).snapshot;
     expect(snap.phase).toBe("end");
     expect(c.events.some((e) => e.kind === "endGeneration")).toBe(true);
+  });
+});
+
+describe("A2: mishap roll 1 offers Injury-result-2 OR roll-twice-take-lower (Core p.49)", () => {
+  it("choosing the fixed 'Injury result 2' applies injury row 2 (reduce one physical by 1D)", () => {
+    const c = mkChar({ strength: 9 });
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    // mishap roll=1; chooseEffect pick index 0 -> applyInjury(2); 1D reduction = 3
+    mockRandom([d6(1), d6(1), d6(3)]);
+    resolveMishap(c, true);
+    expect(c.events.some((e) => e.kind === "raw" && /Injury \(2\)/.test(e.text))).toBe(true);
+    expect(c.attributes.strength).toBe(6); // 9 - 3
+  });
+
+  it("choosing 'roll twice, take lower' rolls the Injury table twice", () => {
+    const c = mkChar({ strength: 9 });
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    // mishap roll=1; pick index 1 -> rollInjury(twiceTakeLower); two 1D rolls 5 then 3 -> take 3
+    mockRandom([d6(1), d6(6), d6(5), d6(3)]);
+    resolveMishap(c, true);
+    expect(c.events.some((e) => e.kind === "raw" && /Injury \(3\)/.test(e.text))).toBe(true);
+    expect(c.attributes.strength).toBe(7); // injury 3: reduce STR or DEX by 2 (STR 9 -> 7)
   });
 });

@@ -115,17 +115,22 @@ export function applyReductions(ch: Character, reductions: readonly MongooseRedu
   }
 }
 
-/** Roll on the Injury table (Core p.49). twiceTakeLower -> roll 1D twice and
- *  take the worse (lower) result. */
-export function rollInjury(ch: Character, twiceTakeLower: boolean): void {
+/** Apply a SPECIFIC Injury table row (Core p.49) by its roll value. */
+export function applyInjuryRow(ch: Character, roll: number): void {
   const injury = getMongooseData(ch).injury;
-  const r1 = ch.rng.roll(1);
-  const roll = twiceTakeLower ? Math.min(r1, ch.rng.roll(1)) : r1;
   const row = requireRule(
     injury.find((x) => x.roll === roll), `mongoose.injury[${roll}]`, "MgT2 Core p.49",
   );
   ch.log(ev.raw(`Injury (${roll}): ${row.text}`));
   applyReductions(ch, row.reductions);
+}
+
+/** Roll on the Injury table (Core p.49). twiceTakeLower -> roll 1D twice and
+ *  take the worse (lower) result. */
+export function rollInjury(ch: Character, twiceTakeLower: boolean): void {
+  const r1 = ch.rng.roll(1);
+  const roll = twiceTakeLower ? Math.min(r1, ch.rng.roll(1)) : r1;
+  applyInjuryRow(ch, roll);
 }
 
 /** Resolve a Mishap (Core p.18): roll 1D on the current career's Mishap table,
@@ -212,6 +217,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     }
     case "rollMishap": resolveMishap(ch, e.ejected); return;
     case "rollInjury": rollInjury(ch, e.twiceTakeLower); return;
+    case "applyInjury": applyInjuryRow(ch, e.roll); return;
     case "lifeEvent": resolveLifeEvent(ch); return;
     case "autoPromote": promote(ch); return;
     case "autoCommission": commission(ch); return;

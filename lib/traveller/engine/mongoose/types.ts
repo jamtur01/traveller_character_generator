@@ -87,6 +87,10 @@ export type MongooseEffect =
   | { readonly kind: "gainRelation"; readonly relation: "contact" | "ally" | "rival" | "enemy"; readonly count: string }
   | { readonly kind: "rollMishap"; readonly ejected: boolean }
   | { readonly kind: "rollInjury"; readonly twiceTakeLower: boolean }
+  // Apply a SPECIFIC Injury table row by its roll value (Core p.49). The mishap
+  // roll-1 "Severely injured (same as a result of 2 on the Injury table)" uses
+  // { roll: 2 } as one branch of its player choice.
+  | { readonly kind: "applyInjury"; readonly roll: number }
   | { readonly kind: "lifeEvent" }
   | { readonly kind: "autoPromote" }
   | { readonly kind: "forceCareer"; readonly career: string }

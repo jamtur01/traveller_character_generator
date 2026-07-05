@@ -9,7 +9,7 @@ import type { AttributeKey } from "@/lib/traveller/types";
 const HANDLED = new Set([
   "gainSkill", "gainSkillChoice", "gainAnySkill", "modifyCharacteristic",
   "modifyCharacteristicChoice", "benefitDm", "advancementDm", "survivalDm",
-  "qualificationDm", "gainRelation", "rollMishap", "rollInjury", "lifeEvent",
+  "qualificationDm", "gainRelation", "rollMishap", "rollInjury", "applyInjury", "lifeEvent",
   "autoPromote", "autoCommission", "benefitRoll", "forfeitBenefits", "stayInCareer",
   "leaveCareer", "forceCareer", "offerCareer", "rollDraft", "rollForceCareer",
   "chooseEffect", "check",
