@@ -22,11 +22,15 @@ import type {
   FrontierAction,
 } from "@/lib/traveller/chargen/session";
 
-/** UI descriptor for a phase: which panel component to render + stepper label.
- *  Lets `app/page.tsx` map phase -> component without a hard-coded switch. */
-export interface PhaseDescriptor {
-  panel: string;
-  stepperLabel: string;
+/** One stage in the model's stepper: a labeled group of phases. The UI renders
+ *  the stages in order and highlights the one holding the current phase, so
+ *  each model owns its progression display (no per-edition switch in the
+ *  Stepper). */
+export interface FlowStage {
+  readonly id: string;
+  readonly label: string;
+  readonly hint: string;
+  readonly phases: readonly ChargenPhase[];
 }
 
 /** One edition-style chargen flow. */
@@ -45,6 +49,6 @@ export interface ChargenModel {
   /** Phase to render if `action` pauses on a frontier choice (the base is the
    *  pristine pre-action character, for pre-increment accounting). */
   pausedPhase(action: FrontierAction, ch: Character, base: Character): ChargenPhase;
-  /** UI panel key + stepper label for a phase. */
-  describePhase(phase: ChargenPhase, ch: Character): PhaseDescriptor;
+  /** Ordered stepper stages for this model (labels + member phases). */
+  flowStages(): readonly FlowStage[];
 }

@@ -2,32 +2,9 @@
 
 import type { Character } from "@/lib/traveller/character";
 import type * as session from "@/lib/traveller/chargen/session";
+import { getChargenModel } from "@/lib/traveller/chargen/modelRegistry";
 
 type Phase = session.ChargenPhase;
-
-interface StepperStep {
-  id: string;
-  label: string;
-  hint: string;
-  phases: Phase[];
-}
-
-const STEPPER_STEPS_BASIC: StepperStep[] = [
-  { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
-  { id: "enlist", label: "Enlist", hint: "Service & draft", phases: ["career"] },
-  { id: "serve", label: "Serve", hint: "Terms of duty", phases: ["term", "skill_basic", "skill_adv"] },
-  { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
-  { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
-];
-
-const STEPPER_STEPS_ACG: StepperStep[] = [
-  { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
-  { id: "pre", label: "Pre-Career", hint: "College & academies", phases: ["pre_career"] },
-  { id: "enlist", label: "Enlist", hint: "Pathway & branch", phases: ["acg_enlist", "career"] },
-  { id: "serve", label: "Serve", hint: "Annual cycle", phases: ["term", "skill_basic", "skill_adv"] },
-  { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
-  { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
-];
 
 function activityFor(phase: Phase, character: Character | null): string {
   if (phase === "start") return "Configure your character";
@@ -50,8 +27,7 @@ function activityFor(phase: Phase, character: Character | null): string {
 }
 
 export function Stepper({ phase, character }: { phase: Phase; character: Character | null }) {
-  const useAcgStepper = character?.useAcg ?? false;
-  const steps = useAcgStepper ? STEPPER_STEPS_ACG : STEPPER_STEPS_BASIC;
+  const steps = getChargenModel(character?.chargenModelId ?? "classic").flowStages();
   const currentIdx = steps.findIndex((s) => s.phases.includes(phase));
   const activity = activityFor(phase, character);
   const progress = currentIdx < 0 ? 0 : ((currentIdx) / (steps.length - 1)) * 100;

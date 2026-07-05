@@ -13,7 +13,7 @@ const fake: ChargenModel = {
   entryPhase: () => "start",
   execute: (ch) => ({ snapshot: { character: ch, phase: "end" } }),
   pausedPhase: () => "term",
-  describePhase: () => ({ panel: "x", stepperLabel: "X" }),
+  flowStages: () => [{ id: "s", label: "S", hint: "", phases: ["start"] }],
 };
 
 describe("chargen model registry", () => {

@@ -8,7 +8,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { getEditionServices } from "@/lib/traveller/services";
 import { maxCashRolls } from "@/lib/traveller/core";
-import type { ChargenModel, PhaseDescriptor } from "@/lib/traveller/chargen/model";
+import type { ChargenModel, FlowStage } from "@/lib/traveller/chargen/model";
 import type {
   ChargenPhase,
   ChargenResult,
@@ -108,10 +108,14 @@ export const classicModel: ChargenModel = {
         return "career";
     }
   },
-  describePhase(phase: ChargenPhase): PhaseDescriptor {
-    // Panel key == phase name; the UI maps it to a component. Stepper label is
-    // refined in the UI-descriptor task.
-    return { panel: phase, stepperLabel: phase };
+  flowStages(): readonly FlowStage[] {
+    return [
+      { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
+      { id: "enlist", label: "Enlist", hint: "Service & draft", phases: ["career"] },
+      { id: "serve", label: "Serve", hint: "Terms of duty", phases: ["term", "skill_basic", "skill_adv"] },
+      { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
+      { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
+    ];
   },
 };
 

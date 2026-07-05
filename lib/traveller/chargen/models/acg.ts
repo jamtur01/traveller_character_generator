@@ -11,7 +11,7 @@ import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import { freshAcgState } from "@/lib/traveller/engine/acg/state";
 import { event as ev } from "@/lib/traveller/history";
 import { maxCashRolls } from "@/lib/traveller/core";
-import type { ChargenModel, PhaseDescriptor } from "@/lib/traveller/chargen/model";
+import type { ChargenModel, FlowStage } from "@/lib/traveller/chargen/model";
 import type {
   ChargenPhase,
   ChargenResult,
@@ -132,8 +132,15 @@ export const acgModel: ChargenModel = {
           : "muster";
     }
   },
-  describePhase(phase: ChargenPhase): PhaseDescriptor {
-    return { panel: phase, stepperLabel: phase };
+  flowStages(): readonly FlowStage[] {
+    return [
+      { id: "roll", label: "Roll", hint: "Attributes & edition", phases: ["start"] },
+      { id: "pre", label: "Pre-Career", hint: "College & academies", phases: ["pre_career"] },
+      { id: "enlist", label: "Enlist", hint: "Pathway & branch", phases: ["acg_enlist", "career"] },
+      { id: "serve", label: "Serve", hint: "Annual cycle", phases: ["term", "skill_basic", "skill_adv"] },
+      { id: "muster", label: "Muster", hint: "Cash & benefits", phases: ["muster", "muster_no_cash"] },
+      { id: "done", label: "Done", hint: "Character sheet", phases: ["end"] },
+    ];
   },
 };
 
