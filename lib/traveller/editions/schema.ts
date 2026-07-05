@@ -492,12 +492,13 @@ const MongooseCareerSchema = z.looseObject({
   skillTables: z.looseObject({
     personalDevelopment: MongooseSkillColumnSchema,
     serviceSkills: MongooseSkillColumnSchema,
-    advancedEducation: MongooseSkillColumnSchema,
-    advancedEducationEduMin: z.number(),
+    advancedEducation: MongooseSkillColumnSchema.nullable(),
+    advancedEducationEduMin: z.number().nullable(),
     officer: MongooseSkillColumnSchema.optional(),
   }),
   ranks: z.looseObject({
-    enlisted: z.array(MongooseRankSchema),
+    enlisted: z.record(z.string(), z.array(MongooseRankSchema)),
+    enlistedByAssignment: z.record(z.string(), z.string()),
     officer: z.array(MongooseRankSchema).optional(),
   }),
   events: z.array(MongooseTableRowSchema),

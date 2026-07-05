@@ -28,10 +28,11 @@ export type MongooseSkillColumn = readonly (string | null)[];
 export interface MongooseSkillTables {
   readonly personalDevelopment: MongooseSkillColumn;
   readonly serviceSkills: MongooseSkillColumn;
-  readonly advancedEducation: MongooseSkillColumn;
+  /** Advanced Education table (1D). Null for careers without one (Drifter). */
+  readonly advancedEducation: MongooseSkillColumn | null;
   /** Minimum EDU to roll on the Advanced Education table (usually 8, Citizen/
-   *  Scholar 10). */
-  readonly advancedEducationEduMin: number;
+   *  Scholar 10). Null when the career has no Advanced Education table. */
+  readonly advancedEducationEduMin: number | null;
   /** Officer skill table — commissioned military careers only. */
   readonly officer?: MongooseSkillColumn;
 }
@@ -44,10 +45,15 @@ export interface MongooseRank {
   readonly benefit: string | null;
 }
 
-/** A career's rank ladders. Military careers separate enlisted vs officer;
- *  civilian careers use a single ladder (`enlisted`). */
+/** A career's rank ladders. Enlisted ladders are keyed by ladder id: for
+ *  careers where each assignment has its own ladder the key is the assignment
+ *  id; where assignments share a ladder (military, or Agent's Intelligence /
+ *  Corporate) one ladder covers several assignments. `enlistedByAssignment`
+ *  maps every assignment id to the ladder it advances on. Military careers add
+ *  a shared `officer` ladder. */
 export interface MongooseRanks {
-  readonly enlisted: readonly MongooseRank[];
+  readonly enlisted: Record<string, readonly MongooseRank[]>;
+  readonly enlistedByAssignment: Record<string, string>;
   readonly officer?: readonly MongooseRank[];
 }
 
@@ -79,6 +85,20 @@ export type MongooseEffect =
   | { readonly kind: "autoPromote" }
   | { readonly kind: "forceCareer"; readonly career: string }
   | { readonly kind: "leaveCareer"; readonly keepBenefit: boolean }
+  | { readonly kind: "gainAnySkill"; readonly level?: number; readonly existingOnly?: boolean }
+  | { readonly kind: "modifyCharacteristicChoice"; readonly characteristics: readonly string[]; readonly delta: number }
+  | { readonly kind: "autoCommission" }
+  | { readonly kind: "benefitRoll"; readonly delta: number }
+  | { readonly kind: "stayInCareer" }
+  | { readonly kind: "qualificationDm"; readonly dm: number; readonly scope: "next" | "any" }
+  | { readonly kind: "survivalDm"; readonly dm: number; readonly scope: "next" | "any" }
+  | { readonly kind: "rollDraft" }
+  | { readonly kind: "forfeitBenefits" }
+  | { readonly kind: "offerCareer"; readonly career: string }
+  | { readonly kind: "rollForceCareer"; readonly dice: number; readonly results: readonly number[]; readonly career: string }
+  // Player-choice between heterogeneous effect bundles ("gain X or DM+4"; a "may
+  // ..." option includes an empty [] branch = decline). One branch is applied.
+  | { readonly kind: "chooseEffect"; readonly options: readonly (readonly MongooseEffect[])[] }
   // An embedded skill/characteristic check whose outcome branches into further
   // effects (e.g. Agent event 3: "Roll Investigate 8+ ... on success ...").
   | { readonly kind: "check"; readonly options: readonly string[]; readonly target: number;
