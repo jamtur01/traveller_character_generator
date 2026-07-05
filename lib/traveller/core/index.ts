@@ -30,4 +30,6 @@ export type {
   HomeworldFieldTest,
 } from "@/lib/traveller/engine/predicate";
 export { cashDmFor, benefitDmFor, maxCashRolls } from "@/lib/traveller/engine/musterDm";
+export { characteristicDm, rollCheck } from "@/lib/traveller/engine/check";
+export type { DmBand, CheckResult } from "@/lib/traveller/engine/check";
 export { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
