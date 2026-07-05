@@ -214,6 +214,9 @@ export interface MongooseData {
   readonly agingStartTerm: number;
   /** Max Cash-column benefit rolls across all careers (Core p.46: 3). */
   readonly cashRollCap: number;
+  /** SOC at which a commission may be attempted in any term, not just the
+   *  first (Core p.18). */
+  readonly commissionAnyTermSocMin: number;
   /** Benefits of Rank bonus-roll bands (Core p.46). */
   readonly benefitsOfRank: readonly MongooseRankBonus[];
   /** Pension schedule (Core p.49). */

@@ -7317,6 +7317,8 @@
         "effects": []
       }
     ],
-    "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12)."
+    "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12).",
+    "commissionAnyTermSocMin": 9,
+    "$commissionAnyTermSocMin": "Core p.18: a commission may only be attempted in the first term unless SOC 9+ (then any term)."
   }
 }

@@ -536,6 +536,7 @@ const MongooseDataSchema = z.looseObject({
   careers: z.record(z.string(), MongooseCareerSchema),
   agingStartTerm: z.number(),
   cashRollCap: z.number(),
+  commissionAnyTermSocMin: z.number(),
   benefitsOfRank: z.array(z.looseObject({
     minRank: z.number(),
     maxRank: z.number(),
