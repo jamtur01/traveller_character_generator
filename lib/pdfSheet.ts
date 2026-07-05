@@ -280,7 +280,10 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
 
   doc.rect(X0 + 180, y, 140, r3H);
   fieldLabel(doc, X0 + 184, y + 10, "10. Branch");
-  if (c.drafted) fieldValue(doc, X0 + 186, y + 26, "Drafted", 132);
+  // Field 10 shows the character's actual branch (ACG combat arm / fleet /
+  // office), not their enlistment method. Basic chargen has no branch, so the
+  // field is left blank; the draft is recorded in the service-history log.
+  if (c.acgBranch) fieldValue(doc, X0 + 186, y + 26, c.acgBranch, 132);
 
   doc.rect(X0 + 320, y, 220, r3H);
   fieldLabel(doc, X0 + 324, y + 10, "11. Dischargeworld");
