@@ -15,7 +15,7 @@ import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import { characteristicDm, rollCheck } from "@/lib/traveller/core";
-import { getMongooseData, getCareer, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, getCareer, rollParoleThreshold, mongooseSkillNames, skillBaseName } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { promote, commission } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseEffect, MongooseReduction } from "@/lib/traveller/engine/mongoose/types";
@@ -62,12 +62,18 @@ function paroleDelta(ch: Character, delta: number | string): number {
   throw new Error(`Mongoose modifyParoleThreshold: unrecognized delta "${delta}" (expected number, "±N", or "±ND").`);
 }
 
-/** Candidate skills for "gain any skill": trained skills (existingOnly) or
- *  trained + background skills otherwise. */
-function anySkillPool(ch: Character, existingOnly: boolean): string[] {
-  const trained = ch.skills.map(([n]) => n);
-  if (existingOnly) return [...new Set(trained)];
-  return [...new Set([...trained, ...getMongooseData(ch).backgroundSkills])];
+/** Candidate skills for "gain any skill": trained skills only (existingOnly,
+ *  e.g. "increase a skill you already have") or the full Mongoose skill catalog
+ *  otherwise (Core p.18). `exclude` removes named skills (Prisoner event 6:
+ *  "except Jack-of-all-Trades"). The catalog is taken from mongooseSkillNames,
+ *  which stores both level-suffixed cells ("Streetwise 1") and bare names; the
+ *  bare-name filter keeps only pickable skill names. */
+function anySkillPool(ch: Character, existingOnly: boolean, exclude: readonly string[]): string[] {
+  const excluded = new Set(exclude);
+  const names = existingOnly
+    ? ch.skills.map(([n]) => n)
+    : [...mongooseSkillNames(ch)].filter((n) => skillBaseName(n) === n);
+  return [...new Set(names)].filter((n) => !excluded.has(n));
 }
 
 /** Best DM among a check's options: characteristic DM for an attribute abbrev,
@@ -177,7 +183,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       });
       return;
     case "gainAnySkill": {
-      const pool = anySkillPool(ch, e.existingOnly === true);
+      const pool = anySkillPool(ch, e.existingOnly === true, e.exclude ?? []);
       if (pool.length === 0) return;
       ch.pickOrDefer({
         kind: "mongooseSkillChoice", label: "Choose any skill", options: pool,

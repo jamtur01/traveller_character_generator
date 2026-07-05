@@ -6224,7 +6224,10 @@
                 "onSuccess": [
                   {
                     "kind": "gainAnySkill",
-                    "level": 1
+                    "level": 1,
+                    "exclude": [
+                      "Jack-of-all-Trades"
+                    ]
                   }
                 ],
                 "onFailure": []

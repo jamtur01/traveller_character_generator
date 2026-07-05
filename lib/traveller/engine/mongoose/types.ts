@@ -91,7 +91,11 @@ export type MongooseEffect =
   | { readonly kind: "autoPromote" }
   | { readonly kind: "forceCareer"; readonly career: string }
   | { readonly kind: "leaveCareer"; readonly keepBenefit: boolean }
-  | { readonly kind: "gainAnySkill"; readonly level?: number; readonly existingOnly?: boolean }
+  // "gain any one skill": from trained skills only (existingOnly), else the
+  // full skill catalog. `exclude` drops named skills (Prisoner event 6: "except
+  // Jack-of-all-Trades", Core p.57).
+  | { readonly kind: "gainAnySkill"; readonly level?: number; readonly existingOnly?: boolean;
+      readonly exclude?: readonly string[] }
   | { readonly kind: "modifyCharacteristicChoice"; readonly characteristics: readonly string[]; readonly delta: number }
   | { readonly kind: "autoCommission" }
   | { readonly kind: "benefitRoll"; readonly delta: number }
