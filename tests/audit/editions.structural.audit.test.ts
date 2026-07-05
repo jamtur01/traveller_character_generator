@@ -22,6 +22,7 @@ interface EditionFile {
     edition: { id: string; status?: string; displayName: string };
     services: Record<string, ServiceShape>;
     lifecycle?: { terms?: Array<{ id: string; config?: unknown }> };
+    mongoose?: { careers?: Record<string, unknown> };
   };
 }
 
@@ -58,6 +59,13 @@ function loadEditions(): EditionFile[] {
 
 const EDITIONS = loadEditions();
 
+// Editions using the CT/MT service model (non-empty services block). The
+// per-service structural checks below apply only to these; careers-model
+// editions (e.g. Mongoose) declare careers instead and are audited separately.
+const SERVICE_EDITIONS = EDITIONS.filter(
+  (ed) => Object.keys(ed.data.services).length > 0,
+);
+
 // ---------------------------------------------------------------------------
 // Edition discovery — sanity check we found something
 // ---------------------------------------------------------------------------
@@ -71,6 +79,10 @@ describe("edition discovery", () => {
     it(`${ed.path}: parses as valid JSON with edition.id`, () => {
       expect(ed.data.edition.id).toBeTruthy();
       expect(ed.data.edition.displayName).toBeTruthy();
+    });
+    it(`${ed.path}: declares services or a mongoose career block`, () => {
+      const hasServices = Object.keys(ed.data.services).length > 0;
+      expect(hasServices || ed.data.mongoose !== undefined).toBe(true);
     });
   }
 });
@@ -105,13 +117,9 @@ function isAttributeCell(cell: string): boolean {
   return ATTR_LABELS.has(m[2]!);
 }
 
-for (const ed of EDITIONS) {
+for (const ed of SERVICE_EDITIONS) {
   describe(`${ed.id}: service structure`, () => {
     const services = Object.entries(ed.data.services);
-
-    it(`has at least one service`, () => {
-      expect(services.length).toBeGreaterThan(0);
-    });
 
     for (const [key, svc] of services) {
       describe(`${ed.id} / ${key}`, () => {
@@ -246,7 +254,7 @@ for (const ed of EDITIONS) {
 // Cell-attribute sanity (catches typo cells like "+1 Foo")
 // ---------------------------------------------------------------------------
 
-for (const ed of EDITIONS) {
+for (const ed of SERVICE_EDITIONS) {
   describe(`${ed.id}: attribute-change cells reference known attributes`, () => {
     for (const [svcKey, svc] of Object.entries(ed.data.services)) {
       for (const [tableKey, table] of Object.entries(svc.skillTables)) {

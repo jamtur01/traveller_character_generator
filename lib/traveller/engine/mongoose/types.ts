@@ -136,8 +136,10 @@ export interface MongooseData {
   readonly characteristicDmBands: readonly { readonly min: number; readonly max: number; readonly dm: number }[];
   /** Default task target when a check lists no difficulty (Core p.61: 8). */
   readonly defaultTaskTarget: number;
-  /** Number of background skills granted from adolescence (Core p.10). */
-  readonly backgroundSkillCount: string;
+  /** Background skills granted from adolescence (Core p.10): the count is this
+   *  base plus the character's EDU DM, so background skill count = base + EDU
+   *  DM (base 3 gives the printed 0-6 range). */
+  readonly backgroundSkillBase: number;
   /** Background skill table (Core p.10). */
   readonly backgroundSkills: readonly string[];
   readonly preCareer: readonly MongoosePreCareer[];

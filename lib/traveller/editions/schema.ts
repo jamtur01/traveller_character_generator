@@ -515,7 +515,7 @@ const MongooseDataSchema = z.looseObject({
     z.looseObject({ min: z.number(), max: z.number(), dm: z.number() }),
   ),
   defaultTaskTarget: z.number(),
-  backgroundSkillCount: z.string(),
+  backgroundSkillBase: z.number(),
   backgroundSkills: z.array(z.string()),
   preCareer: z.array(z.looseObject({
     id: z.string(),

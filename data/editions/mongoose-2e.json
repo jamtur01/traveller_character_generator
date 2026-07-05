@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "edition": {
+    "id": "mongoose-2e",
+    "name": "Mongoose Traveller 2e",
+    "displayName": "Mongoose Traveller (2022)",
+    "rulebooks": ["Traveller 2022 Core Rulebook"],
+    "chargenModels": ["mongoose"],
+    "status": "data-only",
+    "supportsInteractive": true,
+    "year": 2022,
+    "description": "Mongoose Traveller 2nd Edition (2022 Core Rulebook): six characteristics run through a Characteristic Modifier table and a unified 2D + DM vs 8+ task system; twelve careers with three assignments each, per-term Qualification / Survival / Events / Advancement / Skills, and mustering-out benefits.",
+    "extractionNotes": [
+      "Extracted from Traveller 2022 Core Rulebook 20-02-2026.pdf (text-layer). Printed page = PDF page (offset 0) except the careers chapter where PDF Image pN markers run +1. TRAVELLER CREATION printed pp.8-57; SKILLS AND TASKS pp.58-72.",
+      "Careers and pre-career blocks are populated in subsequent tasks; this block declares the shared core (characteristic-DM table, background skills, draft, task target)."
+    ]
+  },
+  "services": {},
+  "mongoose": {
+    "startAge": 18,
+    "$startAge": "Core p.8: creation begins at age 18.",
+    "termLengthYears": 4,
+    "$termLengthYears": "Core p.11-12: each career term lasts four years.",
+    "defaultTaskTarget": 8,
+    "$defaultTaskTarget": "Core p.61: if no difficulty is listed, assume Average (8+).",
+    "characteristicDmBands": [
+      { "min": 0, "max": 0, "dm": -3 },
+      { "min": 1, "max": 2, "dm": -2 },
+      { "min": 3, "max": 5, "dm": -1 },
+      { "min": 6, "max": 8, "dm": 0 },
+      { "min": 9, "max": 11, "dm": 1 },
+      { "min": 12, "max": 14, "dm": 2 },
+      { "min": 15, "max": 99, "dm": 3 }
+    ],
+    "$characteristicDmBands": "Core p.9 Characteristic Modifiers table: 0 -> -3, 1-2 -> -2, 3-5 -> -1, 6-8 -> +0, 9-11 -> +1, 12-14 -> +2, 15+ -> +3. Top band open-ended (encoded max 99).",
+    "backgroundSkillBase": 3,
+    "$backgroundSkillBase": "Core p.10: background skills = EDU DM + 3 (0-6). Base 3; engine adds the EDU characteristic DM.",
+    "backgroundSkills": [
+      "Admin", "Animals", "Art", "Athletics", "Carouse", "Drive", "Electronics",
+      "Flyer", "Language", "Mechanic", "Medic", "Profession", "Science",
+      "Seafarer", "Streetwise", "Survival", "Vacc Suit"
+    ],
+    "$backgroundSkills": "Core p.10 background skill list (17 skills), all gained at level 0.",
+    "preCareer": [],
+    "$preCareer": "Core pp.16-17 University / Military Academy. Populated with entry checks and graduation benefits in the pre-career task.",
+    "draft": [
+      { "roll": 1, "career": "navy", "assignment": "any" },
+      { "roll": 2, "career": "army", "assignment": "any" },
+      { "roll": 3, "career": "marine", "assignment": "any" },
+      { "roll": 4, "career": "merchant", "assignment": "merchantMarine" },
+      { "roll": 5, "career": "scout", "assignment": "any" },
+      { "roll": 6, "career": "agent", "assignment": "lawEnforcement" }
+    ],
+    "$draft": "Core p.20 Draft table (1D): 1 Navy (any), 2 Army (any), 3 Marine (any), 4 Merchant (merchant marine), 5 Scout (any), 6 Agent (law enforcement).",
+    "careers": {},
+    "$careers": "Core pp.22-45 twelve careers (Agent, Army, Citizen, Drifter, Entertainer, Marine, Merchant, Navy, Noble, Rogue, Scholar, Scout). Populated per-career in subsequent tasks."
+  }
+}
