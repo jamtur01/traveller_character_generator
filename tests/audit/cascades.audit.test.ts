@@ -15,9 +15,9 @@ describe("CT cascade skills (TTB p. 25)", () => {
   const cs = getEdition("ct-classic").data.cascadeSkills as
     Record<string, string[] | string>;
 
-  it("Blade Combat: Dagger/Foil/Sword/Cutlass/Broadsword/Bayonet/Spear/Halberd/Pike/Cudgel", () => {
+  it("Blade Combat: Dagger/Blade/Foil/Sword/Cutlass/Broadsword/Bayonet/Spear/Halberd/Pike/Cudgel (CotI p. 10)", () => {
     expect(cs.bladeCombat).toEqual([
-      "Dagger", "Foil", "Sword", "Cutlass", "Broadsword",
+      "Dagger", "Blade", "Foil", "Sword", "Cutlass", "Broadsword",
       "Bayonet", "Spear", "Halberd", "Pike", "Cudgel",
     ]);
   });
@@ -39,9 +39,9 @@ describe("CT cascade skills (TTB p. 25)", () => {
     expect(v.length).toBe(10);
   });
 
-  it("Aircraft: 3 entries (Prop / Jet / Helicopter)", () => {
+  it("Aircraft: 4 CotI Air Craft categories (Prop / Jet / Helicopter / Grav Vehicle, CotI p. 12)", () => {
     expect(cs.aircraft).toEqual([
-      "Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter",
+      "Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter", "Grav Vehicle",
     ]);
   });
 

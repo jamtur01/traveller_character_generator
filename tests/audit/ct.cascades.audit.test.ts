@@ -12,9 +12,9 @@ const AIRCRAFTS = cascadePoolByKey("aircraft", "ct-classic");
 const WATERCRAFTS = cascadePoolByKey("watercraft", "ct-classic");
 
 describe("cascade pools (TTB p. 25)", () => {
-  it("BLADES contains the 10 TTB blades & polearms", () => {
+  it("BLADES contains the 11 TTB/CotI blades & polearms (incl. Blade)", () => {
     expect(BLADES).toEqual([
-      "Dagger", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet",
+      "Dagger", "Blade", "Foil", "Sword", "Cutlass", "Broadsword", "Bayonet",
       "Spear", "Halberd", "Pike", "Cudgel",
     ]);
   });
@@ -40,9 +40,9 @@ describe("cascade pools (TTB p. 25)", () => {
     }
   });
 
-  it("AIRCRAFTS is exactly the 3 TTB aircraft types", () => {
+  it("AIRCRAFTS is the 4 CotI Air Craft categories (Prop/Jet/Heli/Grav)", () => {
     expect(AIRCRAFTS).toEqual([
-      "Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter",
+      "Prop-driven Fixed Wing", "Jet-driven Fixed Wing", "Helicopter", "Grav Vehicle",
     ]);
   });
 
