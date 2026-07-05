@@ -102,6 +102,11 @@ const CONFIGS: readonly DriveConfig[] = [
     },
     minPendingSeeds,
   })),
+  {
+    name: "Mongoose",
+    start: { ...INTERACTIVE, edition: "mongoose-2e" },
+    minPendingSeeds: 20, // every seed hits career/assignment/background/skill choices
+  },
 ];
 
 const SEEDS_PER_CONFIG = 20;
@@ -256,9 +261,24 @@ function nextAction(
       const option = pick === schools.length ? "skip" : schools[pick]!;
       return { type: "preCareer", option };
     }
-    case "career": return { type: "enlist", opts: basicEnlistOptions(c, rng) };
+    case "career":
+      if (c.chargenModelId === "mongoose") {
+        // Mongoose "career" phase = between careers: finish once one career is
+        // done, otherwise attempt to enter another.
+        return (c.mongooseState?.careerCount ?? 0) >= 1
+          ? { type: "attemptMusterOut" }
+          : { type: "enlist", opts: basicEnlistOptions(c, rng) };
+      }
+      return { type: "enlist", opts: basicEnlistOptions(c, rng) };
     case "acg_enlist": return { type: "enlist", opts: acgEnlistOptions(c, rng) };
     case "term":
+      if (c.chargenModelId === "mongoose") {
+        const st = c.mongooseState;
+        if (st?.perTerm.mustContinue) return { type: "runTerm" };
+        return st && st.termsInCareer >= musterAfterTerms
+          ? { type: "attemptMusterOut" }
+          : { type: "runTerm" };
+      }
       // Voluntary muster-out after the seed-derived target terms (mirrors
       // TermPhase's canMusterOut gate); otherwise serve another term.
       if (!c.mandatoryReenlistment && c.terms >= musterAfterTerms) {
