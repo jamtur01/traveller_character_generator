@@ -5,19 +5,15 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
-import { requireRule } from "@/lib/traveller/editions/strict";
-import { getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { currentCareer, findRollRow } from "@/lib/traveller/engine/mongoose/core";
 import { applyEffects } from "@/lib/traveller/engine/mongoose/effects";
 
 /** Roll a career Event for the current term and apply its effects. */
 export function rollEvent(ch: Character): void {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
+  const { careerId, career } = currentCareer(ch);
   const roll = ch.rng.roll(2);
-  const row = requireRule(
-    career.events.find((e) => e.roll === roll),
-    `mongoose.careers.${careerId}.events[${roll}]`, "MgT2 Core",
+  const row = findRollRow(
+    career.events, roll, `mongoose.careers.${careerId}.events[${roll}]`, "MgT2 Core",
   );
   ch.log(ev.mongooseEvent(roll, row.text));
   applyEffects(ch, row.effects);

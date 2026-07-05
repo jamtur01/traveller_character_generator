@@ -31,6 +31,11 @@ export function rollAging(ch: Character): void {
   );
   ch.log(ev.raw(`Ageing (2D ${roll} - ${ch.terms} terms = ${roll + dm}): ${row.text}`));
   applyReductions(ch, row.reductions);
+  // The crisis floor (<= 0) and the restore-to-1 target are an auto-mode
+  // heuristic, NOT a printed game value: Core p.49 leaves a 0-characteristic
+  // Traveller to medical care / anagathics / death (a referee call), so there is
+  // no JSON constant to source. This solo generator assumes emergency care
+  // restores the crisis attribute(s) to 1 (documented, not fabricated).
   const crisis = ALL_ATTRS.filter((a) => ch.attributes[a] <= 0);
   if (crisis.length > 0) {
     for (const a of crisis) ch.improveAttribute(a, 1 - ch.attributes[a]); // restore to 1

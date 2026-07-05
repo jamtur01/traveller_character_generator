@@ -9,7 +9,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm, freshPendingDms } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, getMongooseData, checkDm, rollParoleThreshold, splitTopLevelOr } from "@/lib/traveller/engine/mongoose/core";
+import { getCareer, getMongooseData, checkDm, rollParoleThreshold, splitTopLevelOr, requireAssignment } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit, currentLadder } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
@@ -52,10 +52,7 @@ export function enterCareer(
 ): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
   const career = getCareer(ch, careerId);
-  const asg = requireRule(
-    career.assignments.find((a) => a.id === assignmentId),
-    `mongoose.careers.${careerId}.assignments.${assignmentId}`, "MgT2 Core",
-  );
+  const asg = requireAssignment(career, assignmentId);
   state.career = careerId;
   state.assignment = assignmentId;
   state.rank = 0;
@@ -88,10 +85,7 @@ export function applyBasicTraining(
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
   const useAssignment = career.basicTrainingFromAssignment === true;
   const table = useAssignment
-    ? requireRule(
-        career.assignments.find((a) => a.id === assignmentId),
-        `mongoose.careers.${career.id}.assignments.${assignmentId}`, "MgT2 Core",
-      ).skills
+    ? requireAssignment(career, assignmentId).skills
     : career.skillTables.serviceSkills;
   const names = table.filter((c): c is string => typeof c === "string");
   if (state.careerCount === 0) {

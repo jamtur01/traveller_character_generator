@@ -7,18 +7,12 @@
 // then recorded in the history and the previous-career count is bumped.
 
 import type { Character } from "@/lib/traveller/character";
-import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
-import { getMongooseData, getCareer, mongooseSkillNames, skillBaseName } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, currentCareer, findRollRow, mongooseSkillNames, skillBaseName, ATTR_ABBREV, ATTR_CELL } from "@/lib/traveller/engine/mongoose/core";
 import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
-
-const ATTR_ABBREV: Record<string, AttributeKey> = {
-  STR: "strength", DEX: "dexterity", END: "endurance",
-  INT: "intelligence", EDU: "education", SOC: "social",
-};
 
 const clampMuster = (career: MongooseCareer, n: number): number =>
   Math.max(1, Math.min(career.musterOut.length, n));
@@ -33,9 +27,13 @@ function splitBenefitParts(benefit: string, conjunction: "or" | "and"): string[]
 }
 
 /** Apply a single Material Benefit token: a characteristic increase, a
- *  relationship, or (for equipment/ships/memberships) a recorded benefit string. */
+ *  relationship, or (for equipment/ships/memberships) a recorded benefit string.
+ *  Die-string group resources ("1D Ship Shares", "2D Ship Shares") are recorded
+ *  verbatim rather than rolled to a concrete count: Ship Shares are a shared
+ *  group resource (Core p.46), meaningless to resolve for a solo Traveller, so
+ *  the leading die is intentionally left unrolled (not a missing feature). */
 function applySingleBenefit(ch: Character, benefit: string): void {
-  const attr = benefit.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
+  const attr = benefit.match(ATTR_CELL);
   if (attr) {
     ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
     return;
@@ -96,18 +94,16 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
         const cb = data.cashBonusSkill;
         const gambler = skillLevel(c, cb.skill) >= 0 ? cb.dm : 0;
         const roll = clampMuster(career, c.rng.roll(1) + rankDm + gambler + benefitDm);
-        const row = requireRule(
-          career.musterOut.find((r) => r.roll === roll),
-          `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
+        const row = findRollRow(
+          career.musterOut, roll, `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
         );
         c.credits += row.cash;
         st.cashRollsUsed += 1;
         c.log(ev.raw(`Muster benefit (Cash): Cr${row.cash} (roll ${roll}).`));
       } else {
         const roll = clampMuster(career, c.rng.roll(1) + rankDm + benefitDm);
-        const row = requireRule(
-          career.musterOut.find((r) => r.roll === roll),
-          `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
+        const row = findRollRow(
+          career.musterOut, roll, `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
         );
         applyMaterialBenefit(c, row.benefit);
       }
@@ -130,9 +126,7 @@ function applyPension(ch: Character, career: MongooseCareer, data: MongooseData)
 
 /** Muster out of the current career (Core pp.46-49). */
 export function musterOut(ch: Character): void {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
+  const { state, careerId, career } = currentCareer(ch);
   const data = getMongooseData(ch);
   const band = data.benefitsOfRank.find((b) => state.rank >= b.minRank && state.rank <= b.maxRank);
   const rankDm = band?.benefitDm ?? 0;

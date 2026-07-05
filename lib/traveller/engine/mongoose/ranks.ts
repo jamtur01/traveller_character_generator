@@ -6,16 +6,14 @@
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
-import { getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { currentCareer } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseRank } from "@/lib/traveller/engine/mongoose/types";
 
 /** The rank ladder the character currently advances on: the officer ladder once
  *  commissioned, else the enlisted ladder mapped to the current assignment. */
 export function currentLadder(ch: Character): readonly MongooseRank[] {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
+  const { state, careerId, career } = currentCareer(ch);
   if (state.commissioned) {
     return requireRule(
       career.ranks.officer, `mongoose.careers.${careerId}.ranks.officer`, "MgT2 Core",
@@ -65,6 +63,10 @@ export function promote(ch: Character): void {
  *  apply the officer rank-1 benefit. */
 export function commission(ch: Character): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  // An already-commissioned officer's "gain a commission" is a no-op: the
+  // roll-12 autoCommission event (Core p.46) must never reset an O-rank officer
+  // back to rank 1. Only attemptCommission's normal path reaches an un-officer.
+  if (state.commissioned) return;
   state.commissioned = true;
   state.rank = 1;
   const ladder = currentLadder(ch);

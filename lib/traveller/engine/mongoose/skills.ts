@@ -7,13 +7,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
-import { getMongooseData, splitTopLevelOr } from "@/lib/traveller/engine/mongoose/core";
-
-/** Printed characteristic abbreviations in skill/rank cells -> attribute keys. */
-const ATTR_ABBREV: Record<string, AttributeKey> = {
-  STR: "strength", DEX: "dexterity", END: "endurance",
-  INT: "intelligence", EDU: "education", SOC: "social",
-};
+import { getMongooseData, splitTopLevelOr, ATTR_ABBREV, ATTR_CELL } from "@/lib/traveller/engine/mongoose/core";
 
 /** Current level of a skill, or -1 if untrained (distinct from a trained 0). */
 export function skillLevel(ch: Character, name: string): number {
@@ -100,7 +94,7 @@ export function applySkillCell(ch: Character, cell: string, source?: string): vo
     });
     return;
   }
-  const attr = cell.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
+  const attr = cell.match(ATTR_CELL);
   if (attr) {
     ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
     return;

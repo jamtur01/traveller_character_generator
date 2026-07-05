@@ -16,18 +16,12 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, checkDm, getMongooseData } from "@/lib/traveller/engine/mongoose/core";
+import { currentCareer, currentAssignment, checkDm, getMongooseData } from "@/lib/traveller/engine/mongoose/core";
 import { promote, commission } from "@/lib/traveller/engine/mongoose/ranks";
 
 /** Roll for advancement this term. Returns whether the Traveller was promoted. */
 export function rollAdvancement(ch: Character): boolean {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
-  const asg = requireRule(
-    career.assignments.find((a) => a.id === state.assignment),
-    `mongoose.careers.${careerId}.assignments.${state.assignment}`, "MgT2 Core",
-  );
+  const { state, asg } = currentAssignment(ch);
   const dm = checkDm(ch, asg.advancement) + consumePendingDm(state.pendingDms.advancement);
   const r = rollCheck(ch.rng, [dm], asg.advancement.target);
   ch.log(ev.roll("Advancement", r.roll, dm, asg.advancement.target, r.success));
@@ -51,8 +45,7 @@ export function rollAdvancement(ch: Character): boolean {
  *  career offers one, they are not already an officer, and it is the first term
  *  or their SOC meets the any-term minimum. */
 export function commissionEligible(ch: Character): boolean {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
+  const { state, career } = currentCareer(ch);
   if (!career.commission || state.commissioned) return false;
   const firstTerm = state.termsInCareer <= 1;
   return firstTerm || ch.attributes.social >= getMongooseData(ch).commissionAnyTermSocMin;
@@ -63,8 +56,7 @@ export function commissionEligible(ch: Character): boolean {
  *  (those belong to the separate advancement roll). */
 export function attemptCommission(ch: Character): boolean {
   if (!commissionEligible(ch)) return false;
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
+  const { state, career } = currentCareer(ch);
   const check = requireRule(
     career.commission, `mongoose.careers.${state.career}.commission`, "MgT2 Core",
   );

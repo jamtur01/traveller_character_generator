@@ -27,7 +27,7 @@ import {
   resetMongoosePerTerm,
   type MongooseState,
 } from "@/lib/traveller/engine/mongoose/state";
-import { getMongooseData } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
 import { qualifyForCareer, enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { rollSurvival } from "@/lib/traveller/engine/mongoose/survival";
@@ -69,7 +69,7 @@ function applyBackgroundSkills(ch: Character): void {
  *  — a drafted "any" row, a forced career, or an offered career (Core p.20).
  *  Auto mode picks an assignment as usual. */
 function enterCareerWithAssignmentChoice(ch: Character, careerId: string): void {
-  const career = getMongooseData(ch).careers[careerId]!;
+  const career = getCareer(ch, careerId);
   ch.pickOrDefer({
     kind: "mongooseAssignment",
     label: `Choose an assignment for ${career.displayName}`,
@@ -105,7 +105,9 @@ function enterViaDraftOrDrifter(ch: Character): void {
   const fallback = requireRule(
     getMongooseData(ch).careers[fallbackId], `mongoose.careers.${fallbackId}`, "MgT2 Core p.20",
   );
-  enterCareer(ch, fallbackId, fallback.assignments[0]!.id);
+  enterCareer(ch, fallbackId, requireRule(
+    fallback.assignments[0], `mongoose.careers.${fallbackId}.assignments[0]`, "MgT2 Core p.20",
+  ).id);
 }
 
 /** The normal path: pick a career + assignment, roll qualification, and enter
@@ -115,9 +117,9 @@ function pickCareerNormally(ch: Character): void {
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",
-    options: Object.keys(data.careers).filter((id) => !data.careers[id]!.forcedOnly),
+    options: Object.keys(data.careers).filter((id) => !getCareer(ch, id).forcedOnly),
     onResolve: (c, careerId) => {
-      const career = getMongooseData(c).careers[careerId]!;
+      const career = getCareer(c, careerId);
       c.pickOrDefer({
         kind: "mongooseAssignment",
         label: "Choose an assignment",

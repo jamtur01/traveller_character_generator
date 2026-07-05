@@ -153,7 +153,6 @@ export interface MongooseMusterRow {
 export interface MongooseCareer {
   readonly id: string;
   readonly displayName: string;
-  readonly page: number;
   readonly qualification: MongooseCheck;
   /** Commission check target — Army / Navy / Marine only. */
   readonly commission?: MongooseCheck;
@@ -173,13 +172,6 @@ export interface MongooseCareer {
    *  the normal roll<=terms leave rule. `dice`+`plus` is the initial 1D+2 roll;
    *  the threshold never rises above `max` (12). */
   readonly parole?: { readonly dice: string; readonly plus: number; readonly max: number };
-}
-
-/** Pre-career education option (University / Military Academy, Core pp.14-16). */
-export interface MongoosePreCareer {
-  readonly id: string;
-  readonly displayName: string;
-  readonly qualification: MongooseCheck;
 }
 
 /** A characteristic reduction (ageing / injury): reduce `count` characteristics
@@ -240,7 +232,6 @@ export interface MongooseData {
   readonly backgroundSkillBase: number;
   /** Background skill table (Core p.10). */
   readonly backgroundSkills: readonly string[];
-  readonly preCareer: readonly MongoosePreCareer[];
   /** Draft table (Core p.20): 1D -> career + assignment. */
   readonly draft: readonly { readonly roll: number; readonly career: string; readonly assignment: string }[];
   readonly careers: Record<string, MongooseCareer>;

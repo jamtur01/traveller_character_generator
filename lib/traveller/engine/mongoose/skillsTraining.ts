@@ -7,8 +7,7 @@
 // enforced by the skill-grant helpers.
 
 import type { Character } from "@/lib/traveller/character";
-import { requireRule } from "@/lib/traveller/editions/strict";
-import { getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { currentAssignment } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseSkillColumn } from "@/lib/traveller/engine/mongoose/types";
 
@@ -20,13 +19,7 @@ interface TrainingTable {
 
 /** The skill tables the Traveller may roll on this term. */
 export function availableTables(ch: Character): TrainingTable[] {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
-  const asg = requireRule(
-    career.assignments.find((a) => a.id === state.assignment),
-    `mongoose.careers.${careerId}.assignments.${state.assignment}`, "MgT2 Core",
-  );
+  const { state, career, asg } = currentAssignment(ch);
   const tables: TrainingTable[] = [
     { key: "personalDevelopment", label: "Personal Development", column: career.skillTables.personalDevelopment },
     { key: "serviceSkills", label: "Service Skills", column: career.skillTables.serviceSkills },

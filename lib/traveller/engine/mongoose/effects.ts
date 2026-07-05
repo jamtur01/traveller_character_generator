@@ -15,16 +15,12 @@ import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import { characteristicDm, rollCheck } from "@/lib/traveller/core";
-import { getMongooseData, getCareer, rollParoleThreshold, mongooseSkillNames, skillBaseName } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, getCareer, currentCareer, findRollRow, rollParoleThreshold, mongooseSkillNames, skillBaseName, ATTR_ABBREV } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { promote, commission } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseEffect, MongooseReduction } from "@/lib/traveller/engine/mongoose/types";
 
-const ATTR_ABBREV: Record<string, AttributeKey> = {
-  STR: "strength", DEX: "dexterity", END: "endurance",
-  INT: "intelligence", EDU: "education", SOC: "social",
-};
-// Full characteristic names — the abbreviation forms above are the ONLY valid
+// Full characteristic names — the ATTR_ABBREV forms (core.ts) are the ONLY valid
 // attribute tokens in a check's options; a full name here means a data typo.
 const CHARACTERISTIC_FULL_NAMES: Record<string, true> = {
   strength: true, dexterity: true, endurance: true,
@@ -41,7 +37,10 @@ function grantOne(ch: Character, name: string, level: number | undefined): void 
   else grantSkillIncrement(ch, name, "Event");
 }
 
-/** Resolve a "D3" / "2D" / numeric count string to a number. */
+/** Resolve a "D3" / "2D" / numeric count string to a number. Kept separate from
+ *  strict.parseDieCount (which parses only "<n>D") and from paroleDelta (signed):
+ *  this grammar also accepts a plain int and "D<n>" (an inclusive 1..n range, not
+ *  a die count), so merging the three would need a mode/flag zoo (MG-DRY-6). */
 function rollCount(ch: Character, count: string): number {
   if (/^\d+$/.test(count)) return Number(count);
   const dN = count.match(/^D(\d+)$/);
@@ -53,7 +52,8 @@ function rollCount(ch: Character, count: string): number {
 
 /** Resolve a Parole Threshold delta (Core p.52): a signed integer, a plain
  *  integer string, or a signed die-string ("-1D", "+2D") rolled on `ch.rng`.
- *  The Prisoner "hire a lawyer" event uses "-1D"; simple events use fixed ints. */
+ *  The Prisoner "hire a lawyer" event uses "-1D"; simple events use fixed ints.
+ *  Distinct from rollCount/parseDieCount: it carries a sign (see MG-DRY-6). */
 function paroleDelta(ch: Character, delta: number | string): number {
   if (typeof delta === "number") return delta;
   const die = delta.match(/^([+-]?)(\d+)D$/);
@@ -117,9 +117,8 @@ export function applyReductions(ch: Character, reductions: readonly MongooseRedu
 
 /** Apply a SPECIFIC Injury table row (Core p.49) by its roll value. */
 export function applyInjuryRow(ch: Character, roll: number): void {
-  const injury = getMongooseData(ch).injury;
-  const row = requireRule(
-    injury.find((x) => x.roll === roll), `mongoose.injury[${roll}]`, "MgT2 Core p.49",
+  const row = findRollRow(
+    getMongooseData(ch).injury, roll, `mongoose.injury[${roll}]`, "MgT2 Core p.49",
   );
   ch.log(ev.raw(`Injury (${roll}): ${row.text}`));
   applyReductions(ch, row.reductions);
@@ -137,12 +136,10 @@ export function rollInjury(ch: Character, twiceTakeLower: boolean): void {
  *  log it, apply its effects, then eject + lose the term's benefit roll unless
  *  the roll said "not ejected" or an effect set stayInCareer. */
 export function resolveMishap(ch: Character, ejected: boolean): void {
-  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine"));
+  const { state, career } = currentCareer(ch);
   const roll = ch.rng.roll(1);
-  const row = requireRule(
-    career.mishaps.find((m) => m.roll === roll),
-    `mongoose.careers.${career.id}.mishaps[${roll}]`, "MgT2 Core",
+  const row = findRollRow(
+    career.mishaps, roll, `mongoose.careers.${career.id}.mishaps[${roll}]`, "MgT2 Core",
   );
   ch.log(ev.mongooseMishap(roll, row.text));
   applyEffects(ch, row.effects);
@@ -159,16 +156,15 @@ export function resolveMishap(ch: Character, ejected: boolean): void {
 export function resolveLifeEvent(ch: Character): void {
   const data = getMongooseData(ch);
   const roll = ch.rng.roll(2);
-  const row = requireRule(
-    data.lifeEvents.find((r) => r.roll === roll), `mongoose.lifeEvents[${roll}]`, "MgT2 Core p.46",
+  const row = findRollRow(
+    data.lifeEvents, roll, `mongoose.lifeEvents[${roll}]`, "MgT2 Core p.46",
   );
   ch.log(ev.raw(`Life Event (${roll}): ${row.text}`));
   applyEffects(ch, row.effects);
   if (roll === data.lifeEventsUnusualTrigger) {
     const uRoll = ch.rng.roll(1);
-    const uRow = requireRule(
-      data.lifeEventsUnusual.find((r) => r.roll === uRoll),
-      `mongoose.lifeEventsUnusual[${uRoll}]`, "MgT2 Core p.46",
+    const uRow = findRollRow(
+      data.lifeEventsUnusual, uRoll, `mongoose.lifeEventsUnusual[${uRoll}]`, "MgT2 Core p.46",
     );
     ch.log(ev.raw(`Unusual Event (${uRoll}): ${uRow.text}`));
     applyEffects(ch, uRow.effects);
@@ -269,7 +265,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const r = rollCheck(ch.rng, [dm], e.target);
       ch.log(ev.roll(`Event check (${e.options.join("/")})`, r.roll, dm, e.target, r.success));
       applyEffects(ch, r.success ? e.onSuccess : e.onFailure);
-      if (r.roll === 2 && e.onNatural2) applyEffects(ch, e.onNatural2);
+      if (r.roll === getMongooseData(ch).survivalNaturalFail && e.onNatural2) applyEffects(ch, e.onNatural2);
       return;
     }
     case "modifyParoleThreshold": {

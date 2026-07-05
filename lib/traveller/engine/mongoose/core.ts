@@ -7,7 +7,8 @@ import type { AttributeKey } from "@/lib/traveller/types";
 import { getEdition } from "@/lib/traveller/editions";
 import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import { characteristicDm } from "@/lib/traveller/core";
-import type { MongooseData, MongooseCareer, MongooseCheck } from "@/lib/traveller/engine/mongoose/types";
+import type { MongooseData, MongooseCareer, MongooseCheck, MongooseAssignment } from "@/lib/traveller/engine/mongoose/types";
+import type { MongooseState } from "@/lib/traveller/engine/mongoose/state";
 
 /** The edition's mongoose data block (throws if the edition lacks one). */
 export function getMongooseData(ch: Character): MongooseData {
@@ -22,6 +23,52 @@ export function getCareer(ch: Character, id: string): MongooseCareer {
     getMongooseData(ch).careers[id],
     `mongoose.careers.${id}`, "MgT2 Core pp.22-45",
   );
+}
+
+/** The current career context every per-term step needs: the mongoose state,
+ *  the current career id, and the resolved career (all fail-loud with a
+ *  citation). Collapses the copy-pasted state -> careerId -> career preamble. */
+export function currentCareer(ch: Character): {
+  state: MongooseState;
+  careerId: string;
+  career: MongooseCareer;
+} {
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
+  return { state, careerId, career: getCareer(ch, careerId) };
+}
+
+/** Resolve one assignment on a career by id (fail-loud with a citation path). */
+export function requireAssignment(career: MongooseCareer, id: string): MongooseAssignment {
+  return requireRule(
+    career.assignments.find((a) => a.id === id),
+    `mongoose.careers.${career.id}.assignments.${id}`, "MgT2 Core",
+  );
+}
+
+/** The current career context plus the resolved current assignment. Used by the
+ *  survival / advancement / skills-training steps. */
+export function currentAssignment(ch: Character): {
+  state: MongooseState;
+  careerId: string;
+  career: MongooseCareer;
+  asg: MongooseAssignment;
+} {
+  const cc = currentCareer(ch);
+  const assignmentId = requireRule(
+    cc.state.assignment, "mongooseState.assignment", "engine (mongoose)",
+  );
+  return { ...cc, asg: requireAssignment(cc.career, assignmentId) };
+}
+
+/** Find a table row keyed by its `.roll` value (2D events / 1D mishaps / injury
+ *  / life events / draft), failing loud with the JSON `what` path + `rule`
+ *  citation if absent. The caller keeps its own roll, log, and
+ *  applyEffects/applyReductions tail. */
+export function findRollRow<T extends { readonly roll: number }>(
+  rows: readonly T[], roll: number, what: string, rule: string,
+): T {
+  return requireRule(rows.find((r) => r.roll === roll), what, rule);
 }
 
 /** The dice modifier a check contributes: the best characteristic DM among its
@@ -47,9 +94,18 @@ export function rollParoleThreshold(
   return Math.min(parole.max, ch.rng.roll(count) + parole.plus);
 }
 
+/** Printed characteristic abbreviations in skill / rank / benefit cells ->
+ *  attribute keys. The only valid characteristic tokens in a cell (a full name
+ *  is a data typo). Shared by the skills / effects / muster cell parsers. */
+export const ATTR_ABBREV: Record<string, AttributeKey> = {
+  STR: "strength", DEX: "dexterity", END: "endurance",
+  INT: "intelligence", EDU: "education", SOC: "social",
+};
+
 /** A characteristic-boost cell ("DEX +1", "SOC -1"): an attribute change, not a
- *  skill. */
-const ATTR_CELL = /^(STR|DEX|END|INT|EDU|SOC)\s*[+-]\d+$/;
+ *  skill. Capture group 1 is the abbreviation, group 2 the signed delta ("+1"),
+ *  so the same regex serves both the boolean test and the parse-and-apply. */
+export const ATTR_CELL = /^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/;
 
 /** Strip a trailing level from a skill/benefit cell ("Streetwise 1" ->
  *  "Streetwise"), leaving the bare skill name. */
