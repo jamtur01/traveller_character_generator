@@ -10,13 +10,12 @@
     "chargenModels": [
       "mongoose"
     ],
-    "status": "data-only",
+    "status": "active",
     "supportsInteractive": true,
     "year": 2022,
     "description": "Mongoose Traveller 2nd Edition (2022 Core Rulebook): six characteristics run through a Characteristic Modifier table and a unified 2D + DM vs 8+ task system; twelve careers with three assignments each, per-term Qualification / Survival / Events / Advancement / Skills, and mustering-out benefits.",
     "extractionNotes": [
-      "Extracted from Traveller 2022 Core Rulebook 20-02-2026.pdf (text-layer). Printed page = PDF page (offset 0) except the careers chapter where PDF Image pN markers run +1. TRAVELLER CREATION printed pp.8-57; SKILLS AND TASKS pp.58-72.",
-      "Careers and pre-career blocks are populated in subsequent tasks; this block declares the shared core (characteristic-DM table, background skills, draft, task target)."
+      "Extracted from Traveller 2022 Core Rulebook 20-02-2026.pdf (text-layer). Printed page = PDF page (offset 0) except the careers chapter where PDF Image pN markers run +1. TRAVELLER CREATION printed pp.8-57; SKILLS AND TASKS pp.58-72."
     ]
   },
   "services": {},

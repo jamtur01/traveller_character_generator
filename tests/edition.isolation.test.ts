@@ -14,7 +14,11 @@ import {
   cascadePoolByKey, cascadePoolForLabel, isCascadeLabel,
 } from "../lib/traveller/engine/cascadeMap";
 
-const ACTIVE = listEditions().filter((e) => e.status === "active");
+// Service-model editions (CT / MT) — the cascade / service checks below apply
+// to these; careers-model editions (Mongoose) are covered by their own suites.
+const ACTIVE = listEditions().filter(
+  (e) => e.status === "active" && e.chargenModels.includes("classic"),
+);
 const ALL = listEditions();
 
 afterEach(() => {

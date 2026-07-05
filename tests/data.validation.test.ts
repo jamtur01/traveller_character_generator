@@ -60,7 +60,9 @@ interface EditionJson {
   benefitDetails?: Record<string, { displayName?: string; firstReceiptMortgageYears?: number }>;
 }
 
-const ACTIVE_EDITIONS = listEditions().filter((e) => e.status === "active");
+const ACTIVE_EDITIONS = listEditions().filter(
+  (e) => e.status === "active" && e.chargenModels.includes("classic"),
+);
 if (ACTIVE_EDITIONS.length === 0) {
   throw new Error("No active editions registered — data.validation.test cannot run");
 }

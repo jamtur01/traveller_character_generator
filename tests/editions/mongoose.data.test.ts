@@ -118,7 +118,7 @@ describe("mongoose-2e edition registration", () => {
   it("getEdition('mongoose-2e') builds and runs lazy validators without throwing", () => {
     const ed = getEdition("mongoose-2e");
     expect(ed.meta.id).toBe("mongoose-2e");
-    expect(ed.meta.status).toBe("data-only");
+    expect(ed.meta.status).toBe("active");
     expect(ed.data.mongoose).toBeDefined();
   });
 });

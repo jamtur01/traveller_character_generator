@@ -21,6 +21,7 @@ import { TermPhase } from "./components/phases/TermPhase";
 import { SkillPhase } from "./components/phases/SkillPhase";
 import { MusterPhase } from "./components/phases/MusterPhase";
 import { EndPhase } from "./components/phases/EndPhase";
+import { MongooseCareerPhase, MongooseTermPhase } from "./components/phases/MongoosePhase";
 
 type Phase = session.ChargenPhase;
 
@@ -244,21 +245,37 @@ export default function Home() {
           )}
 
           {phase === "career" && character && (
-            <CareerPhase
-              character={character}
-              preferredService={preferredService}
-              setPreferredService={setPreferredService}
-              onEnlist={enlist}
-            />
+            character.chargenModelId === "mongoose" ? (
+              <MongooseCareerPhase
+                character={character}
+                onBeginCareer={enlist}
+                onFinish={attemptMusterOut}
+              />
+            ) : (
+              <CareerPhase
+                character={character}
+                preferredService={preferredService}
+                setPreferredService={setPreferredService}
+                onEnlist={enlist}
+              />
+            )
           )}
 
           {phase === "term" && character && (
-            <TermPhase
-              character={character}
-              onRunTerm={runTerm}
-              onMusterOut={attemptMusterOut}
-              onToggleAnagathics={toggleAnagathics}
-            />
+            character.chargenModelId === "mongoose" ? (
+              <MongooseTermPhase
+                character={character}
+                onRunTerm={runTerm}
+                onMusterOut={attemptMusterOut}
+              />
+            ) : (
+              <TermPhase
+                character={character}
+                onRunTerm={runTerm}
+                onMusterOut={attemptMusterOut}
+                onToggleAnagathics={toggleAnagathics}
+              />
+            )
           )}
 
           {(phase === "skill_basic" || phase === "skill_adv") && character && (
