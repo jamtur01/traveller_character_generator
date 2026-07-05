@@ -8,13 +8,17 @@ import { applyOvershootBonus } from "./overshoot";
 
 export const promotionStep: StepFn = ({ ch, service, config }) => {
   if (ch.deceased) return;
+  // Non-officers have no promotion roll (basic chargen has no enlisted-rank
+  // ladder), so there is nothing to "skip" — return silently, as the normal
+  // path does. Only a commissioned officer who lost the term to injury gets
+  // the short-term skip note.
+  if (!ch.commissioned) return;
   if (ch.shortTermThisTerm) {
     ch.log(ev.statusChange(
       "promotionSkipped", "short term after survival failure",
     ));
     return;
   }
-  if (!ch.commissioned) return;
   // Real cap = highest rank index with a non-empty name. serviceLoader fills
   // ranks 0-6 with "" for undefined slots, so Object.keys() is always 0-6;
   // deriving the cap from it would let services topping at rank 5 (merchants,
