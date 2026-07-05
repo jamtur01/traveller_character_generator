@@ -24,6 +24,12 @@ const ATTR_ABBREV: Record<string, AttributeKey> = {
   STR: "strength", DEX: "dexterity", END: "endurance",
   INT: "intelligence", EDU: "education", SOC: "social",
 };
+// Full characteristic names — the abbreviation forms above are the ONLY valid
+// attribute tokens in a check's options; a full name here means a data typo.
+const CHARACTERISTIC_FULL_NAMES: Record<string, true> = {
+  strength: true, dexterity: true, endurance: true,
+  intelligence: true, education: true, social: true,
+};
 const PHYSICAL: readonly AttributeKey[] = ["strength", "dexterity", "endurance"];
 
 /** Apply a list of effects in order. */
@@ -72,6 +78,15 @@ function checkOptionsDm(ch: Character, options: readonly string[]): number {
   const dms = options.map((o) => {
     const attr = ATTR_ABBREV[o];
     if (attr) return characteristicDm(ch.attributes[attr], bands);
+    // A full characteristic name ("education") or an abbreviation-shaped token
+    // (three capitals) not in ATTR_ABBREV is a data typo, not a skill — fail
+    // loud rather than silently scoring it as an untrained level-0 skill.
+    if (CHARACTERISTIC_FULL_NAMES[o.toLowerCase()] || /^[A-Z]{3}$/.test(o)) {
+      throw new Error(
+        `mongoose check option "${o}" is not a valid characteristic abbreviation ` +
+        `(${Object.keys(ATTR_ABBREV).join(", ")}) or skill name`,
+      );
+    }
     return Math.max(0, skillLevel(ch, o));
   });
   return dms.length > 0 ? Math.max(...dms) : 0;

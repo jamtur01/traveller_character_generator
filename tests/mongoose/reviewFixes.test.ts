@@ -6,7 +6,7 @@ import { enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
 import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { getCareer } from "@/lib/traveller/engine/mongoose/core";
 import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
-import { resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
+import { applyEffects, resolveMishap } from "@/lib/traveller/engine/mongoose/effects";
 
 // Math.random value that makes the next single die show face `v` (1-6).
 const d6 = (v: number) => (v - 1) / 6 + 0.001;
@@ -175,5 +175,61 @@ describe("b#11: mishap keep-benefit branch survives forced ejection (Core p.18)"
     expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
     expect(c.mongooseState!.perTerm.benefitKept).toBe(true);
     expect(c.mongooseState!.perTerm.loseBenefitThisTerm).toBe(false);
+  });
+});
+
+describe("M1: check-option EDU DM + typo guard (Core p.61)", () => {
+  it("an 'EDU' option contributes the EDU characteristic DM", () => {
+    const c = mkChar({ education: 12 }); // EDU 12 -> DM +2
+    mockRandom([d6(3), d6(3)]); // 2D = 6; 6 + 2 = 8 >= target 8 -> success
+    applyEffects(c, [{
+      kind: "check", options: ["EDU"], target: 8,
+      onSuccess: [{ kind: "gainSkill", skill: "Investigate", level: 2 }],
+      onFailure: [],
+    }]);
+    const roll = c.events.find((e) => e.kind === "roll");
+    expect(roll).toMatchObject({ dm: 2, succeeded: true });
+    expect(skillLevel(c, "Investigate")).toBe(2);
+  });
+
+  it("the same roll fails at EDU 7 (DM 0), proving the DM was really applied", () => {
+    const c = mkChar({ education: 7 }); // EDU 7 -> DM 0
+    mockRandom([d6(3), d6(3)]); // 2D = 6; 6 + 0 = 6 < target 8 -> failure
+    applyEffects(c, [{
+      kind: "check", options: ["EDU"], target: 8,
+      onSuccess: [{ kind: "gainSkill", skill: "Investigate", level: 2 }],
+      onFailure: [],
+    }]);
+    expect(skillLevel(c, "Investigate")).toBe(-1);
+  });
+
+  it("a full characteristic-name option ('education') throws", () => {
+    const c = mkChar();
+    mockRandom([d6(3), d6(3)]);
+    expect(() => applyEffects(c, [{
+      kind: "check", options: ["education"], target: 8, onSuccess: [], onFailure: [],
+    }])).toThrow(/not a valid characteristic abbreviation/);
+  });
+
+  it("an abbreviation-shaped unknown option ('PSI') throws", () => {
+    const c = mkChar();
+    mockRandom([d6(3), d6(3)]);
+    expect(() => applyEffects(c, [{
+      kind: "check", options: ["PSI"], target: 8, onSuccess: [], onFailure: [],
+    }])).toThrow(/not a valid characteristic abbreviation/);
+  });
+
+  it("a genuine skill option ('Advocate') still scores by level, no throw", () => {
+    const c = mkChar();
+    c.addSkill("Advocate", 3, "test");
+    mockRandom([d6(3), d6(3)]); // 2D = 6; 6 + 3 = 9 >= target 8 -> success
+    applyEffects(c, [{
+      kind: "check", options: ["Advocate"], target: 8,
+      onSuccess: [{ kind: "gainSkill", skill: "Streetwise", level: 1 }],
+      onFailure: [],
+    }]);
+    const roll = c.events.find((e) => e.kind === "roll");
+    expect(roll).toMatchObject({ dm: 3, succeeded: true });
+    expect(skillLevel(c, "Streetwise")).toBe(1);
   });
 });

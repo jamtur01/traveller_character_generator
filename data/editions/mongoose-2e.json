@@ -407,7 +407,7 @@
               {
                 "kind": "check",
                 "options": [
-                  "education"
+                  "EDU"
                 ],
                 "target": 8,
                 "onSuccess": [
@@ -1516,7 +1516,7 @@
               {
                 "kind": "check",
                 "options": [
-                  "education"
+                  "EDU"
                 ],
                 "target": 10,
                 "onSuccess": [
