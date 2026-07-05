@@ -1,0 +1,108 @@
+// Mongoose 2e Mustering Out (Core pp.46-49): on leaving a career the Traveller
+// makes one Benefit roll per full term served plus bonus rolls from rank, each
+// on the Cash or Material Benefits column of the career's muster table. Cash
+// rolls are capped at 3 across all careers; a Gambler grants DM+1 to Cash rolls;
+// the top rank band grants a DM to all this career's Benefit rolls. Pensions
+// apply on leaving after enough terms (excluded careers get none). The career is
+// then recorded in the history and the previous-career count is bumped.
+
+import type { Character } from "@/lib/traveller/character";
+import type { AttributeKey } from "@/lib/traveller/types";
+import { event as ev } from "@/lib/traveller/history";
+import { requireRule } from "@/lib/traveller/editions/strict";
+import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
+import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
+
+const ATTR_ABBREV: Record<string, AttributeKey> = {
+  STR: "strength", DEX: "dexterity", END: "endurance",
+  INT: "intelligence", EDU: "education", SOC: "social",
+};
+
+const clampMuster = (n: number): number => Math.max(1, Math.min(7, n));
+
+/** Apply a Material Benefit cell: a characteristic increase, a relationship, or
+ *  (for equipment/ships/memberships) a recorded benefit string. */
+function applyMaterialBenefit(ch: Character, benefit: string): void {
+  const attr = benefit.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
+  if (attr) {
+    ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
+    return;
+  }
+  const lower = benefit.toLowerCase();
+  if (lower === "ally" || lower === "contact") {
+    ch.mongooseState!.connections.push({ relation: lower, note: "muster benefit" });
+    ch.log(ev.mongooseConnection(lower));
+    return;
+  }
+  ch.benefits.push(benefit);
+  ch.log(ev.raw(`Benefit: ${benefit}.`));
+}
+
+/** Resolve one Benefit roll: pick a column, roll 1D + DMs, apply the result. */
+function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: MongooseData, rankDm: number): void {
+  const state = ch.mongooseState!;
+  const canCash = state.cashRollsUsed < data.cashRollCap;
+  const options = canCash ? ["Cash", "Material Benefits"] : ["Material Benefits"];
+  ch.pickOrDefer({
+    kind: "musterRoll",
+    label: "Choose a benefit column",
+    options,
+    onResolve: (c, chosen) => {
+      const st = c.mongooseState!;
+      if (chosen === "Cash") {
+        const gambler = skillLevel(c, "Gambler") >= 0 ? 1 : 0;
+        const roll = clampMuster(c.rng.roll(1) + rankDm + gambler);
+        const row = requireRule(
+          career.musterOut.find((r) => r.roll === roll),
+          `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
+        );
+        c.credits += row.cash;
+        st.cashRollsUsed += 1;
+        c.log(ev.raw(`Muster benefit (Cash): Cr${row.cash} (roll ${roll}).`));
+      } else {
+        const roll = clampMuster(c.rng.roll(1) + rankDm);
+        const row = requireRule(
+          career.musterOut.find((r) => r.roll === roll),
+          `mongoose.careers.${career.id}.musterOut[${roll}]`, "MgT2 Core",
+        );
+        applyMaterialBenefit(c, row.benefit);
+      }
+    },
+  });
+}
+
+/** Record the pension a Traveller earns for leaving this career (Core p.49). */
+function applyPension(ch: Character, career: MongooseCareer, data: MongooseData): void {
+  const state = ch.mongooseState!;
+  const p = data.pensions;
+  if (state.termsInCareer < p.minTerms || p.excludedCareers.includes(career.id)) return;
+  const tabled = p.table.find((t) => t.terms === state.termsInCareer);
+  const pay = tabled
+    ? tabled.pay
+    : p.table[p.table.length - 1]!.pay + (state.termsInCareer - p.beyondTerm) * p.perTermPay;
+  ch.benefits.push(`Pension Cr${pay}/year`);
+  ch.log(ev.raw(`Pension: Cr${pay} per year (${state.termsInCareer} terms served).`));
+}
+
+/** Muster out of the current career (Core pp.46-49). */
+export function musterOut(ch: Character): void {
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
+  const career = getCareer(ch, careerId);
+  const data = getMongooseData(ch);
+  const band = data.benefitsOfRank.find((b) => state.rank >= b.minRank && state.rank <= b.maxRank);
+  const rankDm = band?.benefitDm ?? 0;
+  let rolls = state.termsInCareer + (band?.bonusRolls ?? 0) + state.benefitRolls;
+  if (state.perTerm.loseBenefitThisTerm) rolls -= 1;
+  rolls = Math.max(0, rolls);
+  ch.log(ev.section(`Mustering out of ${career.displayName} (${rolls} benefit roll${rolls === 1 ? "" : "s"})`));
+  for (let i = 0; i < rolls; i++) resolveBenefitRoll(ch, career, data, rankDm);
+  applyPension(ch, career, data);
+  state.history.push({
+    career: careerId, assignment: requireRule(state.assignment, "mongooseState.assignment", "engine"),
+    terms: state.termsInCareer, finalRank: state.rank, commissioned: state.commissioned,
+  });
+  state.careerCount += 1;
+  state.benefitRolls = 0;
+}

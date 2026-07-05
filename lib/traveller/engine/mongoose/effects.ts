@@ -70,7 +70,7 @@ function checkOptionsDm(ch: Character, options: readonly string[]): number {
  *  `count` distinct characteristics from its pool (default physical), reducing
  *  the highest-scoring ones first to avoid a crisis. Distinct across the whole
  *  reduction set (injury row 1: "one physical by 1D, two OTHER by 2"). */
-function applyReductions(ch: Character, reductions: readonly MongooseReduction[]): void {
+export function applyReductions(ch: Character, reductions: readonly MongooseReduction[]): void {
   const used = new Set<string>();
   for (const red of reductions) {
     const pool = (red.pool ?? PHYSICAL).filter((a) => !used.has(a));
