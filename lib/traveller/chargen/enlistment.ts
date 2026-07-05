@@ -160,6 +160,66 @@ export function applyServiceStartAge(ch: Character, svc: ServiceKey): void {
   if (data?.startAge !== undefined) ch.age = data.startAge;
 }
 
+/** Draft the character into a random service from `pool` and apply its service
+ *  skills. Used when the enlistment roll fails, or when an unqualified explicit
+ *  automatic-only (Nobility) pick is refused. */
+function draftInto(ch: Character, pool: ServiceKey[]): ServiceKey {
+  ch.drafted = true;
+  const draftService = ch.rng.pick(pool);
+  ch.log(ev.drafted(draftService));
+  applyServiceStartAge(ch, draftService);
+  ch.service = draftService;
+  if (ch.homeworld) applyHomeworldSkills(ch);
+  const draftDef = ch.editionService(draftService);
+  const skills = draftDef.getServiceSkills(ch);
+  for (const sk of skills) ch.addSkill(sk, 1, `${draftDef.serviceName} service skill`);
+  return draftService;
+}
+
+/** CotI auto-enrolment for the automatic-only Nobility. Returns the resolved
+ *  service when the automaticIf gate governs the outcome — enrolled when the
+ *  gated attribute meets the threshold, drafted when an explicit Nobility pick
+ *  misses it — and null when the character should proceed to the normal
+ *  enlistment roll. Editions without a nobles service, or whose nobles service
+ *  has no automaticIf rule, always return null. */
+function tryNobilityAutoEnroll(
+  ch: Character, method: string, preferredService: ServiceKey,
+  effDraftPool: ServiceKey[],
+): ServiceKey | null {
+  const noblesData: ServiceData | undefined =
+    getEdition(ch.editionId).data.services.nobles;
+  const autoIf = noblesData?.checks.enlistment.automaticIf;
+  if (!autoIf) return null;
+  const explicitAuto = preferredService === "nobles";
+  const randomPath = !method || method === "random";
+  if (!randomPath && !explicitAuto) return null;
+  const attrVal = ch.attributes[autoIf.attribute as AttributeKey] ?? 0;
+  if (attrVal >= autoIf.min) {
+    ch.log(ev.enlistmentAttempt(
+      "Nobility", 0, 0, 0, true,
+      `distinguished by social standing (${attrShort(autoIf.attribute as AttributeKey)} ${autoIf.min}+, auto-enrolled)`,
+    ));
+    applyServiceStartAge(ch, "nobles");
+    ch.service = "nobles";
+    if (ch.homeworld) applyHomeworldSkills(ch);
+    const skills = ch.editionService("nobles").getServiceSkills(ch);
+    for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
+    return "nobles";
+  }
+  if (explicitAuto) {
+    // Explicitly chose the automatic-only Nobility but doesn't meet the gate.
+    // Nobles enlist automatically or not at all — there is no 2D enlistment
+    // roll — so a sub-threshold pick is refused and the character is drafted,
+    // rather than silently succeeding via the automaticIf enlistmentThrow = 0.
+    ch.log(ev.enlistmentAttempt(
+      "Nobility", 0, 0, 0, false,
+      `does not meet ${attrShort(autoIf.attribute as AttributeKey)} ${autoIf.min}+ for automatic enrolment`,
+    ));
+    return draftInto(ch, effDraftPool);
+  }
+  return null;
+}
+
 /** Basic-chargen enlistment. Returns the service the character ended
  *  up in (their preferred service if accepted, otherwise the draft
  *  pool's random pick). Throws if invoked on an ACG character — those
@@ -203,28 +263,14 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     preferredService = ch.rng.pick(gated);
   }
 
-  // CotI: characters whose social standing (or other attribute) meets the
-  // nobles service's enlistment.automaticIf threshold are automatically
-  // enrolled in the Nobility. Editions without a nobles service, or whose
-  // nobles service has no automaticIf rule, skip this branch entirely.
-  const noblesData: ServiceData | undefined =
-    getEdition(ch.editionId).data.services.nobles;
-  const autoIf = noblesData?.checks.enlistment.automaticIf;
-  if (autoIf && (!method || method === "random")) {
-    const attrVal = ch.attributes[autoIf.attribute as AttributeKey] ?? 0;
-    if (attrVal >= autoIf.min) {
-      ch.log(ev.enlistmentAttempt(
-        "Nobility", 0, 0, 0, true,
-        `distinguished by social standing (${attrShort(autoIf.attribute as AttributeKey)} ${autoIf.min}+, auto-enrolled)`,
-      ));
-      applyServiceStartAge(ch, "nobles");
-      ch.service = "nobles";
-      if (ch.homeworld) applyHomeworldSkills(ch);
-      const skills = ch.editionService("nobles").getServiceSkills(ch);
-      for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
-      return "nobles";
-    }
-  }
+  // Defensive: if no draft pool is registered for the edition, fall back to
+  // the gated enlistable list so the draft doesn't crash on an empty array.
+  const effDraftPool = draftPool.length > 0 ? draftPool : gated;
+
+  // CotI: the automatic-only Nobility enrolls a qualifying character or drafts
+  // an unqualified explicit Nobility pick; null = proceed to the normal roll.
+  const auto = tryNobilityAutoEnroll(ch, method, preferredService, effDraftPool);
+  if (auto) return auto;
 
   const pref = ch.editionService(preferredService);
   const dm = pref.enlistmentDM(ch.attributes);
@@ -241,18 +287,5 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     for (const sk of skills) ch.addSkill(sk, 1, `${pref.serviceName} service skill`);
     return preferredService;
   }
-  ch.drafted = true;
-  // Defensive: if no draft pool is registered for the edition, fall
-  // back to the gated enlistable list so the draft doesn't crash on
-  // arnd of an empty array.
-  const effDraftPool = draftPool.length > 0 ? draftPool : gated;
-  const draftService = ch.rng.pick(effDraftPool);
-  ch.log(ev.drafted(draftService));
-  applyServiceStartAge(ch, draftService);
-  ch.service = draftService;
-  if (ch.homeworld) applyHomeworldSkills(ch);
-  const draftDef = ch.editionService(draftService);
-  const skills = draftDef.getServiceSkills(ch);
-  for (const sk of skills) ch.addSkill(sk, 1, `${draftDef.serviceName} service skill`);
-  return draftService;
+  return draftInto(ch, effDraftPool);
 }
