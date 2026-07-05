@@ -2,7 +2,6 @@ import { jsPDF } from "jspdf";
 import { Character } from "./traveller/character";
 import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
-import { requireRule } from "./traveller/editions/strict";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
 import { numCommaSep } from "./traveller/formatting";
 import type { AttributeKey } from "./traveller/types";
