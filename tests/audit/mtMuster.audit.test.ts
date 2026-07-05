@@ -93,7 +93,7 @@ const PM: Record<MtService, ServiceTruth> = {
   bureaucrats: {
     throws: { enlistment: 5, survival: 4, position: 6, promotion: 7, specialDuty: 6, reenlistment: 5 },
     cash: [null, null, null, 10000, 10000, 40000, 40000, 80000],
-    benefits: [null, "Low Psg", "Mid Psg", "Watch", "Watch", null, "High Psg", "+1 Social"],
+    benefits: [null, "Low Psg", "Mid Psg", null, "Watch", null, "High Psg", "+1 Social"],
   },
   scientists: {
     throws: { enlistment: 6, survival: 5, position: null, promotion: null, specialDuty: 5, reenlistment: 5 },

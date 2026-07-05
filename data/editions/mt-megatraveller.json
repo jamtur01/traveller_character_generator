@@ -372,7 +372,7 @@
     },
     "retirement": {
       "eligibleAfterCompletedTerm": 5,
-      "basePensionCredits": 4000,
+      "basePensionCredits": 10000,
       "pensionCreditsPerTerm": 2000,
       "excludedServices": ["barbarians", "pirates", "rogues", "scouts"],
       "anagathicTermsExcluded": true
@@ -1655,7 +1655,7 @@
       "automaticSkills": [
         { "trigger": "service", "skill": "Gun Combat", "level": 0 },
         { "trigger": "service", "skill": "Small Watercraft", "level": 1 },
-        { "trigger": "rank", "rank": 1, "skill": "Large Watercraft", "level": 1 }
+        { "trigger": "rank", "rank": 2, "skill": "Large Watercraft", "level": 1 }
       ],
       "skillTables": {
         "personalDevelopment": [
@@ -1921,7 +1921,7 @@
         "personalDevelopment": [
           null,
           "+1 Strength",
-          "+1 Education",
+          "+1 Dexterity",
           "+1 Endurance",
           "Mental",
           "+1 Education",
@@ -2063,7 +2063,7 @@
         "personalDevelopment": [
           null,
           "Physical",
-          "+1 Dexterity",
+          "+1 Education",
           "Mental",
           "Blade Combat",
           "Gun Combat",
@@ -2239,7 +2239,7 @@
           null,
           "Low Psg",
           "Mid Psg",
-          "Watch",
+          null,
           "Watch",
           null,
           "High Psg",
@@ -2425,6 +2425,7 @@
           "target": 4
         }
       },
+      "rankBySocial": { "$rule": "MT PM p.22 (Prior Service Table / Table of Ranks): 'Rank corresponds to noble rank (determined from Social Standing) once the character successfully rolls for position.' Knight/11 ... Duke/15, so rank = Social - 10, capped at rank 5, Social floored at 10. MT nobles receive no per-rank +1 Social (no Noble entry in the Rank and Service Skills list, p.23/25), so no social-floor hook.", "socialFloor": 10, "rankOffset": -10, "maxRank": 5 },
       "ranks": [
         null,
         "Knight",
@@ -3112,7 +3113,7 @@
           "Technical",
           "Computer",
           "Environ",
-          "Academic"
+          "Economic"
         ],
         "advancedEducation8Plus": [
           null,
