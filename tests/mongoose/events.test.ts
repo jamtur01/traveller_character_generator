@@ -43,6 +43,8 @@ describe("rollEvent", () => {
     rollEvent(c);
     expect(c.events.find((e) => e.kind === "mongooseEvent")).toMatchObject({ roll: 7 });
     expect(c.events.some((e) => e.kind === "raw" && /Life Event \(7\)/.test(e.text))).toBe(true);
-    expect(c.mongooseState!.connections).toContainEqual({ relation: "contact", note: "" });
+    expect(c.mongooseState!.connections).toContainEqual(
+      { relation: "contact", note: "New Contact: you gain a new Contact." },
+    );
   });
 });

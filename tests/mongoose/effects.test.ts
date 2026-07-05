@@ -30,6 +30,12 @@ describe("effect interpreter", () => {
     expect(c.events.some((e) => e.kind === "mongooseConnection")).toBe(true);
   });
 
+  it("threads the granting event/mishap text into the connection note", () => {
+    const c = mongooseChar();
+    applyEffects(c, [{ kind: "gainRelation", relation: "enemy", count: "1" }], "Test event text");
+    expect(c.mongooseState!.connections.at(-1)).toEqual({ relation: "enemy", note: "Test event text" });
+  });
+
   it("benefitRoll adjusts the benefit-roll count (clamped >= 0)", () => {
     const c = mongooseChar();
     applyEffects(c, [{ kind: "benefitRoll", delta: 2 }]);
