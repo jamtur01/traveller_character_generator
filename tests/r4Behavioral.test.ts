@@ -57,9 +57,10 @@ describe("rankBySocial clamps noble starting rank to maxRank (CotI p.8)", () => 
 });
 
 // ---------------------------------------------------------------------------
-// (2) doMusterChoice fail-loud guards (flow.ts). The UI enforced the cash
-//     cap and roll count, but a RunLog replay calling the engine directly
-//     could over-roll silently. The guards throw instead.
+// (2) doMusterChoice muster guards (flow.ts). The UI enforced the cash cap and
+//     roll count, but a RunLog replay calling the engine directly could over-
+//     roll silently. The cash-cap guard throws (genuine corruption); a no-rolls
+//     call routes gracefully to end (benign replay re-entry; prevents negative).
 // ---------------------------------------------------------------------------
 
 describe("doMusterChoice fail-loud guards (flow.ts)", () => {
@@ -77,9 +78,14 @@ describe("doMusterChoice fail-loud guards (flow.ts)", () => {
     expect(() => doMusterChoice(c, "cash")).toThrow(/cash roll past the 3-roll cap/);
   });
 
-  it("throws when no muster rolls remain", () => {
+  it("returns to end without rolling when no muster rolls remain", () => {
     const c = midMuster(0, 0);
-    expect(() => doMusterChoice(c, "cash")).toThrow(/no muster rolls remaining/);
+    const snap = doMusterChoice(c, "cash");
+    // Graceful no-op re-entry (not a throw): routes to end, musterRolls stays
+    // >= 0 (the BUG-7 no-negative guarantee) without faulting a seed-mismatched
+    // replay that over-applies muster actions.
+    expect(snap.phase).toBe("end");
+    expect(c.muster.musterRolls).toBe(0);
   });
 });
 

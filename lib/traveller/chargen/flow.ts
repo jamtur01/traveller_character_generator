@@ -71,7 +71,13 @@ export function doMusterChoice(
   kind: "cash" | "benefit",
 ): ChargenSnapshot {
   if (ch.muster.musterRolls <= 0) {
-    throw new Error("doMusterChoice: no muster rolls remaining");
+    // A no-rolls muster call is a benign re-entry to an already-finalized
+    // character (the roll that took rolls to 0 already ran musterOutPay +
+    // markMustered + routed to end). Return end without rolling — this still
+    // prevents musterRolls going negative (BUG-7) but does not throw, so a
+    // seed-mismatched RunLog replay that over-applies muster actions diverges
+    // gracefully instead of faulting.
+    return { character: ch, phase: "end" };
   }
   if (kind === "cash" && ch.muster.musterCashUsed >= maxCashRolls(ch)) {
     throw new Error(
