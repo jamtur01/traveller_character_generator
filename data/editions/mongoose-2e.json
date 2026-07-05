@@ -20,6 +20,7 @@
     ]
   },
   "services": {},
+  "rules": {},
   "mongoose": {
     "startAge": 18,
     "$startAge": "Core p.8: creation begins at age 18.",

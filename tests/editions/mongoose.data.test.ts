@@ -1,3 +1,4 @@
+import { getEdition, listEditions } from "@/lib/traveller/editions";
 import { describe, it, expect } from "vitest";
 import { parseCanonData } from "@/lib/traveller/editions/schema";
 import mongooseJson from "@/data/editions/mongoose-2e.json";
@@ -107,4 +108,17 @@ describe("mongoose-2e careers", () => {
       });
     });
   }
+});
+
+describe("mongoose-2e edition registration", () => {
+  it("builds and is discoverable via listEditions", () => {
+    expect(listEditions().map((e) => e.id)).toContain("mongoose-2e");
+  });
+
+  it("getEdition('mongoose-2e') builds and runs lazy validators without throwing", () => {
+    const ed = getEdition("mongoose-2e");
+    expect(ed.meta.id).toBe("mongoose-2e");
+    expect(ed.meta.status).toBe("data-only");
+    expect(ed.data.mongoose).toBeDefined();
+  });
 });

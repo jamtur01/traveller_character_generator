@@ -13,8 +13,12 @@ import ctClassicData from "@/data/editions/ct-classic.json" with {
 import mtMegatravellerData from "@/data/editions/mt-megatraveller.json" with {
   type: "json",
 };
+import mongooseData from "@/data/editions/mongoose-2e.json" with {
+  type: "json",
+};
 import { ctClassicHooks } from "./ct-classic/hooks";
 import { mtMegatravellerHooks } from "./mt-megatraveller/hooks";
+import { mongooseHooks } from "./mongoose-2e/hooks";
 import type { CanonData, Edition, EditionMeta } from "./types";
 import { parseRules, parseCanonData } from "./schema";
 import { validateEditionAcgConfigs } from "@/lib/traveller/engine/acg";
@@ -46,6 +50,7 @@ const REGISTRY: Record<string, Edition> = {
   "mt-megatraveller": buildEdition(
     mtMegatravellerData, mtMegatravellerHooks, "mt-megatraveller",
   ),
+  "mongoose-2e": buildEdition(mongooseData, mongooseHooks, "mongoose-2e"),
 };
 
 export const DEFAULT_EDITION_ID = "ct-classic";
