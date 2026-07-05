@@ -418,3 +418,69 @@ describe("Minor: pre-career attributeChanges clamp lower bound at 0", () => {
     expect(c.attributes.strength).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bug #9 — MT basic-chargen promotion step logged a spurious
+// `promotionSkipped` note for NON-commissioned characters on a short term.
+// A rank-0 character never had a promotion roll to skip (basic chargen has
+// no enlisted-rank ladder), so the note was noise. Fix: promotion.ts returns
+// silently on `!ch.commissioned` BEFORE the short-term guard; only a
+// commissioned officer who lost the term to injury records the skip. The
+// commission step's `commissionSkipped` note for a non-commissioned short
+// term is unchanged (and correct).
+// ---------------------------------------------------------------------------
+
+describe("Bug #9: MT promotion skip note fires only for commissioned officers", () => {
+  // Marines survival: target 6, +2 DM when Endurance >= 8 (makeMt sets 9).
+  // Forcing every 2d6 to its minimum (2) → 2 + 2 = 4 < 6, so survival fails
+  // and the character enters a short term (injured in service).
+  it("non-commissioned short term logs commissionSkipped but no promotionSkipped", () => {
+    const c = makeMt();
+    c.service = "marines";
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    c.doServiceTermStep();
+
+    expect(c.shortTermThisTerm).toBe(true);
+
+    const promotionSkipped = c.events.filter(
+      (e) => e.kind === "statusChange" && e.kind_ === "promotionSkipped",
+    );
+    expect(promotionSkipped).toHaveLength(0);
+
+    const commissionSkipped = c.events.filter(
+      (e) => e.kind === "statusChange" && e.kind_ === "commissionSkipped",
+    );
+    expect(commissionSkipped).toHaveLength(1);
+    expect(commissionSkipped[0]).toMatchObject({
+      kind_: "commissionSkipped",
+      note: "short term after survival failure",
+    });
+  });
+
+  it("commissioned officer short term logs promotionSkipped exactly once", () => {
+    const c = makeMt();
+    c.service = "marines";
+    c.commissioned = true;
+    c.rank = 1;
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    c.doServiceTermStep();
+
+    expect(c.shortTermThisTerm).toBe(true);
+
+    const promotionSkipped = c.events.filter(
+      (e) => e.kind === "statusChange" && e.kind_ === "promotionSkipped",
+    );
+    expect(promotionSkipped).toHaveLength(1);
+    expect(promotionSkipped[0]).toMatchObject({
+      kind_: "promotionSkipped",
+      note: "short term after survival failure",
+    });
+
+    // An officer who is already commissioned never reaches the commission-skip
+    // branch — that note is reserved for a non-commissioned character.
+    const commissionSkipped = c.events.filter(
+      (e) => e.kind === "statusChange" && e.kind_ === "commissionSkipped",
+    );
+    expect(commissionSkipped).toHaveLength(0);
+  });
+});
