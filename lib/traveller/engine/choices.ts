@@ -39,7 +39,9 @@ export type ChoiceKind =
   | "mongooseSkillTable"   // pick which skill table to roll on this term
   | "mongooseBasicSkill"   // subsequent-career basic training: one service skill
   | "mongooseSkillChoice"  // event/rank gainSkillChoice: pick among skills
-  | "mongooseEventChoice"; // event chooseEffect: pick a branch
+  | "mongooseEventChoice"    // event chooseEffect: pick a branch
+  | "mongooseOfferedCareer"  // event offer: take a career next term without qualifying
+  | "mongooseCommission";    // optional commission attempt (military careers)
 
 export interface ChoiceRequest<T = string> {
   kind: ChoiceKind;

@@ -37,26 +37,54 @@ export function rollAdvancement(ch: Character): boolean {
   return r.success;
 }
 
-/** Attempt a commission (military careers only). Returns whether commissioned.
- *  Not eligible if the career has no commission, the Traveller is already an
- *  officer, or it is not the first term and SOC < 9. */
-export function attemptCommission(ch: Character): boolean {
+/** Whether the Traveller may attempt a commission this term (Core p.18-19): the
+ *  career offers one, they are not already an officer, and it is the first term
+ *  or their SOC meets the any-term minimum. */
+export function commissionEligible(ch: Character): boolean {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
-  const careerId = requireRule(state.career, "mongooseState.career", "engine (mongoose)");
-  const career = getCareer(ch, careerId);
+  const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
   if (!career.commission || state.commissioned) return false;
   const firstTerm = state.termsInCareer <= 1;
-  if (!firstTerm && ch.attributes.social < getMongooseData(ch).commissionAnyTermSocMin) {
-    return false;
-  }
+  return firstTerm || ch.attributes.social >= getMongooseData(ch).commissionAnyTermSocMin;
+}
+
+/** Attempt a commission (military careers only). Returns whether commissioned.
+ *  DM-1 per term after the first; a commission does not consume advancement DMs
+ *  (those belong to the separate advancement roll). */
+export function attemptCommission(ch: Character): boolean {
+  if (!commissionEligible(ch)) return false;
+  const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
+  const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
+  const check = requireRule(
+    career.commission, `mongoose.careers.${state.career}.commission`, "MgT2 Core",
+  );
   const termPenalty = Math.max(0, state.termsInCareer - 1); // DM-1 per term after the first
-  const dm = checkDm(ch, career.commission) - termPenalty
-    + consumePendingDm(state.pendingDms.advancement);
-  const r = rollCheck(ch.rng, [dm], career.commission.target);
-  ch.log(ev.roll("Commission", r.roll, dm, career.commission.target, r.success));
+  const dm = checkDm(ch, check) - termPenalty;
+  const r = rollCheck(ch.rng, [dm], check.target);
+  ch.log(ev.roll("Commission", r.roll, dm, check.target, r.success));
   if (r.success) {
     commission(ch);
     return true;
   }
   return false;
+}
+
+/** Resolve the commission/advancement phase (Core p.18). A commission is
+ *  optional: eligible Travellers are prompted (auto attempts). If not
+ *  commissioned this term, roll for advancement. */
+export function resolveAdvancementPhase(ch: Character): void {
+  if (!commissionEligible(ch)) {
+    rollAdvancement(ch);
+    return;
+  }
+  ch.pickOrDefer({
+    kind: "mongooseCommission",
+    label: "Attempt a commission?",
+    options: ["Attempt", "Decline"],
+    preferred: ["Attempt"],
+    onResolve: (c, choice) => {
+      if (choice === "Attempt" && attemptCommission(c)) return;
+      rollAdvancement(c);
+    },
+  });
 }

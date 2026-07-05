@@ -21,14 +21,20 @@ export function skillLevel(ch: Character, name: string): number {
   return found ? found[1] : -1;
 }
 
-/** True when the character is at the total skill-level cap (Core p.19:
+/** Levels still grantable before hitting the total skill-level cap (Core p.19:
  *  multiplier x sum of the capped attributes, i.e. 3 x (INT + EDU)). */
-function atTotalCap(ch: Character): boolean {
+function remainingTotalCap(ch: Character): number {
   const { multiplier, attributes } = getMongooseData(ch).skillTotalCap;
   const cap = multiplier * attributes.reduce(
     (sum, a) => sum + ch.attributes[a as AttributeKey], 0,
   );
-  return ch.totalSkillLevels() >= cap;
+  return cap - ch.totalSkillLevels();
+}
+
+/** True when the character is at the total skill-level cap (Core p.19:
+ *  multiplier x sum of the capped attributes, i.e. 3 x (INT + EDU)). */
+function atTotalCap(ch: Character): boolean {
+  return remainingTotalCap(ch) <= 0;
 }
 
 /** "No level listed" cell: gain the skill at 1, or increase it by 1 if trained.
@@ -50,10 +56,15 @@ export function grantSkillFloor(
   const target = Math.min(level, getMongooseData(ch).skillLevelMax);
   const cur = skillLevel(ch, name);
   if (cur < 0) {
-    if (target > 0 && atTotalCap(ch)) return;
-    ch.addSkill(name, target, source);
-  } else if (target > cur && !atTotalCap(ch)) {
-    ch.addSkill(name, target - cur, source);
+    if (target <= 0) {
+      ch.addSkill(name, 0, source);
+      return;
+    }
+    const add = Math.min(target, remainingTotalCap(ch));
+    if (add > 0) ch.addSkill(name, add, source);
+  } else if (target > cur) {
+    const add = Math.min(target - cur, remainingTotalCap(ch));
+    if (add > 0) ch.addSkill(name, add, source);
   }
 }
 

@@ -32,7 +32,7 @@ import { qualifyForCareer, enterCareer } from "@/lib/traveller/engine/mongoose/e
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { rollSurvival } from "@/lib/traveller/engine/mongoose/survival";
 import { rollEvent } from "@/lib/traveller/engine/mongoose/events";
-import { rollAdvancement, attemptCommission } from "@/lib/traveller/engine/mongoose/advancement";
+import { resolveAdvancementPhase } from "@/lib/traveller/engine/mongoose/advancement";
 import { rollSkillTraining } from "@/lib/traveller/engine/mongoose/skillsTraining";
 import { rollAging, agingBegun } from "@/lib/traveller/engine/mongoose/aging";
 import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
@@ -65,40 +65,39 @@ function applyBackgroundSkills(ch: Character): void {
   }
 }
 
+/** Roll on the Draft table (Core p.20) and enter the resulting career. */
+function rollDraftAndEnter(ch: Character): void {
+  const data = getMongooseData(ch);
+  const draftRoll = ch.rng.roll(1);
+  const row = requireRule(
+    data.draft.find((d) => d.roll === draftRoll),
+    `mongoose.draft[${draftRoll}]`, "MgT2 Core p.20",
+  );
+  const career = requireRule(data.careers[row.career], `mongoose.careers.${row.career}`, "MgT2");
+  const asg = row.assignment === "any" ? career.assignments[0]!.id : row.assignment;
+  ch.log(ev.drafted(career.displayName));
+  enterCareer(ch, row.career, asg);
+}
+
 /** Enter a career after a failed qualification: submit to the Draft once per
  *  lifetime (Core p.20), else become a Drifter (always open). */
 function enterViaDraftOrDrifter(ch: Character): void {
   const state = ensureState(ch);
-  const data = getMongooseData(ch);
   if (!state.draftedOnce) {
     state.draftedOnce = true;
-    const draftRoll = ch.rng.roll(1);
-    const row = requireRule(
-      data.draft.find((d) => d.roll === draftRoll),
-      `mongoose.draft[${draftRoll}]`, "MgT2 Core p.20",
-    );
-    const career = requireRule(data.careers[row.career], `mongoose.careers.${row.career}`, "MgT2");
-    const asg = row.assignment === "any" ? career.assignments[0]!.id : row.assignment;
-    ch.log(ev.drafted(career.displayName));
-    enterCareer(ch, row.career, asg);
+    rollDraftAndEnter(ch);
     return;
   }
-  const drifter = requireRule(data.careers["drifter"], "mongoose.careers.drifter", "MgT2");
+  const drifter = requireRule(
+    getMongooseData(ch).careers["drifter"], "mongoose.careers.drifter", "MgT2",
+  );
   enterCareer(ch, "drifter", drifter.assignments[0]!.id);
 }
 
-/** Pick a career + assignment, roll qualification, and enter (or draft/drift on
- *  failure). Honors a forced next career (e.g. Prisoner via an event) when the
- *  edition models it; otherwise falls through to a normal choice. */
-function pickCareerAndEnter(ch: Character): void {
-  const state = ensureState(ch);
+/** The normal path: pick a career + assignment, roll qualification, and enter
+ *  (or draft/drift on failure). */
+function pickCareerNormally(ch: Character): void {
   const data = getMongooseData(ch);
-  const forced = state.forcedNextCareer;
-  state.forcedNextCareer = null;
-  if (forced && data.careers[forced]) {
-    enterCareer(ch, forced, data.careers[forced]!.assignments[0]!.id);
-    return;
-  }
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",
@@ -116,6 +115,43 @@ function pickCareerAndEnter(ch: Character): void {
       });
     },
   });
+}
+
+/** Pick a career + assignment, roll qualification, and enter (or draft/drift on
+ *  failure). Honors a forced next career (e.g. Prisoner via an event) when the
+ *  edition models it; otherwise falls through to a normal choice. */
+function pickCareerAndEnter(ch: Character): void {
+  const state = ensureState(ch);
+  const data = getMongooseData(ch);
+  const forced = state.forcedNextCareer;
+  state.forcedNextCareer = null;
+  if (forced && data.careers[forced]) {
+    enterCareer(ch, forced, data.careers[forced]!.assignments[0]!.id);
+    return;
+  }
+  if (state.mustDraft) {
+    state.mustDraft = false;
+    rollDraftAndEnter(ch);
+    return;
+  }
+  const offered = state.offeredNextCareer;
+  state.offeredNextCareer = null;
+  if (offered && data.careers[offered]) {
+    ch.pickOrDefer({
+      kind: "mongooseOfferedCareer",
+      label: `Take the ${data.careers[offered]!.displayName} career next term without qualifying?`,
+      options: ["Accept", "Decline"],
+      onResolve: (c, choice) => {
+        if (choice === "Accept") {
+          enterCareer(c, offered, getMongooseData(c).careers[offered]!.assignments[0]!.id);
+        } else {
+          pickCareerNormally(c);
+        }
+      },
+    });
+    return;
+  }
+  pickCareerNormally(ch);
 }
 
 function doEnlist(ch: Character, opts: EnlistOptions): ChargenSnapshot {
@@ -140,15 +176,14 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   if (survived) {
     rollEvent(ch);
     if (ch.deceased) return { character: ch, phase: "end" };
-    const commissioned = attemptCommission(ch);
-    if (!commissioned) rollAdvancement(ch);
+    resolveAdvancementPhase(ch);
     rollSkillTraining(ch);
     if (state.perTerm.advancedThisTerm) rollSkillTraining(ch);
   }
   if (agingBegun(ch) && !ch.deceased) rollAging(ch);
   if (ch.deceased) return { character: ch, phase: "end" };
 
-  if (state.perTerm.mustLeave && !state.perTerm.mustContinue) {
+  if (state.perTerm.mustLeave) {
     musterOut(ch);
     state.career = null;
     return { character: ch, phase: "career" };

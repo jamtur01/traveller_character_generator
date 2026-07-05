@@ -43,7 +43,7 @@ function rollCount(ch: Character, count: string): number {
   if (dN) return ch.rng.int(1, Number(dN[1]));
   const nD = count.match(/^(\d+)D$/);
   if (nD) return ch.rng.roll(Number(nD[1]));
-  return 1;
+  throw new Error(`Mongoose effect: unrecognized die/count spec "${count}" (expected "<n>", "<n>D", or "D<n>").`);
 }
 
 /** Candidate skills for "gain any skill": trained skills (existingOnly) or
@@ -78,7 +78,7 @@ export function applyReductions(ch: Character, reductions: readonly MongooseRedu
     for (let i = 0; i < red.count && i < ordered.length; i++) {
       const attr = ordered[i]!;
       used.add(attr);
-      const amount = red.amount === "1D" ? ch.rng.roll(1) : Number(red.amount);
+      const amount = typeof red.amount === "number" ? red.amount : rollCount(ch, red.amount);
       ch.improveAttribute(attr as AttributeKey, -amount);
     }
   }
@@ -194,6 +194,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     case "stayInCareer": state.perTerm.noEject = true; return;
     case "forceCareer":
       state.forcedNextCareer = e.career;
+      state.perTerm.mustLeave = true;
       ch.log(ev.raw(`Forced into the ${e.career} career next term.`));
       return;
     case "offerCareer": state.offeredNextCareer = e.career; return;
@@ -202,6 +203,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const r = ch.rng.roll(e.dice);
       if (e.results.includes(r)) {
         state.forcedNextCareer = e.career;
+        state.perTerm.mustLeave = true;
         ch.log(ev.raw(`Rolled ${r} - forced into the ${e.career} career next term.`));
       }
       return;

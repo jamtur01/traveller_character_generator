@@ -45,10 +45,13 @@ function applyRankBenefit(ch: Character, ladder: readonly MongooseRank[], rank: 
 export function promote(ch: Character): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
   const ladder = currentLadder(ch);
-  state.rank += 1;
-  applyRankBenefit(ch, ladder, state.rank);
-  const row = ladder.find((r) => r.rank === state.rank);
-  ch.log(ev.mongooseRank(state.rank, row?.title ?? null, false));
+  const maxRank = Math.max(...ladder.map((r) => r.rank));
+  if (state.rank < maxRank) {
+    state.rank += 1;
+    applyRankBenefit(ch, ladder, state.rank);
+    const row = ladder.find((r) => r.rank === state.rank);
+    ch.log(ev.mongooseRank(state.rank, row?.title ?? null, false));
+  }
   state.perTerm.advancedThisTerm = true;
 }
 
