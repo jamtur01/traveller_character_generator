@@ -459,7 +459,7 @@ exports[`barbarians — service snapshot > data + behavior matches snapshot 1`] 
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Foil-1",
+        "Blade-1",
       ],
     },
     "table2-d3": {
@@ -469,7 +469,7 @@ exports[`barbarians — service snapshot > data + behavior matches snapshot 1`] 
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-1",
+        "Sword-1",
       ],
     },
     "table2-d4": {
@@ -660,36 +660,36 @@ exports[`barbarians — service snapshot > data + behavior matches snapshot 1`] 
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Foil",
+        "Blade",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Foil-0",
+        "Blade-0",
       ],
     },
     "3": {
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {
@@ -1047,12 +1047,12 @@ exports[`belters — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
@@ -1215,7 +1215,7 @@ exports[`bureaucrats — service snapshot > data + behavior matches snapshot 1`]
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-1",
+        "Sword-1",
       ],
     },
     "table2-d4": {
@@ -1612,7 +1612,7 @@ exports[`diplomats — service snapshot > data + behavior matches snapshot 1`] =
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-1",
+        "Broadsword-1",
       ],
     },
     "table1-d5": {
@@ -2610,12 +2610,12 @@ exports[`flyers — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
@@ -2772,7 +2772,7 @@ exports[`hunters — service snapshot > data + behavior matches snapshot 1`] = `
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Foil-1",
+        "Blade-1",
       ],
     },
     "table2-d3": {
@@ -2983,12 +2983,12 @@ exports[`hunters — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
@@ -3155,7 +3155,7 @@ exports[`marines — service snapshot > data + behavior matches snapshot 1`] = `
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-1",
+        "Sword-1",
       ],
     },
     "table2-d4": {
@@ -3369,12 +3369,12 @@ exports[`marines — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {
@@ -4117,12 +4117,12 @@ exports[`navy — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {
@@ -4267,7 +4267,7 @@ exports[`nobles — service snapshot > data + behavior matches snapshot 1`] = `
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Foil-1",
+        "Blade-1",
       ],
     },
     "table2-d3": {
@@ -4470,12 +4470,12 @@ exports[`nobles — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {
@@ -4578,7 +4578,7 @@ exports[`other — service snapshot > data + behavior matches snapshot 1`] = `
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-1",
+        "Broadsword-1",
       ],
     },
     "table1-d5": {
@@ -5259,12 +5259,12 @@ exports[`pirates — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
@@ -5724,12 +5724,12 @@ exports[`rogues — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {
@@ -6082,12 +6082,12 @@ exports[`sailors — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Cutlass",
+        "Sword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Cutlass-0",
+        "Sword-0",
       ],
     },
     "4": {
@@ -6244,7 +6244,7 @@ exports[`scientists — service snapshot > data + behavior matches snapshot 1`] 
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Foil-1",
+        "Blade-1",
       ],
     },
     "table2-d3": {
@@ -6839,12 +6839,12 @@ exports[`scouts — service snapshot > data + behavior matches snapshot 1`] = `
       "TAS": undefined,
       "attrDelta": {},
       "benefits": [
-        "Bayonet",
+        "Broadsword",
       ],
       "mortgage": undefined,
       "ship": undefined,
       "skills": [
-        "Bayonet-0",
+        "Broadsword-0",
       ],
     },
     "5": {

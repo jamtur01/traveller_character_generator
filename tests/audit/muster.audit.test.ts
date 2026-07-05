@@ -35,12 +35,11 @@ describe("Anagathics audit — PM p. 18", () => {
     expect(r?.cashRollCap).toBe(2);
   });
 
-  it("Retry: one retry if extra survival roll passes; survival fail = short-term muster", () => {
-    const r = getEdition("mt-megatraveller").rules.anagathics;
-    const retry = (r?.retry ?? {}) as Record<string, unknown>;
-    expect(retry.extraSurvivalRequired).toBe(true);
-    expect(retry.onFailForcedShortTermMuster).toBe(true);
-  });
+  // Retry mechanic (PM p. 15): one retry gated on an extra survival roll, and a
+  // short-term muster-out when that survival fails. This is hardcoded in
+  // chargen/anagathics.ts — the former rules.anagathics.retry.* flags were never
+  // read by the engine and were removed (round-4 MT-F4). Its behavior is covered
+  // by the "retry mechanic" tests in tests/anagathics.test.ts.
 });
 
 describe("Survival rule (PM p. 16)", () => {
