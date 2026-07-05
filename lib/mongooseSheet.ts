@@ -4,7 +4,7 @@
 // field names below come from the template's AcroForm (420 fields); the
 // skill-layout sets mirror the sheet's printed skill grid, not a game rule.
 
-import { PDFDocument, PDFName, PDFBool, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
+import { PDFDocument, PDFName, PDFBool, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFForm } from "pdf-lib";
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { getEdition } from "@/lib/traveller/editions";
@@ -258,6 +258,33 @@ async function drawHistoryPages(pdf: PDFDocument, ch: Character): Promise<void> 
   }
 }
 
+/** A long connection note can't fit the sheet's single-row (11pt) Notes field,
+ *  so grow each long note's field down into the empty rows below it — up to the
+ *  next populated note, or the group's last row — and set multiline, so the full
+ *  note wraps and stays visible instead of overflowing one line. */
+function expandConnectionNotes(form: PDFForm, fields: Record<string, string>): void {
+  for (const group of Object.values(CONNECTION_LABEL)) {
+    const rows: number[] = [];
+    for (let n = 1; n <= MAX_CONNECTION_ROWS; n++) {
+      if (fields[`${group} Notes ${n}`]) rows.push(n);
+    }
+    rows.forEach((n, i) => {
+      const field = form.getTextField(`${group} Notes ${n}`);
+      field.enableMultiline();
+      const widget = field.acroField.getWidgets()[0];
+      const rect = widget?.getRectangle();
+      if (!widget || !rect || (fields[`${group} Notes ${n}`] ?? "").length <= 55) return;
+      const next = rows[i + 1];
+      const below = form.getTextField(`${group} Notes ${next ?? MAX_CONNECTION_ROWS}`)
+        .acroField.getWidgets()[0]?.getRectangle();
+      if (!below) return;
+      const floor = next !== undefined ? below.y + below.height : below.y;
+      const height = rect.y + rect.height - floor;
+      if (height > rect.height) widget.setRectangle({ x: rect.x, y: floor, width: rect.width, height });
+    });
+  }
+}
+
 /** Fill the fillable template bytes with a Mongoose character's data and return
  *  the saved PDF bytes. NeedAppearances is set (and pdf-lib appearance
  *  generation skipped) because the template has a rich-text field pdf-lib cannot
@@ -268,12 +295,14 @@ export async function fillMongooseSheet(
   const pdf = await PDFDocument.load(template);
   const form = pdf.getForm();
   const valid = new Set(form.getFields().map((f) => f.getName()));
-  for (const [name, value] of Object.entries(mongooseSheetFields(ch))) {
+  const fields = mongooseSheetFields(ch);
+  for (const [name, value] of Object.entries(fields)) {
     if (!valid.has(name) || value === "") continue;
     const field = form.getTextField(name);
     if (value.includes("\n")) field.enableMultiline();
     field.setText(value);
   }
+  expandConnectionNotes(form, fields);
   await drawHistoryPages(pdf, ch);
   form.acroForm.dict.set(PDFName.of("NeedAppearances"), PDFBool.True);
   return pdf.save({ updateFieldAppearances: false });
