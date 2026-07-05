@@ -70,7 +70,7 @@ export type HistoryEvent =
       level: HistoryLevel;
       skill: string; reason: string;
     }
-  // Player picked an option from a cascade (e.g., Blade Combat → Cutlass).
+  // Player picked an option from a cascade (e.g., "Blade Combat: chose Cutlass").
   | {
       kind: "cascadePick";
       level: HistoryLevel;
@@ -491,7 +491,7 @@ export function formatEvent(e: HistoryEvent): string {
     case "skillForfeited":
       return `Forfeited ${e.skill} (${e.reason}).`;
     case "cascadePick":
-      return `${e.cascade} → ${e.chosen}.`;
+      return `${e.cascade}: chose ${e.chosen}.`;
     case "enlistmentAttempt": {
       const verb = e.succeeded ? "accepted" : "denied";
       const note = e.note ? ` — ${e.note}` : "";
@@ -538,11 +538,8 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "musterBenefit": {
       const rollTxt = `roll ${e.tableRoll}${dmStr(e.dm)}`;
-      if (e.outcome === "outOfRange") {
-        return `Muster benefit: ${rollTxt} → out of range (no benefit).`;
-      }
-      if (e.outcome === "noBenefit") {
-        return `Muster benefit: ${rollTxt} → no benefit in cell.`;
+      if (e.outcome === "outOfRange" || e.outcome === "noBenefit") {
+        return `Muster benefit: no benefit gained (${rollTxt}).`;
       }
       return `Muster benefit: ${e.benefit} (${rollTxt}).`;
     }
@@ -609,9 +606,9 @@ export function formatEvent(e: HistoryEvent): string {
     }
     case "marineTradition":
       if (e.outcome === "forced") {
-        return `Marine Tradition: Blade Combat → ${e.forcedSkill ?? "(unrecorded)"}.`;
+        return `Marine Tradition: Blade Combat forced to ${e.forcedSkill ?? "(unrecorded)"}.`;
       }
-      return "Marine Tradition save passed — normal Blade Combat cascade.";
+      return "Marine Tradition save passed — free choice of Blade Combat weapon.";
     case "assignmentRolled": {
       const where = e.term !== undefined && e.year !== undefined
         ? ` (term ${e.term} year ${e.year})` : "";
@@ -620,7 +617,7 @@ export function formatEvent(e: HistoryEvent): string {
       return `Assignment: ${e.assignment}${where}${retained}${note}.`;
     }
     case "bonusSkillPoint":
-      return `${e.source} overshoot +${e.overshoot}: +1 bonus skill point.`;
+      return `${e.source}: beat target by ${e.overshoot}+ — +1 bonus skill point.`;
     case "commandDuty":
       return `Command duty roll ${rollVs(e.roll, e.target, e.dm)} — ` +
         (e.inCommand ? "in command" : "staff position") + ".";
@@ -685,7 +682,7 @@ export function formatEvent(e: HistoryEvent): string {
 
 function dmStr(dm: number): string {
   if (dm === 0) return "";
-  return dm > 0 ? ` + ${dm}` : ` − ${Math.abs(dm)}`;
+  return dm > 0 ? ` + ${dm}` : ` - ${Math.abs(dm)}`;
 }
 
 /** "5 + 2 vs 8+" — the roll(+DM)-versus-target fragment shared by the

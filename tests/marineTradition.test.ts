@@ -82,7 +82,7 @@ describe("Marine Tradition (F5)", () => {
     // Forced Large Blade: each constituent bumps from 1 → 2.
     const byName = Object.fromEntries(c.skills);
     expect(byName).toEqual({ "Broadsword": 2, "Cutlass": 2, "Sword": 2 });
-    expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(true);
+    expect(c.history.some((h) => /Blade Combat forced to Large Blade/.test(h))).toBe(true);
     vi.restoreAllMocks();
   });
 
@@ -104,7 +104,7 @@ describe("Marine Tradition (F5)", () => {
     // The cascade pick may itself be an Includes-skill umbrella (e.g.,
     // "Axe" → Battle Axe + Hand Axe) so length ≥ 1, not exactly 1.
     expect(c.skills.length).toBeGreaterThanOrEqual(1);
-    expect(c.history.some((h) => /Blade Combat → Large Blade/.test(h))).toBe(false);
+    expect(c.history.some((h) => /Blade Combat forced to Large Blade/.test(h))).toBe(false);
     vi.restoreAllMocks();
   });
 
