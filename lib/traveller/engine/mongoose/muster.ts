@@ -11,7 +11,7 @@ import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
-import { skillLevel } from "@/lib/traveller/engine/mongoose/skills";
+import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
 
 const ATTR_ABBREV: Record<string, AttributeKey> = {
@@ -21,9 +21,18 @@ const ATTR_ABBREV: Record<string, AttributeKey> = {
 
 const clampMuster = (n: number): number => Math.max(1, Math.min(7, n));
 
-/** Apply a Material Benefit cell: a characteristic increase, a relationship, or
- *  (for equipment/ships/memberships) a recorded benefit string. */
-function applyMaterialBenefit(ch: Character, benefit: string): void {
+/** Split a compound benefit cell ("Melee, Recon or Streetwise", "Deception,
+ *  Persuade and Stealth") into its parts on commas and the trailing conjunction. */
+function splitBenefitParts(benefit: string, conjunction: "or" | "and"): string[] {
+  return benefit
+    .split(new RegExp(`\\s*,\\s*|\\s+${conjunction}\\s+`))
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
+/** Apply a single Material Benefit token: a characteristic increase, a
+ *  relationship, or (for equipment/ships/memberships) a recorded benefit string. */
+function applySingleBenefit(ch: Character, benefit: string): void {
   const attr = benefit.match(/^(STR|DEX|END|INT|EDU|SOC)\s*([+-]\d+)$/);
   if (attr) {
     ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
@@ -37,6 +46,27 @@ function applyMaterialBenefit(ch: Character, benefit: string): void {
   }
   ch.benefits.push(benefit);
   ch.log(ev.raw(`Benefit: ${benefit}.`));
+}
+
+/** Apply a Material Benefit cell. A compound skill/attribute cell resolves via
+ *  applySkillCell: " or " (Prisoner, Core p.57) is a player choice of one part;
+ *  " and " grants every part. A single token keeps the attr/relation/item
+ *  handling (a bare "Blade"/"Ship Share" is equipment, not a skill). */
+function applyMaterialBenefit(ch: Character, benefit: string): void {
+  if (benefit.includes(" or ")) {
+    ch.pickOrDefer({
+      kind: "mongooseMusterBenefit",
+      label: `Choose a benefit: ${benefit}`,
+      options: splitBenefitParts(benefit, "or"),
+      onResolve: (c, chosen) => applySkillCell(c, chosen, "Muster benefit"),
+    });
+    return;
+  }
+  if (benefit.includes(" and ")) {
+    for (const part of splitBenefitParts(benefit, "and")) applySkillCell(ch, part, "Muster benefit");
+    return;
+  }
+  applySingleBenefit(ch, benefit);
 }
 
 /** Resolve one Benefit roll: pick a column, roll 1D + DMs, apply the result. */

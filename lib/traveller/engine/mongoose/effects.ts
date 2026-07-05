@@ -15,7 +15,7 @@ import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { characteristicDm, rollCheck } from "@/lib/traveller/core";
-import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
+import { getMongooseData, getCareer, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { promote, commission } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseEffect, MongooseReduction } from "@/lib/traveller/engine/mongoose/types";
@@ -44,6 +44,17 @@ function rollCount(ch: Character, count: string): number {
   const nD = count.match(/^(\d+)D$/);
   if (nD) return ch.rng.roll(Number(nD[1]));
   throw new Error(`Mongoose effect: unrecognized die/count spec "${count}" (expected "<n>", "<n>D", or "D<n>").`);
+}
+
+/** Resolve a Parole Threshold delta (Core p.52): a signed integer, a plain
+ *  integer string, or a signed die-string ("-1D", "+2D") rolled on `ch.rng`.
+ *  The Prisoner "hire a lawyer" event uses "-1D"; simple events use fixed ints. */
+function paroleDelta(ch: Character, delta: number | string): number {
+  if (typeof delta === "number") return delta;
+  const die = delta.match(/^([+-]?)(\d+)D$/);
+  if (die) return (die[1] === "-" ? -1 : 1) * ch.rng.roll(Number(die[2]));
+  if (/^[+-]?\d+$/.test(delta)) return Number(delta);
+  throw new Error(`Mongoose modifyParoleThreshold: unrecognized delta "${delta}" (expected number, "±N", or "±ND").`);
 }
 
 /** Candidate skills for "gain any skill": trained skills (existingOnly) or
@@ -221,6 +232,28 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const r = rollCheck(ch.rng, [dm], e.target);
       ch.log(ev.roll(`Event check (${e.options.join("/")})`, r.roll, dm, e.target, r.success));
       applyEffects(ch, r.success ? e.onSuccess : e.onFailure);
+      return;
+    }
+    case "modifyParoleThreshold": {
+      if (state.paroleThreshold === null) return; // meaningful only inside a parole career
+      const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
+      const parole = requireRule(career.parole, `mongoose.careers.${career.id}.parole`, "MgT2 Core p.52");
+      const delta = paroleDelta(ch, e.delta);
+      state.paroleThreshold = Math.min(parole.max, state.paroleThreshold + delta);
+      ch.log(ev.raw(`Parole Threshold ${delta >= 0 ? "+" : ""}${delta} -> ${state.paroleThreshold}.`));
+      return;
+    }
+    case "rerollParoleThreshold": {
+      if (state.paroleThreshold === null) return;
+      const career = getCareer(ch, requireRule(state.career, "mongooseState.career", "engine (mongoose)"));
+      const parole = requireRule(career.parole, `mongoose.careers.${career.id}.parole`, "MgT2 Core p.52");
+      state.paroleThreshold = rollParoleThreshold(ch, parole);
+      ch.log(ev.raw(`Parole Threshold re-rolled -> ${state.paroleThreshold}.`));
+      return;
+    }
+    case "rollSubTable": {
+      const idx = ch.rng.roll(1);
+      applyEffects(ch, e.entries[idx - 1] ?? []);
       return;
     }
     default: {

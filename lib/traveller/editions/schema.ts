@@ -508,6 +508,12 @@ const MongooseCareerSchema = z.looseObject({
     cash: z.number(),
     benefit: z.string(),
   })),
+  forcedOnly: z.boolean().optional(),
+  parole: z.looseObject({
+    dice: z.string(),
+    plus: z.number(),
+    max: z.number(),
+  }).optional(),
 });
 const MongooseReductionSchema = z.looseObject({
   count: z.number(),

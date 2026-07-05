@@ -5,7 +5,7 @@
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { getEdition } from "@/lib/traveller/editions";
-import { requireRule } from "@/lib/traveller/editions/strict";
+import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import { characteristicDm } from "@/lib/traveller/core";
 import type { MongooseData, MongooseCareer, MongooseCheck } from "@/lib/traveller/engine/mongoose/types";
 
@@ -35,4 +35,14 @@ export function checkDm(ch: Character, check: MongooseCheck): number {
       characteristicDm(ch.attributes[k as AttributeKey], bands),
     ),
   );
+}
+
+/** Roll a fresh Parole Threshold for a Prisoner-career entry/reroll (Core
+ *  p.52): the career's `parole.dice` + `parole.plus`, clamped to `parole.max`
+ *  (never above 12). Pure over the JSON parole config + `ch.rng`. */
+export function rollParoleThreshold(
+  ch: Character, parole: { readonly dice: string; readonly plus: number; readonly max: number },
+): number {
+  const count = parseDieCount(parole.dice, "mongoose career parole.dice (Core p.52)");
+  return Math.min(parole.max, ch.rng.roll(count) + parole.plus);
 }

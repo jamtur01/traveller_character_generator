@@ -5831,6 +5831,637 @@
         ],
         "$musterOut": "Core p.41 Mustering-Out Benefits."
       },
+      "prisoner": {
+        "id": "prisoner",
+        "displayName": "Prisoner",
+        "page": 56,
+        "$page": "Core p.52 (special rules), pp.56-57 (tables).",
+        "forcedOnly": true,
+        "$forcedOnly": "Core p.52: the Prisoner career cannot be chosen; it is entered only when a mishap/event forces it. Excluded from the normal career-choice list.",
+        "parole": {
+          "dice": "1D",
+          "plus": 2,
+          "max": 12
+        },
+        "$parole": "Core p.52: Parole Threshold starts at 1D+2 and is never above 12. At the end of each term, if the advancement roll (2D + advancement DM) exceeds the Parole Threshold the Traveller is released; otherwise they must serve another term. A prisoner cannot leave or be ejected otherwise (mishaps never eject, though their effects still apply).",
+        "qualification": {
+          "characteristics": [],
+          "target": 0,
+          "$qualification": "Core p.52: Special. No qualification roll - the Prisoner career is only ever entered when forced into it by another career's mishap/event."
+        },
+        "assignments": [
+          {
+            "id": "inmate",
+            "displayName": "Inmate",
+            "survival": {
+              "characteristics": [
+                "endurance"
+              ],
+              "target": 7
+            },
+            "advancement": {
+              "characteristics": [
+                "strength"
+              ],
+              "target": 7
+            },
+            "skills": [
+              null,
+              "Stealth",
+              "Melee (unarmed)",
+              "Streetwise",
+              "Survival",
+              "Athletics (strength)",
+              "Mechanic"
+            ]
+          },
+          {
+            "id": "thug",
+            "displayName": "Thug",
+            "survival": {
+              "characteristics": [
+                "strength"
+              ],
+              "target": 8
+            },
+            "advancement": {
+              "characteristics": [
+                "endurance"
+              ],
+              "target": 6
+            },
+            "skills": [
+              null,
+              "Persuade",
+              "Melee (unarmed)",
+              "Melee (unarmed)",
+              "Melee (blade)",
+              "Athletics (strength)",
+              "Athletics (strength)"
+            ]
+          },
+          {
+            "id": "fixer",
+            "displayName": "Fixer",
+            "survival": {
+              "characteristics": [
+                "intelligence"
+              ],
+              "target": 9
+            },
+            "advancement": {
+              "characteristics": [
+                "endurance"
+              ],
+              "target": 5
+            },
+            "skills": [
+              null,
+              "Investigate",
+              "Broker",
+              "Deception",
+              "Streetwise",
+              "Stealth",
+              "Admin"
+            ]
+          }
+        ],
+        "$assignments": "Core p.56 Survival & Advancement (Inmate END 7+ / STR 7+; Thug STR 8+ / END 6+; Fixer INT 9+ / END 5+) + assignment specialist 1D skill columns.",
+        "skillTables": {
+          "personalDevelopment": [
+            null,
+            "STR +1",
+            "Melee (unarmed)",
+            "END +1",
+            "Jack-of-all-Trades",
+            "EDU +1",
+            "Gambler"
+          ],
+          "serviceSkills": [
+            null,
+            "Athletics",
+            "Deception",
+            "Profession",
+            "Streetwise",
+            "Melee (unarmed)",
+            "Persuade"
+          ],
+          "advancedEducation": null,
+          "advancedEducationEduMin": null,
+          "$rule": "Core p.56 Personal Development and Service Skills (1D).",
+          "$note": "The Prisoner has NO Advanced Education table (advancedEducation null; advancedEducationEduMin null), like the Drifter (Core p.56)."
+        },
+        "ranks": {
+          "enlisted": {
+            "prisoner": [
+              {
+                "rank": 0,
+                "title": null,
+                "benefit": "Melee (unarmed) 1"
+              },
+              {
+                "rank": 1,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 2,
+                "title": null,
+                "benefit": "Athletics 1"
+              },
+              {
+                "rank": 3,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 4,
+                "title": null,
+                "benefit": "Advocate 1"
+              },
+              {
+                "rank": 5,
+                "title": null,
+                "benefit": null
+              },
+              {
+                "rank": 6,
+                "title": null,
+                "benefit": "END +1"
+              }
+            ]
+          },
+          "enlistedByAssignment": {
+            "inmate": "prisoner",
+            "thug": "prisoner",
+            "fixer": "prisoner"
+          },
+          "$rule": "Core p.56 Ranks and Bonuses: a single title-less ladder shared by all three assignments (0 Melee (unarmed) 1, 2 Athletics 1, 4 Advocate 1, 6 END +1). No officer ladder.",
+          "$note": "As with every Mongoose career in this data (e.g. Army/Marine rank 0), the rank-0 benefit row is informational at entry: the engine applies a rank benefit only on promotion to that rank (ranks.ts promote), so the rank-0 Melee (unarmed) 1 is not auto-granted on entry. Melee (unarmed) remains reachable via the Inmate/Thug skill tables, service skills, personal development and events."
+        },
+        "events": [
+          {
+            "roll": 2,
+            "text": "Disaster! Roll on the Mishap table, but you are not ejected from this career.",
+            "effects": [
+              {
+                "kind": "rollMishap",
+                "ejected": false
+              }
+            ]
+          },
+          {
+            "roll": 3,
+            "text": "You have the opportunity to escape. If you take it, roll Stealth 10+ or Deception 10+. If you succeed you leave this career immediately; if you fail, your Parole Threshold increases by 2.",
+            "effects": [
+              {
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "check",
+                      "options": [
+                        "Stealth",
+                        "Deception"
+                      ],
+                      "target": 10,
+                      "onSuccess": [
+                        {
+                          "kind": "leaveCareer",
+                          "keepBenefit": true
+                        }
+                      ],
+                      "onFailure": [
+                        {
+                          "kind": "modifyParoleThreshold",
+                          "delta": 2
+                        }
+                      ]
+                    }
+                  ],
+                  []
+                ]
+              }
+            ]
+          },
+          {
+            "roll": 4,
+            "text": "You are put to hard, backbreaking labour. Roll END 8+. If you fail, your Parole Threshold increases by 1. If you succeed, your Parole Threshold decreases by 1 and you gain one of Athletics (any) 1, Mechanic 1 or Melee (unarmed) 1.",
+            "effects": [
+              {
+                "kind": "check",
+                "options": [
+                  "END"
+                ],
+                "target": 8,
+                "onSuccess": [
+                  {
+                    "kind": "modifyParoleThreshold",
+                    "delta": -1
+                  },
+                  {
+                    "kind": "gainSkillChoice",
+                    "options": [
+                      "Athletics (any)",
+                      "Mechanic",
+                      "Melee (unarmed)"
+                    ],
+                    "level": 1
+                  }
+                ],
+                "onFailure": [
+                  {
+                    "kind": "modifyParoleThreshold",
+                    "delta": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "roll": 5,
+            "text": "You are recruited into a prison gang. Roll Persuade 8+ or Melee 8+. If you fail, you gain an Enemy. If you succeed, your Parole Threshold increases by 1, you gain DM+1 to all Survival rolls for the rest of this career, and you gain one of Deception 1, Persuade 1, Melee (unarmed) 1 or Stealth 1.",
+            "effects": [
+              {
+                "kind": "check",
+                "options": [
+                  "Persuade",
+                  "Melee (unarmed)"
+                ],
+                "target": 8,
+                "onSuccess": [
+                  {
+                    "kind": "modifyParoleThreshold",
+                    "delta": 1
+                  },
+                  {
+                    "kind": "survivalDm",
+                    "dm": 1,
+                    "scope": "any"
+                  },
+                  {
+                    "kind": "gainSkillChoice",
+                    "options": [
+                      "Deception",
+                      "Persuade",
+                      "Melee (unarmed)",
+                      "Stealth"
+                    ],
+                    "level": 1
+                  }
+                ],
+                "onFailure": [
+                  {
+                    "kind": "gainRelation",
+                    "relation": "enemy",
+                    "count": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "roll": 6,
+            "text": "Vocational training. Roll EDU 8+ to gain any one skill (other than Jack-of-all-Trades) at level 1.",
+            "effects": [
+              {
+                "kind": "check",
+                "options": [
+                  "EDU"
+                ],
+                "target": 8,
+                "onSuccess": [
+                  {
+                    "kind": "gainAnySkill",
+                    "level": 1
+                  }
+                ],
+                "onFailure": []
+              }
+            ]
+          },
+          {
+            "roll": 7,
+            "text": "Prison event. Roll 1D on the prison event sub-table.",
+            "effects": [
+              {
+                "kind": "rollSubTable",
+                "$rule": "Core p.57 Prison Events sub-table (1D).",
+                "entries": [
+                  [
+                    {
+                      "kind": "rollSubTable",
+                      "$rule": "Core p.57 sub-event 1 (Riot): roll 1D - 1-2 injured, 3-4 nothing, 5-6 loot (extra Benefit roll).",
+                      "entries": [
+                        [
+                          {
+                            "kind": "rollInjury",
+                            "twiceTakeLower": false
+                          }
+                        ],
+                        [
+                          {
+                            "kind": "rollInjury",
+                            "twiceTakeLower": false
+                          }
+                        ],
+                        [],
+                        [],
+                        [
+                          {
+                            "kind": "benefitRoll",
+                            "delta": 1
+                          }
+                        ],
+                        [
+                          {
+                            "kind": "benefitRoll",
+                            "delta": 1
+                          }
+                        ]
+                      ]
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainRelation",
+                      "relation": "contact",
+                      "count": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "gainRelation",
+                      "relation": "rival",
+                      "count": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "rerollParoleThreshold"
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "modifyParoleThreshold",
+                      "delta": -2
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "check",
+                      "options": [
+                        "Melee (unarmed)"
+                      ],
+                      "target": 8,
+                      "onSuccess": [],
+                      "onFailure": [
+                        {
+                          "kind": "rollInjury",
+                          "twiceTakeLower": false
+                        }
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "roll": 8,
+            "text": "A parole hearing goes in your favour. Your Parole Threshold decreases by 1.",
+            "effects": [
+              {
+                "kind": "modifyParoleThreshold",
+                "delta": -1
+              }
+            ]
+          },
+          {
+            "roll": 9,
+            "text": "You hire a lawyer to argue for your release (Advocate skill, at a cost of Cr1000 x their Advocate level squared). Roll 2D + the lawyer's Advocate 8+; if you succeed your Parole Threshold decreases by 1D.",
+            "effects": [
+              {
+                "kind": "check",
+                "options": [
+                  "Advocate"
+                ],
+                "target": 8,
+                "onSuccess": [
+                  {
+                    "kind": "modifyParoleThreshold",
+                    "delta": "-1D"
+                  }
+                ],
+                "onFailure": []
+              }
+            ],
+            "$simplification": "Core p.57 event 9. The optional Cr1000 x level^2 lawyer purchase and the hired lawyer's own Advocate are not modelled; the release check uses the character's own Advocate DM (0 if untrained) vs 8+ and, on success, applies modifyParoleThreshold with a die-string delta \"-1D\"."
+          },
+          {
+            "roll": 10,
+            "text": "You are given special duties. Gain one of Admin 1, Advocate 1, Electronics (computers) 1 or Steward 1.",
+            "effects": [
+              {
+                "kind": "gainSkillChoice",
+                "options": [
+                  "Admin",
+                  "Advocate",
+                  "Electronics (computers)",
+                  "Steward"
+                ],
+                "level": 1
+              }
+            ]
+          },
+          {
+            "roll": 11,
+            "text": "The warden takes an interest in your case. Your Parole Threshold decreases by 2.",
+            "effects": [
+              {
+                "kind": "modifyParoleThreshold",
+                "delta": -2
+              }
+            ]
+          },
+          {
+            "roll": 12,
+            "text": "You have the chance to act heroically and save a guard. If you take it, roll 2D: on 7 or less, roll on the Injury table; on 8+, gain an Ally and your Parole Threshold decreases by 2.",
+            "effects": [
+              {
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "check",
+                      "options": [],
+                      "target": 8,
+                      "onSuccess": [
+                        {
+                          "kind": "gainRelation",
+                          "relation": "ally",
+                          "count": "1"
+                        },
+                        {
+                          "kind": "modifyParoleThreshold",
+                          "delta": -2
+                        }
+                      ],
+                      "onFailure": [
+                        {
+                          "kind": "rollInjury",
+                          "twiceTakeLower": false
+                        }
+                      ]
+                    }
+                  ],
+                  []
+                ]
+              }
+            ]
+          }
+        ],
+        "$events": "Core pp.56-57 Events (2D). modifyParoleThreshold/rerollParoleThreshold/rollSubTable are the Prisoner-specific effect kinds; parole increases are clamped to the parole.max of 12.",
+        "mishaps": [
+          {
+            "roll": 1,
+            "text": "Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.",
+            "effects": [
+              {
+                "kind": "rollInjury",
+                "twiceTakeLower": true
+              }
+            ]
+          },
+          {
+            "roll": 2,
+            "text": "You are accused of assaulting a guard. Your Parole Threshold increases by 2.",
+            "effects": [
+              {
+                "kind": "modifyParoleThreshold",
+                "delta": 2
+              }
+            ]
+          },
+          {
+            "roll": 3,
+            "text": "A prison gang persecutes you. You may fight back or lose all Benefit rolls gained from the Prisoner career. If you fight back, roll Melee (unarmed) 8+: on a failure, roll twice on the Injury table and take the lower result; on a success, you gain an Enemy and your Parole Threshold increases by 1.",
+            "effects": [
+              {
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "forfeitBenefits"
+                    }
+                  ],
+                  [
+                    {
+                      "kind": "check",
+                      "options": [
+                        "Melee (unarmed)"
+                      ],
+                      "target": 8,
+                      "onSuccess": [
+                        {
+                          "kind": "gainRelation",
+                          "relation": "enemy",
+                          "count": "1"
+                        },
+                        {
+                          "kind": "modifyParoleThreshold",
+                          "delta": 1
+                        }
+                      ],
+                      "onFailure": [
+                        {
+                          "kind": "rollInjury",
+                          "twiceTakeLower": true
+                        }
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "roll": 4,
+            "text": "A guard takes a dislike to you. You gain an Enemy and your Parole Threshold increases by 1.",
+            "effects": [
+              {
+                "kind": "gainRelation",
+                "relation": "enemy",
+                "count": "1"
+              },
+              {
+                "kind": "modifyParoleThreshold",
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "roll": 5,
+            "text": "You are disgraced and word reaches your homeworld. Reduce your SOC by 1.",
+            "effects": [
+              {
+                "kind": "modifyCharacteristic",
+                "characteristic": "social",
+                "delta": -1
+              }
+            ]
+          },
+          {
+            "roll": 6,
+            "text": "Injured. Roll on the Injury table (see page 49).",
+            "effects": [
+              {
+                "kind": "rollInjury",
+                "twiceTakeLower": false
+              }
+            ]
+          }
+        ],
+        "$mishaps": "Core p.57 Mishaps (1D). A prisoner is never ejected by a mishap (Core p.52); the mishap effects still apply.",
+        "musterOut": [
+          {
+            "roll": 1,
+            "cash": 0,
+            "benefit": "Contact"
+          },
+          {
+            "roll": 2,
+            "cash": 0,
+            "benefit": "Blade"
+          },
+          {
+            "roll": 3,
+            "cash": 100,
+            "benefit": "Deception, Persuade or Stealth"
+          },
+          {
+            "roll": 4,
+            "cash": 200,
+            "benefit": "Ally"
+          },
+          {
+            "roll": 5,
+            "cash": 500,
+            "benefit": "Melee, Recon or Streetwise"
+          },
+          {
+            "roll": 6,
+            "cash": 1000,
+            "benefit": "STR +1 or END +1"
+          },
+          {
+            "roll": 7,
+            "cash": 2500,
+            "benefit": "Deception, Persuade and Stealth"
+          }
+        ],
+        "$musterOut": "Core p.57 Mustering-Out Benefits (1D, rows 1-7). Rows 3/5 are a choice of one skill (\" or \"), row 6 a choice of one characteristic, row 7 grants all three listed skills (\" and \")."
+      },
       "scholar": {
         "id": "scholar",
         "displayName": "Scholar",

@@ -31,8 +31,18 @@ export function rollAdvancement(ch: Character): boolean {
   const dm = checkDm(ch, asg.advancement) + consumePendingDm(state.pendingDms.advancement);
   const r = rollCheck(ch.rng, [dm], asg.advancement.target);
   ch.log(ev.roll("Advancement", r.roll, dm, asg.advancement.target, r.success));
-  if (r.roll === 12) state.perTerm.mustContinue = true;
-  else if (r.roll <= state.termsInCareer) state.perTerm.mustLeave = true;
+  if (state.paroleThreshold !== null) {
+    // Prisoner (Core p.52): release is governed by the Parole Threshold, not the
+    // normal 12-continue / roll<=terms-leave rule. The advancement total (2D+DM)
+    // must EXCEED the threshold to be released; otherwise serve another term.
+    const total = r.roll + dm;
+    if (total > state.paroleThreshold) state.perTerm.mustLeave = true;
+    else state.perTerm.mustContinue = true;
+  } else if (r.roll === 12) {
+    state.perTerm.mustContinue = true;
+  } else if (r.roll <= state.termsInCareer) {
+    state.perTerm.mustLeave = true;
+  }
   if (r.success) promote(ch);
   return r.success;
 }

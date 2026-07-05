@@ -8,7 +8,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
-import { getCareer, checkDm } from "@/lib/traveller/engine/mongoose/core";
+import { getCareer, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
 
@@ -49,6 +49,9 @@ export function enterCareer(
   state.rank = 0;
   state.commissioned = false;
   state.termsInCareer = 0;
+  // Prisoner (Core p.52): entering a parole career rolls the initial Parole
+  // Threshold (1D+2, max 12); every other career has no threshold.
+  state.paroleThreshold = career.parole ? rollParoleThreshold(ch, career.parole) : null;
   ch.log(ev.section(`${career.displayName} - ${asg.displayName}`));
   applyBasicTraining(ch, career, assignmentId);
 }

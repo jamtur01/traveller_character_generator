@@ -41,6 +41,7 @@ export type ChoiceKind =
   | "mongooseSkillChoice"  // event/rank gainSkillChoice: pick among skills
   | "mongooseEventChoice"    // event chooseEffect: pick a branch
   | "mongooseOfferedCareer"  // event offer: take a career next term without qualifying
+  | "mongooseMusterBenefit"  // muster material-benefit "X or Y" cell: pick one
   | "mongooseCommission";    // optional commission attempt (military careers)
 
 export interface ChoiceRequest<T = string> {

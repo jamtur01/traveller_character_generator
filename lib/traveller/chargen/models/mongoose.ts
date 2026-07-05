@@ -101,7 +101,7 @@ function pickCareerNormally(ch: Character): void {
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",
-    options: Object.keys(data.careers),
+    options: Object.keys(data.careers).filter((id) => !data.careers[id]!.forcedOnly),
     onResolve: (c, careerId) => {
       const career = getMongooseData(c).careers[careerId]!;
       c.pickOrDefer({
@@ -167,6 +167,10 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   const state = ensureState(ch);
   const data = getMongooseData(ch);
   resetMongoosePerTerm(state);
+  // Prisoner (Core p.52): a mishap never ejects a prisoner — parole (the
+  // advancement roll vs the threshold) is the only route out.
+  const currentCareer = state.career ? data.careers[state.career] : undefined;
+  if (currentCareer?.parole) state.perTerm.noEject = true;
   state.termsInCareer += 1;
   ch.terms += 1;
   ch.age = data.startAge + ch.terms * data.termLengthYears;
@@ -183,9 +187,17 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   if (agingBegun(ch) && !ch.deceased) rollAging(ch);
   if (ch.deceased) return { character: ch, phase: "end" };
 
+  // Prisoner (Core p.52): a prisoner who was not released this term (parole roll
+  // did not exceed the threshold, or survival failed so no parole roll happened)
+  // and did not escape must serve another term — never a voluntary departure.
+  if (state.paroleThreshold !== null && !state.perTerm.mustLeave) {
+    state.perTerm.mustContinue = true;
+  }
+
   if (state.perTerm.mustLeave) {
     musterOut(ch);
     state.career = null;
+    state.paroleThreshold = null;
     return { character: ch, phase: "career" };
   }
   return { character: ch, phase: "term" };
@@ -197,9 +209,15 @@ function doRunTerm(ch: Character): ChargenSnapshot {
 function doMusterAction(ch: Character): ChargenSnapshot {
   const state = ensureState(ch);
   if (state.career) {
-    if (state.perTerm.mustContinue) return { character: ch, phase: "term" };
+    // Prisoner (Core p.52): cannot leave voluntarily — only a parole release or
+    // escape (both set mustLeave in the term itself) ends the career. mustContinue
+    // (natural 12 / unreleased parole) also blocks a voluntary departure.
+    if (state.perTerm.mustContinue || state.paroleThreshold !== null) {
+      return { character: ch, phase: "term" };
+    }
     musterOut(ch);
     state.career = null;
+    state.paroleThreshold = null;
     return { character: ch, phase: "career" };
   }
   applyConnections(ch);

@@ -84,6 +84,11 @@ export interface MongooseState {
   offeredNextCareer: string | null;
   /** Must roll on the Draft next term (event). */
   mustDraft: boolean;
+  /** Prisoner-career parole threshold (Core p.52): initialised to 1D+2 on
+   *  entering a career with a `parole` config, cleared to null on leaving. When
+   *  non-null, the advancement roll total (2D+DM) governs release: > threshold
+   *  releases, otherwise the Traveller must serve another term. */
+  paroleThreshold: number | null;
 }
 
 function freshPendingDms(): MongoosePendingDms {
@@ -121,6 +126,7 @@ export function freshMongooseState(): MongooseState {
     forcedNextCareer: null,
     offeredNextCareer: null,
     mustDraft: false,
+    paroleThreshold: null,
   };
 }
 

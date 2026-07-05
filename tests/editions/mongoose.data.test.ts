@@ -44,7 +44,7 @@ describe("mongoose-2e core data", () => {
 const CAREERS = parseCanonData(mongooseJson, "mongoose-2e").mongoose!.careers;
 const EXPECTED_IDS = [
   "agent", "army", "citizen", "drifter", "entertainer", "marine",
-  "merchant", "navy", "noble", "rogue", "scholar", "scout",
+  "merchant", "navy", "noble", "prisoner", "rogue", "scholar", "scout",
 ];
 const MILITARY = new Set(["army", "navy", "marine"]);
 
@@ -53,7 +53,7 @@ function isCol7(col: readonly unknown[]): boolean {
 }
 
 describe("mongoose-2e careers", () => {
-  it("declares all twelve core careers (Core pp.22-45)", () => {
+  it("declares all thirteen careers: the twelve core (Core pp.22-45) + Prisoner (Core pp.56-57)", () => {
     expect(Object.keys(CAREERS).sort()).toEqual([...EXPECTED_IDS].sort());
   });
 

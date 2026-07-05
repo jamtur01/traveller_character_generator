@@ -13,6 +13,7 @@ const HANDLED = new Set([
   "autoPromote", "autoCommission", "benefitRoll", "forfeitBenefits", "stayInCareer",
   "leaveCareer", "forceCareer", "offerCareer", "rollDraft", "rollForceCareer",
   "chooseEffect", "check",
+  "modifyParoleThreshold", "rerollParoleThreshold", "rollSubTable",
 ]);
 
 function effectKinds(effects: readonly MongooseEffect[]): string[] {
@@ -21,6 +22,7 @@ function effectKinds(effects: readonly MongooseEffect[]): string[] {
     out.push(e.kind);
     if (e.kind === "chooseEffect") for (const branch of e.options) out.push(...effectKinds(branch));
     else if (e.kind === "check") out.push(...effectKinds(e.onSuccess), ...effectKinds(e.onFailure));
+    else if (e.kind === "rollSubTable") for (const entry of e.entries) out.push(...effectKinds(entry));
   }
   return out;
 }

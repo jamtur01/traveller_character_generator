@@ -102,7 +102,16 @@ export type MongooseEffect =
   // An embedded skill/characteristic check whose outcome branches into further
   // effects (e.g. Agent event 3: "Roll Investigate 8+ ... on success ...").
   | { readonly kind: "check"; readonly options: readonly string[]; readonly target: number;
-      readonly onSuccess: readonly MongooseEffect[]; readonly onFailure: readonly MongooseEffect[] };
+      readonly onSuccess: readonly MongooseEffect[]; readonly onFailure: readonly MongooseEffect[] }
+  // --- Prisoner career (Core p.52) ---
+  // Adjust the parole threshold by a fixed integer or a die-string delta
+  // ("-1D", "+2D"): parsed sign + NdX, clamped to the career's parole.max.
+  | { readonly kind: "modifyParoleThreshold"; readonly delta: number | string }
+  // Re-roll the parole threshold from the career's parole config (Transferred).
+  | { readonly kind: "rerollParoleThreshold" }
+  // Roll 1D and apply the effects of the matching sub-table entry (entries are
+  // 1-indexed by the roll; index 0 unused). Used by the Prisoner prison event.
+  | { readonly kind: "rollSubTable"; readonly entries: readonly (readonly MongooseEffect[])[] };
 
 /** A 2D Events-table row (roll 2-12) or a 1D Mishaps-table row (roll 1-6). */
 export interface MongooseTableRow {
@@ -137,6 +146,13 @@ export interface MongooseCareer {
   readonly events: readonly MongooseTableRow[];
   readonly mishaps: readonly MongooseTableRow[];
   readonly musterOut: readonly MongooseMusterRow[];
+  /** Prisoner only (Core p.52): entered solely via a forced-career reference,
+   *  never offered as a normal / drafted / offered career choice. */
+  readonly forcedOnly?: boolean;
+  /** Prisoner only (Core p.52): a Parole Threshold governs release instead of
+   *  the normal roll<=terms leave rule. `dice`+`plus` is the initial 1D+2 roll;
+   *  the threshold never rises above `max` (12). */
+  readonly parole?: { readonly dice: string; readonly plus: number; readonly max: number };
 }
 
 /** Pre-career education option (University / Military Academy, Core pp.14-16). */
