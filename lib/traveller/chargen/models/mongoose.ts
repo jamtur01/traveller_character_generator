@@ -233,8 +233,9 @@ function doRunTerm(ch: Character): ChargenSnapshot {
       && state.forcedNextCareer === null && !state.mustDraft;
     if (!immediateLeave) {
       resolveAdvancementPhase(ch);
-      rollSkillTraining(ch);
-      if (state.perTerm.advancedThisTerm) rollSkillTraining(ch);
+      const skillPicks = 1 + (state.perTerm.advancedThisTerm ? 1 : 0);
+      rollSkillTraining(ch, 1, skillPicks);
+      if (state.perTerm.advancedThisTerm) rollSkillTraining(ch, 2, skillPicks);
     }
   }
   if (agingBegun(ch) && !ch.deceased) rollAging(ch);

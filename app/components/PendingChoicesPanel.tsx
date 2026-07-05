@@ -20,6 +20,11 @@ export function PendingChoicesPanel({
       title="Player choice"
       subtitle={first.label}
     >
+      {first.progress && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Selection {first.progress.current} of {first.progress.total}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         {first.options.map((opt, i) => (
           <button

@@ -77,7 +77,9 @@ function applyMaterialBenefit(ch: Character, benefit: string): void {
 }
 
 /** Resolve one Benefit roll: pick a column, roll 1D + DMs, apply the result. */
-function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: MongooseData, rankDm: number): void {
+function resolveBenefitRoll(
+  ch: Character, career: MongooseCareer, data: MongooseData, rankDm: number, index: number, total: number,
+): void {
   const state = ch.mongooseState!;
   const canCash = state.cashRollsUsed < data.cashRollCap;
   const options = canCash ? ["Cash", "Material Benefits"] : ["Material Benefits"];
@@ -85,6 +87,7 @@ function resolveBenefitRoll(ch: Character, career: MongooseCareer, data: Mongoos
     kind: "musterRoll",
     label: "Choose a benefit column",
     options,
+    progress: { current: index + 1, total },
     onResolve: (c, chosen) => {
       const st = c.mongooseState!;
       // Event-granted "DM+1 to any one Benefit roll" (Core p.46) is consumed on
@@ -137,7 +140,7 @@ export function musterOut(ch: Character): void {
   // no benefit rolls at all, not just the lost event bonuses.
   if (state.benefitsForfeited) rolls = 0;
   ch.log(ev.section(`Mustering out of ${career.displayName} (${rolls} benefit roll${rolls === 1 ? "" : "s"})`));
-  for (let i = 0; i < rolls; i++) resolveBenefitRoll(ch, career, data, rankDm);
+  for (let i = 0; i < rolls; i++) resolveBenefitRoll(ch, career, data, rankDm, i, rolls);
   applyPension(ch, career, data);
   state.history.push({
     career: careerId, assignment: requireRule(state.assignment, "mongooseState.assignment", "engine"),

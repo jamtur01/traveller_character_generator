@@ -172,6 +172,81 @@ export function resolveLifeEvent(ch: Character): void {
   }
 }
 
+/** Reverse of ATTR_ABBREV: full characteristic key -> abbreviation
+ *  ("dexterity" -> "DEX"). Effects carry the full key; choice labels show the
+ *  short form ("DEX +1"). */
+const CHAR_ABBREV: Record<string, string> = Object.fromEntries(
+  Object.entries(ATTR_ABBREV).map(([abbrev, key]) => [key, abbrev]),
+);
+
+/** Signed integer for a display label: "+4", "-1". */
+function signed(n: number): string {
+  return n >= 0 ? `+${n}` : `${n}`;
+}
+
+/** Characteristic abbreviation for a label; falls back to titleize on an
+ *  unexpected token (a data typo) rather than crashing a cosmetic label. */
+function charAbbrev(characteristic: string): string {
+  return CHAR_ABBREV[characteristic] ?? titleize(characteristic);
+}
+
+/** "DM+4 to next Advancement" — shared by the four DM-nudge effect kinds. */
+function dmPhrase(dm: number, scope: "next" | "any", subject: string): string {
+  return `DM${signed(dm)} to ${scope} ${subject}`;
+}
+
+/** One-line human-readable summary of a single effect, keyed by kind.
+ *  DISPLAY-ONLY: drives the chooseEffect option labels (parallels optionLabels)
+ *  and is never consumed by resolution, onResolve, the decision-cursor/replay
+ *  contract, or the RNG stream. The mapped type keeps this exhaustive over the
+ *  MongooseEffect union. */
+const EFFECT_DESCRIBERS: {
+  [K in MongooseEffect["kind"]]: (e: Extract<MongooseEffect, { kind: K }>) => string;
+} = {
+  gainSkill: (e) => (e.level !== undefined ? `${e.skill} ${e.level}` : e.skill),
+  gainSkillChoice: (e) => `${e.options.join("/")} 1`,
+  gainAnySkill: () => "Any skill",
+  modifyCharacteristic: (e) => `${charAbbrev(e.characteristic)} ${signed(e.delta)}`,
+  modifyCharacteristicChoice: (e) =>
+    `${e.characteristics.map(charAbbrev).join("/")} ${signed(e.delta)}`,
+  benefitDm: (e) => dmPhrase(e.dm, e.scope, "Benefit"),
+  advancementDm: (e) => dmPhrase(e.dm, e.scope, "Advancement"),
+  survivalDm: (e) => dmPhrase(e.dm, e.scope, "Survival"),
+  qualificationDm: (e) => dmPhrase(e.dm, e.scope, "Qualification"),
+  gainRelation: (e) => `Gain ${/^[aeiou]/i.test(e.relation) ? "an" : "a"} ${titleize(e.relation)}`,
+  benefitRoll: (e) => `${signed(e.delta)} Benefit roll`,
+  leaveCareer: (e) =>
+    e.keepBenefit ? "Leave this career (keep benefit)" : "Leave this career",
+  stayInCareer: () => "Remain in this career",
+  autoPromote: () => "Automatic promotion",
+  autoCommission: () => "Automatic commission",
+  forfeitBenefits: () => "Forfeit all benefits",
+  forceCareer: (e) => `Transfer to ${titleize(e.career)}`,
+  offerCareer: (e) => `Transfer to ${titleize(e.career)}`,
+  rollForceCareer: (e) => `Transfer to ${titleize(e.career)}`,
+  rollMishap: () => "Roll on the Mishap table",
+  rollInjury: () => "Injury",
+  applyInjury: () => "Injury",
+  lifeEvent: () => "Life event",
+  check: () => "Make a check",
+  modifyParoleThreshold: () => "Adjust parole threshold",
+  rerollParoleThreshold: () => "Re-roll parole threshold",
+  rollDraft: () => "Roll on the Draft table",
+  rollSubTable: () => "Roll on a sub-table",
+  chooseEffect: () => "Choose an outcome",
+};
+
+/** Summarize one chooseEffect option bundle into readable text: each effect
+ *  described and joined with " + "; an EMPTY bundle (a "may ..." decline
+ *  branch) reads "Decline". DISPLAY-ONLY (see EFFECT_DESCRIBERS): the label a
+ *  player reads, never the value resolution consumes. */
+export function describeEffectBundle(effects: readonly MongooseEffect[]): string {
+  if (effects.length === 0) return "Decline";
+  return effects
+    .map((e) => (EFFECT_DESCRIBERS[e.kind] as (x: MongooseEffect) => string)(e))
+    .join(" + ");
+}
+
 function applyEffect(ch: Character, e: MongooseEffect): void {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
   switch (e.kind) {
@@ -257,6 +332,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
       const labels = e.options.map((_, i) => `Option ${i + 1}`);
       ch.pickOrDefer({
         kind: "mongooseEventChoice", label: "Choose an outcome", options: labels,
+        optionLabels: e.options.map(describeEffectBundle),
         onResolve: (c, chosen) => applyEffects(c, requireRule(
           e.options[labels.indexOf(chosen)], "mongoose chooseEffect option", "engine (mongoose)",
         )),

@@ -58,6 +58,15 @@ export interface ChoiceRequest<T = string> {
    */
   optionLabels?: readonly string[];
   /**
+   * Optional 1-based position of this choice within a fixed sequence of sibling
+   * choices (e.g. "roll 3 of 4" mustering out, "skill pick 1 of 2" this term).
+   * Parallels `optionLabels`: DISPLAY-ONLY, purely for the UI to render a
+   * progress count. It is never read by resolution, `onResolve`, the
+   * decision-cursor/replay contract, or the seeded RNG stream, so it can vary
+   * or be absent without affecting re-execution.
+   */
+  progress?: { readonly current: number; readonly total: number };
+  /**
    * Subset of options to pick from in auto mode (typically: weapons the
    * character already has skill in, so blade-cascades stack onto the same
    * blade). When empty or absent, auto mode picks from all options. The UI

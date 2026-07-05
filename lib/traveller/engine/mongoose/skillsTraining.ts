@@ -38,12 +38,15 @@ export function availableTables(ch: Character): TrainingTable[] {
 
 /** Roll one skill: the player picks a table, then a 1D roll selects the cell to
  *  apply (Core p.18). */
-export function rollSkillTraining(ch: Character): void {
+export function rollSkillTraining(ch: Character, current?: number, total?: number): void {
   const tables = availableTables(ch);
   ch.pickOrDefer({
     kind: "mongooseSkillTable",
     label: "Choose a skill table to train on",
     options: tables.map((t) => t.label),
+    ...(current !== undefined && total !== undefined
+      ? { progress: { current, total } }
+      : {}),
     onResolve: (c, chosen) => {
       const table = tables.find((t) => t.label === chosen) ?? tables[0]!;
       const cell = table.column[c.rng.roll(1)];
