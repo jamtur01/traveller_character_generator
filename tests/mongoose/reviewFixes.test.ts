@@ -278,3 +278,40 @@ describe("any-assignment prompt on draft/forced/offered entry (Core p.20)", () =
     expect(c.mongooseState!.assignment).toBe("fixer"); // not assignments[0] ("inmate")
   });
 });
+
+describe("Prisoner per-term reassignment (Core p.52)", () => {
+  // Record every choice kind pickOrDefer is asked for, resolving each as usual.
+  function recordChoiceKinds(c: Character): string[] {
+    const kinds: string[] = [];
+    const original = Character.prototype.pickOrDefer;
+    vi.spyOn(c, "pickOrDefer").mockImplementation((req) => {
+      kinds.push(req.kind);
+      original.call(c, req);
+    });
+    return kinds;
+  }
+
+  it("offers a fresh assignment choice each term; auto keeps the current one", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "prisoner";
+    c.mongooseState!.assignment = "inmate";
+    c.mongooseState!.paroleThreshold = 5;
+    c.mongooseState!.termsInCareer = 1;
+    const kinds = recordChoiceKinds(c);
+    mockRandom([]); // fallback for every draw
+    mongooseModel.execute(c, { kind: "runTerm" });
+    expect(kinds).toContain("mongooseAssignment"); // the per-term reassignment prompt
+    expect(c.mongooseState!.assignment).toBe("inmate"); // auto keeps current
+  });
+
+  it("does not offer a reassignment for a non-parole career", () => {
+    const c = mkChar();
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    c.mongooseState!.termsInCareer = 1;
+    const kinds = recordChoiceKinds(c);
+    mockRandom([]);
+    mongooseModel.execute(c, { kind: "runTerm" });
+    expect(kinds).not.toContain("mongooseAssignment");
+  });
+});

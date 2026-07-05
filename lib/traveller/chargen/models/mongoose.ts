@@ -185,6 +185,18 @@ function doRunTerm(ch: Character): ChargenSnapshot {
   // advancement roll vs the threshold) is the only route out.
   const currentCareer = state.career ? data.careers[state.career] : undefined;
   if (currentCareer?.parole) state.perTerm.noEject = true;
+  // Prisoner (Core p.52): a Traveller may pick a new assignment every term.
+  // Auto keeps the current assignment (preferred); interactive offers all three.
+  if (currentCareer?.parole && state.assignment) {
+    const current = state.assignment;
+    ch.pickOrDefer({
+      kind: "mongooseAssignment",
+      label: "Prisoner: choose this term's assignment",
+      options: currentCareer.assignments.map((a) => a.id),
+      preferred: [current],
+      onResolve: (c, asgId) => { c.mongooseState!.assignment = asgId; },
+    });
+  }
   state.termsInCareer += 1;
   ch.terms += 1;
   ch.age = data.startAge + ch.terms * data.termLengthYears;
