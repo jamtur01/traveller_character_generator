@@ -10,6 +10,7 @@ import { requireRule } from "@/lib/traveller/editions/strict";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import { getCareer, getMongooseData, checkDm, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
+import { applyRankBenefit, currentLadder } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
 
 /** Attempt to qualify for a career (Core p.18): roll 2D + best-characteristic
@@ -54,6 +55,10 @@ export function enterCareer(
   // Threshold (1D+2, max 12); every other career has no threshold.
   state.paroleThreshold = career.parole ? rollParoleThreshold(ch, career.parole) : null;
   ch.log(ev.section(`${career.displayName} - ${asg.displayName}`));
+  // Rank 0 is attained on entry, so its ladder benefit is granted immediately
+  // (Core p.19: "bonuses acquired immediately upon attaining the rank"). Army
+  // Gun Combat 1, Marine Gun Combat/Melee choice, Prisoner Melee (unarmed) 1.
+  applyRankBenefit(ch, currentLadder(ch), 0);
   applyBasicTraining(ch, career, assignmentId);
 }
 

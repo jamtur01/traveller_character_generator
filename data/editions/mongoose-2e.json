@@ -6003,8 +6003,7 @@
             "thug": "prisoner",
             "fixer": "prisoner"
           },
-          "$rule": "Core p.56 Ranks and Bonuses: a single title-less ladder shared by all three assignments (0 Melee (unarmed) 1, 2 Athletics 1, 4 Advocate 1, 6 END +1). No officer ladder.",
-          "$note": "As with every Mongoose career in this data (e.g. Army/Marine rank 0), the rank-0 benefit row is informational at entry: the engine applies a rank benefit only on promotion to that rank (ranks.ts promote), so the rank-0 Melee (unarmed) 1 is not auto-granted on entry. Melee (unarmed) remains reachable via the Inmate/Thug skill tables, service skills, personal development and events."
+          "$rule": "Core p.56 Ranks and Bonuses: a single title-less ladder shared by all three assignments (0 Melee (unarmed) 1, 2 Athletics 1, 4 Advocate 1, 6 END +1). No officer ladder. The rank-0 Melee (unarmed) 1 is granted on entry (Core p.19: bonuses acquired immediately upon attaining the rank)."
         },
         "events": [
           {

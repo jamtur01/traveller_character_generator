@@ -34,10 +34,27 @@ export function currentLadder(ch: Character): readonly MongooseRank[] {
   );
 }
 
-/** Apply the skill/characteristic benefit a rank grants on attainment. */
-function applyRankBenefit(ch: Character, ladder: readonly MongooseRank[], rank: number): void {
+/** Apply the skill/characteristic benefit a rank grants on attainment. A
+ *  compound "X or Y" cell (Marine rank 0, Rogue, Drifter) is a player choice of
+ *  one skill/characteristic; a cell carrying a comma (the officer "SOC 10 or
+ *  SOC +1, whichever is higher" form) is not a two-way choice and passes through
+ *  applySkillCell unchanged. */
+export function applyRankBenefit(
+  ch: Character, ladder: readonly MongooseRank[], rank: number,
+): void {
   const row = ladder.find((r) => r.rank === rank);
-  if (row?.benefit) applySkillCell(ch, row.benefit, `Rank ${rank}`);
+  if (!row?.benefit) return;
+  const source = `Rank ${rank}`;
+  if (row.benefit.includes(" or ") && !row.benefit.includes(",")) {
+    ch.pickOrDefer({
+      kind: "mongooseSkillChoice",
+      label: `Rank ${rank} benefit: choose one`,
+      options: row.benefit.split(/\s+or\s+/).map((p) => p.trim()).filter((p) => p.length > 0),
+      onResolve: (c, chosen) => applySkillCell(c, chosen, source),
+    });
+    return;
+  }
+  applySkillCell(ch, row.benefit, source);
 }
 
 /** Advance one rank on the current ladder: +1 rank, apply the new rank's
