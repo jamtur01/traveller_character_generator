@@ -95,7 +95,7 @@ export type MongooseEffect =
   | { readonly kind: "rollDraft" }
   | { readonly kind: "forfeitBenefits" }
   | { readonly kind: "offerCareer"; readonly career: string }
-  | { readonly kind: "rollForceCareer"; readonly dice: number; readonly results: readonly number[]; readonly career: string }
+  | { readonly kind: "rollForceCareer"; readonly dice: string; readonly results: readonly number[]; readonly career: string }
   // Player-choice between heterogeneous effect bundles ("gain X or DM+4"; a "may
   // ..." option includes an empty [] branch = decline). One branch is applied.
   | { readonly kind: "chooseEffect"; readonly options: readonly (readonly MongooseEffect[])[] }

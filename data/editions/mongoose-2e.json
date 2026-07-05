@@ -5722,7 +5722,7 @@
               },
               {
                 "kind": "rollForceCareer",
-                "dice": 2,
+                "dice": "2D",
                 "results": [
                   2
                 ],

@@ -13,7 +13,7 @@
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
-import { requireRule } from "@/lib/traveller/editions/strict";
+import { requireRule, parseDieCount } from "@/lib/traveller/editions/strict";
 import { characteristicDm, rollCheck } from "@/lib/traveller/core";
 import { getMongooseData, getCareer, rollParoleThreshold } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
@@ -211,7 +211,7 @@ function applyEffect(ch: Character, e: MongooseEffect): void {
     case "offerCareer": state.offeredNextCareer = e.career; return;
     case "rollDraft": state.mustDraft = true; return;
     case "rollForceCareer": {
-      const r = ch.rng.roll(e.dice);
+      const r = ch.rng.roll(parseDieCount(e.dice, "mongoose rollForceCareer.dice"));
       if (e.results.includes(r)) {
         state.forcedNextCareer = e.career;
         state.perTerm.mustLeave = true;
