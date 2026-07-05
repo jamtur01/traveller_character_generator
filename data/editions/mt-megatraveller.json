@@ -172,117 +172,7 @@
         "id": "autoSkillTerm"
       }
     ],
-    "mtChecklist": [
-      {
-        "step": 1,
-        "id": "rollCharacteristics",
-        "uses": [
-          "attributes"
-        ]
-      },
-      {
-        "step": 2,
-        "id": "rollHomeworld",
-        "uses": [
-          "mtExtensions.homeworld"
-        ]
-      },
-      {
-        "step": 3,
-        "id": "selectCareerAndEnlist",
-        "uses": [
-          "services.*.checks.enlistment"
-        ]
-      },
-      {
-        "step": "3A",
-        "id": "draftIfRejected",
-        "uses": [
-          "services.*.draft"
-        ]
-      },
-      {
-        "step": "3B",
-        "id": "survival",
-        "uses": [
-          "services.*.checks.survival"
-        ]
-      },
-      {
-        "step": "3C1",
-        "id": "commission",
-        "uses": [
-          "services.*.checks.position"
-        ]
-      },
-      {
-        "step": "3C2",
-        "id": "promotion",
-        "uses": [
-          "services.*.checks.promotion"
-        ]
-      },
-      {
-        "step": "3C3",
-        "id": "specialDuty",
-        "uses": [
-          "services.*.checks.specialDuty"
-        ]
-      },
-      {
-        "step": "3D1",
-        "id": "automaticSkills",
-        "uses": [
-          "services.*.automaticSkills"
-        ]
-      },
-      {
-        "step": "3D2",
-        "id": "acquiredSkills",
-        "uses": [
-          "services.*.skillTables",
-          "services.*.skillsPerTerm",
-          "mtExtensions.term1Bonus"
-        ]
-      },
-      {
-        "step": "3D3",
-        "id": "cascadeSkills",
-        "uses": [
-          "cascadeSkills"
-        ]
-      },
-      {
-        "step": "3E",
-        "id": "aging",
-        "uses": [
-          "aging"
-        ]
-      },
-      {
-        "step": "3F",
-        "id": "reenlistment",
-        "uses": [
-          "services.*.checks.reenlistment",
-          "mtExtensions.mandatoryReenlistOn12"
-        ]
-      },
-      {
-        "step": 4,
-        "id": "musterOut",
-        "uses": [
-          "services.*.musterOut"
-        ]
-      }
-    ],
-    "mtExtensions": {
-      "homeworld": "Generate homeworld (Starport/Size/Atmos/Hydro/Pop/Law/Tech). Tech>=7 grants Computer-0; Tech 3-8 grants Wheeled Vehicle-0; Tech>=9 grants Grav Vehicle-0. Tech<5 hides Army/Marines/Navy/Scientist/Noble. Tech<7 hides Scout/Merchant/Belter/Pirate. Tech<3 hides Flyer/Law Enforcer/Doctor/Diplomat/Rogue. Tech>=3 hides Barbarian. Soc<10 hides Noble.",
-      "term1Bonus": "Careers with skillsPerTerm=1 receive +1 additional skill in term 1.",
-      "specialDutyDoubleBonus": "Special Duty roll 4+ over target grants 2 skills instead of 1.",
-      "commissionPromotionDoubleBonus": "Commission or Promotion roll 4+ over target grants 2 bonus skills instead of 1.",
-      "mandatoryReenlistOn12": "Rolling exactly 12 on reenlistment forces another term.",
-      "belterTerm3ZeroG": "Belter automatically gains Zero-G Environ-1 at start of term 3."
-    }
+    "$comment": "The former mtChecklist (PM chargen step order) and mtExtensions (homeworld/term1Bonus/double-bonus/mandatoryReenlist/belterTerm3ZeroG prose) were descriptive-only and never read by the engine. Live mechanics: lifecycle.terms + per-step config (term1Bonus, doubleBonusOvershoot), rules.reenlistment.mandatoryOnExactRoll, services.belters.automaticSkills (term:3), and the homeworld block."
   },
   "sheet": {
     "$comment": "Presentation metadata (TAS Form 2 box 17 'Equipment Qualified On'), not a game rule: equipment-operation skills listed individually; lib/pdfSheet.ts unions in the vehicle cascade (+Includes expansion).",
@@ -378,10 +268,8 @@
       "anagathicTermsExcluded": true
     },
     "draft": {
-      "trigger": "failedEnlistment",
-      "noCommissionFirstTerm": true,
-      "die": "1D",
-      "note": "Failed enlistment is followed by a 1D draft roll using each service's 'draft' field. Draft assignment overrides homeworld career restrictions. Drafted characters cannot receive a commission during their first term of service."
+      "$comment": "Only noCommissionFirstTerm is engine-read (commission.ts, acg/schools.ts). The draft roll uses each service's `draft` field; die/trigger/note prose were unread.",
+      "noCommissionFirstTerm": true
     },
     "nobleTitles": {
       "$rule": "PM p. 8 lines 516-526. Social Standing B (11) through F (15) confers a noble title. G (16) Archduke and H (17) Emperor are beyond PC range and listed here for completeness.",
@@ -403,11 +291,9 @@
       "$rule": "PM p. 15 lines 887-947. All thresholds and DMs are PM-validated.",
       "eligibility": {
         "minAge": 30,
-        "minTerms": 3,
-        "rule": "Upon reaching age 30 at the end of the third term of service (but never before age 30)."
+        "minTerms": 3
       },
       "availability": {
-        "die": "2D",
         "target": 12,
         "dms": {
           "byStarport": { "A": 3, "B": 2, "C": 1 },
@@ -419,11 +305,7 @@
       "nobleService": "nobles",
       "agingAutoSavesPerTerm": 2,
       "cashRollCap": 2,
-      "retry": {
-        "rule": "PM p. 15: if availability fails, one retry allowed if the character rerolls another survival roll first. On survival fail, character is short-term mustered out.",
-        "extraSurvivalRequired": true,
-        "onFailForcedShortTermMuster": true
-      }
+      "$comment": "PM p. 15: on availability failure, one retry is allowed if the character first passes an extra survival roll; failing that survival forces short-term muster-out. Hardcoded in chargen/anagathics.ts; the former retry.{extraSurvivalRequired,onFailForcedShortTermMuster} flags were never read."
     },
     "skillCap": {
       "$rule": "MT PM p. 15 line 36: 'Total skill levels may never exceed Int + Edu.' The cap's operands are Intelligence and Education.",
@@ -2756,8 +2638,8 @@
         ],
         "cash": [
           null,
-          0,
-          0,
+          null,
+          null,
           1000,
           10000,
           100000,
@@ -3381,7 +3263,7 @@
       { "homeworldField": { "field": "tech", "in": ["Industrial", "Pre-Stellar", "Early Stellar"] }, "skill": "Wheeled Vehicle", "level": 0, "source": "MT p. 13" }
     ],
     "careerAvailability": [
-      { "requiresTechAtLeast": "Pre-Stellar",   "services": ["army", "marines", "navy", "scientists"] },
+      { "requiresTechAtLeast": "Pre-Stellar",   "services": ["army", "marines", "navy", "scientists", "nobles"] },
       { "requiresTechAtLeast": "Early Stellar", "services": ["scouts", "merchants", "belters", "pirates"] },
       { "requiresTechAtLeast": "Industrial",    "services": ["lawenforcers", "doctors", "diplomats", "rogues", "flyers"] },
       { "requiresTechExactly": "Pre-Industrial", "services": ["barbarians"] },
@@ -5258,10 +5140,6 @@
           "results": {
             "1": "Imperial Navy"
           }
-        },
-        "academyRanks": {
-          "navalAcademy": "O1 Imperial Navy",
-          "notc": "O1 Reserve Fleet"
         }
       },
       "branchAssignment": {
@@ -6378,7 +6256,6 @@
         ],
         "startingRank": "IS-1",
         "collegeHonorsStartingRank": "IS-10",
-        "automatic": "College graduates may choose automatic enlistment; honors graduates start at IS-10.",
         "draft": {
           "die": "1D",
           "results": {
@@ -8440,9 +8317,6 @@
           ],
           "effect": "Transfer to Deck."
         },
-        "commission": {
-          "effect": "Receive rank O0, or O1 in Free Traders, and determine department assignment normally. Must pass exam for O1 within 4 years or revert to enlisted rank."
-        },
         "deckSchool": {
           "throw": "5+",
           "skills": [
@@ -8451,9 +8325,6 @@
             "Gunnery"
           ],
           "effect": "Transfer to Deck."
-        },
-        "departmentTest": {
-          "effect": "May take department test without regard for skill requirements."
         },
         "driveTrainingEngineeringSchool": {
           "throw": "5+",

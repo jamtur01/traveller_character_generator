@@ -113,7 +113,7 @@ const PM: Record<MtService, ServiceTruth> = {
   },
   belters: {
     throws: { enlistment: 8, survival: 9, position: null, promotion: null, specialDuty: 6, reenlistment: 6 },
-    cash: [null, 0, 0, 1000, 10000, 100000, 100000, 100000],
+    cash: [null, null, null, 1000, 10000, 100000, 100000, 100000],
     benefits: [null, "Low Psg", "+1 Intelligence", "Weapon", "High Psg", "Travellers'", "Seeker", null],
   },
   pirates: {
