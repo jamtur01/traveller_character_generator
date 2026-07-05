@@ -217,6 +217,11 @@ export interface MongooseData {
   /** SOC at which a commission may be attempted in any term, not just the
    *  first (Core p.18). */
   readonly commissionAnyTermSocMin: number;
+  /** Max skill level during creation (Core p.19: 4). */
+  readonly skillLevelMax: number;
+  /** Total skill-level cap: multiplier x sum of the named attributes (Core
+   *  p.19: 3 x (INT + EDU)). */
+  readonly skillTotalCap: { readonly multiplier: number; readonly attributes: readonly string[] };
   /** Benefits of Rank bonus-roll bands (Core p.46). */
   readonly benefitsOfRank: readonly MongooseRankBonus[];
   /** Pension schedule (Core p.49). */

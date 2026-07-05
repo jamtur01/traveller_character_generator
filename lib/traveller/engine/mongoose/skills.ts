@@ -7,6 +7,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
+import { getMongooseData } from "@/lib/traveller/engine/mongoose/core";
 
 /** Printed characteristic abbreviations in skill/rank cells -> attribute keys. */
 const ATTR_ABBREV: Record<string, AttributeKey> = {
@@ -20,24 +21,40 @@ export function skillLevel(ch: Character, name: string): number {
   return found ? found[1] : -1;
 }
 
-/** "No level listed" cell: gain the skill at 1, or increase it by 1 if trained. */
+/** True when the character is at the total skill-level cap (Core p.19:
+ *  multiplier x sum of the capped attributes, i.e. 3 x (INT + EDU)). */
+function atTotalCap(ch: Character): boolean {
+  const { multiplier, attributes } = getMongooseData(ch).skillTotalCap;
+  const cap = multiplier * attributes.reduce(
+    (sum, a) => sum + ch.attributes[a as AttributeKey], 0,
+  );
+  return ch.totalSkillLevels() >= cap;
+}
+
+/** "No level listed" cell: gain the skill at 1, or increase it by 1 if trained.
+ *  Blocked at the level-4 cap or the total-skill cap (increases are lost). */
 export function grantSkillIncrement(ch: Character, name: string, source?: string): void {
+  const cur = skillLevel(ch, name);
+  if (cur >= getMongooseData(ch).skillLevelMax) return;
+  if (atTotalCap(ch)) return;
   ch.addSkill(name, 1, source);
 }
 
-/** "Level listed" cell: gain/raise the skill to `level` only if higher than the
- *  current level (an untrained skill is raised straight to `level`). A level-0
- *  floor simply ensures the skill is present at 0. */
+/** "Level listed" cell: gain/raise the skill to `level` (clamped to the level-4
+ *  cap) only if higher than the current level. A level-0 floor just ensures the
+ *  skill is present (adds no levels, so it is never cap-blocked); raising an
+ *  existing skill is blocked at the total-skill cap. */
 export function grantSkillFloor(
   ch: Character, name: string, level: number, source?: string,
 ): void {
+  const target = Math.min(level, getMongooseData(ch).skillLevelMax);
   const cur = skillLevel(ch, name);
   if (cur < 0) {
-    ch.addSkill(name, level, source);
-  } else if (level > cur) {
-    ch.addSkill(name, level - cur, source);
+    if (target > 0 && atTotalCap(ch)) return;
+    ch.addSkill(name, target, source);
+  } else if (target > cur && !atTotalCap(ch)) {
+    ch.addSkill(name, target - cur, source);
   }
-  // else: current level already meets or exceeds the floor — no change.
 }
 
 /** Apply a skill-table / rank-benefit cell string (Core p.19):

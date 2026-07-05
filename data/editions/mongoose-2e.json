@@ -7319,6 +7319,16 @@
     ],
     "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12).",
     "commissionAnyTermSocMin": 9,
-    "$commissionAnyTermSocMin": "Core p.18: a commission may only be attempted in the first term unless SOC 9+ (then any term)."
+    "$commissionAnyTermSocMin": "Core p.18: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
+    "skillLevelMax": 4,
+    "$skillLevelMax": "Core p.19: a skill may never be increased beyond level 4 during creation; further increases are lost.",
+    "skillTotalCap": {
+      "multiplier": 3,
+      "attributes": [
+        "intelligence",
+        "education"
+      ]
+    },
+    "$skillTotalCap": "Core p.19: total skill levels may never exceed 3 x (INT + EDU)."
   }
 }
