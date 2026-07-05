@@ -509,6 +509,11 @@ const MongooseCareerSchema = z.looseObject({
     benefit: z.string(),
   })),
 });
+const MongooseReductionSchema = z.looseObject({
+  count: z.number(),
+  amount: z.union([z.number(), z.string()]),
+  pool: z.array(z.string()).optional(),
+});
 const MongooseDataSchema = z.looseObject({
   startAge: z.number(),
   termLengthYears: z.number(),
@@ -529,6 +534,33 @@ const MongooseDataSchema = z.looseObject({
     assignment: z.string(),
   })),
   careers: z.record(z.string(), MongooseCareerSchema),
+  agingStartTerm: z.number(),
+  cashRollCap: z.number(),
+  benefitsOfRank: z.array(z.looseObject({
+    minRank: z.number(),
+    maxRank: z.number(),
+    bonusRolls: z.number(),
+    benefitDm: z.number().optional(),
+  })),
+  pensions: z.looseObject({
+    minTerms: z.number(),
+    excludedCareers: z.array(z.string()),
+    table: z.array(z.looseObject({ terms: z.number(), pay: z.number() })),
+    beyondTerm: z.number(),
+    perTermPay: z.number(),
+  }),
+  injury: z.array(z.looseObject({
+    roll: z.number(),
+    text: z.string(),
+    reductions: z.array(MongooseReductionSchema),
+  })),
+  aging: z.array(z.looseObject({
+    threshold: z.number(),
+    text: z.string(),
+    reductions: z.array(MongooseReductionSchema),
+  })),
+  lifeEvents: z.array(MongooseTableRowSchema),
+  lifeEventsUnusual: z.array(MongooseTableRowSchema),
 });
 
 const CanonDataSchema = z.looseObject({

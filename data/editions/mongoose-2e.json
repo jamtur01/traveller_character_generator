@@ -6831,6 +6831,485 @@
         "$musterOut": "Core p.44 Mustering-Out Benefits (Cash + Material Benefits, per-career table)"
       }
     },
-    "$careers": "Core pp.22-45 twelve careers (Agent, Army, Citizen, Drifter, Entertainer, Marine, Merchant, Navy, Noble, Rogue, Scholar, Scout). Populated per-career in subsequent tasks."
+    "$careers": "Core pp.22-45 twelve careers (Agent, Army, Citizen, Drifter, Entertainer, Marine, Merchant, Navy, Noble, Rogue, Scholar, Scout). Populated per-career in subsequent tasks.",
+    "agingStartTerm": 4,
+    "$agingStartTerm": "Core p.49: ageing rolls begin at the end of the fourth term (age 34).",
+    "cashRollCap": 3,
+    "$cashRollCap": "Core p.46: may roll on the Cash column at most three times across all careers.",
+    "benefitsOfRank": [
+      {
+        "minRank": 1,
+        "maxRank": 2,
+        "bonusRolls": 1
+      },
+      {
+        "minRank": 3,
+        "maxRank": 4,
+        "bonusRolls": 2
+      },
+      {
+        "minRank": 5,
+        "maxRank": 6,
+        "bonusRolls": 3,
+        "benefitDm": 1
+      }
+    ],
+    "$benefitsOfRank": "Core p.46 Benefits of Rank: rank 1-2 -> +1 roll; 3-4 -> +2; 5-6 -> +3 and DM+1 to all Benefit rolls from this career.",
+    "pensions": {
+      "minTerms": 5,
+      "excludedCareers": [
+        "scout",
+        "rogue",
+        "prisoner",
+        "drifter"
+      ],
+      "table": [
+        {
+          "terms": 5,
+          "pay": 10000
+        },
+        {
+          "terms": 6,
+          "pay": 12000
+        },
+        {
+          "terms": 7,
+          "pay": 14000
+        },
+        {
+          "terms": 8,
+          "pay": 16000
+        }
+      ],
+      "beyondTerm": 8,
+      "perTermPay": 2000,
+      "$rule": "Core p.49 Pensions: leaving after 5+ terms (except Scout/Rogue/Prisoner/Drifter) retires on a pension; Cr2000 per term beyond 8."
+    },
+    "injury": [
+      {
+        "roll": 1,
+        "text": "Nearly killed - reduce one physical characteristic by 1D, reduce two other physical characteristics by 2.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": "1D",
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          },
+          {
+            "count": 2,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "text": "Severely injured - reduce one physical characteristic by 1D.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": "1D",
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "text": "Missing Eye or Limb - reduce STR or DEX by 2.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity"
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "text": "Scarred - reduce any physical characteristic by 2.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "text": "Injured. Reduce any physical characteristic by 1.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "text": "Lightly Injured. No permanent effect.",
+        "reductions": []
+      }
+    ],
+    "$injury": "Core p.49 Injury table (1D). Physical characteristics = STR/DEX/END.",
+    "aging": [
+      {
+        "threshold": -6,
+        "text": "Reduce three physical characteristics by 2, reduce one mental characteristic by 1.",
+        "reductions": [
+          {
+            "count": 3,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          },
+          {
+            "count": 1,
+            "amount": 1,
+            "pool": [
+              "intelligence",
+              "education",
+              "social"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": -5,
+        "text": "Reduce three physical characteristics by 2.",
+        "reductions": [
+          {
+            "count": 3,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": -4,
+        "text": "Reduce two physical characteristics by 2, reduce one physical characteristic by 1.",
+        "reductions": [
+          {
+            "count": 2,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          },
+          {
+            "count": 1,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": -3,
+        "text": "Reduce one physical characteristic by 2, reduce two physical characteristics by 1.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": 2,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          },
+          {
+            "count": 2,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": -2,
+        "text": "Reduce three physical characteristics by 1.",
+        "reductions": [
+          {
+            "count": 3,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": -1,
+        "text": "Reduce two physical characteristics by 1.",
+        "reductions": [
+          {
+            "count": 2,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": 0,
+        "text": "Reduce one physical characteristic by 1.",
+        "reductions": [
+          {
+            "count": 1,
+            "amount": 1,
+            "pool": [
+              "strength",
+              "dexterity",
+              "endurance"
+            ]
+          }
+        ]
+      },
+      {
+        "threshold": 1,
+        "text": "No effect.",
+        "reductions": []
+      }
+    ],
+    "$aging": "Core p.49 Ageing table (2D - total terms), clamped to [-6, 1]. Reduce to 0 -> ageing crisis (die unless 1Dx Cr10000 medical care).",
+    "lifeEvents": [
+      {
+        "roll": 2,
+        "text": "Sickness or Injury: roll on the Injury table.",
+        "effects": [
+          {
+            "kind": "rollInjury",
+            "twiceTakeLower": false
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "text": "Birth or Death: someone close to you dies or is born; you are involved.",
+        "effects": []
+      },
+      {
+        "roll": 4,
+        "text": "Ending of Relationship: a romantic relationship ends badly. Gain a Rival or Enemy.",
+        "effects": [
+          {
+            "kind": "chooseEffect",
+            "options": [
+              [
+                {
+                  "kind": "gainRelation",
+                  "relation": "rival",
+                  "count": "1"
+                }
+              ],
+              [
+                {
+                  "kind": "gainRelation",
+                  "relation": "enemy",
+                  "count": "1"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "text": "Improved Relationship: a relationship deepens. Gain an Ally.",
+        "effects": [
+          {
+            "kind": "gainRelation",
+            "relation": "ally",
+            "count": "1"
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "text": "New Relationship: you become involved in a romantic relationship. Gain an Ally.",
+        "effects": [
+          {
+            "kind": "gainRelation",
+            "relation": "ally",
+            "count": "1"
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "text": "New Contact: you gain a new Contact.",
+        "effects": [
+          {
+            "kind": "gainRelation",
+            "relation": "contact",
+            "count": "1"
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "text": "Betrayal: a friend betrays you. Convert a Contact or Ally into a Rival or Enemy, otherwise gain a Rival or Enemy.",
+        "effects": [
+          {
+            "kind": "chooseEffect",
+            "options": [
+              [
+                {
+                  "kind": "gainRelation",
+                  "relation": "rival",
+                  "count": "1"
+                }
+              ],
+              [
+                {
+                  "kind": "gainRelation",
+                  "relation": "enemy",
+                  "count": "1"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "text": "Travel: you move to another world. Gain DM+2 to your next qualification roll.",
+        "effects": [
+          {
+            "kind": "qualificationDm",
+            "dm": 2,
+            "scope": "next"
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "text": "Good Fortune: something good happens. Gain DM+2 to any one Benefit roll.",
+        "effects": [
+          {
+            "kind": "benefitDm",
+            "dm": 2,
+            "scope": "any"
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "text": "Crime: lose one Benefit roll or take the Prisoner career in your next term.",
+        "effects": [
+          {
+            "kind": "chooseEffect",
+            "options": [
+              [
+                {
+                  "kind": "benefitRoll",
+                  "delta": -1
+                }
+              ],
+              [
+                {
+                  "kind": "forceCareer",
+                  "career": "prisoner"
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "text": "Unusual Event: something weird happens. Roll 1D on the Unusual Event sub-table.",
+        "effects": []
+      }
+    ],
+    "$lifeEvents": "Core p.46 Life Events (2D). Reached via an Events result of 7 on any career. Row 12 rolls 1D on lifeEventsUnusual.",
+    "lifeEventsUnusual": [
+      {
+        "roll": 1,
+        "text": "Psionics: you encounter a Psionic institute; you may test PSI and, if you qualify, take the Psion career next term.",
+        "effects": []
+      },
+      {
+        "roll": 2,
+        "text": "Aliens: you spend time among an alien species. Gain Science 1 and a Contact among an alien species.",
+        "effects": [
+          {
+            "kind": "gainSkill",
+            "skill": "Science",
+            "level": 1
+          },
+          {
+            "kind": "gainRelation",
+            "relation": "contact",
+            "count": "1"
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "text": "Alien Artefact: you have a strange device from an alien culture not normally available to humans.",
+        "effects": []
+      },
+      {
+        "roll": 4,
+        "text": "Amnesia: something happened to you but you do not know what it was.",
+        "effects": []
+      },
+      {
+        "roll": 5,
+        "text": "Contact with Government: you briefly came into contact with the highest echelons of the Imperium.",
+        "effects": []
+      },
+      {
+        "roll": 6,
+        "text": "Ancient Technology: you have something older than the Imperium, or older than humanity.",
+        "effects": []
+      }
+    ],
+    "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12)."
   }
 }

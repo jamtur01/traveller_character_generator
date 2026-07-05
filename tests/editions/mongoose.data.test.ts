@@ -122,3 +122,34 @@ describe("mongoose-2e edition registration", () => {
     expect(ed.data.mongoose).toBeDefined();
   });
 });
+
+describe("mongoose-2e shared muster/aging/life-events data", () => {
+  const MG = parseCanonData(mongooseJson, "mongoose-2e").mongoose!;
+
+  it("declares the 1D Injury table (Core p.49)", () => {
+    expect(MG.injury.map((r) => r.roll)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(MG.injury[5]!.reductions).toEqual([]); // roll 6 = lightly injured
+    expect(MG.injury[2]!.reductions[0]).toMatchObject({ pool: ["strength", "dexterity"], amount: 2 });
+  });
+
+  it("declares the Ageing table clamped to [-6, 1] with term-4 start (Core p.49)", () => {
+    expect(MG.agingStartTerm).toBe(4);
+    expect(MG.aging.map((r) => r.threshold)).toEqual([-6, -5, -4, -3, -2, -1, 0, 1]);
+    expect(MG.aging.at(-1)!.reductions).toEqual([]); // 1+ = no effect
+  });
+
+  it("declares Benefits of Rank and Pensions (Core pp.46, 49)", () => {
+    expect(MG.cashRollCap).toBe(3);
+    expect(MG.benefitsOfRank.at(-1)).toMatchObject({ bonusRolls: 3, benefitDm: 1 });
+    expect(MG.pensions.minTerms).toBe(5);
+    expect(MG.pensions.excludedCareers).toContain("scout");
+    expect(MG.pensions.table.find((t) => t.terms === 5)?.pay).toBe(10000);
+  });
+
+  it("declares the 2D Life Events table + Unusual sub-table (Core p.46)", () => {
+    expect(MG.lifeEvents.map((r) => r.roll)).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(MG.lifeEventsUnusual.map((r) => r.roll)).toEqual([1, 2, 3, 4, 5, 6]);
+    // Event 7 -> new Contact.
+    expect(MG.lifeEvents.find((r) => r.roll === 7)!.effects[0]).toMatchObject({ kind: "gainRelation", relation: "contact" });
+  });
+});

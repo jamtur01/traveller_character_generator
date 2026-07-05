@@ -146,6 +146,50 @@ export interface MongoosePreCareer {
   readonly qualification: MongooseCheck;
 }
 
+/** A characteristic reduction (ageing / injury): reduce `count` characteristics
+ *  drawn from `pool` (default the three physical characteristics) by `amount`
+ *  — a fixed number or a die string like "1D". */
+export interface MongooseReduction {
+  readonly count: number;
+  readonly amount: number | string;
+  readonly pool?: readonly string[];
+}
+
+/** Injury table row (Core p.49, 1D). */
+export interface MongooseInjuryRow {
+  readonly roll: number;
+  readonly text: string;
+  readonly reductions: readonly MongooseReduction[];
+}
+
+/** Ageing table row (Core p.49, 2D - total terms). `threshold` is the modified
+ *  value at which the row applies; the engine clamps the roll into range and
+ *  looks up the exact threshold. */
+export interface MongooseAgingRow {
+  readonly threshold: number;
+  readonly text: string;
+  readonly reductions: readonly MongooseReduction[];
+}
+
+/** Benefits of Rank (Core p.46): a rank band grants bonus benefit rolls (and,
+ *  at the top band, a DM to all benefit rolls from that career). */
+export interface MongooseRankBonus {
+  readonly minRank: number;
+  readonly maxRank: number;
+  readonly bonusRolls: number;
+  readonly benefitDm?: number;
+}
+
+/** Pension schedule (Core p.49). */
+export interface MongoosePensions {
+  readonly minTerms: number;
+  readonly excludedCareers: readonly string[];
+  readonly table: readonly { readonly terms: number; readonly pay: number }[];
+  /** Beyond the highest tabulated term, add perTermPay per extra term. */
+  readonly beyondTerm: number;
+  readonly perTermPay: number;
+}
+
 /** The mongoose edition's top-level data block. */
 export interface MongooseData {
   /** Starting age (Core p.8: 18). */
@@ -166,4 +210,21 @@ export interface MongooseData {
   /** Draft table (Core p.20): 1D -> career + assignment. */
   readonly draft: readonly { readonly roll: number; readonly career: string; readonly assignment: string }[];
   readonly careers: Record<string, MongooseCareer>;
+  /** Term at whose end ageing rolls begin — term 4 / age 34 (Core p.49). */
+  readonly agingStartTerm: number;
+  /** Max Cash-column benefit rolls across all careers (Core p.46: 3). */
+  readonly cashRollCap: number;
+  /** Benefits of Rank bonus-roll bands (Core p.46). */
+  readonly benefitsOfRank: readonly MongooseRankBonus[];
+  /** Pension schedule (Core p.49). */
+  readonly pensions: MongoosePensions;
+  /** Injury table (Core p.49, 1D). */
+  readonly injury: readonly MongooseInjuryRow[];
+  /** Ageing table (Core p.49, 2D - total terms). */
+  readonly aging: readonly MongooseAgingRow[];
+  /** Life Events table (Core p.46, 2D) — the event-7 target; uses the shared
+   *  effect union. */
+  readonly lifeEvents: readonly MongooseTableRow[];
+  /** Unusual Event sub-table (Core p.46, 1D on a Life Event of 12). */
+  readonly lifeEventsUnusual: readonly MongooseTableRow[];
 }
