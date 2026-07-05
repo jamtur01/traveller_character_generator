@@ -49,7 +49,6 @@ export function MongooseTermPhase({
   const st = character.mongooseState;
   const career = currentCareerLabel(character);
   const assignment = currentAssignmentLabel(character);
-  const rank = st?.rank ?? 0;
   const rankTitle = currentRankTitle(character);
   const mustContinue = st?.perTerm.mustContinue ?? false;
   const isPrisoner = (st?.paroleThreshold ?? null) !== null;
@@ -59,7 +58,7 @@ export function MongooseTermPhase({
       subtitle={`Term ${(st?.termsInCareer ?? 0) + 1}. Each term is four years: qualification (once), survival, events, advancement, and skills.`}
     >
       <dl className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <Stat label="Rank" value={rankTitle ?? `Rank ${rank}`} />
+        <Stat label="Rank" value={rankTitle ?? "—"} />
         <Stat label="Age" value={String(character.age)} />
         <Stat label="Terms in career" value={String(st?.termsInCareer ?? 0)} />
       </dl>

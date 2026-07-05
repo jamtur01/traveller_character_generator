@@ -17,9 +17,8 @@ const CHAR_ORDER: readonly AttributeKey[] = [
 function sheetHeaderLeft(ch: Character): string {
   const deceasedMark = ch.deceased ? "\u2020 " : "";
   if (ch.chargenModelId === "mongoose") {
-    const st = ch.mongooseState;
     const careerName = currentCareerLabel(ch);
-    const rankStr = currentRankTitle(ch) ?? (st ? `rank ${st.rank}` : "");
+    const rankStr = currentRankTitle(ch) ?? "";
     const prefix = careerName ? `${careerName}${rankStr ? ` ${rankStr}` : ""} ` : "";
     const attrs = CHAR_ORDER.map((k) => ch.attributes[k]).join(" ");
     return `${deceasedMark}${prefix}${ch.name} ${attrs}`;

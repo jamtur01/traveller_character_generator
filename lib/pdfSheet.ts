@@ -3,12 +3,13 @@ import { Character } from "./traveller/character";
 import { formatBenefit } from "./traveller/sheet";
 import { getEdition } from "./traveller/editions";
 import { cascadePoolByKey } from "./traveller/engine/cascadeMap";
-import { numCommaSep } from "./traveller/formatting";
+import { numCommaSep, safeFilename } from "./traveller/formatting";
 import type { AttributeKey } from "./traveller/types";
 import {
   acgRankTitle, bladeSkills, expandIncludes, passageNames, pistolSkills, shipNames,
 } from "./traveller/view";
 import { currentCareerLabel, currentRankTitle } from "./traveller/engine/mongoose/labels";
+import { downloadMongooseSheet } from "@/lib/mongooseSheet";
 
 const MONGOOSE_ATTRS: readonly AttributeKey[] = [
   "strength", "dexterity", "endurance", "intelligence", "education", "social",
@@ -48,20 +49,6 @@ const W = PAGE_W - 2 * MARGIN; // 540
 
 const LINE = 0.7;
 const BOLD = "helvetica";
-
-// Combining diacritical marks block (U+0300..U+036F). Built from a string
-// literal with Unicode escapes so the regex is robust against editor
-// normalization (a literal /[̀-ͯ]/ would break if anyone normalized the file).
-const COMBINING_MARKS = new RegExp("[\\u0300-\\u036F]", "g");
-
-export function safeFilename(name: string): string {
-  return name
-    .normalize("NFKD")
-    .replace(COMBINING_MARKS, "")
-    .replace(/[^a-zA-Z0-9-_. ]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-}
 
 // jsPDF's base-14 fonts use WinAnsi (CP1252). A single character outside that
 // set makes jsPDF encode the whole string as UTF-16, which the non-embedded
@@ -281,7 +268,7 @@ function drawTasForm2(doc: jsPDF, c: Character): number {
   // back to the basic service ranks (covers O1-O6 universally) and
   // finally to the raw rank code if no title is registered.
   const rankText = isMongoose(c)
-    ? (currentRankTitle(c) ?? `Rank ${c.mongooseState?.rank ?? 0}`)
+    ? (currentRankTitle(c) ?? "")
     : c.useAcg && c.acgState?.rankCode
       ? acgRankTitle(c) ?? c.acgState.rankCode
       : (c.serviceDef().ranks[c.rank] || "");
@@ -788,6 +775,17 @@ export function buildCharacterSheetPdf(c: Character): jsPDF {
 }
 
 export function downloadCharacterSheetPdf(c: Character): void {
+  // Mongoose characters get the official fillable 2022 sheet (its own AcroForm
+  // PDF), not the generic TAS form this module draws for CT/MT/ACG.
+  if (c.chargenModelId === "mongoose") {
+    downloadMongooseSheet(c).catch((err: unknown) => {
+      console.error("Failed to build/save Mongoose character sheet PDF:", err);
+      if (typeof window !== "undefined") {
+        window.alert("Could not generate the PDF. See the browser console for details.");
+      }
+    });
+    return;
+  }
   try {
     const doc = buildCharacterSheetPdf(c);
     const filename = `${safeFilename(c.name) || "traveller"}-character.pdf`;

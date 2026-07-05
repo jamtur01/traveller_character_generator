@@ -7,6 +7,21 @@ export function numCommaSep(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+// Combining diacritical marks block (U+0300..U+036F). Built from a string
+// literal with Unicode escapes so the regex is robust against editor
+// normalization (a literal /[̀-ͯ]/ would break if anyone normalized the file).
+const COMBINING_MARKS = new RegExp("[\\u0300-\\u036F]", "g");
+
+/** Sanitize a character name into a safe download filename stem. */
+export function safeFilename(name: string): string {
+  return name
+    .normalize("NFKD")
+    .replace(COMBINING_MARKS, "")
+    .replace(/[^a-zA-Z0-9-_. ]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
 export function intToOrdinal(i: number): string {
   switch (i) {
     case 1: return "first";

@@ -22,11 +22,10 @@ export function CharacterSummary({ character }: { character: Character }) {
   const def = getEditionServices(character.editionId)[character.service];
   let subtitleParts: string[];
   if (isMongoose) {
-    const st = character.mongooseState;
     const careerName = currentCareerLabel(character);
-    const rankStr = currentRankTitle(character) ?? `rank ${st?.rank ?? 0}`;
+    const rankStr = currentRankTitle(character) ?? "";
     subtitleParts = careerName
-      ? [`${careerName} (${rankStr}${st?.commissioned ? ", officer" : ""})`]
+      ? [rankStr ? `${careerName} (${rankStr})` : careerName]
       : [];
   } else {
     const rankText = def?.ranks[character.rank] || "";

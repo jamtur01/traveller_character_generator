@@ -27,34 +27,76 @@ export function assignmentLabel(ch: Character, careerId: string, asgId: string):
   return a?.displayName ?? cap(asgId);
 }
 
+/** The career context to DISPLAY: the live career while one is active, else the
+ *  most recent finished career from history. `state.career`/`assignment` are
+ *  cleared to null at muster-out, so a completed character's career, assignment,
+ *  and final rank survive only in `history` — read them there for the sheet. */
+interface EffectiveCareer {
+  readonly careerId: string;
+  readonly career: MongooseCareer;
+  readonly assignment: string | null;
+  readonly rank: number;
+  readonly commissioned: boolean;
+}
+
+function effectiveCareer(ch: Character): EffectiveCareer | null {
+  const st = ch.mongooseState;
+  if (!st) return null;
+  if (st.career) {
+    const career = careersOf(ch)?.[st.career];
+    if (!career) return null;
+    return {
+      careerId: st.career, career, assignment: st.assignment,
+      rank: st.rank, commissioned: st.commissioned,
+    };
+  }
+  const last = st.history.at(-1);
+  if (!last) return null;
+  const career = careersOf(ch)?.[last.career];
+  if (!career) return null;
+  return {
+    careerId: last.career, career, assignment: last.assignment,
+    rank: last.finalRank, commissioned: last.commissioned,
+  };
+}
+
 /** The character's current (or most recent) career display name, or "". */
 export function currentCareerLabel(ch: Character): string {
-  const st = ch.mongooseState;
-  const id = st?.career ?? st?.history.at(-1)?.career ?? "";
-  return id ? careerLabel(ch, id) : "";
+  const eff = effectiveCareer(ch);
+  return eff ? careerLabel(ch, eff.careerId) : "";
 }
 
-/** The character's current assignment display name, or "". */
+/** The character's current (or most recent) assignment display name, or "". */
 export function currentAssignmentLabel(ch: Character): string {
-  const st = ch.mongooseState;
-  if (!st?.career || !st.assignment) return "";
-  return assignmentLabel(ch, st.career, st.assignment);
+  const eff = effectiveCareer(ch);
+  return eff?.assignment ? assignmentLabel(ch, eff.careerId, eff.assignment) : "";
 }
 
-/** The rank-ladder TITLE for the character's current rank (e.g. "2nd Officer"),
- *  or null when not in a career or no title is defined at that rank. Mirrors
- *  ranks.ts currentLadder but defensively — display code must not throw. */
-export function currentRankTitle(ch: Character): string | null {
-  const st = ch.mongooseState;
-  if (!st?.career) return null;
-  const career = careersOf(ch)?.[st.career];
+/** Rank-ladder TITLE for an explicit career/assignment/rank/commissioned tuple
+ *  (e.g. "2nd Officer"), or null when the career is unknown or that rung has no
+ *  title (rankless careers / untitled rungs — the caller renders a blank, never
+ *  "Rank N"). Used for finished-career history records on the sheet. */
+export function rankTitleFor(
+  ch: Character, careerId: string, assignment: string | null,
+  rank: number, commissioned: boolean,
+): string | null {
+  const career = careersOf(ch)?.[careerId];
   if (!career) return null;
   let ladder: readonly MongooseRank[] | undefined;
-  if (st.commissioned) {
+  if (commissioned) {
     ladder = career.ranks.officer;
-  } else if (st.assignment) {
-    const key = career.ranks.enlistedByAssignment[st.assignment];
+  } else if (assignment) {
+    const key = career.ranks.enlistedByAssignment[assignment];
     ladder = key ? career.ranks.enlisted[key] : undefined;
   }
-  return ladder?.find((r) => r.rank === st.rank)?.title ?? null;
+  return ladder?.find((r) => r.rank === rank)?.title ?? null;
+}
+
+/** The rank-ladder TITLE for the character's current (or final) rank, reading
+ *  the finished career from history when no career is active. Null when there
+ *  is no career or no title at that rank (caller renders a blank, never
+ *  "Rank N"). Mirrors ranks.ts currentLadder but defensively — must not throw. */
+export function currentRankTitle(ch: Character): string | null {
+  const eff = effectiveCareer(ch);
+  return eff ? rankTitleFor(ch, eff.careerId, eff.assignment, eff.rank, eff.commissioned) : null;
 }

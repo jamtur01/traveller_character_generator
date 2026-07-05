@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCharacterSheetPdf, equipmentQualifiedOn, highestSkillIn,
-  safeFilename, splitSkills,
+  splitSkills,
 } from "../lib/pdfSheet";
+import { safeFilename } from "../lib/traveller/formatting";
 import { Character } from "../lib/traveller/character";
 import { freshAcgState } from "../lib/traveller/engine/acg/state";
 
