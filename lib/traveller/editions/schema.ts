@@ -66,6 +66,7 @@ export const RulesSchema = z.looseObject({
   musterOutRolls: z.looseObject({
     perTerm: z.number().optional(),
     rankExtraRolls: z.array(RankExtraRollSchema).optional(),
+    rankExtraRollsBySource: z.record(z.string(), z.array(RankExtraRollSchema)).optional(),
     cashTableDm: z.array(z.looseObject({
       retired: z.boolean().optional(),
       skillAtLeast: z.looseObject({
@@ -481,7 +482,6 @@ const MongooseTableRowSchema = z.looseObject({
 const MongooseCareerSchema = z.looseObject({
   id: z.string(),
   displayName: z.string(),
-  page: z.number(),
   qualification: MongooseCheckSchema,
   commission: MongooseCheckSchema.optional(),
   basicTrainingFromAssignment: z.boolean().optional(),
@@ -531,11 +531,6 @@ const MongooseDataSchema = z.looseObject({
   ),
   backgroundSkillBase: z.number(),
   backgroundSkills: z.array(z.string()),
-  preCareer: z.array(z.looseObject({
-    id: z.string(),
-    displayName: z.string(),
-    qualification: MongooseCheckSchema,
-  })),
   draft: z.array(z.looseObject({
     roll: z.number(),
     career: z.string(),

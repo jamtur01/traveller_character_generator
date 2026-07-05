@@ -73,7 +73,10 @@ export function musterOutRolls(ch: Character): number {
     ch.terms - ch.shortTermsCount - acgPartial - anagathicsTerms + overlap,
   );
   let r = perTerm * qualifyingTerms;
-  const band = rules?.rankExtraRolls?.find(
+  const source = getEdition(ch.editionId).data.services[ch.service]?.source;
+  const bands = (source ? rules?.rankExtraRollsBySource?.[source] : undefined)
+    ?? rules?.rankExtraRolls;
+  const band = bands?.find(
     (b) => ch.rank >= b.rankMin && ch.rank <= b.rankMax,
   );
   if (band) r += band.additionalRolls;
