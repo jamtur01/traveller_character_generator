@@ -14,6 +14,7 @@ import type {
 import {
   assertPathway, freshAcgState,
 } from "./engine/acg/state";
+import type { MongooseState } from "./engine/mongoose/state";
 import {
   editionHasHomeworld,
   generateAndApplyHomeworld, type Homeworld,
@@ -157,6 +158,7 @@ export interface CharacterState {
   useAcg: boolean;
   acgPathway: string | null;
   acgState: AcgState | null;
+  mongooseState: MongooseState | null;
 }
 
 export class Character implements CharacterState {
@@ -449,6 +451,9 @@ export class Character implements CharacterState {
   /** Full ACG state — pathway, role, rank, per-term cycle, resume fields.
    *  Lazily initialized when ACG begins. */
   acgState: AcgState | null = null;
+  /** Full Mongoose 2e chargen state — lazily created when the mongoose flow
+   *  begins (null for CT/MT characters). */
+  mongooseState: MongooseState | null = null;
 
   /** Non-null assertion helper for ACG pathway code. Pathway functions
    *  are only called when the character is on an ACG path, so acgState
@@ -992,5 +997,6 @@ export function cloneCharacter(ch: Character): Character {
   // reference leaks mutations back into the snapshot. structuredClone
   // deep-copies all serializable shapes.
   if (ch.acgState) next.acgState = structuredClone(ch.acgState);
+  if (ch.mongooseState) next.mongooseState = structuredClone(ch.mongooseState);
   return next;
 }
