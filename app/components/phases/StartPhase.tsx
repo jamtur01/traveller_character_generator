@@ -15,9 +15,17 @@ function editionSummary(meta: EditionMeta): string {
 function workflowStepsFor(editionId: string, useAcg: boolean): string[] {
   const ct = editionId === "ct-classic";
   const mt = editionId === "mt-megatraveller";
+  const mongoose = editionId === "mongoose-2e";
   const steps: string[] = [
     "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
   ];
+  if (mongoose) {
+    steps.push("Gain background skills at level 0 from your upbringing (Education DM + 3 skills).");
+    steps.push("Choose a career and assignment, then roll Qualification (2D + characteristic DM); fail and you are drafted or become a Drifter.");
+    steps.push("Each four-year term: Survival (a natural 2 always fails, sending you to the Mishap table), Events, an optional Commission then Advancement, Skills & Training, and Ageing from term 4.");
+    steps.push("Muster out: Cash and Material Benefits (max 3 cash rolls) plus any pension, then the Connections step ties Travellers together.");
+    return steps;
+  }
   if (mt) {
     steps.push("Roll a homeworld (PM p. 12) — its tech / atmosphere / law constrain which careers you may enlist in.");
   }

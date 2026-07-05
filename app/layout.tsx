@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Traveller Character Generator",
   description:
-    "Step-by-step character generator for the Traveller RPG — supports Classic Traveller and MegaTraveller editions, data-driven from the original rulebook tables.",
+    "Step-by-step character generator for the Traveller RPG — supports Classic Traveller, MegaTraveller, and Mongoose Traveller 2e, data-driven from the original rulebook tables.",
 };
 
 export default function RootLayout({
