@@ -17,6 +17,12 @@
 export interface MongooseCheck {
   readonly characteristics: readonly string[];
   readonly target: number;
+  /** Qualification-only (Core p.24/32/36): a negative DM applied when the
+   *  Traveller is at least `minAge` on entry (Army/Marine 30+, Navy 34+). */
+  readonly ageDm?: { readonly minAge: number; readonly dm: number };
+  /** Qualification-only (Core p.38 Noble): automatic qualification with no roll
+   *  when the named characteristic is at least `value`. */
+  readonly autoQualifyAtLeast?: { readonly attribute: string; readonly value: number };
 }
 
 /** A skill-table column: index 1-6 (1D). Index 0 is unused (null). Cells carry

@@ -4,6 +4,7 @@
 // these are the atomic mechanics it composes.
 
 import type { Character } from "@/lib/traveller/character";
+import type { AttributeKey } from "@/lib/traveller/types";
 import { event as ev } from "@/lib/traveller/history";
 import { rollCheck } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
@@ -15,7 +16,9 @@ import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
 
 /** Attempt to qualify for a career (Core p.18): roll 2D + best-characteristic
  *  DM - 1 per previous career + pending qualification DMs, vs the target.
- *  Drifter (empty characteristics) qualifies automatically with no roll.
+ *  Drifter (empty characteristics) qualifies automatically with no roll, as
+ *  does a Noble whose SOC meets `autoQualifyAtLeast` (Core p.38). Army/Marine/
+ *  Navy apply the qualification `ageDm` when old enough (Core p.24/32/36).
  *  Returns whether qualification succeeded; the caller commits via enterCareer. */
 export function qualifyForCareer(ch: Character, careerId: string): boolean {
   const state = requireRule(ch.mongooseState, "mongooseState", "engine (mongoose)");
@@ -25,8 +28,15 @@ export function qualifyForCareer(ch: Character, careerId: string): boolean {
     ch.log(ev.raw(`Qualified for ${career.displayName} (automatic).`));
     return true;
   }
+  const auto = check.autoQualifyAtLeast;
+  if (auto && ch.attributes[auto.attribute as AttributeKey] >= auto.value) {
+    ch.log(ev.raw(`Qualified for ${career.displayName} (automatic: ${auto.attribute} ${auto.value}+).`));
+    return true;
+  }
+  const ageDm = check.ageDm && ch.age >= check.ageDm.minAge ? check.ageDm.dm : 0;
   const dm = checkDm(ch, check)
     + state.careerCount * getMongooseData(ch).qualificationDmPerPriorCareer
+    + ageDm
     + consumePendingDm(state.pendingDms.qualification);
   const r = rollCheck(ch.rng, [dm], check.target);
   ch.log(ev.roll(

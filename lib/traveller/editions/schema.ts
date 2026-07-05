@@ -461,6 +461,8 @@ const EditionMetaSchema = z.looseObject({
 const MongooseCheckSchema = z.looseObject({
   characteristics: z.array(z.string()),
   target: z.number(),
+  ageDm: z.looseObject({ minAge: z.number(), dm: z.number() }).optional(),
+  autoQualifyAtLeast: z.looseObject({ attribute: z.string(), value: z.number() }).optional(),
 });
 const MongooseSkillColumnSchema = z.array(z.string().nullable());
 const MongooseRankSchema = z.looseObject({

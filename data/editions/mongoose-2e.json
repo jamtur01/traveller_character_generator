@@ -661,6 +661,11 @@
             "endurance"
           ],
           "target": 5,
+          "ageDm": {
+            "minAge": 30,
+            "dm": -2,
+            "$rule": "Core p.24: DM-2 if you are aged 30 or more."
+          },
           "$qualification": "END 5+; DM-1 for every previous career; DM-2 if you are aged 30 or more (Core p.24)"
         },
         "commission": {
@@ -2855,6 +2860,11 @@
             "endurance"
           ],
           "target": 6,
+          "ageDm": {
+            "minAge": 30,
+            "dm": -2,
+            "$rule": "Core p.32: DM-2 if you are aged 30 or more."
+          },
           "$qualification": "END 6+ (Core p.32). DM-1 for every previous career; DM-2 if you are aged 30 or more."
         },
         "commission": {
@@ -3977,6 +3987,11 @@
             "intelligence"
           ],
           "target": 6,
+          "ageDm": {
+            "minAge": 34,
+            "dm": -2,
+            "$rule": "Core p.36: DM-2 if you are aged 34 or more."
+          },
           "$qualification": "Core p.36 Qualification: INT 6+; DM-1 for every previous career; DM-2 if aged 34 or more"
         },
         "commission": {
@@ -4568,6 +4583,11 @@
             "social"
           ],
           "target": 10,
+          "autoQualifyAtLeast": {
+            "attribute": "social",
+            "value": 10,
+            "$rule": "Core p.38: automatic qualification if your SOC is 10 or higher."
+          },
           "$qualification": "SOC 10+. Automatic qualification if your SOC is 10 or higher. DM-1 for every previous career (standard rule, applied globally by the engine)."
         },
         "assignments": [
