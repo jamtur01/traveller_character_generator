@@ -60,7 +60,7 @@ export function TermPhase({
         />
         {def.commissionThrow !== undefined && (
           <Stat
-            label={character.commissioned ? "Promotion" : "Commission"}
+            label={character.commissioned ? "Promotion" : (def.positionLabel ?? "Commission")}
             value={`${character.commissioned ? (def.promotionThrow ?? "—") : def.commissionThrow}+`}
             hint={
               character.commissioned

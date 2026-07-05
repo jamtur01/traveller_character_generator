@@ -62,6 +62,9 @@ export interface CheckData {
   target: number | null;
   dms?: DMRule[];
   inverseToLeave?: boolean;
+  /** Roll-log / UI label for the position check: "Commission" (TTB) vs
+   *  "Position" (CotI). Defaults to "Commission" when absent. */
+  label?: string;
   /** CotI auto-enrolment (e.g. Nobles): enlistment succeeds automatically
    *  when the named attribute meets `min`. Absent = no auto-enrolment. */
   automaticIf?: { attribute: string; min: number };

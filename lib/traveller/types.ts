@@ -83,6 +83,13 @@ export interface ServiceDef {
   promotionThrow?: number;
   reenlistThrow: number;
   /**
+   * Roll-log / UI label for the position check ("Commission" for TTB, "Position"
+   * for CotI). Sourced from the service's `checks.position.label`; consumers
+   * fall back to "Commission" when absent. Display-only — the mechanic is
+   * identical either way.
+   */
+  positionLabel?: string;
+  /**
    * If true, reverse the reenlistment rule: the character must throw
    * `reenlistThrow` or higher to LEAVE the service before retirement.
    * Used for the Bureaucrats career per CotI.

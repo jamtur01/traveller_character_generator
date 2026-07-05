@@ -75,6 +75,17 @@ export function buildServiceDef(
     `services.${serviceData.displayName}.checks.survival.target`, "TTB/PM service tables",
   );
   const commissionThrow = serviceData.checks.position?.target ?? undefined;
+  // Roll-log / UI label for the position check: "Commission" (TTB) vs
+  // "Position" (CotI). Strict-read from JSON (every position check declares a
+  // label); undefined only for services with no position check, which never
+  // reach a commission roll. Display-only — the mechanic is identical.
+  const positionLabel = serviceData.checks.position
+    ? requireRule(
+        serviceData.checks.position.label,
+        `services.${serviceData.displayName}.checks.position.label`,
+        "TTB/PM service tables (Commission vs Position)",
+      )
+    : undefined;
   const promotionThrow = serviceData.checks.promotion?.target ?? undefined;
   const reenlistThrow = requireRule(
     serviceData.checks.reenlistment.target,
@@ -114,11 +125,14 @@ export function buildServiceDef(
   };
 
   const checkCommission = (ch: Character): CheckResult => {
-    if (!serviceData.checks.position || commissionThrow === undefined) {
+    if (
+      !serviceData.checks.position || commissionThrow === undefined
+      || positionLabel === undefined
+    ) {
       return { passed: false, margin: 0 };
     }
     const dm = evaluateDM(serviceData.checks.position.dms, ch);
-    return check2dVsTarget(ch, { dm, target: commissionThrow, label: "Commission" });
+    return check2dVsTarget(ch, { dm, target: commissionThrow, label: positionLabel });
   };
 
   const checkPromotion = (ch: Character): CheckResult => {
@@ -255,6 +269,7 @@ export function buildServiceDef(
     musterBenefits,
     acquireSkill,
   };
+  if (positionLabel !== undefined) def.positionLabel = positionLabel;
   if (commissionThrow !== undefined) def.commissionThrow = commissionThrow;
   if (promotionThrow !== undefined) def.promotionThrow = promotionThrow;
   if (inverseReenlist) def.inverseReenlist = inverseReenlist;

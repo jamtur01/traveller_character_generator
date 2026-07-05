@@ -35,7 +35,10 @@ export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
   ch.rank += 1;
   ch.skillPoints += 1;
 
-  applyOvershootBonus(ch, config, margin, "Commission");
+  // A commission just succeeded, so the service has a position check and thus a
+  // strict-read positionLabel (serviceLoader). Overshoot fires only for MT,
+  // whose position labels are all "Commission".
+  applyOvershootBonus(ch, config, margin, service.positionLabel!);
 
   service.doPromotion(ch);
   ch.log(ev.promoted(
