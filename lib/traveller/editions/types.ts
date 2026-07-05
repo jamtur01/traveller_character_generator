@@ -6,6 +6,7 @@ import type { Character } from "@/lib/traveller/character";
 import type { ServiceKey } from "@/lib/traveller/types";
 import type { Predicate } from "@/lib/traveller/engine/predicate";
 import type { StepRegistry } from "@/lib/traveller/engine/steps/types";
+import type { MongooseData } from "@/lib/traveller/engine/mongoose/types";
 
 export interface EditionMeta {
   id: string;
@@ -197,6 +198,10 @@ export interface CanonData {
    *  equipment-operation skills listed individually in "Equipment
    *  Qualified On" (the vehicle cascade is unioned in by the renderer). */
   sheet?: { equipmentSkills: string[] };
+  /** Mongoose Traveller 2e chargen data. Editions without the mongoose
+   *  model omit this block; the engine (engine/mongoose/*) reads it when a
+   *  character's chargenModelId is "mongoose". */
+  mongoose?: MongooseData;
 }
 
 export interface AcgData {
