@@ -51,7 +51,7 @@ function applySingleBenefit(ch: Character, benefit: string): void {
 }
 
 /** Apply a Material Benefit cell. Compound cells split into parts on commas and
- *  the trailing conjunction: " or " (Core p.57) is a player choice of one part,
+ *  the trailing conjunction: " or " (Core p.56) is a player choice of one part,
  *  " and " grants every part. Each part is routed by kind — a skill (present in
  *  mongooseSkillNames) via applySkillCell, otherwise (equipment, attribute,
  *  relationship: "Ship Share", "END +1", "Ally") via applySingleBenefit. A

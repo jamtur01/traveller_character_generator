@@ -93,7 +93,7 @@
     ],
     "$backgroundSkills": "Core p.9 background skill list (17 skills), all gained at level 0.",
     "preCareer": [],
-    "$preCareer": "Core pp.16-17 University / Military Academy. Populated with entry checks and graduation benefits in the pre-career task.",
+    "$preCareer": "Core pp.16-17 University / Military Academy pre-career education is intentionally NOT modeled in this edition: the array is empty and the mongoose chargen flow enters careers directly. Left as an explicit empty list rather than removed so the omission is documented.",
     "draft": [
       {
         "roll": 1,
@@ -441,7 +441,8 @@
                 "onSuccess": [],
                 "onFailure": []
               }
-            ]
+            ],
+            "$simplification": "Core p.23 Agent event 8: the Deception 8+ check is modeled, but both outcomes are cross-career-table rolls that are not modeled (on success: roll on the Rogue or Citizen Events table and one Specialist skill-table roll for that career; on failure: roll on the Rogue or Citizen Mishap table). Both branches are left empty (no mechanical effect)."
           },
           {
             "roll": 9,
@@ -3892,7 +3893,8 @@
                   []
                 ]
               }
-            ]
+            ],
+            "$simplification": "Core p.35 Merchant event 5: the variable Benefit-roll wager (gamble any number of Benefit rolls on a Gambler or Broker 8+ check; win half the stake rounded up, else lose the entire stake) is a player-chosen stake that is not modeled. Only the skill outcome is offered (take the deal for one level of Gambler or Broker, or decline); the rulebook grants the skill either way."
           },
           {
             "roll": 6,
@@ -4652,7 +4654,8 @@
                   }
                 ]
               }
-            ]
+            ],
+            "$simplification": "Core p.37 Navy mishap 3: the branch-specific skill check is simplified to a best-of over all six candidate skills (Electronics (sensors)/Gunner for crew, Mechanic/Vacc Suit for engineer-gunner, Pilot (small craft or spacecraft)/Tactics (naval) for flight) instead of restricting the options to the character's actual branch. The pass keeps this term's Benefit roll and the fail forfeits it (both leave the career), which is faithful."
           },
           {
             "roll": 4,
@@ -4680,7 +4683,8 @@
                   ]
                 ]
               }
-            ]
+            ],
+            "$simplification": "Core p.37 Navy mishap 4: the 'if you were responsible' branch's reward - one free roll on the Skills and Training tables before ejection - is omitted; that branch only ejects (leaveCareer, no free skill roll). The 'not responsible' branch (gain an Enemy, keep this term's Benefit roll) is faithful."
           },
           {
             "roll": 5,
@@ -5844,7 +5848,8 @@
                 "skill": "Gambler",
                 "level": 1
               }
-            ]
+            ],
+            "$simplification": "Core p.41 Rogue event 10: only the Gambler 1 gain is modeled. The variable Benefit-roll wager (wager any number of Benefit rolls on a Gambler 8+ check; win half rounded up, else lose the wagered rolls) is a player-chosen stake that is not modeled."
           },
           {
             "roll": 11,
@@ -7524,7 +7529,8 @@
                 "relation": "enemy",
                 "count": "1"
               }
-            ]
+            ],
+            "$simplification": "Core p.45 Scout event 3: the run/treat choice, the Pilot 8+ or Persuade 10+ checks, the Electronics (sensors) 1 gain on success and the Enemy are modeled. The 'may not re-enlist in the Scouts at the end of this term' penalty on a failed check is omitted (there is no per-term re-enlistment lock in this model)."
           },
           {
             "roll": 4,

@@ -1,5 +1,5 @@
-// Mongoose 2e Ageing (Core p.49): at the end of the fourth term and every term
-// thereafter, roll 2D minus total terms on the Ageing table and apply the
+// Mongoose 2e Ageing (Core pp.48-49): at the end of the fourth term and every
+// term thereafter, roll 2D minus total terms on the Ageing table and apply the
 // characteristic reductions. A characteristic reduced to 0 triggers an ageing
 // crisis; in auto mode we assume emergency medical care restores it to 1.
 
@@ -14,7 +14,7 @@ const ALL_ATTRS: readonly AttributeKey[] = [
   "strength", "dexterity", "endurance", "intelligence", "education", "social",
 ];
 
-/** Whether ageing rolls have begun (end of agingStartTerm onward, Core p.49). */
+/** Whether ageing rolls have begun (end of agingStartTerm onward, Core p.48). */
 export function agingBegun(ch: Character): boolean {
   return ch.terms >= getMongooseData(ch).agingStartTerm;
 }
