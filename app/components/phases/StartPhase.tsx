@@ -108,17 +108,9 @@ function EditionCard({
             </div>
           )}
         </div>
-        {dataOnly ? (
+        {dataOnly && (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
             Data only
-          </span>
-        ) : selected ? (
-          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-            Selected
-          </span>
-        ) : (
-          <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 group-hover:border-emerald-400 group-hover:text-emerald-700 dark:border-zinc-700 dark:text-zinc-400">
-            Available
           </span>
         )}
       </div>
