@@ -595,7 +595,8 @@
           {
             "roll": 5,
             "text": "Your work ends up coming home with you and someone gets hurt. Choose one of your Contacts, Allies or family members and roll twice on the Injury table for them, taking the lower result.",
-            "effects": []
+            "effects": [],
+            "$simplification": "Core p.23 Agent mishap 5. The injury is rolled for one of the Traveller's Contacts/Allies/family members, not the Traveller; NPC connections carry no characteristics in this model, so there is no character-facing mechanical outcome to apply. The relation is left intact (the text does not remove it)."
           },
           {
             "roll": 6,
@@ -2119,7 +2120,76 @@
           {
             "roll": 9,
             "text": "You are offered a chance to take part in a risky but rewarding adventure. If you accept, roll 1D: On a 1-2, you are injured or arrested; either roll on the Injury table or take the Prisoner career in your next term. On 3-4, you survive, but gain nothing. On a 5-6, you succeed. Gain DM+4 to one Benefit roll.",
-            "effects": []
+            "effects": [
+              {
+                "kind": "chooseEffect",
+                "options": [
+                  [
+                    {
+                      "kind": "rollSubTable",
+                      "entries": [
+                        [
+                          {
+                            "kind": "chooseEffect",
+                            "options": [
+                              [
+                                {
+                                  "kind": "rollInjury",
+                                  "twiceTakeLower": false
+                                }
+                              ],
+                              [
+                                {
+                                  "kind": "forceCareer",
+                                  "career": "prisoner"
+                                }
+                              ]
+                            ]
+                          }
+                        ],
+                        [
+                          {
+                            "kind": "chooseEffect",
+                            "options": [
+                              [
+                                {
+                                  "kind": "rollInjury",
+                                  "twiceTakeLower": false
+                                }
+                              ],
+                              [
+                                {
+                                  "kind": "forceCareer",
+                                  "career": "prisoner"
+                                }
+                              ]
+                            ]
+                          }
+                        ],
+                        [],
+                        [],
+                        [
+                          {
+                            "kind": "benefitDm",
+                            "dm": 4,
+                            "scope": "next"
+                          }
+                        ],
+                        [
+                          {
+                            "kind": "benefitDm",
+                            "dm": 4,
+                            "scope": "next"
+                          }
+                        ]
+                      ],
+                      "$rule": "Core p.29 Drifter event 9: on accepting, roll 1D - 1-2 injured or arrested (Injury table or Prisoner career, player choice), 3-4 nothing gained, 5-6 DM+4 to one Benefit roll."
+                    }
+                  ],
+                  []
+                ]
+              }
+            ]
           },
           {
             "roll": 10,
