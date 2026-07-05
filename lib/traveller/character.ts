@@ -745,10 +745,10 @@ export class Character implements CharacterState {
     // The displayed delta is the requested change, not the post-clamp
     // change; the cap-warning log line above is what tells the reader
     // a clamp happened.
-    this.log(ev.attributeChange(
-      attrib, delta,
-      `now ${extendedHex(this.attributes[attrib])}`,
-    ));
+    const now = this.chargenModelId === "mongoose"
+      ? String(this.attributes[attrib])
+      : extendedHex(this.attributes[attrib]);
+    this.log(ev.attributeChange(attrib, delta, `now ${now}`));
   }
 
   addBenefit(benefit: string) {

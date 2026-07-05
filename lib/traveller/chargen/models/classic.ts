@@ -41,8 +41,8 @@ function doRunTerm(ch: Character): ChargenSnapshot {
     if (ch.attributes.social < rankRule.socialFloor) {
       ch.attributes.social = rankRule.socialFloor;
     }
-    const startingRank = ch.attributes.social + rankRule.rankOffset;
-    if (ch.rank < startingRank && startingRank >= 1 && startingRank <= rankRule.maxRank) {
+    const startingRank = Math.min(ch.attributes.social + rankRule.rankOffset, rankRule.maxRank);
+    if (ch.rank < startingRank && startingRank >= 1) {
       ch.rank = startingRank;
       ch.commissioned = true;
     }

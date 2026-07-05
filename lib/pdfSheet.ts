@@ -145,7 +145,7 @@ function drawClampedLines(
   doc: jsPDF, text: string,
   opts: { x: number; y: number; w: number; maxLines: number; lineH: number; moreSuffix?: string },
 ): void {
-  const lines = doc.splitTextToSize(text, opts.w) as string[];
+  const lines = doc.splitTextToSize(toWinAnsi(text), opts.w) as string[];
   let ly = opts.y;
   const shown = Math.min(opts.maxLines, lines.length);
   for (let i = 0; i < shown; i++) {
@@ -707,7 +707,7 @@ function drawAcgRecordSheet(doc: jsPDF, c: Character): void {
       let rowY = sy;
       for (let i = 0; i < visible; i++) {
         const x = col === 0 ? X0 + 6 : X0 + W / 2 + 6;
-        doc.text(`• ${c.schoolsAttended[i]!}`, x, rowY);
+        doc.text(toWinAnsi(`• ${c.schoolsAttended[i]!}`), x, rowY);
         col = (col + 1) % 2;
         if (col === 0) rowY += 12;
       }

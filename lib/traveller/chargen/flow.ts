@@ -70,6 +70,15 @@ export function doMusterChoice(
   ch: Character,
   kind: "cash" | "benefit",
 ): ChargenSnapshot {
+  if (ch.muster.musterRolls <= 0) {
+    throw new Error("doMusterChoice: no muster rolls remaining");
+  }
+  if (kind === "cash" && ch.muster.musterCashUsed >= maxCashRolls(ch)) {
+    throw new Error(
+      `doMusterChoice: cash roll past the ${maxCashRolls(ch)}-roll cap ` +
+        `(musterCashUsed=${ch.muster.musterCashUsed})`,
+    );
+  }
   const cashDM = cashDmFor(ch);
   const benefitsDM = benefitDmFor(ch);
   if (kind === "cash") {
