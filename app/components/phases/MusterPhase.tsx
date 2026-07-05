@@ -38,7 +38,12 @@ export function MusterPhase({
   onChoose: (kind: "cash" | "benefit") => void;
 }) {
   const cashCap = maxCashRolls(character);
-  const cashLeft = cashCap - character.musterCashUsed;
+  // Cash rolls are also bounded by the total rolls remaining: you can never
+  // spend more on cash than you have rolls left. Clamp so the stat never
+  // claims more cash rolls than are actually reachable (e.g. "2 / 2", not
+  // "3 / 3", when only 2 rolls remain).
+  const cashLeft = Math.min(cashCap - character.musterCashUsed, character.musterRolls);
+  const cashCapReachable = character.musterCashUsed + cashLeft;
   const cashDM = cashDmFor(character);
   const benefitDM = benefitDmFor(character);
 
@@ -51,7 +56,7 @@ export function MusterPhase({
         <Stat label="Rolls left" value={String(character.musterRolls)} />
         <Stat
           label="Cash rolls left"
-          value={`${cashLeft} / ${cashCap}`}
+          value={`${cashLeft} / ${cashCapReachable}`}
           hint={cashDM ? "+1 DM (Gambling)" : undefined}
         />
         <Stat
