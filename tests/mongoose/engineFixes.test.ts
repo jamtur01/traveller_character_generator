@@ -145,6 +145,46 @@ describe("ejection overrides must-continue in doRunTerm (M2)", () => {
   });
 });
 
+describe("immediate escape leaves the career, skipping advancement (doRunTerm, L2)", () => {
+  it("skips advancement + skill training when an event sets mustLeave with no forced next career", () => {
+    // Prisoner term, Inmate assignment (Survival END 7+). Event 3 is the escape:
+    // pass the Stealth/Deception 10+ check and leaveCareer fires — mustLeave WITHOUT
+    // a forcedNextCareer. That is an IMMEDIATE leave, so the term ends before the
+    // advancement + skill step (Core p.57 "you leave this career"). Contrast: the
+    // M2 arrest sets forcedNextCareer, so its term's advancement still runs.
+    const c = mkChar();
+    c.mongooseState!.career = "prisoner";
+    c.mongooseState!.assignment = "inmate";
+    c.mongooseState!.termsInCareer = 1;
+    c.mongooseState!.paroleThreshold = 8; // in a parole career; escape bypasses parole
+    c.terms = 0; // stays below ageing (term 4)
+    mockRandom([
+      d6(1),        // Prisoner re-picks this term's assignment (pool = [current])
+      d6(4), d6(4), // Survival 2D = 8 vs END 7+ -> survives (not a natural 2)
+      d6(1), d6(2), // Event 2D = 3 -> "you have the opportunity to escape"
+      d6(1),        // chooseEffect: take the escape (Option 1)
+      d6(6), d6(6), // escape check 2D = 12 vs Stealth/Deception 10+ -> success
+    ]); // muster-out benefit rolls fall to the d6(3) fallback -> Cash column (no skill)
+    const result = mongooseModel.execute(c, { kind: "runTerm" });
+
+    // The escape fired and set an immediate leave, not a forced next-term transfer.
+    expect(c.events.find((e) => e.kind === "mongooseEvent" && e.roll === 3)).toBeDefined();
+    expect(c.mongooseState!.perTerm.mustLeave).toBe(true);
+    expect(c.mongooseState!.forcedNextCareer).toBeNull();
+
+    // (1) No advancement this term: a prisoner's advancement is the parole check,
+    // which logs an "Advancement" roll; the skipped skill step trained nothing.
+    // (If the guard drops the `forcedNextCareer === null` clause, advancement runs
+    // on escape and this roll appears — the test reddens.)
+    expect(c.events.filter((e) => e.kind === "roll" && e.rollName === "Advancement")).toHaveLength(0);
+    expect(c.skills).toHaveLength(0);
+
+    // (2) The character left the career this term.
+    expect(result.snapshot.phase).toBe("career");
+    expect(c.mongooseState!.career).toBeNull();
+  });
+});
+
 describe("optional commission in resolveAdvancementPhase (M4, Core pp.18-19)", () => {
   it("auto mode attempts the preferred commission and can commission", () => {
     const c = mkChar({ social: 10 });
