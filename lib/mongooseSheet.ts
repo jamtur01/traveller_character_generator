@@ -182,9 +182,14 @@ export function mongooseSheetFields(ch: Character): Record<string, string> {
   return out;
 }
 
-// The sheet's section-bar orange (#ec6607) + Arial Narrow / Bebas Neue titles,
-// sampled from the template. pdf-lib has no Arial Narrow, so Helvetica stands in.
-const SHEET_ORANGE = rgb(0.925, 0.4, 0.027);
+// Section-block styling sampled from the template: the gray section-header bar
+// (#747174) with a right-end bevel, a green accent tab, and a pale-blue field
+// box — matching the sheet's "HISTORY & BACKGROUND"-style blocks. pdf-lib has
+// no Arial Narrow / Bebas Neue, so Helvetica stands in for the titles.
+const HEADER_GRAY = rgb(0.455, 0.443, 0.455);
+const FIELD_BLUE = rgb(0.906, 0.929, 0.965);
+const ACCENT_GREEN = rgb(0.49, 0.7, 0.26);
+const BOX_LINE = rgb(0.72, 0.72, 0.72);
 const HISTORY_INK = rgb(0.12, 0.12, 0.12);
 const HIST_MARGIN = 40;
 const HIST_BAR_H = 26;
@@ -208,21 +213,25 @@ function wrapText(text: string, font: PDFFont, size: number, maxW: number): stri
   return out.length > 0 ? out : [""];
 }
 
-/** Add a history page: the sheet's orange section bar + a bordered content box.
- *  Returns the page and the first body baseline. */
+/** Add a history page styled like the sheet's section blocks: a pale-blue field
+ *  box under a gray, right-beveled header bar with a green accent tab. Returns
+ *  the page and the first body baseline. */
 function addHistoryPage(
   pdf: PDFDocument, size: { width: number; height: number }, bold: PDFFont, cont: boolean,
 ): { page: PDFPage; top: number } {
   const page = pdf.addPage([size.width, size.height]);
   const innerW = size.width - HIST_MARGIN * 2;
   const barY = size.height - HIST_MARGIN - HIST_BAR_H;
-  page.drawRectangle({ x: HIST_MARGIN, y: barY, width: innerW, height: HIST_BAR_H, color: SHEET_ORANGE });
-  page.drawText(cont ? "SERVICE HISTORY (CONTINUED)" : "SERVICE HISTORY", {
-    x: HIST_MARGIN + 10, y: barY + 8, size: 14, font: bold, color: rgb(1, 1, 1),
-  });
   page.drawRectangle({
     x: HIST_MARGIN, y: HIST_MARGIN, width: innerW, height: barY - HIST_MARGIN,
-    borderColor: rgb(0.72, 0.72, 0.72), borderWidth: 1,
+    color: FIELD_BLUE, borderColor: BOX_LINE, borderWidth: 1,
+  });
+  page.drawSvgPath(`M 0 0 L ${innerW} 0 L ${innerW - 14} ${HIST_BAR_H} L 0 ${HIST_BAR_H} Z`, {
+    x: HIST_MARGIN, y: barY + HIST_BAR_H, color: HEADER_GRAY,
+  });
+  page.drawRectangle({ x: HIST_MARGIN + 4, y: barY - 15, width: 5, height: 12, color: ACCENT_GREEN });
+  page.drawText(cont ? "SERVICE HISTORY (CONTINUED)" : "SERVICE HISTORY", {
+    x: HIST_MARGIN + 14, y: barY + 8, size: 13, font: bold, color: rgb(1, 1, 1),
   });
   return { page, top: barY - 16 };
 }
