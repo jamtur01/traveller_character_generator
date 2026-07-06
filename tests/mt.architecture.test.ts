@@ -216,7 +216,14 @@ describe("All registered editions either have ACG pathways or omit ACG entirely"
       if (hasAcg) {
         expect(ed.hooks.acgPathways).toBeDefined();
         const declared = Object.keys(ed.data.advancedCharacterGeneration!)
-          .filter((k) => k !== "common" && k !== "source" && k !== "coverage" && k !== "homeworld");
+          .filter(
+            (k) =>
+              k !== "common" &&
+              k !== "source" &&
+              k !== "coverage" &&
+              k !== "homeworld" &&
+              k !== "pathways",
+          );
         for (const pathway of declared) {
           expect(ed.hooks.acgPathways![pathway]).toBeDefined();
         }

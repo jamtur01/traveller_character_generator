@@ -225,8 +225,18 @@ for (const ed of EDITIONS) {
       expect(common.decorationTiers).toBeDefined();
     });
 
+    // "Pathway" = a named ACG service block. Exclude the non-pathway meta keys
+    // (common/source/coverage) plus the promoted enumerable/data roots
+    // (pathways: the acg.pathway option-domain array; homeworld: shared data),
+    // matching the exclusion set in tests/audit/optionDomains.audit.test.ts and
+    // listAcgPathways() (lib/traveller/engine/acg.ts).
     const pathways = Object.keys(acg).filter(
-      (k) => k !== "common" && k !== "source" && k !== "coverage",
+      (k) =>
+        k !== "common" &&
+        k !== "source" &&
+        k !== "coverage" &&
+        k !== "homeworld" &&
+        k !== "pathways",
     );
 
     it("has at least one named pathway", () => {
