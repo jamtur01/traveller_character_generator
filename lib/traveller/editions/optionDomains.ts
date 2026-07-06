@@ -42,6 +42,18 @@
 //   (e.g. `pathways`), which cite in-code in the requireRule call instead, because
 //   the structural/architecture audits treat any non-meta root key (a `$rule…`
 //   sibling included) as a service pathway and would misclassify it.
+//
+// INTENTIONALLY NOT OPTION-DOMAINS:
+//   Pure yes/no interaction affordances are NOT option-domains and are left
+//   engine-side by design — do NOT "promote" them. These are engine-emitted UI
+//   labels for a binary player prompt that carries NO game rule of its own; the
+//   underlying DMs and gates they toggle already live in the edition JSON. They
+//   include: Accept/Decline an offered career (draft/qualification),
+//   Attempt/Decline a commission, Roll-for-command/Take-staff command duty,
+//   Accept/Decline a transfer, Take-DM/Roll-without an admin (education) DM, and
+//   Apply/Skip an academy. Each is a two-branch affordance with no enumerable
+//   worth citing, so registering one would add a JSON array whose "values" are
+//   just yes/no — noise, not a decision domain.
 
 import { getAcgPathway, getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
@@ -170,6 +182,22 @@ function readWeaponBenefitTypes(editionId: string): readonly string[] {
   );
 }
 
+/** Mongoose-2e muster-benefit-column source pattern: read the cited
+ *  Mustering-Out benefit-column set (Cash, Material Benefits — Core p.46) from
+ *  the mongoose data block. In-flow domain (a `pickOrDefer` of kind
+ *  "musterRoll", muster.ts) — its DOMAINS entry omits `field`; the Cash column
+ *  is runtime-gated by cashRollCap but the DOMAIN is the full 2-column set.
+ *  Fails loud via requireRule when the mongoose block / list is absent. */
+function readMongooseMusterBenefitColumns(
+  editionId: string,
+): readonly string[] {
+  return requireRule(
+    getEdition(editionId).data.mongoose?.musterBenefitColumns,
+    `${editionId}: mongoose.musterBenefitColumns`,
+    "MgT2 Core p.46",
+  );
+}
+
 const DOMAINS: Record<string, DomainSource> = {
   "acg.mercenary.service": {
     field: "acgService",
@@ -268,6 +296,19 @@ const DOMAINS: Record<string, DomainSource> = {
   },
   "ct.weaponType": {
     read: (editionId) => readWeaponBenefitTypes(editionId),
+  },
+  "acg.navy.officerSkillTable": {
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "navy",
+        "officerSkillTables",
+        "advancedCharacterGeneration.navy.officerSkillTables",
+        "PM p. 52",
+      ),
+  },
+  "mongoose.musterBenefitColumn": {
+    read: (editionId) => readMongooseMusterBenefitColumns(editionId),
   },
 };
 

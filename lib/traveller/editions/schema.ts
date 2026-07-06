@@ -389,6 +389,10 @@ const PathwayDataSchema = z.looseObject({
   // sibling citations (kept by z.looseObject).
   departments: z.array(z.string()).optional(),
   skillTableOrder: z.array(z.string()).optional(),
+  // PM p. 52: declared, order-significant navy officer initial-training
+  // skill-table pick (in-flow option domain). `$ruleOfficerSkillTables` is
+  // its sibling citation (kept by z.looseObject).
+  officerSkillTables: z.array(z.string()).optional(),
   ranks: z.looseObject({
     enlisted: z.array(z.unknown()).optional(),
     officer: z.array(z.unknown()).optional(),
@@ -609,6 +613,10 @@ const MongooseDataSchema = z.looseObject({
   // (in-flow per-term table pick). `$skillTrainingTables` is its sibling
   // citation (kept by z.looseObject).
   skillTrainingTables: z.array(z.string()).optional(),
+  // Core p.46: declared, order-significant Mustering-Out benefit-column set
+  // (in-flow per-roll Cash/Material Benefits pick). `$musterBenefitColumns` is
+  // its sibling citation (kept by z.looseObject).
+  musterBenefitColumns: z.array(z.string()).optional(),
 });
 
 const CanonDataSchema = z.looseObject({

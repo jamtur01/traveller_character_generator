@@ -7848,6 +7848,8 @@
     "$agingStartTerm": "Core p.48: ageing rolls begin at the end of the fourth term (age 34).",
     "cashRollCap": 3,
     "$cashRollCap": "Core p.46: may roll on the Cash column at most three times across all careers.",
+    "musterBenefitColumns": ["Cash", "Material Benefits"],
+    "$musterBenefitColumns": "Core p.46: each Benefit roll is taken on the career's Cash or Material Benefits column (the Cash column offered only while Cash rolls remain, capped at cashRollCap across all careers).",
     "benefitsOfRank": [
       {
         "minRank": 1,

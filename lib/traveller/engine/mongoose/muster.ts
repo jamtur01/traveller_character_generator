@@ -13,6 +13,7 @@ import { getMongooseData, currentCareer, findRollRow, mongooseSkillNames, skillB
 import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 
 const clampMuster = (career: MongooseCareer, n: number): number =>
   Math.max(1, Math.min(career.musterOut.length, n));
@@ -82,7 +83,8 @@ function resolveBenefitRoll(
 ): void {
   const state = ch.mongooseState!;
   const canCash = state.cashRollsUsed < data.cashRollCap;
-  const options = canCash ? ["Cash", "Material Benefits"] : ["Material Benefits"];
+  const columns = optionDomain(ch.editionId, "mongoose.musterBenefitColumn").values;
+  const options = canCash ? columns : columns.filter((col) => col !== "Cash");
   ch.pickOrDefer({
     kind: "musterRoll",
     label: "Choose a benefit column",

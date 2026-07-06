@@ -42,6 +42,9 @@ import { Character } from "@/lib/traveller/character";
 import { ChoicePendingError } from "@/lib/traveller/engine/choices";
 import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 import { availableTables } from "@/lib/traveller/engine/mongoose/skillsTraining";
+import { musterOut } from "@/lib/traveller/engine/mongoose/muster";
+import { navyInitialTraining } from "@/lib/traveller/engine/acg/pathways/navy";
+import { freshAcgState } from "@/lib/traveller/engine/acg/state";
 
 // Consumer side: read the authoritative consumer keys/values straight from the
 // edition JSON, using the house audit pattern (see
@@ -588,6 +591,141 @@ describe("option-domain audit-locks — ct.weaponType", () => {
 
     // (b) declared enumerable, in declaration order (golden literal).
     expect(domain.values).toEqual(["Blade", "Gun"]);
+
+    // (c) same SET as the engine picker's options (order-insensitive).
+    expect([...domain.values].sort()).toEqual([...consumerOptions].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// acg.navy.officerSkillTable — the academy/NOTC officer's initial-training
+// skill-table pick (MT-ACG), an IN-FLOW pending choice: the engine raises it
+// as a `pickOrDefer` of kind "navyOfficerSkillTable" (navy.ts:372-382,
+// navyOfficerSkillChoice, fired by navyInitialTraining for a commissioned
+// academy/NOTC officer in interactive mode), NOT a field the enlist form
+// writes. So this domain OMITS `field` and the lock asserts
+// `.field === undefined`, like the other in-flow domains above.
+//
+// For each of the two initial-training rolls, an academy/NOTC officer chooses
+// to roll on Branch Skills (the enlisted branch table) or Officer Staff Skills
+// (the serviceSkills "staffOfficer" column — onResolve routes them at
+// navy.ts:377-380). PM p. 52 (initial training: "two rolls on Branch Skills;
+// academy/NOTC officers may take each roll on Branch Skills or Officer Staff
+// Skills" — mt-megatraveller.json navy.initialTraining.$rule) / the navy
+// officer skill tables printed at PM pp. 53-55. Grounded value set, in the
+// option-declaration order hard-coded at navy.ts:376:
+//   Branch Skills, Officer Staff Skills
+//
+// Edition scope: mt-megatraveller. The navy pathway (and this officer-training
+// choice) exists only under advancedCharacterGeneration.navy, and the `acg.`
+// decisionId scopes this lock there.
+//
+// Independent consumer (the engine picker exercised DIRECTLY, never via the
+// accessor — that independence is the lock's teeth): navyInitialTraining() run
+// on a commissioned academy/NOTC officer in interactive mode queues a
+// "navyOfficerSkillTable" pending choice (unwinding via ChoicePendingError);
+// its `options` are the engine's authoritative table list. Change the
+// ["Branch Skills","Officer Staff Skills"] literal or the choice kind and this
+// reddens.
+describe("option-domain audit-locks — acg.navy.officerSkillTable", () => {
+  it("acg.navy.officerSkillTable === navyOfficerSkillChoice options, field omitted (in-flow)", () => {
+    // Consumer side: run the officer initial-training picker directly. A
+    // commissioned academy/NOTC officer in interactive mode makes the Branch
+    // vs Officer Staff Skills choice; pickOrDefer queues it and unwinds via
+    // ChoicePendingError, and the queued options are the engine's table list.
+    const c = new Character({
+      attributes: {
+        strength: 7,
+        dexterity: 7,
+        endurance: 7,
+        intelligence: 7,
+        education: 7,
+        social: 7,
+      },
+    });
+    c.editionId = "mt-megatraveller";
+    c.choiceMode = "interactive";
+    const acg = freshAcgState("navy");
+    acg.isOfficer = true;
+    acg.preCareerCommission = true; // academy/NOTC officer gate (navy.ts:358-359)
+    c.acgState = acg;
+    expect(() => navyInitialTraining(c)).toThrow(ChoicePendingError);
+    const picker = c.pendingChoices.find((p) => p.kind === "navyOfficerSkillTable");
+    const consumerOptions = picker?.options ?? [];
+
+    const domain = optionDomain("mt-megatraveller", "acg.navy.officerSkillTable");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "navyOfficerSkillTable".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration order (golden literal).
+    expect(domain.values).toEqual(["Branch Skills", "Officer Staff Skills"]);
+
+    // (c) same SET as the engine picker's options (order-insensitive).
+    expect([...domain.values].sort()).toEqual([...consumerOptions].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mongoose.musterBenefitColumn — the Mustering-Out benefit-column pick
+// (Mongoose 2e, Core pp.46-49), an IN-FLOW pending choice: for each Benefit
+// roll the engine raises a `pickOrDefer` of kind "musterRoll"
+// (muster.ts:86-114, resolveBenefitRoll), NOT a field the enlist form writes.
+// So this domain OMITS `field`.
+//
+// Each Benefit roll is taken on the career's Cash OR Material Benefits column
+// (Core p.46). The Cash column is offered only while Cash rolls remain (capped
+// at cashRollCap=3 across all careers — muster.ts:84-85,
+// `cashRollsUsed < data.cashRollCap`); the DOMAIN is the full, ungated
+// 2-column set. Grounded value set, in the option-declaration order hard-coded
+// at muster.ts:85:
+//   Cash, Material Benefits
+//
+// Edition scope: mongoose-2e. The Cash/Material Benefits muster columns live in
+// the mongoose engine (each mongoose.careers[].musterOut row carries a `cash`
+// value and a `benefit` value), and the `mongoose.` decisionId scopes this
+// lock there.
+//
+// Independent consumer (the engine picker exercised DIRECTLY, never via the
+// accessor — that independence is the lock's teeth): musterOut() run on a
+// mongoose career with a term served and no Cash rolls used yet (cashRollsUsed
+// 0 < cashRollCap, so the Cash column is offered) queues a "musterRoll" pending
+// choice in interactive mode (unwinding via ChoicePendingError); its `options`
+// are the engine's authoritative 2-column list. Change the
+// ["Cash","Material Benefits"] literal or the choice kind and this reddens.
+describe("option-domain audit-locks — mongoose.musterBenefitColumn", () => {
+  it("mongoose.musterBenefitColumn === musterRoll options, field omitted (in-flow)", () => {
+    // Consumer side: run the muster benefit picker directly. A career with a
+    // term served and Cash rolls remaining offers both columns; pickOrDefer
+    // queues the first Benefit roll and unwinds via ChoicePendingError, and the
+    // queued options are the engine's column list.
+    const c = new Character({
+      attributes: {
+        strength: 7,
+        dexterity: 7,
+        endurance: 7,
+        intelligence: 7,
+        education: 7,
+        social: 7,
+      },
+    });
+    c.editionId = "mongoose-2e";
+    c.choiceMode = "interactive";
+    c.mongooseState = freshMongooseState();
+    c.mongooseState.career = "agent";
+    c.mongooseState.assignment = "lawEnforcement";
+    c.mongooseState.termsInCareer = 2; // >0 → at least one Benefit roll
+    expect(() => musterOut(c)).toThrow(ChoicePendingError);
+    const picker = c.pendingChoices.find((p) => p.kind === "musterRoll");
+    const consumerOptions = picker?.options ?? [];
+
+    const domain = optionDomain("mongoose-2e", "mongoose.musterBenefitColumn");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "musterRoll".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration order (golden literal).
+    expect(domain.values).toEqual(["Cash", "Material Benefits"]);
 
     // (c) same SET as the engine picker's options (order-insensitive).
     expect([...domain.values].sort()).toEqual([...consumerOptions].sort());

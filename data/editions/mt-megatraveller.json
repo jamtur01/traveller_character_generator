@@ -5129,6 +5129,8 @@
       "$ruleFleets": "PM p. 52: the Navy comprises three fleets — Imperial Navy, Reserve Fleet, System Squadron.",
       "subsectorTechOptions": ["", "Early Stellar", "Avg Stellar", "High Stellar"],
       "$ruleSubsectorTechOptions": "PM p. 52: the subsector tech code offered at navy enlistment — the empty option defaults to the homeworld tech code (clamped to the Early Stellar minimum), then the Early Stellar, Avg Stellar, and High Stellar ceilings.",
+      "officerSkillTables": ["Branch Skills", "Officer Staff Skills"],
+      "$ruleOfficerSkillTables": "PM p. 52: an academy/NOTC officer may take each of the two initial-training rolls on Branch Skills or Officer Staff Skills.",
       "branchAssignment": {
         "columns": [
           "die",

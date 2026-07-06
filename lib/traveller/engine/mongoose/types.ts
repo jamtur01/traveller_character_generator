@@ -287,4 +287,9 @@ export interface MongooseData {
    *  Advanced Education (EDU-gated), and, once commissioned, Officer.
    *  `availableTables` and `optionDomain("mongoose.skillTable")` read this. */
   readonly skillTrainingTables?: readonly string[];
+  /** Mustering-Out benefit columns (Core p.46), in pick order: Cash, Material
+   *  Benefits. `resolveBenefitRoll` and `optionDomain("mongoose.musterBenefitColumn")`
+   *  read this; the Cash column is offered only while Cash rolls remain
+   *  (cashRollCap). */
+  readonly musterBenefitColumns?: readonly string[];
 }

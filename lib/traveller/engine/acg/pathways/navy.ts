@@ -28,6 +28,7 @@ import {
   type SkillColumnPolicy,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import { event as ev } from "@/lib/traveller/history";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
@@ -373,7 +374,7 @@ function navyOfficerSkillChoice(ch: Character): void {
   ch.pickOrDefer({
     kind: "navyOfficerSkillTable",
     label: "Officer training: roll on which skill table?",
-    options: ["Branch Skills", "Officer Staff Skills"],
+    options: optionDomain(ch.editionId, "acg.navy.officerSkillTable").values,
     onResolve: (ch, table) => {
       if (table === "Officer Staff Skills") navyServiceSkillRoll(ch, "staffOfficer");
       else navyBranchSkillRoll(ch);
