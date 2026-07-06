@@ -90,16 +90,18 @@ function mapSkillOverflow(overflow: readonly [string, number][], out: Record<str
   });
 }
 
-/** The five career-history rows: career, assignment (as notes), terms, rank title. */
+/** The five career-history rows: career, terms, the rank NUMBER (the RANK column
+ *  is number-width), and assignment + rank title in the wider notes cell. */
 function mapCareers(ch: Character, out: Record<string, string>): void {
   const history = ch.mongooseState?.history ?? [];
   history.slice(0, MAX_CAREER_ROWS).forEach((rec, i) => {
     const n = i + 1;
-    out[`Career ${n}`] = careerLabel(ch, rec.career);
-    out[`Career Notes ${n}`] = assignmentLabel(ch, rec.career, rec.assignment);
-    out[`Career Term ${n}`] = String(rec.terms);
+    const asg = assignmentLabel(ch, rec.career, rec.assignment);
     const title = rankTitleFor(ch, rec.career, rec.assignment, rec.finalRank, rec.commissioned);
-    if (title) out[`Career Rank ${n}`] = title;
+    out[`Career ${n}`] = careerLabel(ch, rec.career);
+    out[`Career Term ${n}`] = String(rec.terms);
+    out[`Career Rank ${n}`] = String(rec.finalRank);
+    out[`Career Notes ${n}`] = title ? `${asg} - ${title}` : asg;
   });
 }
 
@@ -299,7 +301,10 @@ export async function fillMongooseSheet(
   for (const [name, value] of Object.entries(fields)) {
     if (!valid.has(name) || value === "") continue;
     const field = form.getTextField(name);
-    if (value.includes("\n")) field.enableMultiline();
+    // Wrap values in tall cells (career/notes/history boxes); thin single-row
+    // fields (characteristics, rank number, term) stay on one line.
+    const box = field.acroField.getWidgets()[0]?.getRectangle();
+    if (value.includes("\n") || (box !== undefined && box.height >= 24)) field.enableMultiline();
     field.setText(value);
   }
   expandConnectionNotes(form, fields);
