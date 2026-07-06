@@ -171,6 +171,10 @@ export interface CanonData {
    *  services whose `checks.enlistment.automaticIf` gate is set. */
   serviceOrder?: readonly string[];
   benefitDetails: Record<string, BenefitDetail>;
+  /** CT/CotI generic "Weapon" mustering-out benefit type list (Blade, Gun).
+   *  The two-stage Weapon benefit (weaponBenefits.doWeaponBenefit) and
+   *  `optionDomain("ct.weaponType")` read this declared enumerable. */
+  weaponBenefitTypes?: readonly string[];
   lifecycle?: LifecycleSpec & Record<string, unknown>;
   /** Engine-consumable rules. Each block is opt-in: the engine falls back
    *  to its defaults when a block is missing. */

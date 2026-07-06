@@ -38,6 +38,10 @@ import { resolve } from "node:path";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import { getEnlistableServices } from "@/lib/traveller/services";
 import { listEditions } from "@/lib/traveller/editions";
+import { Character } from "@/lib/traveller/character";
+import { ChoicePendingError } from "@/lib/traveller/engine/choices";
+import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
+import { availableTables } from "@/lib/traveller/engine/mongoose/skillsTraining";
 
 // Consumer side: read the authoritative consumer keys/values straight from the
 // edition JSON, using the house audit pattern (see
@@ -355,5 +359,237 @@ describe("option-domain audit-locks — mongoose.career", () => {
     expect([...excluded].sort()).toEqual([...forcedOnly].sort());
     expect(offered.has("prisoner")).toBe(false);
     expect(offered.has("navy")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// acg.merchant.department — the Merchant Academy department pick (MT-ACG), an
+// IN-FLOW pending choice: the engine raises it as a `pickOrDefer` of kind
+// "merchantDepartment" (preCareer.ts:732-774, applyMerchantDepartmentSkills),
+// NOT a field the enlist form writes. So this domain OMITS `field` and the
+// lock asserts `.field === undefined`, like mongoose.career.
+//
+// The department enumerable is exactly what the Academy pick offers: the
+// non-"die" columns of the merchant department SKILL table
+// (preCareer.ts:738 — `dept.columns.filter((col) => col !== "die")`, feeding
+// the merchantDepartment pickOrDefer options; the picked column key is stored
+// as ch.acgState.department and later indexes the skill row). PM p. 47
+// (Merchant Academy: "select the department to which he will be assigned") /
+// PM p. 63 (the department skill table). Grounded set, in column-declaration
+// order (mt-megatraveller.json merchantPrince.skillTables.department.columns):
+//   deck, engineer, purser, medic, admin
+// Free Trader is NOT among them — Free Traders are assigned to their own
+// department and cannot change positions
+// (merchantPrince.departmentAssignment.notes) — and "Sales" is not a
+// department skill column. NOTE the JSON carries three DIFFERENT "department"
+// shapes: the skill-table columns above (5); availablePositions.rows[].department
+// = Deck/Engineering/Purser/Administration/Sales (5, title-cased); and
+// departmentAssignment values = Purser/Sales/Engineering/Deck (4). The
+// authoritative IN-FLOW consumer — the set the Academy pickOrDefer actually
+// offers — is the skill-table columns, so the lock pins that (tightest
+// defensible form).
+//
+// Independent consumer (raw JSON, never via the accessor — that independence
+// is the lock's teeth): merchantPrince.skillTables.department.columns minus
+// "die", read straight from mt-megatraveller.json.
+describe("option-domain audit-locks — acg.merchant.department", () => {
+  it("acg.merchant.department === skillTables.department columns minus die, field omitted (in-flow)", () => {
+    // Consumer side: the edition JSON, read raw (never via the accessor).
+    const raw = JSON.parse(
+      readFileSync(
+        resolve(__dirname, "../../data/editions/mt-megatraveller.json"),
+        "utf8",
+      ),
+    ) as {
+      advancedCharacterGeneration: {
+        merchantPrince: {
+          skillTables: { department: { columns: readonly string[] } };
+        };
+      };
+    };
+    const columns =
+      raw.advancedCharacterGeneration.merchantPrince.skillTables.department.columns;
+
+    const domain = optionDomain("mt-megatraveller", "acg.merchant.department");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "merchantDepartment".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration (column) order (golden literal).
+    expect(domain.values).toEqual([
+      "deck",
+      "engineer",
+      "purser",
+      "medic",
+      "admin",
+    ]);
+
+    // (c) same SET as the department skill-table columns minus the "die" roll
+    //     column (order-insensitive) — the Academy pick's actual option source.
+    const deptColumns = columns.filter((c) => c !== "die");
+    expect([...domain.values].sort()).toEqual([...deptColumns].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// acg.merchant.skillTable — the per-year merchant skill-table pick (MT-ACG),
+// an IN-FLOW pending choice: the engine raises it as a `pickOrDefer` of kind
+// "merchantSkillTable" (merchantPrince.ts:530-551, merchantRollSkill), NOT a
+// field the enlist form writes. So this domain OMITS `field`.
+//
+// Each assignment year the merchant rolls a skill "from one of the skill table
+// columns available" (PM p. 63); merchantRollSkill's table universe is
+// `Object.keys(data.skillTables)` (filtered per-year to tables exposing an
+// available column). The full declared universe is the skillTables keys, in
+// declaration order (mt-megatraveller.json merchantPrince.skillTables):
+//   service, department, life
+//
+// Independent consumer (raw JSON, never via the accessor — that independence
+// is the lock's teeth): Object.keys(merchantPrince.skillTables), read straight
+// from mt-megatraveller.json.
+describe("option-domain audit-locks — acg.merchant.skillTable", () => {
+  it("acg.merchant.skillTable === skillTables keys, field omitted (in-flow)", () => {
+    // Consumer side: the edition JSON, read raw (never via the accessor).
+    const raw = JSON.parse(
+      readFileSync(
+        resolve(__dirname, "../../data/editions/mt-megatraveller.json"),
+        "utf8",
+      ),
+    ) as {
+      advancedCharacterGeneration: {
+        merchantPrince: { skillTables: Record<string, unknown> };
+      };
+    };
+    const skillTables = raw.advancedCharacterGeneration.merchantPrince.skillTables;
+
+    const domain = optionDomain("mt-megatraveller", "acg.merchant.skillTable");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "merchantSkillTable".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration order (golden literal).
+    expect(domain.values).toEqual(["service", "department", "life"]);
+
+    // (c) same SET as the declared skillTables keys (order-insensitive).
+    const tableKeys = Object.keys(skillTables);
+    expect([...domain.values].sort()).toEqual([...tableKeys].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mongoose.skillTable — the per-term Skills-and-Training table pick (Mongoose
+// 2e, Core pp.18-19), an IN-FLOW pending choice: the engine raises it as a
+// `pickOrDefer` of kind "mongooseSkillTable" (skillsTraining.ts:41-56,
+// rollSkillTraining), NOT a field the enlist form writes. So this domain OMITS
+// `field`.
+//
+// The training-table set is FIXED (edition-level, not per-career): Personal
+// Development, Service Skills, the chosen Assignment specialist table, Advanced
+// Education (gated by EDU) and, once commissioned, the Officer table —
+// enumerated in availableTables (skillsTraining.ts:21-37). Grounded key set,
+// in push order:
+//   personalDevelopment, serviceSkills, assignment, advancedEducation, officer
+//
+// Independent consumer (the runtime enumerator run DIRECTLY, never via the
+// accessor — that independence is the lock's teeth): availableTables() on a
+// commissioned Army character (Army has both the Officer and Advanced Education
+// tables) with EDU above the Advanced-Education minimum (Army min 8), which
+// exposes all five tables. Rename/drop/add a table key in availableTables and
+// this reddens.
+describe("option-domain audit-locks — mongoose.skillTable", () => {
+  it("mongoose.skillTable === availableTables keys, field omitted (in-flow)", () => {
+    // Consumer side: run the engine's table enumerator directly. A commissioned
+    // Army character with high EDU exposes every fixed training table.
+    const c = new Character({
+      attributes: {
+        strength: 7,
+        dexterity: 7,
+        endurance: 7,
+        intelligence: 7,
+        education: 12,
+        social: 7,
+      },
+    });
+    c.editionId = "mongoose-2e";
+    c.choiceMode = "auto";
+    c.mongooseState = freshMongooseState();
+    c.mongooseState.career = "army";
+    c.mongooseState.assignment = "support";
+    c.mongooseState.commissioned = true;
+    const consumerKeys = availableTables(c).map((t) => t.key);
+
+    const domain = optionDomain("mongoose-2e", "mongoose.skillTable");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "mongooseSkillTable".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration (push) order (golden literal).
+    expect(domain.values).toEqual([
+      "personalDevelopment",
+      "serviceSkills",
+      "assignment",
+      "advancedEducation",
+      "officer",
+    ]);
+
+    // (c) same SET as the runtime availableTables keys (order-insensitive).
+    expect([...domain.values].sort()).toEqual([...consumerKeys].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ct.weaponType — the generic "Weapon" mustering-out benefit's type pick
+// (Classic Traveller, Citizens of the Imperium), an IN-FLOW pending choice:
+// the engine raises it as a `pickOrDefer` of kind "weaponType"
+// (weaponBenefits.ts:115-126, doWeaponBenefit), reached from the muster cell
+// resolver when a benefit cell reads "Weapon" (cellResolver.ts:250-253). So
+// this domain OMITS `field`. Grounded value set (the two-stage type -> specific
+// cascade): ["Blade", "Gun"].
+//
+// Edition scope: ct-classic. ct-classic's benefit tables carry the "Weapon"
+// cell (ct-classic.json benefitDetails {Weapon,Blade,Gun} + several service
+// musterOut rows), and the `ct.` decisionId scopes this lock there. The
+// ["Blade","Gun"] literal is hard-coded in doWeaponBenefit, NOT sourced from
+// edition JSON, so the value set is edition-agnostic; mt-megatraveller also
+// declares a "Weapon" benefit (benefitDetails) and [INFERENCE] routes it
+// through the same shared cellResolver muster path, but the tightest defensible
+// lock is the ct-classic `ct.weaponType` domain.
+//
+// Independent consumer (the runtime picker exercised DIRECTLY, never via the
+// accessor — that independence is the lock's teeth): doWeaponBenefit() run in
+// interactive mode queues a "weaponType" pending choice (unwinding via
+// ChoicePendingError); its `options` are the engine's authoritative type list.
+// Change the ["Blade","Gun"] literal or the choice kind and this reddens.
+describe("option-domain audit-locks — ct.weaponType", () => {
+  it("ct.weaponType === doWeaponBenefit picker options, field omitted (in-flow)", () => {
+    // Consumer side: run the muster weapon-benefit picker directly. In
+    // interactive mode pickOrDefer queues the choice and unwinds via
+    // ChoicePendingError; the queued options are the engine's type list.
+    const c = new Character({
+      attributes: {
+        strength: 7,
+        dexterity: 7,
+        endurance: 7,
+        intelligence: 7,
+        education: 7,
+        social: 7,
+      },
+    });
+    c.editionId = "ct-classic";
+    c.choiceMode = "interactive";
+    expect(() => c.doWeaponBenefit()).toThrow(ChoicePendingError);
+    const picker = c.pendingChoices.find((p) => p.kind === "weaponType");
+    const consumerOptions = picker?.options ?? [];
+
+    const domain = optionDomain("ct-classic", "ct.weaponType");
+
+    // (a) field OMITTED — in-flow pickOrDefer kind "weaponType".
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable, in declaration order (golden literal).
+    expect(domain.values).toEqual(["Blade", "Gun"]);
+
+    // (c) same SET as the engine picker's options (order-insensitive).
+    expect([...domain.values].sort()).toEqual([...consumerOptions].sort());
   });
 });

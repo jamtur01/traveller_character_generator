@@ -30,7 +30,11 @@
 //   the CT/MT basic-service domain reads the top-level `serviceOrder` array via
 //   readEnlistableServiceOrder; the Mongoose-2e voluntary-career domain reads
 //   the cited `careers` map via readMongooseVoluntaryCareers, dropping the
-//   forcedOnly careers. In-flow domains (a `pickOrDefer` choice, not an
+//   forcedOnly careers; the Mongoose-2e skill-training-table domain reads the
+//   cited `mongoose.skillTrainingTables` via readMongooseSkillTrainingTables;
+//   the CT/CotI weapon-benefit-type domain reads the top-level
+//   `weaponBenefitTypes` via readWeaponBenefitTypes. In-flow domains (a
+//   `pickOrDefer` choice, not an
 //   enlist-form field) OMIT `field`; enlist-form domains set it.
 //   None of these use getAcgPathway. Citation rule: the declared JSON array
 //   normally carries a
@@ -138,6 +142,34 @@ function readMongooseVoluntaryCareers(editionId: string): readonly string[] {
     .map(([id]) => id);
 }
 
+/** Mongoose-2e skill-training-table source pattern: read the cited fixed
+ *  Skills-and-Training table set (Core pp.18-19) from the mongoose data
+ *  block. In-flow domain (a `pickOrDefer` of kind "mongooseSkillTable",
+ *  skillsTraining.ts) — its DOMAINS entry omits `field`. Fails loud via
+ *  requireRule when the mongoose block / list is absent. */
+function readMongooseSkillTrainingTables(editionId: string): readonly string[] {
+  return requireRule(
+    getEdition(editionId).data.mongoose?.skillTrainingTables,
+    `${editionId}: mongoose.skillTrainingTables`,
+    "MgT2 Core pp.18-19",
+  );
+}
+
+/** CT/CotI weapon-benefit source pattern: read the declared, order-significant
+ *  "Weapon" mustering-out benefit type list (Blade, Gun) from the edition
+ *  root, failing loud via requireRule when absent. In-flow domain (a
+ *  `pickOrDefer` of kind "weaponType", weaponBenefits.ts) — its DOMAINS entry
+ *  omits `field`. Per-editionId: every edition whose muster tables carry a
+ *  "Weapon" cell (CT + MT) declares this array, so a shared muster benefit
+ *  never throws for the edition that routes it. */
+function readWeaponBenefitTypes(editionId: string): readonly string[] {
+  return requireRule(
+    getEdition(editionId).data.weaponBenefitTypes,
+    `${editionId}: weaponBenefitTypes`,
+    "CT/CotI Weapon benefit",
+  );
+}
+
 const DOMAINS: Record<string, DomainSource> = {
   "acg.mercenary.service": {
     field: "acgService",
@@ -210,6 +242,32 @@ const DOMAINS: Record<string, DomainSource> = {
   },
   "mongoose.career": {
     read: (editionId) => readMongooseVoluntaryCareers(editionId),
+  },
+  "acg.merchant.department": {
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "merchantPrince",
+        "departments",
+        "advancedCharacterGeneration.merchantPrince.departments",
+        "PM p. 47/63",
+      ),
+  },
+  "acg.merchant.skillTable": {
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "merchantPrince",
+        "skillTableOrder",
+        "advancedCharacterGeneration.merchantPrince.skillTableOrder",
+        "PM p. 63",
+      ),
+  },
+  "mongoose.skillTable": {
+    read: (editionId) => readMongooseSkillTrainingTables(editionId),
+  },
+  "ct.weaponType": {
+    read: (editionId) => readWeaponBenefitTypes(editionId),
   },
 };
 

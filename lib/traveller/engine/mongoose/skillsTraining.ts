@@ -10,6 +10,7 @@ import type { Character } from "@/lib/traveller/character";
 import { currentAssignment } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseSkillColumn } from "@/lib/traveller/engine/mongoose/types";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 
 interface TrainingTable {
   readonly key: string;
@@ -20,18 +21,29 @@ interface TrainingTable {
 /** The skill tables the Traveller may roll on this term. */
 export function availableTables(ch: Character): TrainingTable[] {
   const { state, career, asg } = currentAssignment(ch);
-  const tables: TrainingTable[] = [
-    { key: "personalDevelopment", label: "Personal Development", column: career.skillTables.personalDevelopment },
-    { key: "serviceSkills", label: "Service Skills", column: career.skillTables.serviceSkills },
-    { key: "assignment", label: asg.displayName, column: asg.skills },
-  ];
-  const ae = career.skillTables.advancedEducation;
-  const aeMin = career.skillTables.advancedEducationEduMin;
-  if (ae && aeMin !== null && ch.attributes.education >= aeMin) {
-    tables.push({ key: "advancedEducation", label: "Advanced Education", column: ae });
-  }
-  if (state.commissioned && career.skillTables.officer) {
-    tables.push({ key: "officer", label: "Officer", column: career.skillTables.officer });
+  const st = career.skillTables;
+  const ae = st.advancedEducation;
+  const aeMin = st.advancedEducationEduMin;
+  const officer = st.officer;
+  // Per-key {label, column} builder + availability gate (Core pp.18-19). A key
+  // whose builder returns undefined is not offered this term: Advanced
+  // Education is gated by EDU, Officer by commission. The offered key SET and
+  // its order come from the edition's declared skillTrainingTables.
+  const build: Record<string, () => { label: string; column: MongooseSkillColumn } | undefined> = {
+    personalDevelopment: () => ({ label: "Personal Development", column: st.personalDevelopment }),
+    serviceSkills: () => ({ label: "Service Skills", column: st.serviceSkills }),
+    assignment: () => ({ label: asg.displayName, column: asg.skills }),
+    advancedEducation: () =>
+      ae && aeMin !== null && ch.attributes.education >= aeMin
+        ? { label: "Advanced Education", column: ae }
+        : undefined,
+    officer: () =>
+      state.commissioned && officer ? { label: "Officer", column: officer } : undefined,
+  };
+  const tables: TrainingTable[] = [];
+  for (const key of optionDomain(ch.editionId, "mongoose.skillTable").values) {
+    const entry = build[key]?.();
+    if (entry) tables.push({ key, label: entry.label, column: entry.column });
   }
   return tables;
 }

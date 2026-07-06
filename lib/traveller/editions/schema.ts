@@ -383,6 +383,12 @@ const PathwayDataSchema = z.looseObject({
   subsectorTechOptions: z.array(z.string()).optional(),
   divisions: z.array(z.string()).optional(),
   lineTypes: z.array(z.string()).optional(),
+  // PM p. 47/63: declared, order-significant merchant department + skill-table
+  // option-domain enumerables (in-flow Academy department pick / per-year
+  // skill-table pick). `$ruleDepartments`/`$ruleSkillTableOrder` are their
+  // sibling citations (kept by z.looseObject).
+  departments: z.array(z.string()).optional(),
+  skillTableOrder: z.array(z.string()).optional(),
   ranks: z.looseObject({
     enlisted: z.array(z.unknown()).optional(),
     officer: z.array(z.unknown()).optional(),
@@ -589,6 +595,10 @@ const MongooseDataSchema = z.looseObject({
   draftFallbackCareer: z.string(),
   survivalNaturalFail: z.number(),
   advancementNaturalContinue: z.number(),
+  // Core pp.18-19: declared, order-significant Skills-and-Training table set
+  // (in-flow per-term table pick). `$skillTrainingTables` is its sibling
+  // citation (kept by z.looseObject).
+  skillTrainingTables: z.array(z.string()).optional(),
 });
 
 const CanonDataSchema = z.looseObject({
@@ -607,6 +617,10 @@ const CanonDataSchema = z.looseObject({
   aging: AgingSchema.optional(),
   advancedCharacterGeneration: AcgDataSchema.optional(),
   benefitDetails: z.record(z.string(), BenefitDetailSchema).optional(),
+  // CT/CotI: declared "Weapon" mustering-out benefit type list (Blade, Gun).
+  // The two-stage Weapon benefit and optionDomain("ct.weaponType") read this.
+  // `$ruleWeaponBenefitTypes` is its sibling citation (kept by z.looseObject).
+  weaponBenefitTypes: z.array(z.string()).optional(),
   skillTableMeta: SkillTableMetaSchema.optional(),
   cascadeAliases: z.record(z.string(), z.string()).optional(),
   // Presentation metadata for the printed sheet (lib/pdfSheet).

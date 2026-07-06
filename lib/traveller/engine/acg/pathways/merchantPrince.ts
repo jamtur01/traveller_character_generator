@@ -25,6 +25,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import {
   applyDmRules, applyStructuredDms, columnDmFor, labelToColumnKey,
   parseResolutionTarget,
@@ -532,7 +533,7 @@ function merchantRollSkill(ch: Character): void {
   // PM p. 63: "the skill received must be taken from one of the skill table
   // columns available." Only tables exposing at least one column available to
   // this character's department/rank can be rolled on.
-  const tables = Object.keys(data.skillTables)
+  const tables = optionDomain(ch.editionId, "acg.merchant.skillTable").values
     .filter((k) => availableSkillColumns(ch, data.skillTables[k]!).length > 0);
   if (tables.length === 0) return;
   // Interactive: let the player pick the table. Auto: round-robin by year.

@@ -282,4 +282,9 @@ export interface MongooseData {
   readonly survivalNaturalFail: number;
   /** Natural Advancement roll that forces continuing the career (Core p.18: 12). */
   readonly advancementNaturalContinue: number;
+  /** Fixed Skills-and-Training table set (Core pp.18-19), in pick order:
+   *  Personal Development, Service Skills, the assignment specialist table,
+   *  Advanced Education (EDU-gated), and, once commissioned, Officer.
+   *  `availableTables` and `optionDomain("mongoose.skillTable")` read this. */
+  readonly skillTrainingTables?: readonly string[];
 }

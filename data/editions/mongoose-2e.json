@@ -92,6 +92,8 @@
       "Vacc Suit"
     ],
     "$backgroundSkills": "Core p.9 background skill list (17 skills), all gained at level 0.",
+    "skillTrainingTables": ["personalDevelopment", "serviceSkills", "assignment", "advancedEducation", "officer"],
+    "$skillTrainingTables": "Core pp.18-19 (Skills and Training): each term the Traveller picks one available skill table — Personal Development, Service Skills, the chosen assignment's specialist table, Advanced Education (gated by EDU) and, once commissioned, the Officer table.",
     "$preCareer": "Core pp.16-17 University / Military Academy pre-career education is intentionally NOT modeled in this edition; the mongoose chargen flow enters careers directly. Documented here for coverage awareness (no preCareer data or type).",
     "$anagathics": "Core p.49 anagathics (start via SOC 10+; natural 2 -> Prisoner; cost 1D x Cr25000 per term; two Survival checks per term while dosed) are intentionally NOT modeled for this edition. Documented for coverage awareness (the shared anagathics module is MT/PM-oriented and is not wired into the mongoose chargen flow).",
     "$medicalBills": "Core p.49 Medical Bills table (each career pays a percentage share of injury medical costs; e.g. Army/Navy/Marine 75/100/100%) is intentionally NOT modeled for this edition. Documented for coverage awareness.",

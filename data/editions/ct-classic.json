@@ -277,6 +277,8 @@
     "Blade": {},
     "Gun": {}
   },
+  "$ruleWeaponBenefitTypes": "CT/CotI Weapon benefit: the generic 'Weapon' mustering-out benefit is resolved as a two-stage pick — first the weapon type (Blade or Gun), then a specific weapon from that type's cascade.",
+  "weaponBenefitTypes": ["Blade", "Gun"],
   "$ruleServiceOrder": "TTB p. 18 enlistment/draft order: the service-selection table lists Navy, Marines, Army, Scouts, Merchants, Other before the Advanced Character Generation services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
   "serviceOrder": [
     "navy", "marines", "army", "scouts", "merchants", "pirates", "other",

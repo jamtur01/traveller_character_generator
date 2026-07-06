@@ -4,6 +4,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 
 /** Names from `pool` that the character already has skills in (for
  *  cascade preference: a subsequent blade cascade stacks onto an
@@ -116,7 +117,7 @@ export function doWeaponBenefit(ch: Character): void {
   ch.pickOrDefer({
     kind: "weaponType",
     label: "Choose weapon type",
-    options: ["Blade", "Gun"],
+    options: optionDomain(ch.editionId, "ct.weaponType").values,
     context: { source: "muster", benefit: "Weapon" },
     onResolve: (ch, type) => {
       if (type === "Blade") doBladeBenefit(ch);

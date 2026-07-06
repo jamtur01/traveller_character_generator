@@ -25,6 +25,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import type { Rng } from "@/lib/traveller/random";
 import { awardBrownie, bpAwardFor } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
@@ -735,7 +736,7 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
     { department?: { columns: string[]; rows: Array<Record<string, unknown>> } }
     | undefined)?.department;
   if (!dept) return;
-  const departments = dept.columns.filter((col) => col !== "die");
+  const departments = optionDomain(ch.editionId, "acg.merchant.department").values;
   if (departments.length === 0) return;
   // Skill-attempt parameters from the Academy spec (JSON pco.skills).
   const pco = acg?.common?.preCareerOptions?.merchantAcademy as

@@ -741,6 +741,8 @@
       "repeat": "May select same weapon again, a different weapon, or one level of skill in a weapon previously taken as a mustering-out benefit."
     }
   },
+  "$ruleWeaponBenefitTypes": "CT/CotI Weapon benefit: the generic 'Weapon' mustering-out benefit is resolved as a two-stage pick — first the weapon type (Blade or Gun), then a specific weapon from that type's cascade.",
+  "weaponBenefitTypes": ["Blade", "Gun"],
   "$ruleServiceOrder": "PM service order: the MegaTraveller Players Manual service list orders Navy, Marines, Army, Scouts, Merchants, Pirates and the extended CotI/COACC services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
   "serviceOrder": [
     "navy", "marines", "army", "scouts", "merchants", "pirates", "belters",
@@ -7335,6 +7337,10 @@
       },
       "lineTypes": ["Megacorp", "Sector-wide", "Subsector-wide", "Interface", "Fledgling", "Free Trader"],
       "$ruleLineTypes": "PM p. 60: a merchant joins one of six types of line at enlistment — Megacorp, Sector-wide, Subsector-wide, Interface, Fledgling, or Free Trader.",
+      "departments": ["deck", "engineer", "purser", "medic", "admin"],
+      "$ruleDepartments": "PM p. 47 (Merchant Academy: 'select the department to which he will be assigned') / PM p. 63 (department skill table): the five Merchant departments a character may be assigned to — the non-die columns of the department skill table, in column order.",
+      "skillTableOrder": ["service", "department", "life"],
+      "$ruleSkillTableOrder": "PM p. 63: each assignment year the merchant rolls a skill from one of the available skill-table columns — the declared universe is the three skill tables (Service, Department, Life), in declaration order.",
       "reenlistment": {
         "target": 4,
         "dms": [
