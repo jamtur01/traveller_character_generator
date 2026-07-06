@@ -119,6 +119,7 @@ export function walkAcg(opts: {
   fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
   division?: "field" | "bureaucracy";
   lineType?: string;
+  subsectorTech?: string;
   preCareer?: session.PreCareerOption;
   interactive?: boolean;
   maxTerms?: number;
@@ -143,7 +144,7 @@ export function walkAcg(opts: {
     acgFleet: opts.fleet ?? "imperialNavy",
     acgDivision: opts.division ?? "field",
     acgLineType: opts.lineType ?? "Free Trader",
-    acgSubsectorTech: "",
+    acgSubsectorTech: opts.subsectorTech ?? "",
     acgMerchantAcademy: false,
   });
   const resolved: WalkResult["resolved"] = [];
