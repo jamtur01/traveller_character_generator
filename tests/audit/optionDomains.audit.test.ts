@@ -299,3 +299,61 @@ describe("option-domain audit-locks — classic.service", () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// mongoose.career — the Mongoose-2e voluntary-career domain, and a BRANCH
+// domain the Phase-2 harness enumerates (it drives each career). Unlike the
+// enlist-form field domains above, this is an IN-FLOW pending choice: the
+// engine raises it as a `pickOrDefer` of kind "mongooseCareer"
+// (mongoose.ts:116-123, pickCareerNormally), NOT a field the enlist form
+// writes. So this domain OMITS `field` and the lock asserts
+// `.field === undefined`.
+//
+// The voluntary-career enumerable is DERIVED, not a second JSON array: it is
+// the cited `careers` map minus every career flagged `forcedOnly`. MgT2 Core
+// p.20 (careers/draft): a Traveller chooses a career to attempt each term; a
+// career flagged force-only is never offered as a voluntary choice (the
+// Prisoner career, Core p.52, forcedOnly — entered only when a mishap/event
+// forces it). The engine derivation is
+// Object.keys(data.careers).filter((id) => !careers[id].forcedOnly)
+// (mongoose.ts:116-123, feeding the mongooseCareer pickOrDefer).
+//
+// Independent source (raw JSON, never via the accessor — that independence is
+// the lock's teeth): the `mongoose.careers` map read straight from
+// mongoose-2e.json, with each entry's forcedOnly flag.
+describe("option-domain audit-locks — mongoose.career", () => {
+  it("mongoose.career === careers minus forcedOnly, field omitted (in-flow)", () => {
+    // Consumer side: the edition JSON, read raw (never via the accessor).
+    const raw = JSON.parse(
+      readFileSync(
+        resolve(__dirname, "../../data/editions/mongoose-2e.json"),
+        "utf8",
+      ),
+    ) as {
+      mongoose: { careers: Record<string, { forcedOnly?: boolean }> };
+    };
+    const careers = raw.mongoose.careers;
+
+    const domain = optionDomain("mongoose-2e", "mongoose.career");
+
+    // (a) field OMITTED — this is an in-flow pending choice (pickOrDefer kind
+    //     "mongooseCareer"), not an enlist-form field.
+    expect(domain.field).toBeUndefined();
+
+    // (b) declared enumerable SET === the independent raw-JSON derivation:
+    //     every career minus those flagged forcedOnly (order-insensitive).
+    const voluntary = Object.keys(careers).filter((id) => !careers[id]?.forcedOnly);
+    expect([...domain.values].sort()).toEqual([...voluntary].sort());
+
+    // (c) teeth: the careers the domain drops are EXACTLY the forcedOnly set —
+    //     two sources reconciled (accessor values vs raw forcedOnly flags).
+    //     Prisoner (Core p.52) is force-only and excluded; a normal career
+    //     like Navy is voluntary and included.
+    const offered = new Set<string>(domain.values);
+    const excluded = Object.keys(careers).filter((id) => !offered.has(id));
+    const forcedOnly = Object.keys(careers).filter((id) => careers[id]?.forcedOnly);
+    expect([...excluded].sort()).toEqual([...forcedOnly].sort());
+    expect(offered.has("prisoner")).toBe(false);
+    expect(offered.has("navy")).toBe(true);
+  });
+});

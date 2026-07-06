@@ -12,6 +12,10 @@
 // Its type-level binding to `keyof EnlistOptions` is enforced by a
 // chargen-layer test added in Phase 2.
 //
+// `field` is OPTIONAL: an in-flow domain — a pending `pickOrDefer` choice
+// rather than an enlist-form field (e.g. "mongoose.career") — OMITS it, so
+// `optionDomain` returns no `field` for those and callers read only `values`.
+//
 // REGISTERING THE NEXT DOMAIN (this is the pattern for the ~18 that follow):
 //   Add one entry to the DOMAINS table below, keyed by its dotted decisionId:
 //     "<pathway>.<thing>": {
@@ -24,7 +28,10 @@
 //   pathway block via getAcgPathway (readAcgPathwayStringArray helper) or, for
 //   enumerables at the advancedCharacterGeneration ROOT, via readAcgRootStringArray;
 //   the CT/MT basic-service domain reads the top-level `serviceOrder` array via
-//   readEnlistableServiceOrder; Mongoose-2e domains supply their own readers.
+//   readEnlistableServiceOrder; the Mongoose-2e voluntary-career domain reads
+//   the cited `careers` map via readMongooseVoluntaryCareers, dropping the
+//   forcedOnly careers. In-flow domains (a `pickOrDefer` choice, not an
+//   enlist-form field) OMIT `field`; enlist-form domains set it.
 //   None of these use getAcgPathway. Citation rule: the declared JSON array
 //   normally carries a
 //   sibling `$rule…` key — EXCEPT arrays at the advancedCharacterGeneration root
@@ -36,14 +43,14 @@ import { getAcgPathway, getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 
 export interface OptionDomain {
-  field: string;
+  field?: string;
   values: readonly string[];
 }
 
 /** Registry entry: the character `field` a domain drives, plus a fail-loud
  *  `read` that sources its declared enumerable from cited edition JSON. */
 interface DomainSource {
-  field: string;
+  field?: string;
   read: (editionId: string) => readonly string[];
 }
 
@@ -110,6 +117,25 @@ function readEnlistableServiceOrder(editionId: string): readonly string[] {
       .map(([key]) => key),
   );
   return order.filter((key) => !autoEnrolled.has(key));
+}
+
+/** Mongoose-2e voluntary-career source pattern: read the cited `careers` map
+ *  from the mongoose data block and return the ids offered as a VOLUNTARY
+ *  career choice — every career minus those flagged `forcedOnly` (the
+ *  Prisoner, Core p.52, entered only when a mishap/event forces it). Fails
+ *  loud via requireRule when the mongoose block / careers map is absent. This
+ *  is an in-flow domain: the ids feed a `pickOrDefer` (mongoose.ts
+ *  pickCareerNormally), not an enlist-form field, so its DOMAINS entry omits
+ *  `field`. */
+function readMongooseVoluntaryCareers(editionId: string): readonly string[] {
+  const careers = requireRule(
+    getEdition(editionId).data.mongoose?.careers,
+    `${editionId}: mongoose.careers`,
+    "MgT2 Core p.20",
+  );
+  return Object.entries(careers)
+    .filter(([, career]) => !career.forcedOnly)
+    .map(([id]) => id);
 }
 
 const DOMAINS: Record<string, DomainSource> = {
@@ -182,6 +208,9 @@ const DOMAINS: Record<string, DomainSource> = {
     field: "preferredService",
     read: (editionId) => readEnlistableServiceOrder(editionId),
   },
+  "mongoose.career": {
+    read: (editionId) => readMongooseVoluntaryCareers(editionId),
+  },
 };
 
 /** Resolve an option domain to its target field and declared enumerable.
@@ -200,5 +229,8 @@ export function optionDomain(
         "lib/traveller/editions/optionDomains.ts.",
     );
   }
-  return { field: source.field, values: source.read(editionId) };
+  const values = source.read(editionId);
+  return source.field === undefined
+    ? { values }
+    : { field: source.field, values };
 }

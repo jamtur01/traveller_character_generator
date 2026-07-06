@@ -13,6 +13,7 @@ import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { characteristicDm } from "@/lib/traveller/core";
 import { requireRule } from "@/lib/traveller/editions/strict";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import type { ChargenModel, FlowStage } from "@/lib/traveller/chargen/model";
 import type {
   ChargenPhase,
@@ -115,7 +116,7 @@ function enterViaDraftOrDrifter(ch: Character): void {
  *  (or draft/drift on failure). */
 function pickCareerNormally(ch: Character): void {
   const data = getMongooseData(ch);
-  const careerIds = Object.keys(data.careers).filter((id) => !getCareer(ch, id).forcedOnly);
+  const careerIds = optionDomain(ch.editionId, "mongoose.career").values;
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",
