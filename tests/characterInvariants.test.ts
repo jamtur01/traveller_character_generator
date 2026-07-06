@@ -1,13 +1,16 @@
 // Teeth for the whole-character correctness oracle (tests/_characterInvariants.ts).
 //
 // PASS: assertCharacterConsistent accepts the finished characters the walkers
-// produce (CT-basic navy, MT-ACG navy, Mongoose full run) and records no solo
-// divergences.
+// produce — a CT-basic navy character, an MT-ACG character on EACH of the four
+// pathways (mercenary, navy, scout, merchantPrince) whose age matches the exact
+// startAge + yearsServed + preCareerAgeYears + imprisonmentAgeYears identity, an
+// MT-ACG character with a non-zero pre-career age summand, and a Mongoose full
+// run — all with no solo divergences.
 // THROW: a single illegal mutation on a clone of a good character makes the
 // oracle throw an error that NAMES the violated invariant — proven for
-// rank-over-cap, attribute-out-of-range, age-vs-terms, plus the ACG navy fleet
-// rank cap, an undeclared decoration, the mongoose per-skill cap, and the
-// mongoose characteristic floor.
+// rank-over-cap, attribute-out-of-range, age-vs-terms (classic and the exact
+// ACG off-by-one), the ACG navy fleet rank cap, an undeclared decoration, the
+// mongoose per-skill cap, and the mongoose characteristic floor.
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
@@ -51,14 +54,22 @@ function generateMongoose(seed: number): Character {
   return snap.character;
 }
 
+const ACG_PATHWAYS = ["mercenary", "navy", "scout", "merchantPrince"] as const;
+
 let basic: Character;
 let acgNavy: Character;
+let acgPreCareer: Character;
 let mongoose: Character;
 
 beforeAll(() => {
   basic = walkBasic({ edition: "ct-classic", service: "navy" }).character;
   vi.restoreAllMocks();
   acgNavy = walkAcg({ pathway: "navy" }).character;
+  vi.restoreAllMocks();
+  // College pre-career ages the character (courseYears), populating the
+  // preCareerAgeYears summand so the exact-age identity is exercised with a
+  // non-zero pre-career term rather than only the skip case.
+  acgPreCareer = walkAcg({ pathway: "navy", preCareer: "college" }).character;
   vi.restoreAllMocks();
   mongoose = generateMongoose(9876);
 });
@@ -74,9 +85,23 @@ describe("assertCharacterConsistent accepts valid finished characters", () => {
     expect(div).toEqual([]);
   });
 
-  it("passes an MT-ACG navy character with no solo divergences", () => {
+  it.each(ACG_PATHWAYS)(
+    "passes an MT-ACG %s character (exact age) with no solo divergences",
+    (pathway) => {
+      const ch = walkAcg({ pathway }).character;
+      const div: SoloDivergence[] = [];
+      assertCharacterConsistent(ch, div);
+      expect(div).toEqual([]);
+    },
+  );
+
+  it("passes an MT-ACG character carrying a non-zero pre-career age summand", () => {
+    // Guard that the pre-career walk actually populated preCareerAgeYears: if a
+    // future engine change made college age-free this would silently collapse
+    // to the skip case and stop proving the pre-career summand is validated.
+    expect(acgPreCareer.acgState?.preCareerAgeYears ?? 0).toBeGreaterThan(0);
     const div: SoloDivergence[] = [];
-    assertCharacterConsistent(acgNavy, div);
+    assertCharacterConsistent(acgPreCareer, div);
     expect(div).toEqual([]);
   });
 
@@ -103,6 +128,20 @@ describe("assertCharacterConsistent throws on the invariant each mutation violat
   it("age inconsistent with terms served → [age]", () => {
     const bad = cloneCharacter(basic);
     bad.age = basic.age + 5;
+    expect(() => assertCharacterConsistent(bad)).toThrow(/\[age\]/);
+  });
+
+  it("ACG age one year above the exact identity → [age]", () => {
+    // The tightened ACG check is exact, not a lower bound: age+1 stays ABOVE
+    // the old bound (startAge + yearsServed) yet must now be rejected.
+    const bad = cloneCharacter(acgNavy);
+    bad.age = acgNavy.age + 1;
+    expect(() => assertCharacterConsistent(bad)).toThrow(/\[age\]/);
+  });
+
+  it("ACG age off by one with a non-zero pre-career summand → [age]", () => {
+    const bad = cloneCharacter(acgPreCareer);
+    bad.age = acgPreCareer.age + 1;
     expect(() => assertCharacterConsistent(bad)).toThrow(/\[age\]/);
   });
 

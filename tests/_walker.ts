@@ -119,6 +119,7 @@ export function walkAcg(opts: {
   fleet?: "imperialNavy" | "reserveFleet" | "systemSquadron";
   division?: "field" | "bureaucracy";
   lineType?: string;
+  preCareer?: session.PreCareerOption;
   interactive?: boolean;
   maxTerms?: number;
 }): WalkResult {
@@ -131,8 +132,9 @@ export function walkAcg(opts: {
     useAcg: true,
     acgPathway: opts.pathway,
   });
-  // Skip pre-career.
-  const skipResult = session.applyPreCareer(snap0, "skip");
+  // Pre-career: skip by default; a real option (e.g. "college") ages the
+  // character, exercising the stored preCareerAgeYears summand.
+  const skipResult = session.applyPreCareer(snap0, opts.preCareer ?? "skip");
   let snap = session.enlist(skipResult.snapshot, {
     verbose: true,
     preferredService: "random",

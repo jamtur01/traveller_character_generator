@@ -181,30 +181,28 @@ function checkAgeMongoose(ch: Character): void {
   }
 }
 
-/** ACG advances age one year per year served (yearsServed), plus dice-driven
- *  pre-career / imprisonment years that are not separately stored. The exact
- *  equality is therefore not JSON-derivable; the enforceable bounds are:
- *  0 <= yearsServed <= terms×fullTermYears and age >= startAge + yearsServed. */
+/** ACG chronological age is EXACTLY reconstructable from the stored summands:
+ *  startAge + yearsServed (one per year served) + preCareerAgeYears (academy/
+ *  college/school time, PM p. 47) + imprisonmentAgeYears (jail sentences, PM
+ *  p. 47). The engine stores each summand on AcgState, so the identity is
+ *  exact — not a bound. Any drift means an unaudited age source or an engine
+ *  bug. `startAge` = advancedCharacterGeneration.common.startAge. */
 function checkAgeAcg(ch: Character): void {
   const ed = getEdition(ch.editionId);
   const startAge = ed.data.advancedCharacterGeneration?.common?.startAge;
   const acg = ch.acgState;
   if (startAge === undefined || !acg) return;
   const yearsServed = acg.yearsServed ?? 0;
-  if (yearsServed < 0) fail("age", `acg yearsServed ${yearsServed} < 0`);
-  const fullTermYears = ed.rules.survival?.fullTermYears;
-  if (fullTermYears !== undefined && yearsServed > ch.terms * fullTermYears) {
+  const preCareerAgeYears = acg.preCareerAgeYears ?? 0;
+  const imprisonmentAgeYears = acg.imprisonmentAgeYears ?? 0;
+  const expected = startAge + yearsServed + preCareerAgeYears + imprisonmentAgeYears;
+  if (ch.age !== expected) {
     fail(
       "age",
-      `acg yearsServed ${yearsServed} > terms ${ch.terms} × ` +
-      `rules.survival.fullTermYears ${fullTermYears}`,
-    );
-  }
-  if (ch.age < startAge + yearsServed) {
-    fail(
-      "age",
-      `age ${ch.age} < advancedCharacterGeneration.common.startAge ${startAge} ` +
-      `+ yearsServed ${yearsServed} (only pre-career/imprisonment add years)`,
+      `age ${ch.age} != advancedCharacterGeneration.common.startAge ${startAge} ` +
+      `+ acgState.yearsServed ${yearsServed} + acgState.preCareerAgeYears ` +
+      `${preCareerAgeYears} + acgState.imprisonmentAgeYears ${imprisonmentAgeYears} ` +
+      `= ${expected}`,
     );
   }
 }
