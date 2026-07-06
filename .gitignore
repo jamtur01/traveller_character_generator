@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# git worktrees (isolated workspaces for multi-phase work)
+/.worktrees/
+
 # production
 /build
 /docs
