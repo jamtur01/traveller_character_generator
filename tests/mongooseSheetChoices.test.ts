@@ -104,9 +104,9 @@ describe("mongooseSheetFields maps a Mongoose character onto the sheet grid", ()
   it("resolves the career-history row incl. the rank-ladder title", () => {
     const f = mongooseSheetFields(sheetChar());
     expect(f["Career 1"]).toBe("Navy"); // career displayName
-    expect(f["Career Notes 1"]).toBe("Line/Crew"); // assignment displayName
+    expect(f["Career Notes 1"]).toBe("Line/Crew - Crewman"); // assignment displayName + " - " + rank-ladder title
     expect(f["Career Term 1"]).toBe("2");
-    expect(f["Career Rank 1"]).toBe("Crewman"); // navy enlisted rank 0 title
+    expect(f["Career Rank 1"]).toBe("0"); // finalRank NUMBER in the narrow RANK column
   });
 
   it("comma-groups cash, parses the pension, and records the connection note", () => {
