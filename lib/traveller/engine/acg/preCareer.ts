@@ -780,6 +780,11 @@ function applyMerchantDepartmentSkills(ch: Character, out: PreCareerResult): voi
  *  leave the picker UI offering the same school again. */
 export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: PreCareerResult): void {
   ch.age += r.ageGainedYears;
+  // Retain the pre-career schooling age gain as an explicit summand so the
+  // character's chronological age stays exactly reconstructable (PM p. 47).
+  if (ch.acgState) {
+    ch.acgState.preCareerAgeYears = (ch.acgState.preCareerAgeYears ?? 0) + r.ageGainedYears;
+  }
   for (const [attr, delta] of Object.entries(r.attributeChanges)) {
     const a = attr as keyof Character["attributes"];
     // Route through improveAttribute so the edition's rules.attributeCaps

@@ -94,6 +94,9 @@ export function beginAcg(
   if (prev?.preCareerBranch !== undefined) acg.preCareerBranch = prev.preCareerBranch;
   if (prev?.preCareerFirstTermShort) acg.preCareerFirstTermShort = true;
   if (prev?.preCareerDraftedInto) acg.preCareerDraftedInto = prev.preCareerDraftedInto;
+  // Carry the pre-career schooling age gain onto the enlistment state so the
+  // exact-age identity survives beginAcg's fresh acgState (PM p. 47).
+  if (prev?.preCareerAgeYears) acg.preCareerAgeYears = prev.preCareerAgeYears;
   if (prev?.attemptMerchantAcademy !== undefined) {
     acg.attemptMerchantAcademy = prev.attemptMerchantAcademy;
   }

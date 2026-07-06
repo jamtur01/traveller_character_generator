@@ -363,6 +363,11 @@ function applyJailSentence(ch: Character, result: string, discharged: boolean): 
     const dice = parseInt(yearsMatch[1]!, 10);
     const years = ch.rng.roll(dice);
     ch.age += years;
+    // Retain the jail-sentence years as an explicit summand so chronological
+    // age stays exactly reconstructable (PM p. 47). st is not in scope here.
+    if (ch.acgState) {
+      ch.acgState.imprisonmentAgeYears = (ch.acgState.imprisonmentAgeYears ?? 0) + years;
+    }
     served = `imprisoned ${years} years (${dice}D rolled)`;
   }
   if (discharged) {

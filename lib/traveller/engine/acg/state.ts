@@ -123,6 +123,13 @@ export interface BaseAcgState {
    *  a character invalided/jailed mid-term gets a partial term that doesn't
    *  contribute the full 4 years. */
   yearsServed?: number;
+  /** Cumulative age (years) gained from pre-career schooling — pre-career
+   *  academies/colleges/schools age the character (PM p. 47). Retained as an
+   *  explicit summand so chronological age is exactly reconstructable. */
+  preCareerAgeYears?: number;
+  /** Cumulative age (years) added by jail sentences (PM p. 47). Retained as an
+   *  explicit summand so chronological age is exactly reconstructable. */
+  imprisonmentAgeYears?: number;
   /** Count of terms that were started but not completed (4 years). Used
    *  by musterOutRolls to discount benefits from short terms. */
   partialTerms?: number;
@@ -252,6 +259,10 @@ export function freshAcgState(pathway: AcgPathwayId): AcgState {
     browniePoints: 0,
     browniePointsSpent: 0,
     decorationDmStrategy: 0,
+    // Age-provenance counters: start at 0, accumulated as pre-career
+    // schooling / jail sentences age the character (see BaseAcgState).
+    preCareerAgeYears: 0,
+    imprisonmentAgeYears: 0,
   };
   switch (pathway) {
     case "mercenary":
