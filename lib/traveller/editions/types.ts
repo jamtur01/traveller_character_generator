@@ -164,6 +164,12 @@ export interface CanonData {
   schemaVersion: number;
   edition: EditionMeta;
   services: Record<ServiceKey, ServiceData>;
+  /** Presentation/enlistment order of ALL of this edition's service keys
+   *  (CT: TTB p. 18 service-selection table; MT: PM service order). The set
+   *  equals `Object.keys(services)`; the enlistable pool (services.ts) and
+   *  `optionDomain("classic.service")` both derive from this list minus
+   *  services whose `checks.enlistment.automaticIf` gate is set. */
+  serviceOrder?: readonly string[];
   benefitDetails: Record<string, BenefitDetail>;
   lifecycle?: LifecycleSpec & Record<string, unknown>;
   /** Engine-consumable rules. Each block is opt-in: the engine falls back

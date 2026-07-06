@@ -277,6 +277,12 @@
     "Blade": {},
     "Gun": {}
   },
+  "$ruleServiceOrder": "TTB p. 18 enlistment/draft order: the service-selection table lists Navy, Marines, Army, Scouts, Merchants, Other before the Advanced Character Generation services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
+  "serviceOrder": [
+    "navy", "marines", "army", "scouts", "merchants", "pirates", "other",
+    "belters", "sailors", "diplomats", "doctors", "flyers", "barbarians",
+    "bureaucrats", "rogues", "scientists", "hunters", "nobles"
+  ],
   "services": {
     "navy": {
       "source": "ttb",

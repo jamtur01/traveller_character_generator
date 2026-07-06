@@ -741,6 +741,12 @@
       "repeat": "May select same weapon again, a different weapon, or one level of skill in a weapon previously taken as a mustering-out benefit."
     }
   },
+  "$ruleServiceOrder": "PM service order: the MegaTraveller Players Manual service list orders Navy, Marines, Army, Scouts, Merchants, Pirates and the extended CotI/COACC services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
+  "serviceOrder": [
+    "navy", "marines", "army", "scouts", "merchants", "pirates", "belters",
+    "sailors", "diplomats", "doctors", "flyers", "barbarians", "bureaucrats",
+    "rogues", "scientists", "hunters", "lawenforcers", "nobles"
+  ],
   "services": {
     "navy": {
       "source": "mt",

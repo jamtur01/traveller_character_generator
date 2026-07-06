@@ -594,6 +594,12 @@ const MongooseDataSchema = z.looseObject({
 const CanonDataSchema = z.looseObject({
   edition: EditionMetaSchema.optional(),
   services: z.record(z.string(), ServiceDataSchema),
+  // Top-level presentation/enlistment order of ALL of an edition's services
+  // (CT: TTB p. 18 service-selection table; MT: PM service order). The
+  // enlistable pool (services.ts) and optionDomain("classic.service") both
+  // read this list, minus automaticIf-gated services. `$ruleServiceOrder`
+  // is its sibling citation (kept by z.looseObject).
+  serviceOrder: z.array(z.string()).optional(),
   cascadeSkills: CascadeSkillsSchema.optional(),
   attributeAbbreviations: AttributeAbbreviationsSchema.optional(),
   skillLabelRenames: SkillLabelRenamesSchema.optional(),

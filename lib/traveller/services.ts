@@ -6,6 +6,7 @@
 import type { ServiceDef, ServiceKey } from "./types";
 import { getEdition, listEditions } from "./editions";
 import { buildServiceDef } from "./engine/serviceLoader";
+import { requireRule } from "./editions/strict";
 
 export type ServiceMap = Partial<Record<ServiceKey, ServiceDef>>;
 
@@ -38,30 +39,32 @@ export function getEditionServices(editionId: string): ServiceMap {
 
 function computeEnlistable(editionId: string): ServiceKey[] {
   const map = REGISTRY[editionId];
-  if (!map) return [];
-  // CT's classic order put "other" mid-list; preserve that visual order
-  // when iterating, but drop services that don't exist in the active map.
-  const CLASSIC_ORDER: ServiceKey[] = [
-    "navy", "marines", "army", "scouts", "merchants", "pirates", "other",
-    "belters", "sailors", "diplomats", "doctors", "flyers", "barbarians",
-    "bureaucrats", "rogues", "scientists", "hunters", "lawenforcers",
-  ];
-  const known = CLASSIC_ORDER.filter((k) => map[k] !== undefined);
-  // A JSON service key missing from the presentation order must not vanish
-  // from the enlistment pool — append unknowns after the classic ordering.
-  // Services whose enlistment declares automaticIf (nobles: auto-enroll on
-  // Soc 10+, CotI) are not voluntarily enlistable and stay out of the pool.
-  const jsonServices = getEdition(editionId).data.services;
-  const rest = (Object.keys(map) as ServiceKey[]).filter(
-    (k) => !CLASSIC_ORDER.includes(k)
+  // A careers-model edition (e.g. Mongoose) declares no services and has no
+  // basic-enlistment pool; there is nothing to order and no serviceOrder to
+  // require. Every service-model edition proceeds to the fail-loud read.
+  if (!map || Object.keys(map).length === 0) return [];
+  // The declared, $rule-cited serviceOrder lists every service in
+  // enlistment/draft presentation order (CT: TTB p. 18; MT: PM service
+  // order). The enlistable pool is that order restricted to services present
+  // in the active map and NOT auto-enrolled: nobles carry an enlistment
+  // automaticIf (Soc 10+, CotI) and are auto-enrolled rather than voluntarily
+  // enlisted, so they never appear in the pool.
+  const ed = getEdition(editionId);
+  const order = requireRule(
+    ed.data.serviceOrder,
+    `${editionId}: serviceOrder`,
+    "TTB p. 18 / PM service order",
+  ) as readonly ServiceKey[];
+  const jsonServices = ed.data.services;
+  return order.filter(
+    (k) => map[k] !== undefined
       && !jsonServices[k]?.checks.enlistment.automaticIf,
   );
-  return [...known, ...rest];
 }
 
-/** Services available for random enlistment selection in the given
- *  edition, in the CT-classic visual order (with non-CT services
- *  appended in declaration order). */
+/** Services available for random enlistment selection in the given edition,
+ *  in declared serviceOrder (CT: TTB p. 18; MT: PM service order), minus
+ *  auto-enrolled services (enlistment automaticIf). */
 export function getEnlistableServices(editionId: string): ServiceKey[] {
   return computeEnlistable(editionId);
 }

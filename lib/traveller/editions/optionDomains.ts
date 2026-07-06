@@ -23,8 +23,10 @@
 //   `?? literal` fallback. The source varies per engine: MT-ACG domains read a
 //   pathway block via getAcgPathway (readAcgPathwayStringArray helper) or, for
 //   enumerables at the advancedCharacterGeneration ROOT, via readAcgRootStringArray;
-//   Mongoose-2e and CT-basic domains supply their own readers and will NOT use
-//   getAcgPathway. Citation rule: the declared JSON array normally carries a
+//   the CT/MT basic-service domain reads the top-level `serviceOrder` array via
+//   readEnlistableServiceOrder; Mongoose-2e domains supply their own readers.
+//   None of these use getAcgPathway. Citation rule: the declared JSON array
+//   normally carries a
 //   sibling `$rule…` key — EXCEPT arrays at the advancedCharacterGeneration root
 //   (e.g. `pathways`), which cite in-code in the requireRule call instead, because
 //   the structural/architecture audits treat any non-meta root key (a `$rule…`
@@ -83,6 +85,31 @@ function readAcgRootStringArray(
     `${editionId}: ${what}`,
     rule,
   );
+}
+
+/** CT/MT basic-service source pattern: read the declared, order-significant
+ *  top-level `serviceOrder` (every service in enlistment/draft presentation
+ *  order — CT: TTB p. 18; MT: PM service order) and return the ENLISTABLE
+ *  subset: services carrying an enlistment `automaticIf` gate (CT/MT nobles,
+ *  auto-enrolled on Soc 10+, CotI) are auto-enrolled, never voluntarily
+ *  enlisted, so they are dropped. Computed independently of
+ *  lib/traveller/services (which derives the same pool via its own filter),
+ *  so the audit-lock's cross-check against getEnlistableServices genuinely
+ *  catches drift instead of comparing a value to itself. Fails loud via
+ *  requireRule when serviceOrder is absent. */
+function readEnlistableServiceOrder(editionId: string): readonly string[] {
+  const data = getEdition(editionId).data;
+  const order = requireRule(
+    data.serviceOrder,
+    `${editionId}: serviceOrder`,
+    "TTB p. 18 / PM service order",
+  );
+  const autoEnrolled = new Set(
+    Object.entries(data.services)
+      .filter(([, svc]) => svc?.checks.enlistment.automaticIf != null)
+      .map(([key]) => key),
+  );
+  return order.filter((key) => !autoEnrolled.has(key));
 }
 
 const DOMAINS: Record<string, DomainSource> = {
@@ -150,6 +177,10 @@ const DOMAINS: Record<string, DomainSource> = {
         "advancedCharacterGeneration.pathways",
         "PM p. 44/64",
       ),
+  },
+  "classic.service": {
+    field: "preferredService",
+    read: (editionId) => readEnlistableServiceOrder(editionId),
   },
 };
 
