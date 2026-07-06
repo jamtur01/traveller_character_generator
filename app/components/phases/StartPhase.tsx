@@ -2,7 +2,8 @@
 
 import { listEditions } from "@/lib/traveller/editions";
 import type { EditionMeta } from "@/lib/traveller/editions/types";
-import { editionHasAcg, listAcgPathways } from "@/lib/traveller";
+import { editionHasAcg } from "@/lib/traveller";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import {
   CARD, SECTION_LABEL, FormField, FormSelect, PrimaryButton,
 } from "@/app/components/ui";
@@ -152,7 +153,7 @@ export function StartPhase({
   const editions = listEditions();
   const selected = editions.find((e) => e.id === edition);
   const hasAcg = editionHasAcg(edition);
-  const acgPathways = hasAcg ? listAcgPathways(edition) : [];
+  const acgPathways = hasAcg ? optionDomain(edition, "acg.pathway").values : [];
 
   return (
     <div className="space-y-6">

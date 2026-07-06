@@ -4006,6 +4006,7 @@
         "step": 1
       }
     },
+    "pathways": ["mercenary", "navy", "scout", "merchantPrince"],
     "mercenary": {
       "resolveAssignment": {
         "$rule": "PM p. 50 line 46 / p. 51 line 10-11 checklist: Survival -> Decoration -> Promotion -> Skills (decoration before promotion so a fail-by-6 court-martial resolves before the rank advances).",
@@ -4055,6 +4056,8 @@
         "Resolve four one-year assignments per term",
         "Conclude term with aging, reenlistment, or mustering out"
       ],
+      "services": ["army", "marines"],
+      "$ruleServices": "PM p. 50: mercenary characters enlist in one of two services — the Army (5+ to enlist) or the Marines (9+ to enlist).",
       "enlistment": {
         "army": {
           "target": 5,
@@ -5110,6 +5113,8 @@
         "systemSquadron"
       ],
       "$ruleFleets": "PM p. 52: the Navy comprises three fleets — Imperial Navy, Reserve Fleet, System Squadron.",
+      "subsectorTechOptions": ["", "Early Stellar", "Avg Stellar", "High Stellar"],
+      "$ruleSubsectorTechOptions": "PM p. 52: the subsector tech code offered at navy enlistment — the empty option defaults to the homeworld tech code (clamped to the Early Stellar minimum), then the Early Stellar, Avg Stellar, and High Stellar ceilings.",
       "branchAssignment": {
         "columns": [
           "die",
@@ -6237,6 +6242,8 @@
         "medSchoolCommission": "bureaucracy",
         "default": "field"
       },
+      "divisions": ["field", "bureaucracy"],
+      "$ruleDivisions": "PM p. 56: scouts serve in one of two divisions — Field or Bureaucracy.",
       "specialWarMissionSkill": {
         "$rule": "PM p. 57: 'the extra training and preparation for the assignment results in an extra skill.' The printed Field skill table has a dedicated Special/War Mission column; the printed Bureaucracy table does not — a bureaucracy scout's extra skill rolls on the normal office column (null routes there).",
         "columnByDivision": { "field": "specialOrWarMission", "bureaucracy": null }
@@ -7320,6 +7327,8 @@
           "Homeworld starport must meet or exceed minimum. Free Traders are a special case, neither large nor small."
         ]
       },
+      "lineTypes": ["Megacorp", "Sector-wide", "Subsector-wide", "Interface", "Fledgling", "Free Trader"],
+      "$ruleLineTypes": "PM p. 60: a merchant joins one of six types of line at enlistment — Megacorp, Sector-wide, Subsector-wide, Interface, Fledgling, or Free Trader.",
       "reenlistment": {
         "target": 4,
         "dms": [

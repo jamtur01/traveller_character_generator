@@ -376,6 +376,13 @@ const PathwayDataSchema = z.looseObject({
   enlistment: z.union([z.looseObject({}), z.array(z.looseObject({}))]).optional(),
   // PM p. 52: declared, order-significant navy fleet enumerable (option domain).
   fleets: z.array(z.string()).optional(),
+  // PM pp. 50/52/56/60: declared, order-significant ACG enlistment
+  // option-domain enumerables — mercenary services, navy subsector-tech
+  // ceilings, scout divisions, merchant line types.
+  services: z.array(z.string()).optional(),
+  subsectorTechOptions: z.array(z.string()).optional(),
+  divisions: z.array(z.string()).optional(),
+  lineTypes: z.array(z.string()).optional(),
   ranks: z.looseObject({
     enlisted: z.array(z.unknown()).optional(),
     officer: z.array(z.unknown()).optional(),
@@ -427,6 +434,8 @@ const AcgCommonSchema = z.looseObject({
 
 const AcgDataSchema = z.looseObject({
   common: AcgCommonSchema,
+  // PM p. 44/64: declared, order-significant ACG pathway enumerable.
+  pathways: z.array(z.string()).optional(),
   mercenary: PathwayDataSchema.optional(),
   navy: PathwayDataSchema.optional(),
   scout: PathwayDataSchema.optional(),

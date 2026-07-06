@@ -5,6 +5,7 @@
 // instead of poking into JSON.
 
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AcgPathway } from "@/lib/traveller/editions/types";
 import type { MercenaryData } from "./acg/pathways/mercenary";
 import type { NavyData } from "./acg/pathways/navy";
@@ -33,13 +34,20 @@ export function editionHasAcg(editionId: string): boolean {
   return getEdition(editionId).data.advancedCharacterGeneration !== undefined;
 }
 
-/** Returns the named ACG pathways for this edition (excluding the "common"
- *  / "source" / "coverage" meta keys). MT returns
- *  ["mercenary", "navy", "scout", "merchantPrince"]; CT returns []. */
+/** Returns the named ACG pathways for this edition, read from the declared
+ *  advancedCharacterGeneration.pathways enumerable (fail-loud via requireRule
+ *  when absent). MT returns ["mercenary", "navy", "scout", "merchantPrince"];
+ *  an edition with no ACG block returns []. */
 export function listAcgPathways(editionId: string): string[] {
   const acg = getEdition(editionId).data.advancedCharacterGeneration;
   if (!acg) return [];
-  return Object.keys(acg).filter((k) => k !== "common" && k !== "source" && k !== "coverage");
+  return [
+    ...requireRule(
+      acg.pathways,
+      `${editionId}: advancedCharacterGeneration.pathways`,
+      "PM p. 44/64",
+    ),
+  ];
 }
 
 /** Look up one ACG pathway. Throws if the edition has no ACG or the pathway

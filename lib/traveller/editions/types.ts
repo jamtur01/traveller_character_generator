@@ -223,6 +223,9 @@ export interface AcgData {
   merchantPrince?: import("../engine/acg/pathways/merchantPrince").MerchantData &
     AcgPathwayData;
   homeworld?: { techCodeOrder?: string[] };
+  /** PM p. 44/64: declared, order-significant ACG pathway enumerable —
+   *  the pathway blocks a character may enlist into. */
+  pathways?: string[];
   [pathway: string]: unknown;
 }
 

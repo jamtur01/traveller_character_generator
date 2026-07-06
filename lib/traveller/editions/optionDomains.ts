@@ -26,7 +26,7 @@
 //   NOT use getAcgPathway. Whatever the source, the declared JSON array MUST
 //   carry a sibling `$rule…` citation.
 
-import { getAcgPathway } from "@/lib/traveller/editions";
+import { getAcgPathway, getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 
 export interface OptionDomain {
@@ -62,7 +62,37 @@ function readAcgPathwayStringArray(
   );
 }
 
+/** ACG-root source pattern: read a declared, order-significant `readonly
+ *  string[]` from the advancedCharacterGeneration root (NOT a pathway
+ *  block — e.g. the pathway enumerable itself), failing loud via
+ *  requireRule when the key is absent. Edition-scoped throw path names
+ *  the offending edition file; `rule` is the printed citation. */
+function readAcgRootStringArray(
+  editionId: string,
+  jsonKey: string,
+  what: string,
+  rule: string,
+): readonly string[] {
+  const acg = getEdition(editionId).data.advancedCharacterGeneration;
+  return requireRule(
+    acg?.[jsonKey] as readonly string[] | undefined,
+    `${editionId}: ${what}`,
+    rule,
+  );
+}
+
 const DOMAINS: Record<string, DomainSource> = {
+  "acg.mercenary.service": {
+    field: "acgService",
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "mercenary",
+        "services",
+        "advancedCharacterGeneration.mercenary.services",
+        "PM p. 50",
+      ),
+  },
   "acg.navy.fleet": {
     field: "acgFleet",
     read: (editionId) =>
@@ -72,6 +102,49 @@ const DOMAINS: Record<string, DomainSource> = {
         "fleets",
         "advancedCharacterGeneration.navy.fleets",
         "PM p. 52",
+      ),
+  },
+  "acg.navy.subsectorTech": {
+    field: "acgSubsectorTech",
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "navy",
+        "subsectorTechOptions",
+        "advancedCharacterGeneration.navy.subsectorTechOptions",
+        "PM p. 52",
+      ),
+  },
+  "acg.scout.division": {
+    field: "acgDivision",
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "scout",
+        "divisions",
+        "advancedCharacterGeneration.scout.divisions",
+        "PM p. 56",
+      ),
+  },
+  "acg.merchant.lineType": {
+    field: "acgLineType",
+    read: (editionId) =>
+      readAcgPathwayStringArray(
+        editionId,
+        "merchantPrince",
+        "lineTypes",
+        "advancedCharacterGeneration.merchantPrince.lineTypes",
+        "PM p. 60",
+      ),
+  },
+  "acg.pathway": {
+    field: "acgPathway",
+    read: (editionId) =>
+      readAcgRootStringArray(
+        editionId,
+        "pathways",
+        "advancedCharacterGeneration.pathways",
+        "PM p. 44/64",
       ),
   },
 };

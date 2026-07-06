@@ -47,6 +47,36 @@ const FLEET_LABELS: Record<string, string> = {
   systemSquadron: "System Squadron (6+, requires Early Stellar+ homeworld)",
 };
 
+/** Presentation labels for the mercenary service option domain. */
+const SERVICE_LABELS: Record<string, string> = {
+  army: "Army",
+  marines: "Marines",
+};
+
+/** Presentation labels for the navy subsector-tech option domain. The
+ *  empty value is the "use homeworld tech" sentinel; each tech-code value
+ *  renders as itself. */
+const SUBSECTOR_TECH_LABELS: Record<string, string> = {
+  "": "— default (homeworld tech, clamped to Early Stellar+)",
+};
+
+/** Presentation labels for the scout division option domain. */
+const DIVISION_LABELS: Record<string, string> = {
+  field: "Field (Survey, Communications, Exploration)",
+  bureaucracy:
+    "Bureaucracy (Technical, Operations, Administration, Detached Duty)",
+};
+
+/** Presentation labels for the merchant line-type option domain. */
+const LINE_TYPE_LABELS: Record<string, string> = {
+  Megacorp: "Megacorp (9+, Class B+)",
+  "Sector-wide": "Sector-wide (8+, Class C+)",
+  "Subsector-wide": "Subsector-wide (7+, Class D+)",
+  Interface: "Interface (7+)",
+  Fledgling: "Fledgling (7+)",
+  "Free Trader": "Free Trader (7+)",
+};
+
 export function AcgEnlistPhase({
   character,
   edition,
@@ -96,8 +126,11 @@ export function AcgEnlistPhase({
                 value={form.service}
                 onChange={(v) => setForm({ service: v as "army" | "marines" })}
               >
-                <option value="army">Army</option>
-                <option value="marines">Marines</option>
+                {optionDomain(edition, "acg.mercenary.service").values.map((s) => (
+                  <option key={s} value={s}>
+                    {SERVICE_LABELS[s] ?? s}
+                  </option>
+                ))}
               </FormSelect>
             </FormField>
             <FormField
@@ -140,12 +173,11 @@ export function AcgEnlistPhase({
                 value={form.subsectorTech}
                 onChange={(v) => setForm({ subsectorTech: v })}
               >
-                <option value="">
-                  — default (homeworld tech, clamped to Early Stellar+)
-                </option>
-                <option value="Early Stellar">Early Stellar</option>
-                <option value="Avg Stellar">Avg Stellar</option>
-                <option value="High Stellar">High Stellar</option>
+                {optionDomain(edition, "acg.navy.subsectorTech").values.map((t) => (
+                  <option key={t} value={t}>
+                    {SUBSECTOR_TECH_LABELS[t] ?? t}
+                  </option>
+                ))}
               </FormSelect>
             </FormField>
           </>
@@ -157,12 +189,11 @@ export function AcgEnlistPhase({
               value={form.division}
               onChange={(v) => setForm({ division: v as "field" | "bureaucracy" })}
             >
-              <option value="field">
-                Field (Survey, Communications, Exploration)
-              </option>
-              <option value="bureaucracy">
-                Bureaucracy (Technical, Operations, Administration, Detached Duty)
-              </option>
+              {optionDomain(edition, "acg.scout.division").values.map((d) => (
+                <option key={d} value={d}>
+                  {DIVISION_LABELS[d] ?? d}
+                </option>
+              ))}
             </FormSelect>
           </FormField>
         )}
@@ -174,12 +205,11 @@ export function AcgEnlistPhase({
                 value={form.lineType}
                 onChange={(v) => setForm({ lineType: v })}
               >
-                <option value="Megacorp">Megacorp (9+, Class B+)</option>
-                <option value="Sector-wide">Sector-wide (8+, Class C+)</option>
-                <option value="Subsector-wide">Subsector-wide (7+, Class D+)</option>
-                <option value="Interface">Interface (7+)</option>
-                <option value="Fledgling">Fledgling (7+)</option>
-                <option value="Free Trader">Free Trader (7+)</option>
+                {optionDomain(edition, "acg.merchant.lineType").values.map((lt) => (
+                  <option key={lt} value={lt}>
+                    {LINE_TYPE_LABELS[lt] ?? lt}
+                  </option>
+                ))}
               </FormSelect>
             </FormField>
             {(form.lineType === "Megacorp" || form.lineType === "Sector-wide") && (
