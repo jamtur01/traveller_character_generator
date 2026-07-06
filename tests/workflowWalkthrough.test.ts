@@ -7,9 +7,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type * as session from "../lib/traveller/chargen/session";
 import {
-  walkBasic, walkCtBasic, walkAcg,
+  walkBasic, walkCtBasic, walkAcg, walkMongoose,
   consecutiveSectionRuns, termBeginsPerTerm,
 } from "./_walker";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -144,6 +145,41 @@ describe("MT ACG merchant prince — all line types × auto/interactive", () => 
       });
     }
   }
+});
+
+describe("Mongoose 2e — every voluntary career drives to a terminal phase", () => {
+  // Careers are registry-sourced so a JSON career addition is walked here too.
+  const careers = optionDomain("mongoose-2e", "mongoose.career").values;
+  for (const career of careers) {
+    it(`${career}: reaches end, clean termBegin, no runaway queue`, () => {
+      const r = walkMongoose({ career });
+      // The targeted career was actually attempted (interactive prompt hit).
+      expect(r.resolved.some((c) => c.kind === "mongooseCareer")).toBe(true);
+      // Drove to the terminal phase with a populated character.
+      expect(r.snap.phase).toBe("end");
+      expect(r.character.chargenModelId).toBe("mongoose");
+      expect(r.character.mongooseState?.careerCount ?? 0).toBeGreaterThanOrEqual(1);
+      expect(r.character.terms).toBeGreaterThanOrEqual(1);
+      expect(r.character.skills.length).toBeGreaterThan(0);
+      // No duplicate term markers and no orphaned choice queue.
+      for (const [n, count] of termBeginsPerTerm(r.character)) {
+        expect(count, `term ${n} termBegin`).toBe(1);
+      }
+      expect(consecutiveSectionRuns(r.character)).toBeLessThanOrEqual(1);
+      expect(r.character.pendingChoices.length).toBe(0);
+    });
+  }
+
+  it("auto mode (no targeted career): reaches end, clean termBegin", () => {
+    const r = walkMongoose();
+    expect(r.snap.phase).toBe("end");
+    expect(r.character.mongooseState?.careerCount ?? 0).toBeGreaterThanOrEqual(1);
+    for (const [n, count] of termBeginsPerTerm(r.character)) {
+      expect(count, `term ${n} termBegin`).toBe(1);
+    }
+    expect(consecutiveSectionRuns(r.character)).toBeLessThanOrEqual(1);
+    expect(r.character.pendingChoices.length).toBe(0);
+  });
 });
 
 describe("Pre-career interactive walkthroughs", () => {

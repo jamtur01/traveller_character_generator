@@ -165,6 +165,134 @@ export function walkAcg(opts: {
   return { character: snap.character, snap, resolved, eventCountTrail, termsTrail };
 }
 
+/** Enlist options for the Mongoose flow. The mongoose model reads only
+ *  `verbose`; career + assignment + background skills are in-flow choices
+ *  (pickOrDefer), so the acg/service fields are inert here. */
+const MONGOOSE_ENLIST: session.EnlistOptions = {
+  verbose: true,
+  preferredService: "random",
+  acgService: "army",
+  acgCombatArm: "",
+  acgFleet: "imperialNavy",
+  acgDivision: "field",
+  acgLineType: "",
+  acgSubsectorTech: "",
+  acgMerchantAcademy: false,
+};
+
+/** Drain pending Mongoose choices. A `mongooseCareer` prompt is resolved to
+ *  the requested `career` id (so a specific career gets attempted) — every
+ *  other prompt (assignment, background skill, per-term skill table) takes
+ *  option 0. Bounded like drainChoices to catch a runaway queue. */
+function drainMongooseChoices(
+  snap: session.ChargenSnapshot,
+  career: string | undefined,
+  resolved: WalkResult["resolved"],
+  cap: number = 60,
+): session.ChargenSnapshot {
+  let cur = snap;
+  let n = 0;
+  while (cur.character.pendingChoices.length > 0) {
+    n++;
+    if (n > cap) {
+      throw new Error(
+        `walkMongoose: runaway choice queue: drained ${cap} choices without ` +
+        `exhausting. Pending kinds: ` +
+        `${cur.character.pendingChoices.map((c) => c.kind).join(", ")}`,
+      );
+    }
+    const c = cur.character.pendingChoices[0]!;
+    let idx = 0;
+    if (c.kind === "mongooseCareer" && career !== undefined) {
+      const target = c.options.indexOf(career);
+      if (target >= 0) idx = target;
+    }
+    resolved.push({ kind: c.kind, pick: idx, label: c.label });
+    cur = session.resolvePending(cur, c.id, idx).snapshot;
+  }
+  return cur;
+}
+
+/** Walk a Mongoose Traveller 2e character to a terminal phase via the session
+ *  API — the peer of walkBasic/walkAcg for the mongoose model. Mongoose folds
+ *  mustering-out into runTerm/attemptMusterOut (there is no musterChoice
+ *  action and no muster phase): "career" = between careers, "term" = in one.
+ *
+ *  Seed-driven (NOT pinned like walkBasic/walkAcg): a constant Math.random
+ *  would roll a natural 12 on every advancement, which the rules (Core p.18)
+ *  read as "must remain in this career" — an inescapable loop. A seeded rng
+ *  gives varied rolls that terminate, and satisfies the session's determinism
+ *  invariant for the interactive re-execution path.
+ *
+ *  When `career` is set the walk runs interactive and resolves the career
+ *  prompt to that id (attempting that specific career); otherwise it runs auto
+ *  and takes the model's default career. `maxTerms` caps terms per career and
+ *  `maxCareers` caps how many careers are entered before finishing — both keep
+ *  the walk bounded. */
+export function walkMongoose(opts: {
+  career?: string;
+  seed?: number;
+  interactive?: boolean;
+  maxTerms?: number;
+  maxCareers?: number;
+} = {}): WalkResult {
+  const interactive = opts.interactive ?? opts.career !== undefined;
+  const snap0 = session.startCareer({
+    edition: "mongoose-2e",
+    verbose: true,
+    interactiveMode: interactive,
+    supportsInteractive: true,
+    useAcg: false,
+    acgPathway: "",
+    seed: opts.seed ?? 0x5eed_2e,
+  });
+  const resolved: WalkResult["resolved"] = [];
+  const eventCountTrail: number[] = [];
+  const termsTrail: number[] = [];
+  const maxTerms = opts.maxTerms ?? 4;
+  const maxCareers = opts.maxCareers ?? 1;
+  // Safety cap on total session steps: a healthy walk terminates well under it;
+  // an over-run means the flow is stuck (e.g. a perpetual "must continue").
+  const stepCap = maxCareers * (maxTerms + 8) + 12;
+  let snap = snap0;
+  let steps = 0;
+  while (snap.phase !== "end") {
+    steps++;
+    if (steps > stepCap) {
+      throw new Error(
+        `walkMongoose: step cap ${stepCap} exceeded at phase "${snap.phase}" ` +
+        `(careerCount=${snap.character.mongooseState?.careerCount ?? "?"}, ` +
+        `termsInCareer=${snap.character.mongooseState?.termsInCareer ?? "?"})`,
+      );
+    }
+    const st = snap.character.mongooseState;
+    switch (snap.phase) {
+      case "career":
+        // Between careers: finish once the career cap is met, else enter one more.
+        snap = (st?.careerCount ?? 0) >= maxCareers
+          ? session.attemptMusterOut(snap)
+          : session.enlist(snap, MONGOOSE_ENLIST);
+        snap = drainMongooseChoices(snap, opts.career, resolved);
+        break;
+      case "term": {
+        // A natural-12 "must continue" (or unreleased parole) forces another
+        // term; otherwise muster out once the per-career term cap is met.
+        const mustStay = st?.perTerm.mustContinue ?? false;
+        snap = !mustStay && st !== null && st.termsInCareer >= maxTerms
+          ? session.attemptMusterOut(snap)
+          : session.runTerm(snap);
+        snap = drainMongooseChoices(snap, opts.career, resolved);
+        eventCountTrail.push(snap.character.events.length);
+        termsTrail.push(snap.character.terms);
+        break;
+      }
+      default:
+        throw new Error(`walkMongoose: unexpected phase "${snap.phase}"`);
+    }
+  }
+  return { character: snap.character, snap, resolved, eventCountTrail, termsTrail };
+}
+
 /** Count repeated consecutive section-separator events (the
  *  "----------" lines). A run > 1 means termBegin duplication. */
 export function consecutiveSectionRuns(c: Character): number {
