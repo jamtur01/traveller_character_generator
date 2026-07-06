@@ -476,12 +476,16 @@ export function tryMitigate(
  *      player.
  *    - "aggressive": spends up to `need` on any failed roll.
  *    - "conservative" (default for auto mode): unconditional spend on
- *      survival/courtMartial (life-or-death), 1 BP on skill/decoration,
- *      2 BP on promotion. */
+ *      survival/courtMartial (life-or-death), else the per-roll cap from
+ *      common.bpSpend.conservativeCaps ($soloPolicy: promotion 2, else 1). */
 function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   const need = Math.abs(req.margin);
   if (need <= 0) return { spent: 0, newMargin: req.margin };
-  const policy = ch.acgState?.bpAutoPolicy ?? "conservative";
+  const block = commonAcg(ch)?.bpSpend;
+  const policy = ch.acgState?.bpAutoPolicy ?? (requireRule(
+    block?.defaultAutoPolicy,
+    "common.bpSpend.defaultAutoPolicy", "PM p. 46 ($soloPolicy)",
+  ) as "conservative" | "aggressive" | "manual");
   if (policy === "manual") return { spent: 0, newMargin: req.margin };
   let maxSpend: number;
   if (req.rollName === "survival" || req.rollName === "courtMartial") {
@@ -489,8 +493,16 @@ function autoMitigate(ch: Character, req: MitigationRequest): MitigationResult {
   } else if (policy === "aggressive") {
     maxSpend = need; // PM "any number" — spend whatever needed
   } else {
-    // Conservative: skill/decoration capped at 1, promotion at 2.
-    maxSpend = req.rollName === "promotion" ? 2 : 1;
+    // Conservative caps sourced from common.bpSpend.conservativeCaps ($soloPolicy).
+    maxSpend = req.rollName === "promotion"
+      ? requireRule(
+        block?.conservativeCaps?.promotion,
+        "common.bpSpend.conservativeCaps.promotion", "PM p. 46 ($soloPolicy)",
+      )
+      : requireRule(
+        block?.conservativeCaps?.default,
+        "common.bpSpend.conservativeCaps.default", "PM p. 46 ($soloPolicy)",
+      );
   }
   if (need > maxSpend) {
     return { spent: 0, newMargin: req.margin };
@@ -538,11 +550,15 @@ function reviewBpSpend(
   const available = ch.acgState?.browniePoints ?? 0;
   if (available <= 0) return result;
   // Build "spend N more" options. PM p. 46 allows any number of BPs on
-  // a single roll, so the cap is whatever the character can afford.
-  // Bounded at 12 to keep the picker tractable for huge BP pools (the
-  // player can still aggregate via repeated prompts in pathological
-  // cases — a court-martial avoid needs ≤ 6, survival ≤ ~10).
-  const max = Math.min(available, 12);
+  // a single roll, so the cap is whatever the character can afford,
+  // bounded by common.bpSpend.pickerMax ($soloPolicy) to keep the picker
+  // tractable for huge BP pools (the player can still aggregate via
+  // repeated prompts — a court-martial avoid needs ≤ 6, survival ≤ ~10).
+  const pickerMax = requireRule(
+    commonAcg(ch)?.bpSpend?.pickerMax,
+    "common.bpSpend.pickerMax", "PM p. 46 ($soloPolicy)",
+  );
+  const max = Math.min(available, pickerMax);
   const options: string[] = [];
   options.push("Spend 0 more (accept current outcome)");
   for (let n = 1; n <= max; n++) {

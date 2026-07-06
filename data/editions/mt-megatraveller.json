@@ -4012,6 +4012,12 @@
         "min": -2,
         "max": 2,
         "step": 1
+      },
+      "bpSpend": {
+        "$soloPolicy": "PM p.46 allows 'any number' of brownie points on a roll — the book sets no cap. These are the generator's auto-play spend policy + interactive picker bound, not book rules.",
+        "defaultAutoPolicy": "conservative",
+        "conservativeCaps": { "promotion": 2, "default": 1 },
+        "pickerMax": 12
       }
     },
     "pathways": ["mercenary", "navy", "scout", "merchantPrince"],

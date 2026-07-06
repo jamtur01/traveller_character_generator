@@ -436,6 +436,16 @@ const AcgCommonSchema = z.looseObject({
     max: z.number(),
     step: z.number(),
   }).optional(),
+  // $soloPolicy: engine auto-play spend caps + picker bound (PM p. 46 sets
+  // no book cap — "any number" of BP on a roll). Not a $rule value.
+  bpSpend: z.looseObject({
+    defaultAutoPolicy: z.string(),
+    conservativeCaps: z.looseObject({
+      promotion: z.number(),
+      default: z.number(),
+    }),
+    pickerMax: z.number(),
+  }).optional(),
 });
 
 const AcgDataSchema = z.looseObject({

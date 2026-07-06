@@ -176,7 +176,7 @@ Four audit rounds converged on these as OK-structural — they are conventions, 
 
 - **Uniform die counts.** Plain 2D checks / 1D table rolls are the system's single resolution mechanic; JSON declares dice **only where they vary** (`courtMartial.*.die`, `navy.retention.throw.die`, `marineTradition.savingThrow.die`, jail/education dice strings — parsed via `parseDieCount`, which throws on unknown formats).
 - **`skillPoints += 1` / `rank += 1`** step semantics — definitional to the steps; variable magnitudes (overshoot thresholds) are JSON.
-- **BP mechanics**: 1 BP = +1 die step is the definition of a brownie point; the auto-play spend caps (1/2, picker cap 12) are engine auto-mode policy, commented as such.
+- **BP mechanics**: 1 BP = +1 die step is the definition of a brownie point (definitional, stays in code). The auto-play spend caps and interactive picker bound are NOT book rules — PM p. 46 allows "any number" of BP on a roll — so they live in `advancedCharacterGeneration.common.bpSpend` (`defaultAutoPolicy`, `conservativeCaps.{promotion,default}`, `pickerMax`) under a cited `$soloPolicy` tag (engine auto-play choice the book leaves open), read via `requireRule`.
 - **`-99` muster sentinel** for "no benefits" (death penalty) — documented arithmetic encoding.
 - **Pre-enlistment placeholders**: `rankCode: "E1"`, constructor `age = 18` — always overwritten from JSON at enlist/start (`acg.common.startAge`, `services.*.startAge`).
 - **`beginAcg` API defaults** — pickerless auto flows take the first printed option; UI and RunLog always pass explicit values.

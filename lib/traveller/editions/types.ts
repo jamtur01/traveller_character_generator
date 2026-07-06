@@ -249,6 +249,13 @@ export interface AcgCommonData {
   /** PM p. 49 survival <-> decoration DM tradeoff option bounds. The book
    *  states no cap; the declared bound is a documented design choice. */
   decorationDmTradeoff?: { min: number; max: number; step: number };
+  /** $soloPolicy: engine auto-play BP-spend caps + interactive picker bound
+   *  (PM p. 46 sets no book cap — "any number" of BP on a roll). Not a $rule. */
+  bpSpend?: {
+    defaultAutoPolicy: string;
+    conservativeCaps: { promotion: number; default: number };
+    pickerMax: number;
+  };
   [k: string]: unknown;
 }
 
