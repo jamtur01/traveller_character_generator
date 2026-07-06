@@ -374,6 +374,8 @@ const SkillColumnPolicySchema = z.looseObject({
 
 const PathwayDataSchema = z.looseObject({
   enlistment: z.union([z.looseObject({}), z.array(z.looseObject({}))]).optional(),
+  // PM p. 52: declared, order-significant navy fleet enumerable (option domain).
+  fleets: z.array(z.string()).optional(),
   ranks: z.looseObject({
     enlisted: z.array(z.unknown()).optional(),
     officer: z.array(z.unknown()).optional(),

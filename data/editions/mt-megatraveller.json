@@ -5104,6 +5104,12 @@
           }
         }
       },
+      "fleets": [
+        "imperialNavy",
+        "reserveFleet",
+        "systemSquadron"
+      ],
+      "$ruleFleets": "PM p. 52: the Navy comprises three fleets — Imperial Navy, Reserve Fleet, System Squadron.",
       "branchAssignment": {
         "columns": [
           "die",

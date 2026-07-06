@@ -2,6 +2,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import {
   PhaseCard, FormField, FormSelect, PrimaryButton,
 } from "@/app/components/ui";
@@ -36,6 +37,15 @@ function mercenaryNonCommandoArms(editionId: string): string[] {
   const gated = new Set(Object.keys(merc?.combatArmEligibility?.armGates ?? {}));
   return arms.filter((a) => !gated.has(a));
 }
+
+/** Display labels for the navy fleet option domain. Presentation-only
+ *  strings keyed by the declared fleet value; the enumerable itself is
+ *  sourced from cited JSON via optionDomain("acg.navy.fleet"). */
+const FLEET_LABELS: Record<string, string> = {
+  imperialNavy: "Imperial Navy (8+ to enlist)",
+  reserveFleet: "Reserve Fleet (7+ to enlist)",
+  systemSquadron: "System Squadron (6+, requires Early Stellar+ homeworld)",
+};
 
 export function AcgEnlistPhase({
   character,
@@ -115,15 +125,11 @@ export function AcgEnlistPhase({
                 value={form.fleet}
                 onChange={(v) => setForm({ fleet: v as AcgFormState["fleet"] })}
               >
-                <option value="imperialNavy">
-                  Imperial Navy (8+ to enlist)
-                </option>
-                <option value="reserveFleet">
-                  Reserve Fleet (7+ to enlist)
-                </option>
-                <option value="systemSquadron">
-                  System Squadron (6+, requires Early Stellar+ homeworld)
-                </option>
+                {optionDomain(edition, "acg.navy.fleet").values.map((fleet) => (
+                  <option key={fleet} value={fleet}>
+                    {FLEET_LABELS[fleet] ?? fleet}
+                  </option>
+                ))}
               </FormSelect>
             </FormField>
             <FormField
