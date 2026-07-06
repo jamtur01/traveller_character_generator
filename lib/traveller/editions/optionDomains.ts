@@ -21,10 +21,14 @@
 //   `read` is ANY reader that maps an editionId to the declared enumerable and
 //   fails loud (via requireRule) when the cited JSON key is absent — never a
 //   `?? literal` fallback. The source varies per engine: MT-ACG domains read a
-//   pathway block via getAcgPathway (use the readAcgPathwayStringArray helper
-//   below); Mongoose-2e and CT-basic domains supply their own readers and will
-//   NOT use getAcgPathway. Whatever the source, the declared JSON array MUST
-//   carry a sibling `$rule…` citation.
+//   pathway block via getAcgPathway (readAcgPathwayStringArray helper) or, for
+//   enumerables at the advancedCharacterGeneration ROOT, via readAcgRootStringArray;
+//   Mongoose-2e and CT-basic domains supply their own readers and will NOT use
+//   getAcgPathway. Citation rule: the declared JSON array normally carries a
+//   sibling `$rule…` key — EXCEPT arrays at the advancedCharacterGeneration root
+//   (e.g. `pathways`), which cite in-code in the requireRule call instead, because
+//   the structural/architecture audits treat any non-meta root key (a `$rule…`
+//   sibling included) as a service pathway and would misclassify it.
 
 import { getAcgPathway, getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
