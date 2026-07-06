@@ -36,6 +36,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
+import { getEnlistableServices } from "@/lib/traveller/services";
+import { listEditions } from "@/lib/traveller/editions";
 
 // Consumer side: read the authoritative consumer keys/values straight from the
 // edition JSON, using the house audit pattern (see
@@ -211,4 +213,89 @@ describe("option-domain audit-locks", () => {
     const pathwayKeys = Object.keys(acg).filter((k) => !NON_PATHWAY_KEYS[k]);
     expect([...domain.values].sort()).toEqual([...pathwayKeys].sort());
   });
+});
+
+// ---------------------------------------------------------------------------
+// classic.service — the CT (Classic Traveller) / MT (MegaTraveller, non-ACG)
+// BASIC service-selection domain, and the biggest branch domain (CT registers
+// 18 services). Unlike the MT-ACG domains above, its enumerable does not live
+// in a pathway block: `serviceOrder` is a NEW top-level JSON array giving the
+// presentation/enlistment order of ALL of an edition's services (CT: the
+// service-selection table, TTB p. 18), and `optionDomain("classic.service")`
+// returns the ENLISTABLE subset — serviceOrder minus every service whose
+// checks.enlistment.automaticIf gate is set. In CT that drops the nobles:
+// per Citizens of the Imperium a Soc 10+ character is auto-enrolled as a noble
+// rather than voluntarily enlisting, so nobles never appear in the enlistment
+// pool. The enlistable subset is therefore exactly getEnlistableServices(ed),
+// today's authoritative runtime list (lib/traveller/services.ts).
+//
+// Parameterized over every ACTIVE edition carrying the "classic" chargen model,
+// mirroring data.validation.test.ts's ACTIVE_EDITIONS filter, so a new classic
+// edition is locked automatically.
+//
+// Independent sources (each read SEPARATELY, never re-derived from the accessor
+// under test — that independence is the lock's teeth):
+//   - `serviceOrder`, read raw from the edition JSON.
+//   - Object.keys(services), read raw from the edition JSON.
+//   - getEnlistableServices(ed), the current authoritative runtime enlistable
+//     list computed in lib/traveller/services.ts.
+//   - the automaticIf-gated service set, read raw from each service's
+//     checks.enlistment.automaticIf.
+//
+// TEETH: rename/reorder a service key, add or drop a serviceOrder entry, flip a
+// service's automaticIf gate, or change getEnlistableServices, and exactly one
+// assertion below reddens, naming the drift.
+const CLASSIC_EDITIONS = listEditions().filter(
+  (e) => e.status === "active" && e.chargenModels.includes("classic"),
+);
+if (CLASSIC_EDITIONS.length === 0) {
+  throw new Error(
+    "No active classic editions registered — classic.service lock cannot run",
+  );
+}
+
+describe("option-domain audit-locks — classic.service", () => {
+  for (const meta of CLASSIC_EDITIONS) {
+    const ed = meta.id;
+    it(`${ed}: serviceOrder covers all services && optionDomain(classic.service)===getEnlistableServices`, () => {
+      // Consumer side: the edition JSON, read raw (never via the accessor).
+      const raw = JSON.parse(
+        readFileSync(
+          resolve(__dirname, `../../data/editions/${ed}.json`),
+          "utf8",
+        ),
+      ) as {
+        serviceOrder: readonly string[];
+        services: Record<
+          string,
+          { checks: { enlistment: { automaticIf?: unknown } } }
+        >;
+      };
+
+      const domain = optionDomain(ed, "classic.service");
+
+      // (a) field — the character property this decision writes into.
+      expect(domain.field).toBe("preferredService");
+
+      // (b) declared serviceOrder SET === services key SET: the order lists
+      // every service (none missing) and names no phantom (none extra).
+      const serviceKeys = Object.keys(raw.services);
+      expect([...raw.serviceOrder].sort()).toEqual([...serviceKeys].sort());
+
+      // (c) enlistable subset, in order === the authoritative runtime list.
+      expect(domain.values).toEqual(getEnlistableServices(ed));
+
+      // (d) teeth: the services serviceOrder drops from the enlistable subset
+      // are EXACTLY those carrying an enlistment automaticIf gate (CT nobles,
+      // auto-enrolled per Citizens of the Imperium). serviceOrder and the
+      // automaticIf set come from raw JSON; the enlistable list from the
+      // runtime — three independent sources reconciled here.
+      const enlistable = new Set<string>(getEnlistableServices(ed));
+      const excluded = raw.serviceOrder.filter((k) => !enlistable.has(k));
+      const automaticIf = serviceKeys.filter(
+        (k) => raw.services[k]?.checks.enlistment.automaticIf != null,
+      );
+      expect([...excluded].sort()).toEqual([...automaticIf].sort());
+    });
+  }
 });
