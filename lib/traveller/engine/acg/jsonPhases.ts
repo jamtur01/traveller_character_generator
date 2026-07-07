@@ -96,9 +96,10 @@ export type PhaseConfig =
   | PhaseSurvival | PhasePromotion | PhaseDecoration | PhaseSkills | PhaseBonus;
 
 export interface ResolveAssignmentConfig {
-  /** Built-in pre-phase setup. `"decorationDmTradeoff"` invokes the
-   *  shared interactive prompt; null/omitted skips. */
-  preRun?: "decorationDmTradeoff" | null;
+  /** Built-in pre-phase setup. A DmTradeoffPromptVerb object
+   *  (declarative); a legacy string names a registered hook (removed at
+   *  cutover); null/omitted skips. */
+  preRun?: "decorationDmTradeoff" | DmTradeoffPromptVerb | null;
   phases: PhaseConfig[];
   /** After-all-phases side effect. A FinalizeVerb object (declarative);
    *  a legacy string names a registered callback (removed at cutover). */
@@ -146,8 +147,10 @@ export function buildPathwaySpecFromConfig(
   const phases = config.phases.map((p) => buildPhase(p, callbacks, build));
   const spec: PathwaySpec = { phases };
   if (config.preRun) {
-    spec.preRun = requireHook(PRERUN_HOOKS, config.preRun, () =>
-      `Unknown preRun hook: ${config.preRun}`);
+    const pr = config.preRun;
+    spec.preRun = typeof pr === "string"
+      ? requireHook(PRERUN_HOOKS, pr, () => `Unknown preRun hook: ${pr}`)
+      : (ctx) => runDmTradeoffPrompt(ctx, pr);
   }
   if (config.finalize) {
     const fin = config.finalize;
@@ -784,28 +787,44 @@ function targetOrZero(t: import("./state").ResolutionTarget): number {
   return typeof t === "number" ? t : 0;
 }
 
-// Register the built-in decoration-DM tradeoff preRun hook. The prompt
-// fires before any phase rolls in interactive mode; both mercenary and
-// navy use it. Skill-cap-style choices stay pathway-local.
-registerPreRun("decorationDmTradeoff", (ctx) => {
+// --- Verb interpreter: dmTradeoffPrompt ------------------------------
+//
+// PM p. 49 survival↔decoration DM tradeoff. In interactive mode, prompt
+// the player to trade DM between two rolls: rollA is credited the chosen
+// DM, rollB the equal opposite. Bounds come from acg.common[boundsRule].
+// Fires before any phase rolls; both mercenary and navy declare it.
+
+type TradeoffRoll = "survival" | "decoration";
+
+export interface DmTradeoffPromptVerb {
+  verb: "dmTradeoffPrompt";
+  /** Key under acg.common holding the { min, max, step } option bounds. */
+  boundsRule: string;
+  /** Roll credited the chosen DM (survival). */
+  rollA: TradeoffRoll;
+  /** Roll credited the equal, opposite DM (decoration). */
+  rollB: TradeoffRoll;
+}
+
+function runDmTradeoffPrompt(ctx: ResolveContext, verb: DmTradeoffPromptVerb): void {
   if (ctx.ch.choiceMode !== "interactive") return;
-  if (ctx.res.decoration === "none") return;
-  if (typeof ctx.res.survival !== "number" || typeof ctx.res.decoration !== "number") return;
+  if (ctx.res[verb.rollB] === "none") return;
+  if (typeof ctx.res[verb.rollA] !== "number" || typeof ctx.res[verb.rollB] !== "number") return;
   // PM p. 49 declares the tradeoff; the +/-2 option bounds are declared in
-  // acg.common.decorationDmTradeoff (a documented design choice — the book
-  // states no cap).
+  // acg.common[boundsRule] (a documented design choice — the book states
+  // no cap).
   const bounds = requireRule(
     getEdition(ctx.ch.editionId).data.advancedCharacterGeneration
-      ?.common?.decorationDmTradeoff,
-    "acg.common.decorationDmTradeoff", "PM p. 49",
+      ?.common?.[verb.boundsRule] as { min: number; max: number; step: number } | undefined,
+    `acg.common.${verb.boundsRule}`, "PM p. 49",
   );
   const values: number[] = [];
   for (let dm = bounds.min; dm <= bounds.max; dm += bounds.step) values.push(dm);
-  // Each value is the survival-roll delta; the decoration roll takes the
-  // opposite sign (combatResolutionDms applies +strategy / -strategy).
+  // Each value is the rollA delta; rollB takes the opposite sign
+  // (combatResolutionDms applies +strategy / -strategy).
   const options = values.map((dm) => dm === 0
     ? "No tradeoff"
-    : `${dm > 0 ? "+" : ""}${dm} survival / ${dm < 0 ? "+" : ""}${-dm} decoration`);
+    : `${dm > 0 ? "+" : ""}${dm} ${verb.rollA} / ${dm < 0 ? "+" : ""}${-dm} ${verb.rollB}`);
   ctx.ch.pickOrDefer({
     kind: "decorationDmTradeoff",
     label:
@@ -823,9 +842,14 @@ registerPreRun("decorationDmTradeoff", (ctx) => {
       // contribution with the fresh pick so the phase rolls see the DM the
       // player just chose.
       const prior = ch.requireAcgState().decorationDmStrategy;
-      ctx.dms.survival += strategy - prior;
-      ctx.dms.decoration = (ctx.dms.decoration ?? 0) - (strategy - prior);
+      adjustDm(ctx.dms, verb.rollA, strategy - prior);
+      adjustDm(ctx.dms, verb.rollB, -(strategy - prior));
       ch.requireAcgState().decorationDmStrategy = strategy;
     },
   });
-});
+}
+
+/** Add `delta` to a tradeoff roll's accumulated DM (absent → 0). */
+function adjustDm(dms: ResolveContext["dms"], roll: TradeoffRoll, delta: number): void {
+  dms[roll] = (dms[roll] ?? 0) + delta;
+}

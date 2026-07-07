@@ -4063,7 +4063,7 @@
     "mercenary": {
       "resolveAssignment": {
         "$rule": "PM p. 50 line 46 / p. 51 line 10-11 checklist: Survival -> Decoration -> Promotion -> Skills (decoration before promotion so a fail-by-6 court-martial resolves before the rank advances).",
-        "preRun": "decorationDmTradeoff",
+        "preRun": { "verb": "dmTradeoffPrompt", "boundsRule": "decorationDmTradeoff", "rollA": "survival", "rollB": "decoration" },
         "phases": [
           {
             "kind": "survival",
@@ -5055,7 +5055,7 @@
     "navy": {
       "resolveAssignment": {
         "$rule": "PM p. 55 line 20-22 navy checklist: Survival -> Decoration -> Promotion -> Skills (decoration first so court-martial can pre-empt promotion).",
-        "preRun": "decorationDmTradeoff",
+        "preRun": { "verb": "dmTradeoffPrompt", "boundsRule": "decorationDmTradeoff", "rollA": "survival", "rollB": "decoration" },
         "phases": [
           {
             "kind": "survival",

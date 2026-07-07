@@ -81,10 +81,13 @@ describe("buildPathwaySpecFromConfig drift detection", () => {
     })).toThrow(/Unknown preRun hook: notAHook/);
   });
 
-  it("decorationDmTradeoff preRun is registered (used by mercenary/navy)", () => {
+  it("dmTradeoffPrompt preRun verb builds a spec preRun (mercenary/navy)", () => {
     const config: ResolveAssignmentConfig = {
       phases: [],
-      preRun: "decorationDmTradeoff",
+      preRun: {
+        verb: "dmTradeoffPrompt", boundsRule: "decorationDmTradeoff",
+        rollA: "survival", rollB: "decoration",
+      },
     };
     const spec = buildPathwaySpecFromConfig(config, {}, {
       combatAssignments: () => [],
