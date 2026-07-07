@@ -53,7 +53,7 @@ describe("ageing", () => {
     vi.spyOn(Math, "random").mockImplementation(() => seq[i++] ?? d6(3));
     rollAging(c);
     expect(c.attributes.strength).toBe(1); // 2 - 2 = 0 -> crisis restores to 1
-    expect(c.events.some((e) => e.kind === "raw" && /Ageing crisis/.test(e.text))).toBe(true);
+    expect(c.events.some((e) => e.kind === "raw" && /Characteristic crisis/.test(e.text))).toBe(true);
   });
 });
 

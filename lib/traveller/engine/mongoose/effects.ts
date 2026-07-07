@@ -124,6 +124,23 @@ export function applyReductions(ch: Character, reductions: readonly MongooseRedu
       ch.improveAttribute(attr as AttributeKey, -amount);
     }
   }
+  // Crisis restore (Core p.49 $soloPolicy): a reduction (injury OR ageing) that
+  // drives a characteristic to <= 0 is a crisis the book leaves to a referee
+  // (medical care / anagathics / death); this solo generator resolves it as
+  // emergency medical care restoring each crisis characteristic to the declared
+  // value. Applied here so injury and ageing are handled uniformly — a live
+  // Traveller never keeps a 0 characteristic.
+  const restore = requireRule(
+    getMongooseData(ch).agingCrisisRestore,
+    "mongoose.agingCrisisRestore", "MgT2 Core p.49 ($soloPolicy)",
+  ).value;
+  const crisis = [...used].filter((a) => ch.attributes[a as AttributeKey] <= 0) as AttributeKey[];
+  if (crisis.length > 0) {
+    for (const a of crisis) ch.improveAttribute(a, restore - ch.attributes[a]);
+    ch.log(ev.raw(
+      `Characteristic crisis: ${crisis.join(", ")} restored to ${restore} with emergency medical care.`,
+    ));
+  }
 }
 
 /** Apply a SPECIFIC Injury table row (Core p.49) by its roll value. */
