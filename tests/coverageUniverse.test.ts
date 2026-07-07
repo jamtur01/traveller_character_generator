@@ -24,6 +24,7 @@ import { getEdition } from "@/lib/traveller/editions";
 import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
 import { Character } from "@/lib/traveller/character";
 import { musterChoice } from "@/lib/traveller/chargen/session";
+import { applyCell } from "@/lib/traveller/engine/cellResolver";
 
 const universe = coverageUniverse();
 
@@ -153,6 +154,24 @@ describe("touchedTags — post-hoc recorder", () => {
     expect(ch.service).toBe("army");
     expect(touched.has("skilltable:ct-classic:army:personalDevelopment")).toBe(true);
     expect(touched.has("skilltable:ct-classic:army:advancedEducation")).toBe(true);
+  });
+
+  it("attribute-only skill-table roll records its skilltable tag", () => {
+    // CT navy's Personal Development table is ENTIRELY attribute cells (+1 Stren,
+    // +1 Dext, …) — it never grants a plain skill, so its skilltable tag is
+    // derivable only from attributeChange.source (commit 0d5be16), never from a
+    // skillLearned event. applyCell records the table on the attributeChange and
+    // the recorder maps it back: the attribute-only path, red before 0d5be16 and
+    // before the recorder's attributeChange branch.
+    const c = new Character();
+    c.editionId = "ct-classic";
+    c.chargenModelId = "classic";
+    c.service = "navy";
+    const pdName = getEdition("ct-classic").data.skillTableMeta!.displayNames.personalDevelopment;
+    applyCell(c, "+1 Stren", "skill", undefined, pdName);
+    const touched = touchedTags(c);
+    expect(touched.has("skilltable:ct-classic:navy:personalDevelopment")).toBe(true);
+    for (const tag of touched) expect(universe.has(tag)).toBe(true);
   });
 
   it("CT cash muster records the cash row from the musterCash event", () => {

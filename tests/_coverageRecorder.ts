@@ -17,7 +17,7 @@
 //   ch.chargenStatus.kind (terminal)  -> outcome:<model>:<mustered|deceased|retired>
 //   classic model only:
 //     ch.service                       -> svc:*
-//     skillLearned/skillImproved.source (table display name) -> skilltable:*
+//     skillLearned/skillImproved/attributeChange.source (table display) -> skilltable:*
 //     musterBenefit (outcome undefined): row = tableRoll+dm  -> muster.benefit:*
 //     musterCash: row = clamp(tableRoll+dm, 1, 7)            -> muster.cash:*
 //   cascadePick.cascade (label -> key) + .chosen (member)   -> cascade:*
@@ -28,11 +28,11 @@
 //
 // DEFERRED elements (universe omits them too, so the subset invariant holds):
 //   - skill CELLS at die granularity: the 1D roll that selects a cell is not
-//     recorded (skill events carry the table DISPLAY name, not the die), and a
-//     table roll yielding an attribute boost logs an attributeChange whose
-//     `reason` is the post-state, not the table — so table coverage is only
-//     partial. skilltable tags therefore mean "a SKILL was gained from this
-//     (service, table)", the exactly-derivable subset.
+//     recorded (skill/attribute events carry the table DISPLAY name, not the
+//     die). skilltable tags therefore mean "a skill OR attribute cell was
+//     gained from this (service, table)" — both a plain-skill row (skillLearned)
+//     and an attribute-boost row (attributeChange.source, since commit 0d5be16)
+//     are derivable; only the die granularity within a table is deferred.
 //   - ACG role sub-fields stored in pathway-specific value formats that don't
 //     match their optionDomain enumerable (mercenary service "Army"/"marines",
 //     navy branch, scout office, merchant department, subsector tech) and
@@ -86,7 +86,12 @@ function recordClassic(ch: Character, tags: Set<string>): void {
   tags.add(`svc:${ed}:${ch.service}`);
   const tableKey = skillTableKeyByDisplayName(ed);
   for (const e of ch.events) {
-    if (e.kind === "skillLearned" || e.kind === "skillImproved") {
+    // A skill-table roll logs skillLearned/skillImproved for a plain-skill row
+    // and (since 0d5be16) attributeChange carrying the table display name in
+    // `source` for an attribute-boost row — both attribute back to the table.
+    // Muster cells carry source "Muster" and aging/injury none, so tableKey.get
+    // skips them; only genuine table-display sources map to a table key.
+    if (e.kind === "skillLearned" || e.kind === "skillImproved" || e.kind === "attributeChange") {
       const key = e.source ? tableKey.get(e.source) : undefined;
       if (key) tags.add(`skilltable:${ed}:${ch.service}:${key}`);
     } else if (e.kind === "musterBenefit" && e.outcome === undefined) {

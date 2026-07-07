@@ -87,15 +87,6 @@ const ALLOWLIST: readonly AllowRule[] = [
     match: (_tag, meta) => meta.ns === "mgt.event" || meta.ns === "mgt.mishap",
   },
   {
-    id: "skilltable-pd-attribute-heavy",
-    reason:
-      "The Personal Development table is attribute-heavy; the recorder derives a skilltable " +
-      "tag only from a plain-skill row (an attribute-boost row logs attributeChange, not " +
-      "skillLearned — a documented recorder limitation), so a PD table that landed only " +
-      "attribute rows across the run set is not post-hoc derivable.",
-    match: (tag, meta) => meta.ns === "skilltable" && tag.endsWith(":personalDevelopment"),
-  },
-  {
     id: "mongoose-forced-only-prisoner-assignment",
     reason:
       "Prisoner is a forced-only career (entered only by draft/mishap, never voluntary " +
