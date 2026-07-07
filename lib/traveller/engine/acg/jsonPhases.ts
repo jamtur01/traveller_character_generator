@@ -25,7 +25,8 @@ import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 import {
   rollSkillFromColumn, serviceSkillColumnFor, branchSkillCandidates,
-  branchOf, applyPromotion, combatFinalize, type SkillColumnPolicy,
+  branchOf, applyPromotion, combatFinalize, clampedRoll,
+  type SkillColumnPolicy,
 } from "./pathways/shared";
 import { labelToColumnKey, type StructuredDm } from "./tables";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
@@ -88,7 +89,7 @@ interface PhaseSkills {
 interface PhaseBonus {
   kind: "bonus";
   consequence: string;
-  onPass: string;
+  onPass: string | AwardCashBonusVerb;
 }
 
 export type PhaseConfig =
@@ -311,7 +312,10 @@ function buildSkills(p: PhaseSkills): PhaseDef {
 }
 
 function buildBonus(p: PhaseBonus, callbacks: PathwayCallbacks): PhaseDef {
-  const onPass = lookupCallback(p.onPass, callbacks);
+  const bonus = p.onPass;
+  const onPass = typeof bonus === "string"
+    ? lookupCallback(bonus, callbacks)
+    : (ctx: ResolveContext) => runAwardCashBonus(ctx, bonus);
   return {
     phase: "bonus",
     skip: (ctx) => bonusTargetOf(ctx) === "none",
@@ -704,6 +708,45 @@ function runFinalizeDivisionSkill(ctx: ResolveContext, columnRule: string): void
     );
   }
   rollDivisionSkill(ctx, column === null ? "first" : column);
+}
+
+// --- Verb interpreter: awardCashBonus --------------------------------
+//
+// In-service cash bonus (PM p. 60): roll 1D on a basic-career service's
+// muster-cash table and award the amount divided by `divisor` (the
+// printed rule is half). Service + table + divisor are declared on the
+// verb; the clamp range derives from the table's declared row indices.
+
+export interface AwardCashBonusVerb {
+  verb: "awardCashBonus";
+  /** Basic-career service whose muster table supplies the bonus. */
+  service: string;
+  /** Muster sub-table to roll on (currently "musterCash"). */
+  fromTable: string;
+  /** Divide the rolled amount by this (the printed rule is half). */
+  divisor: number;
+}
+
+function runAwardCashBonus(ctx: ResolveContext, verb: AwardCashBonusVerb): void {
+  const ch = ctx.ch;
+  if (verb.fromTable !== "musterCash") {
+    throw new Error(
+      `awardCashBonus.fromTable must be "musterCash" (PM p. 60); got ` +
+      `"${verb.fromTable}".`,
+    );
+  }
+  const table = ch.editionService(verb.service as never).musterCash;
+  const indices = Object.keys(table).map(Number);
+  const rawRoll = clampedRoll(ch, 1, 0, Math.min(...indices), Math.max(...indices));
+  const fullAmount = requireRule(
+    table[rawRoll], `${verb.service} ${verb.fromTable}[${rawRoll}]`,
+    "PM p. 60 in-service bonus",
+  );
+  const cash = Math.floor(fullAmount / verb.divisor);
+  if (cash <= 0) return;
+  ch.credits += cash;
+  ch.muster.musterLog.push(`Cr${cash} bonus (in-service)`);
+  ch.log(ev.musterCash(cash, rawRoll, 0, "Merchant in-service bonus (half)"));
 }
 
 // --- Event helpers ---------------------------------------------------

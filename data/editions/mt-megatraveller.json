@@ -7244,7 +7244,13 @@
           {
             "kind": "bonus",
             "consequence": "Earn Merchant bonus",
-            "onPass": "merchantAwardBonus"
+            "onPass": {
+              "$rule": "PM p. 60: 'Bonus: Throw the number shown or greater on 2D to receive a bonus. If it is received, throw 1D on the cash column of the merchants Mustering Out Table, and receive half the amount shown.'",
+              "verb": "awardCashBonus",
+              "service": "merchants",
+              "fromTable": "musterCash",
+              "divisor": 2
+            }
           }
         ],
         "finalize": { "verb": "finalize", "flagRouteThisTerm": { "onAssignment": "Route" } }
@@ -7277,11 +7283,6 @@
         "freeTraderShip": {
           "$rule": "PM p. 61: a Free Trader Owner/Captain (rank O5+) musters out with a free trader ship as an automatic benefit.",
           "minOfficerRank": "O5"
-        },
-        "inServiceBonus": {
-          "$rule": "PM p. 60: 'Bonus: Throw the number shown or greater on 2D to receive a bonus. If it is received, throw 1D on the cash column of the merchants Mustering Out Table, and receive half the amount shown.'",
-          "fromTable": "musterCash",
-          "divisor": 2
         },
         "enlistedAdvancement": {
           "$rule": "PM p. 60: 'Enlisted personnel are promoted every four years.' One grade per completed term; rankMax caps seniority numbering because no enlisted titles are defined above the starting grade (avoids phantom ranks for improbably long enlisted careers).",

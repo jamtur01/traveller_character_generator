@@ -32,9 +32,8 @@ import {
 } from "@/lib/traveller/engine/acg/tables";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
-import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
+  createPathwaySpecRegistry, runReenlist, offerRoleChange,
   clearRetention, consumeRetainedAssignment, rollDieRow,
   EnlistmentValidationError,
 } from "./shared";
@@ -86,9 +85,6 @@ export interface MerchantData {
     schoolTransfer?: { noTransferAtOrAboveOfficerRank?: number };
     reducedPassage?: unknown;
     freeTraderShip?: { minOfficerRank?: string };
-    /** PM p. 60 in-service Bonus: roll 1D on the named muster table and
-     *  receive the amount divided by `divisor` (the printed rule is half). */
-    inServiceBonus?: { fromTable?: string; divisor?: number };
     /** PM p. 60: enlisted personnel are promoted every four years,
      *  capped at rankMax (no titles exist above the starting grade). */
     enlistedAdvancement?: { enlistedAutoAdvancePerTerm?: boolean; rankMax?: string };
@@ -469,13 +465,9 @@ function buildMerchantResolution(
   return { res, dms };
 }
 
-const MERCHANT_CALLBACKS: PathwayCallbacks = {
-  merchantAwardBonus: (ctx) => merchantAwardBonus(ctx.ch),
-};
-
 const REGISTRY = createPathwaySpecRegistry<MerchantData>({
   pathwayKey: "merchantPrince",
-  callbacks: MERCHANT_CALLBACKS,
+  callbacks: {},
   combatAssignments: () => [],
 });
 export const validateMerchantConfig = REGISTRY.validate;
@@ -513,40 +505,6 @@ function merchantCheckAvailablePosition(ch: Character): void {
  *  available position). O1 falls to O0 (enlisted-equivalent). */
 function serveOneRankLower(acg: AcgState): void {
   acg.effectiveRankCode = `O${Math.max(0, rankNum(acg.rankCode) - 1)}`;
-}
-
-function merchantAwardBonus(ch: Character): void {
-  // Bonus per PM p. 60: throw 1D on the merchants muster-out cash table
-  // and receive the amount divided by specialRules.inServiceBonus.divisor
-  // (the printed rule is half). Table choice + divisor live in JSON; the
-  // basic merchants service's musterCash[] is the source-of-truth table,
-  // and the roll's clamp range derives from its declared indices.
-  const merchants = ch.editionService("merchants" as never);
-  if (!merchants) return;
-  const bonus = requireRule(
-    dataFor(ch).specialRules?.inServiceBonus,
-    "merchantPrince.specialRules.inServiceBonus", "PM p. 60",
-  );
-  if (bonus.fromTable !== "musterCash") {
-    throw new Error(
-      `merchantPrince.specialRules.inServiceBonus.fromTable must be ` +
-      `"musterCash" (PM p. 60); got "${bonus.fromTable}".`,
-    );
-  }
-  const divisor = requireRule(
-    bonus.divisor, "merchantPrince.specialRules.inServiceBonus.divisor", "PM p. 60",
-  );
-  const indices = Object.keys(merchants.musterCash).map(Number);
-  const rawRoll = clampedRoll(ch, 1, 0, Math.min(...indices), Math.max(...indices));
-  const fullAmount = requireRule(
-    merchants.musterCash[rawRoll],
-    `merchants musterCash[${rawRoll}]`, "PM p. 60 in-service bonus",
-  );
-  const cash = Math.floor(fullAmount / divisor);
-  if (cash <= 0) return;
-  ch.credits += cash;
-  ch.muster.musterLog.push(`Cr${cash} bonus (in-service)`);
-  ch.log(ev.musterCash(cash, rawRoll, 0, "Merchant in-service bonus (half)"));
 }
 
 function transferMerchantLine(ch: Character, dir: "up" | "down"): void {
