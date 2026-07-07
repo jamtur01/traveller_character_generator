@@ -35,6 +35,7 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange,
   clearRetention, consumeRetainedAssignment, rollDieRow,
+  rollAcgEnlistment, commitStartingRank, checkEnlistmentGate,
   EnlistmentValidationError,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
@@ -100,7 +101,7 @@ export interface MerchantData {
       target: string | number;
     }>;
     startingRank: string;
-    dms?: StructuredDm[];
+    dms: StructuredDm[];
   };
   departmentAssignment: { columns: string[]; rows: Array<Record<string, unknown>> };
   availablePositions: {
@@ -191,25 +192,6 @@ function dataFor(ch: Character): MerchantData {
   return data;
 }
 
-/** Starport ordering: edition JSON `homeworld.starportOrder` lists letters
- *  worst → best (X, E, ... A). */
-function starportMeets(
-  ch: Character, home: string | undefined, minimum: string,
-): boolean {
-  if (!home) return false;
-  if (!minimum || minimum.toLowerCase() === "any") return true;
-  const order = getEdition(ch.editionId).data.homeworld?.starportOrder ?? [];
-  const have = order.indexOf(home.toUpperCase());
-  const want = order.indexOf(minimum.toUpperCase());
-  if (have < 0 || want < 0) {
-    throw new Error(
-      `Starport code not in homeworld.starportOrder (have "${home}", ` +
-      `minimum "${minimum}") — fix the edition JSON; gates must not silently pass.`,
-    );
-  }
-  return have >= want;
-}
-
 export function merchantEnlist(
   ch: Character,
   lineType: string,
@@ -224,23 +206,25 @@ export function merchantEnlist(
   // starport type less than that shown, the individual may not enlist in
   // that merchant line."
   if (row.minimumStarport && row.minimumStarport.toLowerCase() !== "any") {
-    if (!starportMeets(ch, ch.homeworld?.starport, row.minimumStarport)) {
-      throw new EnlistmentValidationError(
-        `Merchant line "${lineType}" requires homeworld starport ${row.minimumStarport}+; ` +
-        `this character's homeworld starport is ${ch.homeworld?.starport ?? "unset"}.`,
-      );
-    }
+    const home = ch.homeworld?.starport;
+    const message =
+      `Merchant line "${lineType}" requires homeworld starport ${row.minimumStarport}+; ` +
+      `this character's homeworld starport is ${home ?? "unset"}.`;
+    if (!home) throw new EnlistmentValidationError(message);
+    const order = getEdition(ch.editionId).data.homeworld?.starportOrder ?? [];
+    checkEnlistmentGate(order, home.toUpperCase(), row.minimumStarport.toUpperCase(), message);
   }
   const parsed = parseResolutionTarget(row.target);
   if (parsed.target === "auto") {
     ch.log(ev.enlistmentAttempt(`Merchant ${lineType} (automatic)`, 0, 0, 0, true));
   } else if (typeof parsed.target === "number") {
-    const dm = applyStructuredDms(data.enlistment.dms, ch);
-    const r = ch.rng.roll(2);
-    const succeeded = r + dm >= parsed.target;
-    ch.log(ev.enlistmentAttempt(`Merchant ${lineType}`, r, dm, parsed.target, succeeded));
-    if (!succeeded) {
-      throw new EnlistmentValidationError(`Merchant enlistment failed (${r + dm} vs ${parsed.target})`);
+    // Merchant enlistment has NO draft table (PM p. 60): a failed roll throws
+    // rather than routing to a drafted service.
+    const spec = { target: parsed.target, dms: data.enlistment.dms };
+    if (!rollAcgEnlistment(ch, spec, `Merchant ${lineType}`)) {
+      throw new EnlistmentValidationError(
+        `Merchant enlistment failed (target ${parsed.target})`,
+      );
     }
   }
   // Preserve pre-career commission rank (e.g. Medical School O3 entering
@@ -248,8 +232,7 @@ export function merchantEnlist(
   // to E1 enlisted.
   const acg = ch.requireAcgState();
   if (!acg.preCareerCommission) {
-    acg.rankCode = data.enlistment.startingRank;
-    acg.isOfficer = false;
+    commitStartingRank(ch, data.enlistment.startingRank);
   } else if (acg.schoolsAttended.includes("medicalSchool")) {
     // PM p. 47: the medical-school direct commission serves as a Purser
     // Department Medic — the department is strict-read from the school's
