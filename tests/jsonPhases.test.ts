@@ -50,8 +50,8 @@ describe("buildPathwaySpecFromConfig drift detection", () => {
     const config: ResolveAssignmentConfig = {
       phases: [
         {
-          kind: "skills",
-          consequence: "Earn a skill",
+          kind: "promotion",
+          consequence: "Earn promotion",
           onPass: "noSuchCallback",
         },
       ],

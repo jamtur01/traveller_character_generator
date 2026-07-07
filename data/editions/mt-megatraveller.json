@@ -4088,7 +4088,7 @@
           {
             "kind": "skills",
             "consequence": "Earn a skill this assignment",
-            "onPass": "rollMercenarySkill"
+            "onPass": { "verb": "rollSkill", "select": "servicePolicy", "sourcePrefix": "mercenary" }
           }
         ],
         "finalize": "mercenaryFinalize"
@@ -5079,7 +5079,7 @@
           {
             "kind": "skills",
             "consequence": "Earn a skill this assignment",
-            "onPass": "navyBranchSkillRoll"
+            "onPass": { "verb": "rollSkill", "select": "branchColumn" }
           }
         ],
         "finalize": "navyFinalize"
@@ -6247,7 +6247,7 @@
           {
             "kind": "skills",
             "consequence": "Earn a skill this assignment",
-            "onPass": "scoutRollSkill"
+            "onPass": { "verb": "rollSkill", "select": "divisionTable", "column": "first" }
           }
         ],
         "finalize": "scoutFinalize"
@@ -7239,7 +7239,7 @@
           {
             "kind": "skills",
             "consequence": "Earn a skill this assignment",
-            "onPass": "merchantRollSkill"
+            "onPass": { "verb": "rollSkill", "select": "availableTables", "optionDomain": "acg.merchant.skillTable" }
           },
           {
             "kind": "bonus",

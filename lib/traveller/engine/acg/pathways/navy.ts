@@ -461,7 +461,6 @@ export function navyRollAssignment(ch: Character): string {
 
 const NAVY_CALLBACKS: PathwayCallbacks = {
   promoteNavy: (ctx) => promoteNavy(ctx.ch),
-  navyBranchSkillRoll: (ctx) => navyBranchSkillRoll(ctx.ch),
   navyFinalize: (ctx) =>
     combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };

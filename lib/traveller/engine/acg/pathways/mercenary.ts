@@ -36,12 +36,11 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, serviceSkillColumnFor, clearRetention,
-  consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
+  applyPromotion, clearRetention,
+  consumeRetainedAssignment, rollDieRowOrThrow,
   resolveCommandDuty, EnlistmentValidationError, type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
-import { rankNum } from "@/lib/traveller/engine/predicate";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "mercenary";
@@ -249,7 +248,6 @@ export function mercenaryRollAssignment(ch: Character): string {
 // registry below provides the named callbacks the JSON references.
 const MERCENARY_CALLBACKS: PathwayCallbacks = {
   promoteMercenary: (ctx) => promoteMercenary(ctx.ch),
-  rollMercenarySkill: (ctx) => rollMercenarySkill(ctx.ch),
   mercenaryFinalize: (ctx) =>
     combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };
@@ -317,82 +315,6 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
   const dms = combatResolutionDms(ch, resTable);
   runPhases(getMercenarySpec(ch), { ch, assignment, resTable, res, dms });
 }
-
-/** Roll one skill from a column appropriate for current rank/duty.
- *  Column selection per manual p. 51:
- *    E1-E2: armyLife/marineLife
- *    E3-E9 enlisted: ncoSkills
- *    O1+ with command duty: commandSkills
- *    O1+ without command duty: staffSkills
- *    Marines currently on Ship's Troops: shipboard
- *  In interactive mode the player may pick across all rank-eligible
- *  columns (e.g. an NCO may always elect armyLife instead of ncoSkills). */
-function rollMercenarySkill(ch: Character): void {
-  // Ship's Troops takes precedence for Marines (manual: ship-troops column
-  // is available to Marines on Ship's Troops assignment regardless of rank).
-  // Both the assignment label and the column it maps to are strict-read
-  // from JSON (assignmentReroutes.marines.toAssignment /
-  // skillColumnPolicy.shipsTroopsColumn) so each lives in one place.
-  const data = dataFor(ch);
-  const shipsTroopsLabel = requireRule(
-    data.assignmentReroutes?.marines?.toAssignment,
-    "acg.mercenary.assignmentReroutes.marines.toAssignment", "PM p. 48",
-  );
-  if (ch.requireMercenaryAcg().branch === "Marines" &&
-      ch.requireAcgState().currentAssignment === shipsTroopsLabel) {
-    rollMercenarySkillFromColumn(ch, requireRule(
-      data.skillColumnPolicy?.shipsTroopsColumn,
-      "acg.mercenary.skillColumnPolicy.shipsTroopsColumn", "PM p. 51",
-    ));
-    return;
-  }
-  if (ch.choiceMode === "interactive") {
-    const options = mercenaryAvailableSkillColumns(ch);
-    if (options.length > 1) {
-      ch.pickOrDefer({
-        kind: "skillTable",
-        label: "Choose a service-skills column to roll on",
-        options,
-        onResolve: (ch, col) => rollMercenarySkillFromColumn(ch, col),
-      });
-      return;
-    }
-  }
-  const col = serviceSkillColumnFor(ch, dataFor(ch).skillColumnPolicy);
-  rollMercenarySkillFromColumn(ch, col);
-}
-
-function mercenaryAvailableSkillColumns(ch: Character): string[] {
-  const pol = requireRule(
-    dataFor(ch).skillColumnPolicy,
-    "acg.mercenary.skillColumnPolicy", "PM p. 51",
-  );
-  const branch = ch.requireMercenaryAcg().branch;
-  const cols: string[] = [requireRule(
-    pol.enlistedLowRankColumns[branch],
-    `acg.mercenary.skillColumnPolicy.enlistedLowRankColumns["${branch}"]`,
-    "PM p. 51",
-  )];
-  const acg = ch.requireAcgState();
-  if (!acg.isOfficer && rankNum(acg.rankCode) >= rankNum(pol.enlistedNcoMinRank)) {
-    cols.push(pol.enlistedNcoColumn);
-  }
-  if (acg.isOfficer) {
-    cols.push(acg.inCommand ? pol.officerInCommand : pol.officerStaff);
-  }
-  if (branch === "Marines") {
-    cols.push(requireRule(
-      pol.shipsTroopsColumn,
-      "acg.mercenary.skillColumnPolicy.shipsTroopsColumn", "PM p. 51",
-    ));
-  }
-  return cols;
-}
-
-function rollMercenarySkillFromColumn(ch: Character, col: string): void {
-  rollSkillFromColumn(ch, dataFor(ch).serviceSkills, col, `mercenary ${col}`);
-}
-
 
 /** Advance the rank by one step per the pathway's rank ladder. */
 function promoteMercenary(ch: Character): void {

@@ -25,7 +25,6 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import {
   applyDmRules, applyStructuredDms, columnDmFor, labelToColumnKey,
   parseResolutionTarget,
@@ -36,18 +35,14 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange, clampedRoll,
-  clearRetention, consumeRetainedAssignment, rollDieRow, rollSkillFromColumn,
+  clearRetention, consumeRetainedAssignment, rollDieRow,
   EnlistmentValidationError,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AcgState, AssignmentResolution, ResolutionTarget } from "@/lib/traveller/engine/acg/state";
 import { attemptPreCareer, applyPreCareerResult } from "@/lib/traveller/engine/acg/preCareer";
 import { event as ev } from "@/lib/traveller/history";
-import { titleize } from "@/lib/traveller/formatting";
-import {
-  rankNum, evaluatePredicate, buildPredicateContext,
-  type PredicateContext,
-} from "@/lib/traveller/engine/predicate";
+import { rankNum } from "@/lib/traveller/engine/predicate";
 
 const PATHWAY = "merchantPrince";
 
@@ -475,7 +470,6 @@ function buildMerchantResolution(
 }
 
 const MERCHANT_CALLBACKS: PathwayCallbacks = {
-  merchantRollSkill: (ctx) => merchantRollSkill(ctx.ch),
   merchantAwardBonus: (ctx) => merchantAwardBonus(ctx.ch),
   merchantFinalize: (ctx) => {
     const acg = ctx.ch.requireAcgState();
@@ -526,91 +520,6 @@ function merchantCheckAvailablePosition(ch: Character): void {
  *  available position). O1 falls to O0 (enlisted-equivalent). */
 function serveOneRankLower(acg: AcgState): void {
   acg.effectiveRankCode = `O${Math.max(0, rankNum(acg.rankCode) - 1)}`;
-}
-
-function merchantRollSkill(ch: Character): void {
-  const data = dataFor(ch);
-  // PM p. 63: "the skill received must be taken from one of the skill table
-  // columns available." Only tables exposing at least one column available to
-  // this character's department/rank can be rolled on.
-  const tables = optionDomain(ch.editionId, "acg.merchant.skillTable").values
-    .filter((k) => availableSkillColumns(ch, data.skillTables[k]!).length > 0);
-  if (tables.length === 0) return;
-  // Interactive: let the player pick the table. Auto: round-robin by year.
-  if (ch.choiceMode === "interactive" && tables.length > 1) {
-    ch.pickOrDefer({
-      kind: "merchantSkillTable",
-      label: "Merchant: choose which skill table to roll on this year.",
-      options: tables,
-      optionLabels: tables.map(titleize),
-      onResolve: (ch, key) => merchantRollFromTable(ch, key),
-    });
-    return;
-  }
-  const tableKey = tables[(ch.requireAcgState().year - 1) % tables.length]!;
-  merchantRollFromTable(ch, tableKey);
-}
-
-/** Columns of `table` available to the character this year, per the PM p. 63
- *  availability notes encoded in JSON (skillTables.*.columnAvailability). A
- *  column with no availability entry is treated as unavailable, and a table
- *  with no availability metadata at all is broken edition data — the JSON is
- *  the single source of truth for who may roll which column. */
-function availableSkillColumns(ch: Character, table: MerchantSkillTable): string[] {
-  const cols = table.columns.filter((c) => c !== "die");
-  const avail = table.columnAvailability;
-  if (!avail) {
-    throw new Error(
-      "Merchant skill table lacks columnAvailability metadata (PM p. 63) — " +
-      "declare it in the edition JSON; column access must not be guessed.",
-    );
-  }
-  const dept = ch.requireMerchantAcg().department!;
-  const pctx = buildPredicateContext(ch);
-  return cols.filter((c) => columnAvailableForCharacter(avail[c], dept, pctx));
-}
-
-function columnAvailableForCharacter(
-  rule: MerchantColumnAvailability | undefined,
-  dept: string,
-  pctx: PredicateContext,
-): boolean {
-  if (!rule) return false;
-  if (rule.departments && !rule.departments.includes(dept)) return false;
-  if (rule.exceptDepartments && rule.exceptDepartments.includes(dept)) return false;
-  if (rule.minRank && !evaluatePredicate({ rankAtLeast: rule.minRank }, pctx)) return false;
-  return true;
-}
-
-function merchantRollFromTable(ch: Character, tableKey: string): void {
-  const data = dataFor(ch);
-  const table = data.skillTables[tableKey];
-  if (!table) return;
-  const columns = availableSkillColumns(ch, table);
-  if (columns.length === 0) return;
-  // PM p. 63 lets the player take the skill from any available column, so a
-  // department with more than one available column exposes the choice in
-  // interactive mode; auto mode takes the first (department-appropriate) one.
-  if (ch.choiceMode === "interactive" && columns.length > 1) {
-    ch.pickOrDefer({
-      kind: "merchantSkillColumn",
-      label: `Merchant: choose a skill column from the ${tableKey} table.`,
-      options: columns,
-      optionLabels: columns.map(titleize),
-      onResolve: (ch, col) => rollMerchantSkillColumn(ch, tableKey, col),
-    });
-    return;
-  }
-  rollMerchantSkillColumn(ch, tableKey, columns[0]!);
-}
-
-/** Roll 1D on `column` of the named skill table and apply the resulting skill
- *  cell. The merchant skill tables list one skill per die row, so the column
- *  selects which department/rank variant of that row is taken. */
-function rollMerchantSkillColumn(ch: Character, tableKey: string, column: string): void {
-  const table = dataFor(ch).skillTables[tableKey];
-  if (!table) return;
-  rollSkillFromColumn(ch, table, column, `Merchant ${tableKey} ${column}`);
 }
 
 function merchantAwardBonus(ch: Character): void {

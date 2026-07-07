@@ -328,7 +328,6 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
 
 const SCOUT_CALLBACKS: PathwayCallbacks = {
   promoteScout: (ctx) => promoteScout(ctx.ch),
-  scoutRollSkill: (ctx) => scoutRollSkill(ctx.ch),
   scoutFinalize: (ctx) => {
     // PM p. 57: Special/War missions grant an extra skill. The column is
     // JSON-declared per division — the printed Field table has a dedicated

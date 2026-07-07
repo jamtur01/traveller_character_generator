@@ -322,6 +322,12 @@ const AgingSchema = z.looseObject({
 
 // --- ACG (Advanced Character Generation) schemas ---------------------
 
+// A resolveAssignment side-effect verb: a discriminated object carrying a
+// `verb` tag plus verb-specific params. The interpreter (jsonPhases)
+// validates the param shapes; the schema only enforces the tag so edition
+// load fails loud on a malformed verb object.
+const VerbSchema = z.looseObject({ verb: z.string() });
+
 const PhaseConfigSchema = z.looseObject({
   kind: z.enum(["survival", "promotion", "decoration", "skills", "bonus"]),
   consequence: z.string().optional(),
@@ -332,7 +338,7 @@ const PhaseConfigSchema = z.looseObject({
     withPension: z.boolean().optional(),
   }).optional(),
   purpleHeartOnExactCombat: z.boolean().optional(),
-  onPass: z.string().optional(),
+  onPass: z.union([z.string(), VerbSchema]).optional(),
   skipIfNotBureaucracy: z.boolean().optional(),
   consumeNextPromotionPenalty: z.boolean().optional(),
   logPenaltyInNote: z.boolean().optional(),
@@ -342,9 +348,11 @@ const PhaseConfigSchema = z.looseObject({
 });
 
 const ResolveAssignmentConfigSchema = z.looseObject({
-  preRun: z.union([z.literal("decorationDmTradeoff"), z.null()]).optional(),
+  preRun: z.union([
+    z.literal("decorationDmTradeoff"), VerbSchema, z.null(),
+  ]).optional(),
   phases: z.array(PhaseConfigSchema),
-  finalize: z.string().optional(),
+  finalize: z.union([z.string(), VerbSchema]).optional(),
 });
 
 // Sub-table for resolveAssignment rows. The garrisonDuty entry (PM p. 49)

@@ -11,7 +11,7 @@
 // through a per-pathway callback registry.
 
 import type { Character } from "@/lib/traveller/character";
-import { getEdition } from "@/lib/traveller/editions";
+import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import {
   awardDecoration, resolveDecorationTier, runCourtMartial,
@@ -23,6 +23,17 @@ import {
 import { requireHook } from "@/lib/traveller/engine/registry";
 import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
+import {
+  rollSkillFromColumn, serviceSkillColumnFor, branchSkillCandidates,
+  branchOf, type SkillColumnPolicy,
+} from "./pathways/shared";
+import { labelToColumnKey, type StructuredDm } from "./tables";
+import { optionDomain } from "@/lib/traveller/editions/optionDomains";
+import {
+  rankNum, buildPredicateContext, evaluatePredicate,
+  type PredicateContext,
+} from "@/lib/traveller/engine/predicate";
+import { titleize } from "@/lib/traveller/formatting";
 
 // --- JSON config shape -----------------------------------------------
 
@@ -70,8 +81,8 @@ interface PhaseDecoration {
 interface PhaseSkills {
   kind: "skills";
   consequence: string;
-  /** Named callback that picks/rolls the actual skill. */
-  onPass: string;
+  /** Declarative skill-roll verb (column-selection strategy + table). */
+  onPass: RollSkillVerb;
 }
 
 interface PhaseBonus {
@@ -157,7 +168,7 @@ function buildPhase(
     case "survival": return buildSurvival(p, build);
     case "promotion": return buildPromotion(p, callbacks);
     case "decoration": return buildDecoration(p);
-    case "skills": return buildSkills(p, callbacks);
+    case "skills": return buildSkills(p);
     case "bonus": return buildBonus(p, callbacks);
   }
 }
@@ -280,8 +291,7 @@ function applyDecorationResolution(
   }
 }
 
-function buildSkills(p: PhaseSkills, callbacks: PathwayCallbacks): PhaseDef {
-  const onPass = lookupCallback(p.onPass, callbacks);
+function buildSkills(p: PhaseSkills): PhaseDef {
   return {
     phase: "skills",
     skip: (ctx) => ctx.res.skills === "none",
@@ -295,7 +305,7 @@ function buildSkills(p: PhaseSkills, callbacks: PathwayCallbacks): PhaseDef {
       margin: r.margin,
       consequence: p.consequence,
     }),
-    onPass: (ctx) => onPass(ctx),
+    onPass: (ctx) => runRollSkill(ctx, p.onPass),
   };
 }
 
@@ -338,6 +348,254 @@ function warnBonusMissing(assignment: string): void {
     `[acg] bonus phase configured but resolution.bonus undefined for ` +
     `assignment "${assignment}" — phase will be skipped.`,
   );
+}
+
+// --- Verb interpreter: rollSkill -------------------------------------
+//
+// resolveAssignment skill rolls are declarative verbs, not named
+// callbacks. `select` names the column-selection strategy; the strategy
+// reuses the shared rollSkillFromColumn / serviceSkillColumnFor
+// primitives. No pathway-name branch: each strategy runs only when the
+// pathway's JSON declares it.
+
+/** Minimal structural shape of a 1D skill table (rows keyed by die). */
+interface SkillTableShape {
+  columns?: string[];
+  rows: Array<Record<string, unknown>>;
+  dms?: StructuredDm[];
+}
+
+/** PM p. 63 per-column availability rule for a merchant skill table. */
+interface MerchantColumnRule {
+  allDepartments?: boolean;
+  departments?: string[];
+  exceptDepartments?: string[];
+  minRank?: string;
+}
+
+interface MerchantSkillTableShape {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  columnAvailability?: Record<string, MerchantColumnRule>;
+}
+
+/** Declarative skill-roll verb. `select` picks the column-selection
+ *  strategy; each strategy carries only the params it needs. */
+export type RollSkillVerb =
+  | { verb: "rollSkill"; select: "servicePolicy"; sourcePrefix: string }
+  | { verb: "rollSkill"; select: "branchColumn" }
+  | { verb: "rollSkill"; select: "divisionTable"; column: string }
+  | { verb: "rollSkill"; select: "availableTables"; optionDomain: string };
+
+/** The current character's pathway data block, read generically by
+ *  pathway key (no per-pathway import). Fails loud if the edition omits
+ *  the block the running pathway needs. */
+function pathwayData(ch: Character): Record<string, unknown> {
+  const acg = ch.requireAcgState();
+  return requireRule(
+    getAcgPathway(ch.editionId, acg.pathway) as Record<string, unknown> | undefined,
+    `acg.${acg.pathway}`, "edition JSON",
+  );
+}
+
+function runRollSkill(ctx: ResolveContext, verb: RollSkillVerb): void {
+  switch (verb.select) {
+    case "servicePolicy": return rollServicePolicySkill(ctx, verb.sourcePrefix);
+    case "branchColumn": return rollBranchColumnSkill(ctx);
+    case "divisionTable": return rollDivisionSkill(ctx, verb.column);
+    case "availableTables": return rollAvailableTablesSkill(ctx, verb.optionDomain);
+  }
+}
+
+interface ServicePolicyData {
+  serviceSkills: SkillTableShape;
+  skillColumnPolicy?: SkillColumnPolicy;
+  assignmentReroutes?: { marines?: { toAssignment?: string } };
+}
+
+/** Mercenary Service Skills (PM p. 51): Marines on Ship's Troops roll the
+ *  ship-troops column; interactive players pick across rank-eligible
+ *  columns; otherwise the rank/duty default column applies. */
+function rollServicePolicySkill(ctx: ResolveContext, sourcePrefix: string): void {
+  const ch = ctx.ch;
+  const data = pathwayData(ch) as unknown as ServicePolicyData;
+  const acg = ch.requireAcgState();
+  const pathway = acg.pathway;
+  const roll = (c: Character, col: string) =>
+    rollSkillFromColumn(c, data.serviceSkills, col, `${sourcePrefix} ${col}`);
+  const shipsTroops = requireRule(
+    data.assignmentReroutes?.marines?.toAssignment,
+    `acg.${pathway}.assignmentReroutes.marines.toAssignment`, "PM p. 48",
+  );
+  if (branchOf(acg) === "Marines" && acg.currentAssignment === shipsTroops) {
+    roll(ch, requireRule(
+      data.skillColumnPolicy?.shipsTroopsColumn,
+      `acg.${pathway}.skillColumnPolicy.shipsTroopsColumn`, "PM p. 51",
+    ));
+    return;
+  }
+  if (ch.choiceMode === "interactive") {
+    const options = servicePolicyColumns(ch, data.skillColumnPolicy, pathway);
+    if (options.length > 1) {
+      ch.pickOrDefer({
+        kind: "skillTable",
+        label: "Choose a service-skills column to roll on",
+        options,
+        onResolve: (c, col) => roll(c, col),
+      });
+      return;
+    }
+  }
+  roll(ch, serviceSkillColumnFor(ch, data.skillColumnPolicy));
+}
+
+/** Rank-eligible Service Skills columns (PM p. 51): branch Life column,
+ *  the NCO column at/above the NCO rank, the officer command/staff column,
+ *  plus Ship's Troops for Marines. */
+function servicePolicyColumns(
+  ch: Character, pol: SkillColumnPolicy | undefined, pathway: string,
+): string[] {
+  const policy = requireRule(pol, `acg.${pathway}.skillColumnPolicy`, "PM p. 51");
+  const acg = ch.requireAcgState();
+  const branch = branchOf(acg);
+  const cols: string[] = [requireRule(
+    policy.enlistedLowRankColumns[branch],
+    `acg.${pathway}.skillColumnPolicy.enlistedLowRankColumns["${branch}"]`, "PM p. 51",
+  )];
+  if (!acg.isOfficer && rankNum(acg.rankCode) >= rankNum(policy.enlistedNcoMinRank)) {
+    cols.push(policy.enlistedNcoColumn);
+  }
+  if (acg.isOfficer) cols.push(acg.inCommand ? policy.officerInCommand : policy.officerStaff);
+  if (branch === "Marines") {
+    cols.push(requireRule(
+      policy.shipsTroopsColumn,
+      `acg.${pathway}.skillColumnPolicy.shipsTroopsColumn`, "PM p. 51",
+    ));
+  }
+  return cols;
+}
+
+/** Navy Branch Skills (PM p. 52): the branch's own column with the
+ *  line↔crew alias fallbacks. */
+function rollBranchColumnSkill(ctx: ResolveContext): void {
+  const ch = ctx.ch;
+  const data = pathwayData(ch) as unknown as { branchSkills?: SkillTableShape };
+  if (!data.branchSkills) return;
+  const branch = requireNavyBranch(ch);
+  rollSkillFromColumn(
+    ch, data.branchSkills, { candidates: branchSkillCandidates(labelToColumnKey(branch)) },
+    `Navy ${branch} branch skills`,
+  );
+}
+
+function requireNavyBranch(ch: Character): string {
+  const branch = branchOf(ch.requireAcgState());
+  if (!branch) {
+    throw new Error(
+      "Navy branch is unset — enlistment must assign a branch before " +
+      "branch-keyed rolls (PM p. 52)",
+    );
+  }
+  return branch;
+}
+
+/** Scout skill tables (PM p. 57): keyed by division. `"first"` scans the
+ *  first non-empty office column; a named column (e.g. adminRank) rolls
+ *  that column, failing loud if the division table lacks it. */
+function rollDivisionSkill(ctx: ResolveContext, column: string): void {
+  const ch = ctx.ch;
+  const data = pathwayData(ch) as unknown as { skillTables: Record<string, SkillTableShape> };
+  const division = ch.requireScoutAcg().division;
+  const table = data.skillTables[division]!;
+  if (column === "first") {
+    rollSkillFromColumn(ch, table, "first", (col) => `Scout ${division} ${col}`);
+    return;
+  }
+  if (!table.columns?.includes(column)) {
+    throw new Error(
+      `Scout ${division} skill table lacks column "${column}" (PM p. 57 ` +
+      "Special/Wartime Mission extra skill) — fix the edition JSON rather " +
+      "than silently substituting the normal column.",
+    );
+  }
+  rollSkillFromColumn(ch, table, column, `Scout ${column}`);
+}
+
+/** Merchant skill tables (PM p. 63): pick an available table (round-robin
+ *  by year, or interactive), then an available column within it. */
+function rollAvailableTablesSkill(ctx: ResolveContext, domain: string): void {
+  const ch = ctx.ch;
+  const data = pathwayData(ch) as unknown as { skillTables: Record<string, MerchantSkillTableShape> };
+  const tables = optionDomain(ch.editionId, domain).values
+    .filter((k) => merchantAvailableColumns(ch, data.skillTables[k]!).length > 0);
+  if (tables.length === 0) return;
+  if (ch.choiceMode === "interactive" && tables.length > 1) {
+    ch.pickOrDefer({
+      kind: "merchantSkillTable",
+      label: "Merchant: choose which skill table to roll on this year.",
+      options: tables,
+      optionLabels: tables.map(titleize),
+      onResolve: (c, key) => merchantRollFromTable(c, key),
+    });
+    return;
+  }
+  const tableKey = tables[(ch.requireAcgState().year - 1) % tables.length]!;
+  merchantRollFromTable(ch, tableKey);
+}
+
+function merchantRollFromTable(ch: Character, tableKey: string): void {
+  const data = pathwayData(ch) as unknown as { skillTables: Record<string, MerchantSkillTableShape> };
+  const table = data.skillTables[tableKey];
+  if (!table) return;
+  const columns = merchantAvailableColumns(ch, table);
+  if (columns.length === 0) return;
+  if (ch.choiceMode === "interactive" && columns.length > 1) {
+    ch.pickOrDefer({
+      kind: "merchantSkillColumn",
+      label: `Merchant: choose a skill column from the ${tableKey} table.`,
+      options: columns,
+      optionLabels: columns.map(titleize),
+      onResolve: (c, col) => rollMerchantColumn(c, tableKey, col),
+    });
+    return;
+  }
+  rollMerchantColumn(ch, tableKey, columns[0]!);
+}
+
+function rollMerchantColumn(ch: Character, tableKey: string, column: string): void {
+  const data = pathwayData(ch) as unknown as { skillTables: Record<string, MerchantSkillTableShape> };
+  const table = data.skillTables[tableKey];
+  if (!table) return;
+  rollSkillFromColumn(ch, table, column, `Merchant ${tableKey} ${column}`);
+}
+
+/** Columns of `table` available to the character (PM p. 63 availability
+ *  notes). A column with no availability entry is unavailable; a table
+ *  with no availability metadata is broken edition data (fail loud). */
+function merchantAvailableColumns(ch: Character, table: MerchantSkillTableShape): string[] {
+  const cols = table.columns.filter((c) => c !== "die");
+  const avail = table.columnAvailability;
+  if (!avail) {
+    throw new Error(
+      "Merchant skill table lacks columnAvailability metadata (PM p. 63) — " +
+      "declare it in the edition JSON; column access must not be guessed.",
+    );
+  }
+  const dept = ch.requireMerchantAcg().department!;
+  const pctx = buildPredicateContext(ch);
+  return cols.filter((c) => merchantColumnAvailable(avail[c], dept, pctx));
+}
+
+function merchantColumnAvailable(
+  rule: MerchantColumnRule | undefined,
+  dept: string,
+  pctx: PredicateContext,
+): boolean {
+  if (!rule) return false;
+  if (rule.departments && !rule.departments.includes(dept)) return false;
+  if (rule.exceptDepartments && rule.exceptDepartments.includes(dept)) return false;
+  if (rule.minRank && !evaluatePredicate({ rankAtLeast: rule.minRank }, pctx)) return false;
+  return true;
 }
 
 // --- Event helpers ---------------------------------------------------
