@@ -7297,6 +7297,10 @@
           "$rule": "PM p. 60: 'Enlisted personnel are promoted every four years.' One grade per completed term; rankMax caps seniority numbering because no enlisted titles are defined above the starting grade (avoids phantom ranks for improbably long enlisted careers).",
           "enlistedAutoAdvancePerTerm": true,
           "rankMax": "E9"
+        },
+        "routeCommission": {
+          "$rule": "PM p. 61: enlisted personnel serving a Route assignment may test for a commission; passing grants the department ladder's entry officer rank (O1 — the row whose rank number is 1, skipping the probationary O0 special-duty grade).",
+          "entryOfficerRank": "O1"
         }
       },
       "assignmentColumnMap": {

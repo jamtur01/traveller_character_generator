@@ -89,6 +89,9 @@ export interface MerchantData {
     /** PM p. 60: enlisted personnel are promoted every four years,
      *  capped at rankMax (no titles exist above the starting grade). */
     enlistedAdvancement?: { enlistedAutoAdvancePerTerm?: boolean; rankMax?: string };
+    /** PM p. 61: enlisted personnel on a Route assignment may test for a
+     *  commission; passing grants the ladder's entry officer rank. */
+    routeCommission?: { entryOfficerRank?: string };
     [k: string]: unknown;
   };
   enlistment: {
@@ -821,13 +824,23 @@ function rollMerchantExam(
 
 /** PM p. 61: enlisted characters serving a Route assignment may test for
  *  a commission. Passing the department's entry-officer exam grants the
- *  ladder's entry-officer rank (the row whose code is rank 1). */
+ *  ladder row matching the JSON-declared entry officer rank
+ *  (specialRules.routeCommission.entryOfficerRank). */
 function attemptMerchantEnlistedCommissionExam(ch: Character): void {
   const data = dataFor(ch);
   const acg = ch.requireAcgState();
   const ladder = merchantRankLadder(ch, data);
   if (!ladder || ladder.length === 0) return;
-  const entry = ladder.find((r) => rankNum(r[0]) === 1) ?? ladder[0]!;
+  const rule = requireRule(
+    data.specialRules?.routeCommission,
+    "merchantPrince.specialRules.routeCommission", "PM p. 61",
+  );
+  const entryRankCode = requireRule(
+    rule.entryOfficerRank,
+    "merchantPrince.specialRules.routeCommission.entryOfficerRank", "PM p. 61",
+  );
+  const entryRankNum = rankNum(entryRankCode);
+  const entry = ladder.find((r) => rankNum(r[0]) === entryRankNum) ?? ladder[0]!;
   const target = parseInt(String(entry[2]).replace(/[^\d]/g, ""), 10);
   if (Number.isNaN(target)) return;
   const succeeded = rollMerchantExam(
