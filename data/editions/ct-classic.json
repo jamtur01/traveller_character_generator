@@ -290,6 +290,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Navy",
+      "memberName": "Navy",
       "startAge": 18,
       "draft": 1,
       "checks": {
@@ -316,6 +317,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Marines",
+      "memberName": "Marine",
       "startAge": 18,
       "draft": 2,
       "checks": {
@@ -342,6 +344,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Army",
+      "memberName": "Army",
       "startAge": 18,
       "draft": 3,
       "checks": {
@@ -368,6 +371,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Scouts",
+      "memberName": "Scout",
       "startAge": 18,
       "draft": 4,
       "checks": {
@@ -395,6 +399,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Merchants",
+      "memberName": "Merchant",
       "startAge": 18,
       "draft": 5,
       "checks": {
@@ -421,6 +426,7 @@
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Other",
+      "memberName": "",
       "startAge": 18,
       "draft": 6,
       "checks": {
@@ -448,6 +454,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Pirates",
+      "memberName": "Pirate",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -474,6 +481,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Belters",
+      "memberName": "Belter",
       "startAge": 14,
       "draft": null,
       "checks": {
@@ -500,6 +508,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Sailors",
+      "memberName": "Sailor",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -526,6 +535,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Diplomats",
+      "memberName": "Diplomat",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -552,6 +562,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Doctors",
+      "memberName": "Doctor",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -578,6 +589,7 @@
       "source": "coti",
       "bookPage": 6,
       "displayName": "Flyers",
+      "memberName": "Flyer",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -604,6 +616,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Barbarians",
+      "memberName": "Barbarian",
       "startAge": 14,
       "draft": null,
       "checks": {
@@ -631,6 +644,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Bureaucrats",
+      "memberName": "Bureaucrat",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -657,6 +671,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Rogues",
+      "memberName": "Rogue",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -683,6 +698,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Nobles",
+      "memberName": "Noble",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -715,6 +731,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Scientists",
+      "memberName": "Scientist",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -741,6 +758,7 @@
       "source": "coti",
       "bookPage": 8,
       "displayName": "Hunters",
+      "memberName": "Hunter",
       "startAge": 18,
       "draft": null,
       "checks": {

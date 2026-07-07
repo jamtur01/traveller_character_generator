@@ -254,7 +254,11 @@ export function buildServiceDef(
 
   const def: ServiceDef = {
     serviceName: serviceData.displayName,
-    memberName: derivedMemberName(serviceData.displayName),
+    memberName: requireRule(
+      serviceData.memberName,
+      `services.${serviceData.displayName}.memberName`,
+      "per-service singular member noun",
+    ),
     enlistmentThrow,
     enlistmentDM,
     survivalThrow,
@@ -321,24 +325,3 @@ function applyAutoCascade(label: string, ch: Character): string | undefined {
   return ch.rng.pick(known.length > 0 ? known : pool);
 }
 
-/** "Marines" → "Marine", "Doctors" → "Doctor", etc. */
-function derivedMemberName(displayName: string): string {
-  if (displayName === "Other") return "";
-  if (displayName === "Barbarians") return "Barbarian";
-  if (displayName === "Belters") return "Belter";
-  if (displayName === "Bureaucrats") return "Bureaucrat";
-  if (displayName === "Diplomats") return "Diplomat";
-  if (displayName === "Doctors") return "Doctor";
-  if (displayName === "Flyers") return "Flyer";
-  if (displayName === "Hunters") return "Hunter";
-  if (displayName === "Marines") return "Marine";
-  if (displayName === "Merchants") return "Merchant";
-  if (displayName === "Nobles") return "Noble";
-  if (displayName === "Pirates") return "Pirate";
-  if (displayName === "Rogues") return "Rogue";
-  if (displayName === "Sailors") return "Sailor";
-  if (displayName === "Scientists") return "Scientist";
-  if (displayName === "Scouts") return "Scout";
-  // Navy / Army keep their plural-as-name form (existing code uses these).
-  return displayName;
-}

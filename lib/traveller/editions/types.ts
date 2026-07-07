@@ -88,6 +88,10 @@ export interface ServiceData {
   source: "ttb" | "coti";
   bookPage: number;
   displayName: string;
+  /** Singular member display noun (e.g. "Marine", "Scout"; "" for Other) used
+   *  by the sheet header prefix and CharacterSummary subtitle. Declared per
+   *  service in JSON, not derived from displayName in code. */
+  memberName: string;
   startAge: number;
   draft: number | null;
   /** MT declares skills-per-term explicitly (PM p. 60 service tables). When

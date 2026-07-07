@@ -753,6 +753,7 @@
     "navy": {
       "source": "mt",
       "displayName": "Navy",
+      "memberName": "Navy",
       "startAge": 18,
       "draft": 1,
       "skillsPerTerm": 1,
@@ -889,6 +890,7 @@
     "marines": {
       "source": "mt",
       "displayName": "Marines",
+      "memberName": "Marine",
       "startAge": 18,
       "draft": 2,
       "skillsPerTerm": 1,
@@ -1025,6 +1027,7 @@
     "army": {
       "source": "mt",
       "displayName": "Army",
+      "memberName": "Army",
       "startAge": 18,
       "draft": 3,
       "skillsPerTerm": 1,
@@ -1160,6 +1163,7 @@
     "scouts": {
       "source": "mt",
       "displayName": "Scout",
+      "memberName": "Scout",
       "startAge": 18,
       "draft": 4,
       "skillsPerTerm": 2,
@@ -1291,6 +1295,7 @@
     "flyers": {
       "source": "mt",
       "displayName": "Flyer",
+      "memberName": "Flyer",
       "startAge": 18,
       "draft": 5,
       "skillsPerTerm": 1,
@@ -1438,6 +1443,7 @@
     "sailors": {
       "source": "mt",
       "displayName": "Sailor",
+      "memberName": "Sailor",
       "startAge": 18,
       "draft": 6,
       "skillsPerTerm": 1,
@@ -1573,6 +1579,7 @@
     "lawenforcers": {
       "source": "mt",
       "displayName": "Law Enforcer",
+      "memberName": "Law Enforcer",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -1710,6 +1717,7 @@
     "doctors": {
       "source": "mt",
       "displayName": "Doctor",
+      "memberName": "Doctor",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 2,
@@ -1833,6 +1841,7 @@
     "diplomats": {
       "source": "mt",
       "displayName": "Diplomat",
+      "memberName": "Diplomat",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -1975,6 +1984,7 @@
     "bureaucrats": {
       "source": "mt",
       "displayName": "Bureaucrat",
+      "memberName": "Bureaucrat",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -2112,6 +2122,7 @@
     "scientists": {
       "source": "mt",
       "displayName": "Scientist",
+      "memberName": "Scientist",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 2,
@@ -2235,6 +2246,7 @@
     "nobles": {
       "source": "mt",
       "displayName": "Noble",
+      "memberName": "Noble",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -2358,6 +2370,7 @@
     "merchants": {
       "source": "mt",
       "displayName": "Merchant",
+      "memberName": "Merchant",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -2493,6 +2506,7 @@
     "belters": {
       "source": "mt",
       "displayName": "Belter",
+      "memberName": "Belter",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 2,
@@ -2621,6 +2635,7 @@
     "pirates": {
       "source": "mt",
       "displayName": "Pirate",
+      "memberName": "Pirate",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,
@@ -2757,6 +2772,7 @@
     "rogues": {
       "source": "mt",
       "displayName": "Rogue",
+      "memberName": "Rogue",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 2,
@@ -2880,6 +2896,7 @@
     "hunters": {
       "source": "mt",
       "displayName": "Hunter",
+      "memberName": "Hunter",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 2,
@@ -3003,6 +3020,7 @@
     "barbarians": {
       "source": "mt",
       "displayName": "Barbarian",
+      "memberName": "Barbarian",
       "startAge": 18,
       "draft": null,
       "skillsPerTerm": 1,

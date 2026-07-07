@@ -244,6 +244,12 @@ const ServiceDataSchema = z.looseObject({
   source: z.string().optional(),
   bookPage: z.number().optional(),
   displayName: z.string(),
+  // Singular member display noun (sheet header prefix + CharacterSummary
+  // subtitle). Every real edition service declares it; presence is enforced
+  // fail-loud at buildServiceDef via requireRule (services.<name>.memberName),
+  // so the schema only type-checks it when present rather than rejecting
+  // partial test fixtures that omit it.
+  memberName: z.string().optional(),
   startAge: z.number(),
   draft: z.number().nullable(),
   // MT-only explicit skills-per-term (PM p. 60 service tables).
