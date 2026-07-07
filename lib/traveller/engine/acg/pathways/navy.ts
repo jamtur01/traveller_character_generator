@@ -23,13 +23,14 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
-  rollDieRow, resolveCommandDuty, branchSkillCandidates, EnlistmentValidationError,
+  rollDieRow, resolveCommandDuty, branchSkillCandidates,
+  rollAcgEnlistment, commitStartingRank, resolveDraft,
+  checkEnlistmentGate, rerollUntilLegal,
   type SkillColumnPolicy,
 } from "./shared";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import { event as ev } from "@/lib/traveller/history";
-import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "navy";
 
@@ -51,7 +52,7 @@ export interface NavyData {
     draft: { die: string; results: Record<string, string> };
     academyRanks?: Record<string, string>;
   };
-  branchAssignment: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
+  branchAssignment: { columns: string[]; rows: Array<Record<string, unknown>>; dms?: StructuredDm[]; rerollCap?: number };
   branchResolution?: Record<string, string>;
   branches?: string[];
   /** Social standing at/above which a character may CHOOSE their branch
@@ -126,8 +127,10 @@ export function navyEnlist(
   ch: Character,
   fleet: "imperialNavy" | "reserveFleet" | "systemSquadron",
 ): void {
-  // System Squadron requires a minimum homeworld tech code (PM p. 52);
-  // the threshold is strict-read from JSON.
+  // System Squadron requires a minimum homeworld tech code (PM p. 52); the
+  // ordered tech ladder + threshold are strict-read from JSON and compared by
+  // the shared checkEnlistmentGate primitive (merchant's starport gate reuses
+  // it), so no navy-local index-compare remains.
   if (fleet === "systemSquadron") {
     const acg = getEdition(ch.editionId).data.advancedCharacterGeneration;
     const order = getEdition(ch.editionId).data.homeworld?.techCodeOrder
@@ -138,13 +141,10 @@ export function navyEnlist(
         dataFor(ch).enlistment.systemSquadron.techMinimum,
         "acg.navy.enlistment.systemSquadron.techMinimum", "PM p. 52",
       );
-      const idx = order.indexOf(hwTech);
-      const minIdx = order.indexOf(minTech);
-      if (idx < minIdx) {
-        throw new EnlistmentValidationError(
-          `System Squadron requires homeworld tech ${minTech}+; this homeworld is ${hwTech}`,
-        );
-      }
+      checkEnlistmentGate(
+        order, hwTech, minTech,
+        `System Squadron requires homeworld tech ${minTech}+; this homeworld is ${hwTech}`,
+      );
     }
   }
   const data = dataFor(ch);
@@ -206,27 +206,21 @@ export function navyEnlist(
     return;
   }
 
-  const dm = evaluateDM(spec.dms, { attributes: ch.attributes, terms: ch.terms });
-  const r = ch.rng.roll(2);
-  const succeeded = r + dm >= spec.target;
-  ch.log(ev.enlistmentAttempt(`${fleet} Navy`, r, dm, spec.target, succeeded));
-  if (succeeded) {
-    acg.rankCode = data.enlistment.startingRank;
-    acg.isOfficer = data.enlistment.startingRank.startsWith("O");
+  if (rollAcgEnlistment(ch, spec, `${fleet} Navy`)) {
+    commitStartingRank(ch, data.enlistment.startingRank);
   } else {
-    // Try draft.
-    const dr = ch.rng.roll(1);
-    const drafted = data.enlistment.draft.results[String(dr)];
-    if (!drafted) {
-      throw new EnlistmentValidationError("Navy draft rejection — choose another path");
-    }
-    ch.drafted = true;
-    // Fleet + log label derive from the rolled JSON draft result (PM p. 52)
-    // rather than code literals that could silently diverge from the data.
-    ch.requireNavyAcg().fleet = navyFleetKeyOf(drafted);
-    acg.rankCode = data.enlistment.startingRank;
-    acg.isOfficer = false;
-    ch.log(ev.drafted(drafted));
+    // Failed enlist → the PM p. 52 draft table. The rolled JSON result names
+    // the fleet (mapping the printed label to its key keeps code from diverging
+    // from the data); a draftee starts enlisted, which commitStartingRank
+    // derives from the E1 draft rank.
+    resolveDraft(ch, data.enlistment.draft, {
+      rejectionMessage: "Navy draft rejection — choose another path",
+      onResult: (drafted) => {
+        ch.requireNavyAcg().fleet = navyFleetKeyOf(drafted);
+        commitStartingRank(ch, data.enlistment.startingRank);
+        ch.log(ev.drafted(drafted));
+      },
+    });
   }
 
   // Branch assignment — different column for officers vs enlisted.
@@ -294,31 +288,37 @@ function navyAssignBranch(ch: Character): void {
   }
   const col = acg.isOfficer ? "officer" : "enlisted";
   const dm = applyStructuredDms(data.branchAssignment.dms, ch);
-  let rolled: string | null = null;
-  // Re-roll if the rolled branch is Technical Services in a fleet that
-  // doesn't have it (cap at 8 attempts as a safety net — the table has
-  // multiple non-Tech-Services rows so re-roll converges quickly).
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm });
-    const cell = row?.[col];
-    if (cell === undefined || cell === null) {
+  const cap = requireRule(
+    data.branchAssignment.rerollCap,
+    "acg.navy.branchAssignment.rerollCap", "PM p. 52",
+  );
+  // Re-roll until the rolled branch is legal for the fleet
+  // (branchFleetRestrictions), capped by the JSON rerollCap. Technical Services
+  // (die 0) exists only in the Imperial Navy and the table has many fleet-legal
+  // rows, so this reroll is a convergence safety net that never fires through
+  // the public enlist surface (locked by enlist.golden.test.ts).
+  const rolled = rerollUntilLegal(
+    () => {
+      const row = rollDieRow(ch, data.branchAssignment, { dice: 1, dm });
+      const cell = row?.[col];
+      if (cell === undefined || cell === null) {
+        throw new Error(
+          `Navy branchAssignment table has no "${col}" cell for the rolled ` +
+          `die (edition: ${ch.editionId}) — fix the edition JSON`,
+        );
+      }
+      return String(cell);
+    },
+    (branch) => isBranchAllowedForFleet(ch, branch),
+    cap,
+    () => {
       throw new Error(
-        `Navy branchAssignment table has no "${col}" cell for the rolled ` +
-        `die (edition: ${ch.editionId}) — fix the edition JSON`,
+        `Navy branch assignment failed: ${cap} consecutive rolls yielded ` +
+        `branches not allowed in the ${ch.requireNavyAcg().fleet} ` +
+        "(branchFleetRestrictions)",
       );
-    }
-    const candidate = String(cell);
-    if (isBranchAllowedForFleet(ch, candidate)) {
-      rolled = candidate;
-      break;
-    }
-  }
-  if (!rolled) {
-    throw new Error(
-      "Navy branch assignment failed: 8 consecutive rolls yielded branches " +
-      `not allowed in the ${ch.requireNavyAcg().fleet} (branchFleetRestrictions)`,
-    );
-  }
+    },
+  );
   ch.requireNavyAcg().branch = rolled;
   // acgState.branch is read by subsequent branch-skill and assignment rolls.
 }

@@ -462,6 +462,50 @@ export function resolveDraft(
   opts.onResult(draftedRole);
 }
 
+/** A generic ordered-code enlistment gate (PM p. 52 System Squadron homeworld
+ *  tech; PM p. 56 merchant starport): throw EnlistmentValidationError with
+ *  `message` when `have` ranks strictly below `minimum` on the low→high
+ *  `orderedCodes` ladder. Fails loud (plain Error) when either code is absent
+ *  from the ladder — an unranked code would otherwise compare as index -1 and
+ *  silently pass or fail, masking edition-JSON drift. The one index-compare
+ *  gate the tech/starport pathways share instead of hand-rolling indexOf. */
+export function checkEnlistmentGate(
+  orderedCodes: readonly string[],
+  have: string,
+  minimum: string,
+  message: string,
+): void {
+  const haveIdx = orderedCodes.indexOf(have);
+  const minIdx = orderedCodes.indexOf(minimum);
+  if (haveIdx < 0 || minIdx < 0) {
+    throw new Error(
+      `checkEnlistmentGate: code not on the ordered ladder ` +
+      `(have="${have}"@${haveIdx}, minimum="${minimum}"@${minIdx}, ` +
+      `ladder=[${orderedCodes.join(", ")}]) — fix the edition JSON`,
+    );
+  }
+  if (haveIdx < minIdx) throw new EnlistmentValidationError(message);
+}
+
+/** Roll until the rolled value is legal, capped at `cap` attempts (PM p. 52
+ *  navy branch reroll against branchFleetRestrictions). Returns the first
+ *  legal value; if every one of `cap` attempts is illegal, `onExhausted` fires
+ *  — it must not return (throws the caller's diagnostic), so the result is
+ *  always a legal T. Generic over the rolled type: any pathway can reroll a
+ *  table result to satisfy a legality predicate without an inline attempt loop. */
+export function rerollUntilLegal<T>(
+  roll: () => T,
+  isLegal: (value: T) => boolean,
+  cap: number,
+  onExhausted: () => never,
+): T {
+  for (let attempt = 0; attempt < cap; attempt++) {
+    const value = roll();
+    if (isLegal(value)) return value;
+  }
+  return onExhausted();
+}
+
 /** Clear the one-shot retained-assignment flags. Only navy sets them (its
  *  Retention rule); the other pathways' per-year "retention" is this no-op. */
 export function clearRetention(ch: Character): void {

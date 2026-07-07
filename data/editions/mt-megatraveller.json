@@ -5231,7 +5231,9 @@
         ],
         "notes": [
           "Automatic Medical for Medical School graduates or unsuccessful Medical School; automatic Flight for Flight School graduates; Social Standing 9+ may choose."
-        ]
+        ],
+        "rerollCap": 8,
+        "$ruleRerollCap": "PM p. 52: re-roll a branch that isn't legal for the chosen fleet (branchFleetRestrictions); cap re-rolls at 8 as a convergence safety net — the table has multiple fleet-legal rows, so a legal branch is reached quickly."
       },
       "initialTraining": {
         "$rule": "PM p. 52: initial training grants two rolls on Branch Skills; academy/NOTC officers may take each roll on Branch Skills or Officer Staff Skills.",
