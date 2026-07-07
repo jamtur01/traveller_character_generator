@@ -32,9 +32,8 @@ import { applyMercenarySchool } from "@/lib/traveller/engine/acg/schools";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import type { AssignmentResolution } from "@/lib/traveller/engine/acg/state";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
-import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
+  createPathwaySpecRegistry, resetCombatTermFlags,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   clearRetention,
   consumeRetainedAssignment, rollDieRowOrThrow,
@@ -243,17 +242,11 @@ export function mercenaryRollAssignment(ch: Character): string {
   return assignment;
 }
 
-// Pathway phase ordering and per-phase parameters come from JSON
-// (data.advancedCharacterGeneration.mercenary.resolveAssignment). The TS
-// registry below provides the named callbacks the JSON references.
-const MERCENARY_CALLBACKS: PathwayCallbacks = {
-  mercenaryFinalize: (ctx) =>
-    combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
-};
-
+// Pathway phase ordering, per-phase parameters, and side-effect verbs
+// come from JSON (advancedCharacterGeneration.mercenary.resolveAssignment).
 const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
   pathwayKey: "mercenary",
-  callbacks: MERCENARY_CALLBACKS,
+  callbacks: {},
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
 export const validateMercenaryConfig = REGISTRY.validate;

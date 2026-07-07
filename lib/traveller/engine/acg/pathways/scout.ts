@@ -26,10 +26,9 @@ import {
 } from "@/lib/traveller/engine/acg/tables";
 import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
-import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, runReenlist,
-  clearRetention, consumeRetainedAssignment, rollSkillFromColumn, rollDieRow,
+  clearRetention, consumeRetainedAssignment, rollDieRow,
   EnlistmentValidationError,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
@@ -210,13 +209,6 @@ export function scoutInitialTraining(ch: Character): void {
   }
 }
 
-function scoutRollSkill(ch: Character): void {
-  const data = dataFor(ch);
-  const division = ch.requireScoutAcg().division;
-  rollSkillFromColumn(ch, data.skillTables[division], "first",
-    (col) => `Scout ${division} ${col}`);
-}
-
 export function scoutRollAssignment(ch: Character): string {
   const acg = ch.requireAcgState();
   const data = dataFor(ch);
@@ -326,52 +318,13 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
   runPhases(getScoutSpec(ch), { ch, assignment, resTable, res, dms });
 }
 
-const SCOUT_CALLBACKS: PathwayCallbacks = {
-  scoutFinalize: (ctx) => {
-    // PM p. 57: Special/War missions grant an extra skill. The column is
-    // JSON-declared per division — the printed Field table has a dedicated
-    // column; Bureaucracy's does not (null routes to the normal office
-    // column roll).
-    if (ctx.assignment === "Special Mission" || ctx.assignment === "Wartime Mission") {
-      const spec = requireRule(
-        dataFor(ctx.ch).specialWarMissionSkill,
-        "acg.scout.specialWarMissionSkill", "PM p. 57",
-      );
-      const division = ctx.ch.requireScoutAcg().division;
-      const column = spec.columnByDivision[division];
-      if (column === undefined) {
-        throw new Error(
-          `acg.scout.specialWarMissionSkill.columnByDivision lacks "${division}" (PM p. 57)`,
-        );
-      }
-      if (column === null) scoutRollSkill(ctx.ch);
-      else scoutRollSkillFromColumn(ctx.ch, column);
-    }
-    ctx.ch.requireAcgState().assignmentHistory.push(ctx.assignment);
-  },
-};
-
 const REGISTRY = createPathwaySpecRegistry<ScoutData>({
   pathwayKey: "scout",
-  callbacks: SCOUT_CALLBACKS,
+  callbacks: {},
   combatAssignments: () => [],
 });
 export const validateScoutConfig = REGISTRY.validate;
 function getScoutSpec(ch: Character): PathwaySpec { return REGISTRY.get(ch); }
-
-function scoutRollSkillFromColumn(ch: Character, column: string): void {
-  const data = dataFor(ch);
-  const division = ch.requireScoutAcg().division;
-  const table = data.skillTables[division];
-  if (!table.columns.includes(column)) {
-    throw new Error(
-      `Scout ${division} skill table lacks column "${column}" (PM p. 57 ` +
-      "Special/Wartime Mission extra skill) — fix the edition JSON rather " +
-      "than silently substituting the normal column.",
-    );
-  }
-  rollSkillFromColumn(ch, table, column, `Scout ${column}`);
-}
 
 function routeScoutToSchool(ch: Character): void {
   const data = dataFor(ch);

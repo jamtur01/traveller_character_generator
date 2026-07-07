@@ -25,7 +25,7 @@ import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 import {
   rollSkillFromColumn, serviceSkillColumnFor, branchSkillCandidates,
-  branchOf, applyPromotion, type SkillColumnPolicy,
+  branchOf, applyPromotion, combatFinalize, type SkillColumnPolicy,
 } from "./pathways/shared";
 import { labelToColumnKey, type StructuredDm } from "./tables";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
@@ -99,9 +99,9 @@ export interface ResolveAssignmentConfig {
    *  shared interactive prompt; null/omitted skips. */
   preRun?: "decorationDmTradeoff" | null;
   phases: PhaseConfig[];
-  /** Named callback run after all phases (combat ribbons, assignment
-   *  history, etc.). */
-  finalize?: string;
+  /** After-all-phases side effect. A FinalizeVerb object (declarative);
+   *  a legacy string names a registered callback (removed at cutover). */
+  finalize?: string | FinalizeVerb;
 }
 
 // --- Callback registry ----------------------------------------------
@@ -149,8 +149,10 @@ export function buildPathwaySpecFromConfig(
       `Unknown preRun hook: ${config.preRun}`);
   }
   if (config.finalize) {
-    spec.finalize = requireHook(callbacks, config.finalize, () =>
-      `Unknown finalize callback: ${config.finalize}`);
+    const fin = config.finalize;
+    spec.finalize = typeof fin === "string"
+      ? requireHook(callbacks, fin, () => `Unknown finalize callback: ${fin}`)
+      : (ctx) => runFinalize(ctx, fin, build);
   }
   return spec;
 }
@@ -643,6 +645,65 @@ function runPromote(ctx: ResolveContext, verb: PromoteVerb): void {
     );
   }
   applyPromotion(ch, ladder, Object.keys(opts).length ? opts : undefined);
+}
+
+// --- Verb interpreter: finalize --------------------------------------
+//
+// After-all-phases side effect. Every variant records the assignment in
+// history; optional params add the pathway-declared extras (combat
+// ribbon, scout Special/War-mission extra skill, merchant Route flag).
+// No pathway-name branch: each add-on runs only when the pathway's JSON
+// declares it.
+
+export interface FinalizeVerb {
+  verb: "finalize";
+  /** Combat pathways (mercenary/navy): Combat Ribbon (+Command Cluster in
+   *  command) for a combat assignment, then record the assignment (PM
+   *  p. 51/55). combatFinalize records history itself. */
+  combatRibbon?: boolean;
+  /** Scout: Special/Wartime missions grant an extra division-table skill
+   *  (PM p. 57). `columnRule` names the pathway data block carrying the
+   *  per-division column map. */
+  extraSkill?: { onAssignments: string[]; columnRule: string };
+  /** Merchant: flag a matching assignment this term for the enlisted
+   *  commission exam (PM p. 61). */
+  flagRouteThisTerm?: { onAssignment: string };
+}
+
+function runFinalize(ctx: ResolveContext, verb: FinalizeVerb, build: BuildContext): void {
+  if (verb.combatRibbon) {
+    combatFinalize(ctx, build.combatAssignments(ctx.ch));
+    return;
+  }
+  const acg = ctx.ch.requireAcgState();
+  const extra = verb.extraSkill;
+  if (extra && extra.onAssignments.includes(ctx.assignment)) {
+    runFinalizeDivisionSkill(ctx, extra.columnRule);
+  }
+  acg.assignmentHistory.push(ctx.assignment);
+  const route = verb.flagRouteThisTerm;
+  if (route && ctx.assignment === route.onAssignment) {
+    acg.perTerm.routeAssignmentThisTerm = true;
+  }
+}
+
+/** Scout Special/Wartime-mission extra skill (PM p. 57): read the per-
+ *  division column from `columnRule`; a null column routes to the normal
+ *  office-column ("first") roll, a named column rolls that column. */
+function runFinalizeDivisionSkill(ctx: ResolveContext, columnRule: string): void {
+  const rule = requireRule(
+    (pathwayData(ctx.ch) as Record<string, unknown>)[columnRule] as
+      { columnByDivision: Record<string, string | null> } | undefined,
+    `acg.scout.${columnRule}`, "PM p. 57",
+  );
+  const division = ctx.ch.requireScoutAcg().division;
+  const column = rule.columnByDivision[division];
+  if (column === undefined) {
+    throw new Error(
+      `acg.scout.${columnRule}.columnByDivision lacks "${division}" (PM p. 57)`,
+    );
+  }
+  rollDivisionSkill(ctx, column === null ? "first" : column);
 }
 
 // --- Event helpers ---------------------------------------------------

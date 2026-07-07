@@ -4091,7 +4091,7 @@
             "onPass": { "verb": "rollSkill", "select": "servicePolicy", "sourcePrefix": "mercenary" }
           }
         ],
-        "finalize": "mercenaryFinalize"
+        "finalize": { "verb": "finalize", "combatRibbon": true }
       },
       "sourcePrintedPages": [
         48,
@@ -5082,7 +5082,7 @@
             "onPass": { "verb": "rollSkill", "select": "branchColumn" }
           }
         ],
-        "finalize": "navyFinalize"
+        "finalize": { "verb": "finalize", "combatRibbon": true }
       },
       "sourcePrintedPages": [
         52,
@@ -6250,7 +6250,7 @@
             "onPass": { "verb": "rollSkill", "select": "divisionTable", "column": "first" }
           }
         ],
-        "finalize": "scoutFinalize"
+        "finalize": { "verb": "finalize", "extraSkill": { "onAssignments": ["Special Mission", "Wartime Mission"], "columnRule": "specialWarMissionSkill" } }
       },
       "sourcePrintedPages": [
         56,
@@ -7247,7 +7247,7 @@
             "onPass": "merchantAwardBonus"
           }
         ],
-        "finalize": "merchantFinalize"
+        "finalize": { "verb": "finalize", "flagRouteThisTerm": { "onAssignment": "Route" } }
       },
       "specialRules": {
         "$comment": "Rule-driven merchant transitions per PM p. 60-61.",

@@ -19,9 +19,8 @@ import {
 } from "@/lib/traveller/engine/acg/tables";
 import { applySpecialAssignment } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
-import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
+  createPathwaySpecRegistry, resetCombatTermFlags,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
   rollDieRow, resolveCommandDuty, branchSkillCandidates, EnlistmentValidationError,
@@ -459,14 +458,9 @@ export function navyRollAssignment(ch: Character): string {
   return String(row.assignment);
 }
 
-const NAVY_CALLBACKS: PathwayCallbacks = {
-  navyFinalize: (ctx) =>
-    combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
-};
-
 const REGISTRY = createPathwaySpecRegistry<NavyData & { combatAssignments?: readonly string[] }>({
   pathwayKey: "navy",
-  callbacks: NAVY_CALLBACKS,
+  callbacks: {},
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
 export const validateNavyConfig = REGISTRY.validate;

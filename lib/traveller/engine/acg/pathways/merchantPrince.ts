@@ -471,13 +471,6 @@ function buildMerchantResolution(
 
 const MERCHANT_CALLBACKS: PathwayCallbacks = {
   merchantAwardBonus: (ctx) => merchantAwardBonus(ctx.ch),
-  merchantFinalize: (ctx) => {
-    const acg = ctx.ch.requireAcgState();
-    acg.assignmentHistory.push(ctx.assignment);
-    // PM p. 61: enlisted commission exam is available "if they are
-    // serving on a Route assignment" during the current term.
-    if (ctx.assignment === "Route") acg.perTerm.routeAssignmentThisTerm = true;
-  },
 };
 
 const REGISTRY = createPathwaySpecRegistry<MerchantData>({
