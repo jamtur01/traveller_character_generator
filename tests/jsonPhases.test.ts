@@ -1,18 +1,18 @@
 // Tests for the JSON-driven pathway phase loader (Option D).
 //
 // The loader compiles per-pathway resolveAssignment JSON into a
-// PathwaySpec executable by runPhases. These tests verify:
-//  - the loader errors loudly on a missing callback (data ↔ code drift
-//    surfaces at edition load time, not at run time)
-//  - each MT pathway's JSON config builds successfully against its
-//    registered callback set
+// PathwaySpec executable by runPhases. Side effects are declarative
+// verbs; these tests verify:
+//  - an unknown verb kind throws at edition load (JSON ↔ interpreter
+//    drift surfaces at load time, not at run time)
+//  - each MT pathway's JSON config builds successfully
 //  - the JSON config matches the canonical phase ordering documented
 //    in the PM checklist
 
 import { describe, expect, it } from "vitest";
 import { getEdition } from "../lib/traveller/editions";
 import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
+  buildPathwaySpecFromConfig,
   type ResolveAssignmentConfig,
 } from "../lib/traveller/engine/acg/jsonPhases";
 
@@ -45,40 +45,24 @@ describe("MT pathway resolveAssignment configs exist", () => {
   });
 });
 
-describe("buildPathwaySpecFromConfig drift detection", () => {
-  it("throws on a missing onPass callback (typo in JSON)", () => {
-    const config: ResolveAssignmentConfig = {
+describe("buildPathwaySpecFromConfig verb-kind drift detection", () => {
+  it("throws on an unknown onPass verb kind at load (JSON ↔ interpreter drift)", () => {
+    const config = {
       phases: [
-        {
-          kind: "bonus",
-          consequence: "Earn bonus",
-          onPass: "noSuchCallback",
-        },
+        { kind: "skills", consequence: "Earn a skill", onPass: { verb: "bogusVerb" } },
       ],
-    };
-    expect(() => buildPathwaySpecFromConfig(config, {}, {
-      combatAssignments: () => [],
-    })).toThrow(/Unknown pathway callback: noSuchCallback/);
+    } as unknown as ResolveAssignmentConfig;
+    expect(() => buildPathwaySpecFromConfig(config, { combatAssignments: () => [] }))
+      .toThrow(/Unknown skills\.onPass verb "bogusVerb"/);
   });
 
-  it("throws on a missing finalize callback", () => {
-    const config: ResolveAssignmentConfig = {
+  it("throws on an unknown finalize verb kind at load", () => {
+    const config = {
       phases: [],
-      finalize: "notRegistered",
-    };
-    expect(() => buildPathwaySpecFromConfig(config, {}, {
-      combatAssignments: () => [],
-    })).toThrow(/Unknown finalize callback: notRegistered/);
-  });
-
-  it("throws on a missing preRun hook", () => {
-    const config: ResolveAssignmentConfig = {
-      phases: [],
-      preRun: "notAHook" as "decorationDmTradeoff",
-    };
-    expect(() => buildPathwaySpecFromConfig(config, {}, {
-      combatAssignments: () => [],
-    })).toThrow(/Unknown preRun hook: notAHook/);
+      finalize: { verb: "bogusFinalize" },
+    } as unknown as ResolveAssignmentConfig;
+    expect(() => buildPathwaySpecFromConfig(config, { combatAssignments: () => [] }))
+      .toThrow(/Unknown finalize verb "bogusFinalize"/);
   });
 
   it("dmTradeoffPrompt preRun verb builds a spec preRun (mercenary/navy)", () => {
@@ -89,15 +73,12 @@ describe("buildPathwaySpecFromConfig drift detection", () => {
         rollA: "survival", rollB: "decoration",
       },
     };
-    const spec = buildPathwaySpecFromConfig(config, {}, {
-      combatAssignments: () => [],
-    });
+    const spec = buildPathwaySpecFromConfig(config, { combatAssignments: () => [] });
     expect(spec.phases).toEqual([]);
     expect(typeof spec.preRun).toBe("function");
   });
 
   it("builds a minimal survival-only spec", () => {
-    const callbacks: PathwayCallbacks = {};
     const config: ResolveAssignmentConfig = {
       phases: [
         {
@@ -108,9 +89,7 @@ describe("buildPathwaySpecFromConfig drift detection", () => {
         },
       ],
     };
-    const spec = buildPathwaySpecFromConfig(config, callbacks, {
-      combatAssignments: () => [],
-    });
+    const spec = buildPathwaySpecFromConfig(config, { combatAssignments: () => [] });
     expect(spec.phases).toHaveLength(1);
     expect(spec.phases[0]!.phase).toBe("survival");
   });

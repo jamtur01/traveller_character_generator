@@ -338,7 +338,7 @@ const PhaseConfigSchema = z.looseObject({
     withPension: z.boolean().optional(),
   }).optional(),
   purpleHeartOnExactCombat: z.boolean().optional(),
-  onPass: z.union([z.string(), VerbSchema]).optional(),
+  onPass: VerbSchema.optional(),
   skipIfNotBureaucracy: z.boolean().optional(),
   consumeNextPromotionPenalty: z.boolean().optional(),
   logPenaltyInNote: z.boolean().optional(),
@@ -348,11 +348,9 @@ const PhaseConfigSchema = z.looseObject({
 });
 
 const ResolveAssignmentConfigSchema = z.looseObject({
-  preRun: z.union([
-    z.literal("decorationDmTradeoff"), VerbSchema, z.null(),
-  ]).optional(),
+  preRun: z.union([VerbSchema, z.null()]).optional(),
   phases: z.array(PhaseConfigSchema),
-  finalize: z.union([z.string(), VerbSchema]).optional(),
+  finalize: VerbSchema.optional(),
 });
 
 // Sub-table for resolveAssignment rows. The garrisonDuty entry (PM p. 49)

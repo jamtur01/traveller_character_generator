@@ -320,7 +320,6 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
 
 const REGISTRY = createPathwaySpecRegistry<ScoutData>({
   pathwayKey: "scout",
-  callbacks: {},
   combatAssignments: () => [],
 });
 export const validateScoutConfig = REGISTRY.validate;

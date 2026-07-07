@@ -246,7 +246,6 @@ export function mercenaryRollAssignment(ch: Character): string {
 // come from JSON (advancedCharacterGeneration.mercenary.resolveAssignment).
 const REGISTRY = createPathwaySpecRegistry<MercenaryData>({
   pathwayKey: "mercenary",
-  callbacks: {},
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
 export const validateMercenaryConfig = REGISTRY.validate;

@@ -467,7 +467,6 @@ function buildMerchantResolution(
 
 const REGISTRY = createPathwaySpecRegistry<MerchantData>({
   pathwayKey: "merchantPrince",
-  callbacks: {},
   combatAssignments: () => [],
 });
 export const validateMerchantConfig = REGISTRY.validate;

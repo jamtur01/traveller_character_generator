@@ -20,7 +20,6 @@ import {
   type PathwaySpec, type PhaseDef, type PhaseFailResult,
   type ResolveContext,
 } from "./phaseRunner";
-import { requireHook } from "@/lib/traveller/engine/registry";
 import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 import {
@@ -89,42 +88,20 @@ interface PhaseSkills {
 interface PhaseBonus {
   kind: "bonus";
   consequence: string;
-  onPass: string | AwardCashBonusVerb;
+  onPass: AwardCashBonusVerb;
 }
 
 export type PhaseConfig =
   | PhaseSurvival | PhasePromotion | PhaseDecoration | PhaseSkills | PhaseBonus;
 
 export interface ResolveAssignmentConfig {
-  /** Built-in pre-phase setup. A DmTradeoffPromptVerb object
-   *  (declarative); a legacy string names a registered hook (removed at
-   *  cutover); null/omitted skips. */
-  preRun?: "decorationDmTradeoff" | DmTradeoffPromptVerb | null;
+  /** Built-in pre-phase setup verb (survival↔decoration DM tradeoff);
+   *  null/omitted skips. */
+  preRun?: DmTradeoffPromptVerb | null;
   phases: PhaseConfig[];
-  /** After-all-phases side effect. A FinalizeVerb object (declarative);
-   *  a legacy string names a registered callback (removed at cutover). */
-  finalize?: string | FinalizeVerb;
-}
-
-// --- Callback registry ----------------------------------------------
-
-/** Per-pathway named callback registry. Loader resolves PhaseConfig.onPass
- *  / finalize / etc. against this map. */
-export interface PathwayCallbacks {
-  /** Called on phase.onPass with the assignment context. */
-  [name: string]: (ctx: ResolveContext) => void;
-}
-
-/** Pre-phase hooks the loader recognises by name. */
-const PRERUN_HOOKS: Record<string, (ctx: ResolveContext) => void> = {};
-
-/** Register a preRun hook keyed by its JSON identifier. Pathways or
- *  shared modules call this at module load. */
-export function registerPreRun(
-  name: string,
-  fn: (ctx: ResolveContext) => void,
-): void {
-  PRERUN_HOOKS[name] = fn;
+  /** After-all-phases side-effect verb (combat ribbon, scout extra
+   *  skill, merchant Route flag; always records assignment history). */
+  finalize?: FinalizeVerb;
 }
 
 // --- Loader ----------------------------------------------------------
@@ -136,46 +113,47 @@ interface BuildContext {
 }
 
 /** Convert a JSON ResolveAssignmentConfig into a PathwaySpec the runner
- *  can execute. Throws if a referenced callback name isn't in the
- *  registry (data ↔ code drift surfaces at edition load, not at run
- *  time). */
+ *  can execute. Every side effect is a declarative verb; an unknown verb
+ *  kind throws at edition load (data ↔ interpreter drift surfaces here,
+ *  not at run time). */
 export function buildPathwaySpecFromConfig(
   config: ResolveAssignmentConfig,
-  callbacks: PathwayCallbacks,
   build: BuildContext,
 ): PathwaySpec {
-  const phases = config.phases.map((p) => buildPhase(p, callbacks, build));
+  const phases = config.phases.map((p) => buildPhase(p, build));
   const spec: PathwaySpec = { phases };
   if (config.preRun) {
     const pr = config.preRun;
-    spec.preRun = typeof pr === "string"
-      ? requireHook(PRERUN_HOOKS, pr, () => `Unknown preRun hook: ${pr}`)
-      : (ctx) => runDmTradeoffPrompt(ctx, pr);
+    requireVerbKind(pr, "dmTradeoffPrompt", "preRun");
+    spec.preRun = (ctx) => runDmTradeoffPrompt(ctx, pr);
   }
   if (config.finalize) {
     const fin = config.finalize;
-    spec.finalize = typeof fin === "string"
-      ? requireHook(callbacks, fin, () => `Unknown finalize callback: ${fin}`)
-      : (ctx) => runFinalize(ctx, fin, build);
+    requireVerbKind(fin, "finalize", "finalize");
+    spec.finalize = (ctx) => runFinalize(ctx, fin, build);
   }
   return spec;
 }
 
-function lookupCallback(name: string, callbacks: PathwayCallbacks): (ctx: ResolveContext) => void {
-  return requireHook(callbacks, name, () => `Unknown pathway callback: ${name}`);
+/** Fail loud at edition load when a JSON side-effect verb's kind doesn't
+ *  match the interpreter the phase expects (the verb schema only checks
+ *  that `verb` is a string). */
+function requireVerbKind(v: { verb: string }, kind: string, where: string): void {
+  if (v.verb !== kind) {
+    throw new Error(
+      `Unknown ${where} verb "${v.verb}" — expected "${kind}" ` +
+      `(edition JSON ↔ interpreter drift).`,
+    );
+  }
 }
 
-function buildPhase(
-  p: PhaseConfig,
-  callbacks: PathwayCallbacks,
-  build: BuildContext,
-): PhaseDef {
+function buildPhase(p: PhaseConfig, build: BuildContext): PhaseDef {
   switch (p.kind) {
     case "survival": return buildSurvival(p, build);
     case "promotion": return buildPromotion(p);
     case "decoration": return buildDecoration(p);
     case "skills": return buildSkills(p);
-    case "bonus": return buildBonus(p, callbacks);
+    case "bonus": return buildBonus(p);
   }
 }
 
@@ -214,6 +192,7 @@ function buildSurvival(p: PhaseSurvival, build: BuildContext): PhaseDef {
 }
 
 function buildPromotion(p: PhasePromotion): PhaseDef {
+  requireVerbKind(p.onPass, "promote", "promotion.onPass");
   return {
     phase: "promotion",
     skip: (ctx) => {
@@ -297,6 +276,7 @@ function applyDecorationResolution(
 }
 
 function buildSkills(p: PhaseSkills): PhaseDef {
+  requireVerbKind(p.onPass, "rollSkill", "skills.onPass");
   return {
     phase: "skills",
     skip: (ctx) => ctx.res.skills === "none",
@@ -314,11 +294,8 @@ function buildSkills(p: PhaseSkills): PhaseDef {
   };
 }
 
-function buildBonus(p: PhaseBonus, callbacks: PathwayCallbacks): PhaseDef {
-  const bonus = p.onPass;
-  const onPass = typeof bonus === "string"
-    ? lookupCallback(bonus, callbacks)
-    : (ctx: ResolveContext) => runAwardCashBonus(ctx, bonus);
+function buildBonus(p: PhaseBonus): PhaseDef {
+  requireVerbKind(p.onPass, "awardCashBonus", "bonus.onPass");
   return {
     phase: "bonus",
     skip: (ctx) => bonusTargetOf(ctx) === "none",
@@ -331,7 +308,7 @@ function buildBonus(p: PhaseBonus, callbacks: PathwayCallbacks): PhaseDef {
       margin: r.margin,
       consequence: p.consequence,
     }),
-    onPass: (ctx) => onPass(ctx),
+    onPass: (ctx) => runAwardCashBonus(ctx, p.onPass),
   };
 }
 

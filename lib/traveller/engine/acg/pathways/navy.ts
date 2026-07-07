@@ -460,7 +460,6 @@ export function navyRollAssignment(ch: Character): string {
 
 const REGISTRY = createPathwaySpecRegistry<NavyData & { combatAssignments?: readonly string[] }>({
   pathwayKey: "navy",
-  callbacks: {},
   combatAssignments: (data) => data.combatAssignments ?? [],
 });
 export const validateNavyConfig = REGISTRY.validate;

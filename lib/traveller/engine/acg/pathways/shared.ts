@@ -11,7 +11,7 @@ import { getEdition } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import type { PathwaySpec, ResolveContext } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
-  buildPathwaySpecFromConfig, type PathwayCallbacks,
+  buildPathwaySpecFromConfig,
   type ResolveAssignmentConfig,
 } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
@@ -43,7 +43,6 @@ interface PathwayRegistryOptions<TData> {
   /** Key under `advancedCharacterGeneration` in edition JSON
    *  ("mercenary", "navy", "scout", "merchantPrince"). */
   pathwayKey: string;
-  callbacks: PathwayCallbacks;
   /** Read combat-assignment names from the pathway's data block. Empty
    *  array for pathways that don't have a Purple Heart phase. */
   combatAssignments: (data: TData) => readonly string[];
@@ -88,7 +87,7 @@ export function createPathwaySpecRegistry<TData>(
           `data/editions/${ch.editionId}.json`,
         );
       }
-      spec = buildPathwaySpecFromConfig(data.resolveAssignment, opts.callbacks, {
+      spec = buildPathwaySpecFromConfig(data.resolveAssignment, {
         combatAssignments: (c) => {
           const d = dataForEdition(c.editionId);
           return d ? opts.combatAssignments(d) : [];
@@ -100,7 +99,7 @@ export function createPathwaySpecRegistry<TData>(
     validate(editionId) {
       const data = dataForEdition(editionId);
       if (!data?.resolveAssignment) return;
-      buildPathwaySpecFromConfig(data.resolveAssignment, opts.callbacks, {
+      buildPathwaySpecFromConfig(data.resolveAssignment, {
         combatAssignments: () => opts.combatAssignments(data),
       });
     },
