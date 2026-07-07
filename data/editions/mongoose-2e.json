@@ -7850,6 +7850,9 @@
     "$cashRollCap": "Core p.46: may roll on the Cash column at most three times across all careers.",
     "musterBenefitColumns": ["Cash", "Material Benefits"],
     "$musterBenefitColumns": "Core p.46: each Benefit roll is taken on the career's Cash or Material Benefits column (the Cash column offered only while Cash rolls remain, capped at cashRollCap across all careers).",
+    "shipSharesPolicy": {
+      "$soloPolicy": "MgT2 Core p.46: Ship Shares are a shared group resource pooled to buy a starship, meaningless to resolve for a solo Traveller; this generator records the die-string benefit ('1D Ship Shares') verbatim rather than rolling it to a concrete count."
+    },
     "benefitsOfRank": [
       {
         "minRank": 1,
@@ -8350,12 +8353,23 @@
       "Jack-of-all-Trades"
     ],
     "$connectionSkillExcluded": "Core p.19: a connection skill may never be Jack-of-all-Trades.",
+    "connectionsPolicy": {
+      "$soloPolicy": "MgT2 Core p.19 prints Connections as a link between two Travellers who shared an event, granting a free shared skill; this solo generator has no second Traveller, so it reinterprets each connection the Traveller formed (an event-generated Ally/Rival/Contact) as +1 to a chosen skill. The caps stay by-the-book (connectionSkillCap / connectionSkillMaxLevel / connectionSkillExcluded)."
+    },
     "qualificationDmPerPriorCareer": -1,
     "$qualificationDmPerPriorCareer": "Core p.22 (Agent) and every other career page: 'DM-1 for every previous career' is printed on each individual career page, not the p.18 Qualification section.",
     "commissionDmPerTermAfterFirst": -1,
     "$commissionDmPerTermAfterFirst": "Core p.19: the Commission roll takes DM-1 for every term after the first.",
     "agingDmPerTerm": -1,
     "$agingDmPerTerm": "Core p.49: the Ageing roll is 2D minus the character's total number of terms.",
+    "agingCrisisRestore": {
+      "$soloPolicy": "MgT2 Core p.49 leaves a Traveller reduced to a 0 characteristic to referee adjudication / anagathics / death; this solo generator instead assumes emergency medical care restores each crisis characteristic to this value.",
+      "value": 1
+    },
+    "reductionPolicy": {
+      "$soloPolicy": "MgT2 Core p.49: injury/ageing characteristic losses leave the pick of which characteristic to reduce to the player; in auto mode this generator reduces the highest-scoring eligible characteristics first to avoid triggering an ageing crisis.",
+      "value": "highestFirst"
+    },
     "lifeEventsUnusualTrigger": 12,
     "$lifeEventsUnusualTrigger": "Core p.46: a Life Event roll of 12 triggers the Unusual Event sub-table.",
     "draftFallbackCareer": "drifter",

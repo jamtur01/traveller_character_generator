@@ -38,10 +38,12 @@ import type { EnlistOptions } from "@/lib/traveller/chargen/session";
 const matrix = coverageMatrix();
 
 // $soloPolicy skips recorded across every walked combo. assertCharacterConsistent
-// pushes here (instead of throwing) for any invariant governed by a
-// $soloPolicy-tagged JSON value; no value is tagged today, so this stays empty
-// (asserted below). Shared across the it.each because tests in a file run
-// sequentially in definition order.
+// would push here (instead of throwing) for any invariant governed by a
+// $soloPolicy-tagged JSON value. Four mongoose heuristics are tagged today, but
+// none relaxes a validated invariant (the aging-crisis restore keeps every
+// characteristic >= 1, so the floor stays hard), so nothing skips and this
+// stays empty (asserted below). Shared across the it.each because tests in a
+// file run sequentially in definition order.
 const divergences: SoloDivergence[] = [];
 
 // Combos driven to a character AND validated. Compared to a fresh
@@ -123,8 +125,9 @@ describe("full coverage — every chargen combo yields a rulebook-consistent cha
   });
 
   it("records zero $soloPolicy divergences across the whole matrix", () => {
-    // No JSON value is $soloPolicy-tagged today, so no combo may skip an
-    // invariant. When a value is first tagged, this reddens and names the skip.
+    // Four mongoose values carry $soloPolicy tags, but none relaxes a
+    // whole-character invariant, so no combo skips one. If a future tag ever
+    // governs a real skip, this reddens and names the skip.
     expect(divergences).toEqual([]);
   });
 });

@@ -259,6 +259,14 @@ export interface MongooseData {
   readonly injury: readonly MongooseInjuryRow[];
   /** Ageing table (Core p.49, 2D - total terms). */
   readonly aging: readonly MongooseAgingRow[];
+  /** Ageing-crisis restore target (auto-mode $soloPolicy, NOT a printed value):
+   *  Core p.49 leaves a 0-characteristic Traveller to referee adjudication, so
+   *  this generator restores each crisis characteristic to `value` instead. */
+  readonly agingCrisisRestore: { readonly $soloPolicy: string; readonly value: number };
+  /** Injury/ageing characteristic-loss ordering (auto-mode $soloPolicy, NOT a
+   *  printed value): which eligible characteristics to reduce first (Core p.49
+   *  leaves the pick to the player; "highestFirst" avoids an ageing crisis). */
+  readonly reductionPolicy: { readonly $soloPolicy: string; readonly value: string };
   /** Life Events table (Core p.46, 2D) — the event-7 target; uses the shared
    *  effect union. */
   readonly lifeEvents: readonly MongooseTableRow[];

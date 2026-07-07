@@ -31,14 +31,17 @@ export function rollAging(ch: Character): void {
   );
   ch.log(ev.raw(`Ageing (2D ${roll} - ${ch.terms} terms = ${roll + dm}): ${row.text}`));
   applyReductions(ch, row.reductions);
-  // The crisis floor (<= 0) and the restore-to-1 target are an auto-mode
-  // heuristic, NOT a printed game value: Core p.49 leaves a 0-characteristic
-  // Traveller to medical care / anagathics / death (a referee call), so there is
-  // no JSON constant to source. This solo generator assumes emergency care
-  // restores the crisis attribute(s) to 1 (documented, not fabricated).
+  // The crisis floor (<= 0) and its restore target are an auto-mode $soloPolicy
+  // (NOT a printed value): Core p.49 leaves a 0-characteristic Traveller to
+  // medical care / anagathics / death (a referee call), so the restore target
+  // is sourced from JSON (mongoose.agingCrisisRestore, $soloPolicy-tagged)
+  // rather than hardcoded — emergency care restores each crisis characteristic.
+  const restore = requireRule(
+    data.agingCrisisRestore, "mongoose.agingCrisisRestore", "MgT2 Core p.49 ($soloPolicy)",
+  ).value;
   const crisis = ALL_ATTRS.filter((a) => ch.attributes[a] <= 0);
   if (crisis.length > 0) {
-    for (const a of crisis) ch.improveAttribute(a, 1 - ch.attributes[a]); // restore to 1
-    ch.log(ev.raw(`Ageing crisis: ${crisis.join(", ")} restored to 1 with emergency medical care.`));
+    for (const a of crisis) ch.improveAttribute(a, restore - ch.attributes[a]);
+    ch.log(ev.raw(`Ageing crisis: ${crisis.join(", ")} restored to ${restore} with emergency medical care.`));
   }
 }

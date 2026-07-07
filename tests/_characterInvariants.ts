@@ -11,10 +11,13 @@
 //
 // `$soloPolicy` convention (see docs/superpowers/plans/2026-07-06-pathway-as-
 // json-soloPolicy.md): a JSON value carrying a sibling `$soloPolicy` key is a
-// DELIBERATE non-book engine choice. Any expectation governed by such a value
-// is SKIPPED and recorded in the caller-supplied `divergences` list rather
-// than thrown on. No values are tagged yet; the mechanism is exercised via
-// `soloPolicyReason` so it is live for the migration phases.
+// DELIBERATE non-book engine choice (its prose cites the book page that leaves
+// the point unspecified). The mongoose block tags four such heuristics today
+// (agingCrisisRestore, reductionPolicy, connectionsPolicy, shipSharesPolicy).
+// None of them relaxes a whole-character invariant — the engine's own
+// guarantees keep every validated value in bounds — so no expectation here
+// SKIPS on a tag; the `divergences` recording sink + `soloPolicyReason` parser
+// stay wired as dormant infrastructure for a future skip-based invariant.
 
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
@@ -56,13 +59,13 @@ function fail(invariant: string, message: string): never {
 
 /**
  * Assert every JSON-derivable whole-character invariant on a finished
- * character. Throws on the first violation. Any expectation governed by a
- * `$soloPolicy`-tagged JSON value is skipped and pushed onto `divergences`
- * (the "known solo divergences" list) instead of throwing.
+ * character. Throws on the first violation. `_divergences` is the dormant
+ * "known solo divergences" sink: no invariant currently skips on a
+ * `$soloPolicy` tag (see the convention note above), so it stays empty.
  */
 export function assertCharacterConsistent(
   ch: Character,
-  divergences: SoloDivergence[] = [],
+  _divergences: SoloDivergence[] = [],
 ): void {
   checkAttributes(ch);
   checkSkills(ch);
@@ -70,7 +73,7 @@ export function assertCharacterConsistent(
   checkRank(ch);
   checkMuster(ch);
   checkDecorations(ch);
-  checkMongooseCharacteristics(ch, divergences);
+  checkMongooseCharacteristics(ch);
 }
 
 // --- attribute bounds (cross-edition) --------------------------------------
@@ -432,26 +435,18 @@ function declaredAcgAwards(editionId: string, pathway: string): Set<string> {
   return out;
 }
 
-// --- mongoose characteristic floor (>=1 unless a $soloPolicy aging path) ---
+// --- mongoose characteristic floor (hard: >= 1, the engine's guarantee) -----
 
 /** MgT2 Core p.49: a Traveller reduced to a 0 characteristic dies / needs
  *  referee adjudication, so a finished (surviving) mongoose Traveller has no
- *  0 characteristic. If the engine's aging-crisis floor is migrated into JSON
- *  as a `$soloPolicy`-tagged value, record the divergence and skip. */
-function checkMongooseCharacteristics(ch: Character, divergences: SoloDivergence[]): void {
+ *  0 characteristic. The engine's aging-crisis floor ALWAYS restores a crisis
+ *  characteristic to mongoose.agingCrisisRestore.value (>= 1), so this floor is
+ *  the engine's own guarantee: a finished characteristic < 1 is always a bug
+ *  and MUST throw. The `$soloPolicy` tag on the restore VALUE documents the
+ *  book-unspecified rationale (and is read by the engine); it does NOT relax
+ *  this invariant. */
+function checkMongooseCharacteristics(ch: Character): void {
   if (ch.chargenModelId !== "mongoose") return;
-  const m = getEdition(ch.editionId).data.mongoose;
-  if (!m) return;
-  const restore = (m as unknown as Record<string, unknown>).agingCrisisRestore;
-  const reason = soloPolicyReason(restore);
-  if (reason !== null) {
-    divergences.push({
-      invariant: "mongooseCharacteristicFloor",
-      jsonPath: "mongoose.agingCrisisRestore",
-      reason,
-    });
-    return;
-  }
   for (const k of ATTR_KEYS) {
     if (ch.attributes[k] < 1) {
       fail(

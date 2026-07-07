@@ -101,10 +101,18 @@ function checkOptionsDm(ch: Character, options: readonly string[]): number {
 }
 
 /** Apply characteristic reductions (injury / ageing): for each reduction pick
- *  `count` distinct characteristics from its pool, reducing
- *  the highest-scoring ones first to avoid a crisis. Distinct across the whole
- *  reduction set (injury row 1: "one physical by 1D, two OTHER by 2"). */
+ *  `count` distinct characteristics from its pool, reducing them in the order
+ *  set by the mongoose.reductionPolicy $soloPolicy (Core p.49 leaves the pick
+ *  to the player; "highestFirst" reduces the highest-scoring first to avoid a
+ *  crisis). Distinct across the whole reduction set (injury row 1: "one
+ *  physical by 1D, two OTHER by 2"). */
 export function applyReductions(ch: Character, reductions: readonly MongooseReduction[]): void {
+  const policy = requireRule(
+    getMongooseData(ch).reductionPolicy, "mongoose.reductionPolicy", "MgT2 Core p.49 ($soloPolicy)",
+  ).value;
+  if (policy !== "highestFirst") {
+    throw new Error(`mongoose.reductionPolicy: unsupported value "${policy}" (expected "highestFirst").`);
+  }
   const used = new Set<string>();
   for (const red of reductions) {
     const pool = red.pool.filter((a) => !used.has(a));

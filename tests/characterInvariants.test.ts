@@ -23,6 +23,7 @@ import { Character, cloneCharacter } from "@/lib/traveller/character";
 import type { NavyAcgState } from "@/lib/traveller/engine/acg/state";
 import * as session from "@/lib/traveller/chargen/session";
 import type { EnlistOptions } from "@/lib/traveller/chargen/session";
+import { getEdition } from "@/lib/traveller/editions";
 
 const MONGOOSE_ENLIST: EnlistOptions = {
   verbose: false,
@@ -184,5 +185,32 @@ describe("soloPolicyReason recognizes the $soloPolicy annotation", () => {
     expect(soloPolicyReason(1)).toBeNull();
     expect(soloPolicyReason(null)).toBeNull();
     expect(soloPolicyReason(undefined)).toBeNull();
+  });
+});
+
+describe("$soloPolicy audit — non-printed mongoose heuristics carry cited tags", () => {
+  // Every engine choice the MgT2 rulebook leaves unspecified is externalized to
+  // JSON with a sibling $soloPolicy key whose prose cites the book page. This
+  // audit reddens if any of the four is pulled back into code or loses its
+  // citation. agingCrisisRestore / reductionPolicy are also read by the engine
+  // via requireRule (their `value`); connections / ship-shares are doc-only.
+  const mongoose = getEdition("mongoose-2e").data.mongoose;
+  if (!mongoose) throw new Error("mongoose-2e edition is missing its mongoose block");
+  const block = mongoose as unknown as Record<string, unknown>;
+
+  it.each([
+    "agingCrisisRestore",
+    "reductionPolicy",
+    "connectionsPolicy",
+    "shipSharesPolicy",
+  ])("mongoose.%s is $soloPolicy-tagged and cites a book page", (key) => {
+    const reason = soloPolicyReason(block[key]);
+    expect(reason).not.toBeNull();
+    expect(reason).toMatch(/p\.\d+/);
+  });
+
+  it("the engine-read heuristics expose their governed `value`", () => {
+    expect(mongoose.agingCrisisRestore.value).toBe(1);
+    expect(mongoose.reductionPolicy.value).toBe("highestFirst");
   });
 });

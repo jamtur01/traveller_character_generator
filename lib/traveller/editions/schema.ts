@@ -637,6 +637,16 @@ const MongooseDataSchema = z.looseObject({
     text: z.string(),
     reductions: z.array(MongooseReductionSchema),
   })),
+  // $soloPolicy-tagged auto-mode values (NOT printed rules; Core p.49 leaves
+  // both to the player/referee). looseObject keeps the sibling $soloPolicy
+  // reason string; the engine reads only `value` via requireRule.
+  agingCrisisRestore: z.looseObject({ value: z.number() }),
+  reductionPolicy: z.looseObject({ value: z.string() }),
+  // $soloPolicy annotations (doc-only; the engine does not read these). The
+  // Connections rule is reinterpreted solo (Core p.19) and Ship Shares are
+  // recorded unrolled (Core p.46); each holds a sibling $soloPolicy reason.
+  connectionsPolicy: z.looseObject({}).optional(),
+  shipSharesPolicy: z.looseObject({}).optional(),
   lifeEvents: z.array(MongooseTableRowSchema),
   lifeEventsUnusual: z.array(MongooseTableRowSchema),
   cashBonusSkill: z.looseObject({ skill: z.string(), dm: z.number() }),
