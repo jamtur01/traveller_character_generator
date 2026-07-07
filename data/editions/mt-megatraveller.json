@@ -3,6 +3,24 @@
   "edition": {
     "id": "mt-megatraveller",
     "chargenModels": ["classic", "acg"],
+    "defaultChargenModel": "classic",
+    "workflowSteps": {
+      "default": [
+        "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
+        "Roll a homeworld (PM p. 12) — its tech / atmosphere / law constrain which careers you may enlist in.",
+        "Choose a service or take random; the enlistment roll determines acceptance vs. draft.",
+        "Each four-year term: survival, position/commission, promotion, special duty, skills, aging from age 34+. Reenlistment at term end.",
+        "Muster out: cash and material benefits (passages, weapons, ships, TAS) determined by rank, terms, and rolls."
+      ],
+      "acg": [
+        "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
+        "Roll a homeworld (PM p. 12) — its tech / atmosphere / law constrain which careers you may enlist in.",
+        "Optional pre-career: college, service academy, medical or flight school. Honors graduates earn brownie points and special skills.",
+        "Pick a pathway (Mercenary / Navy / Scout / Merchant Prince) and roll for enlistment.",
+        "Each four-year term cycles annually: assignment roll, survival, decoration, promotion, skills. Schools, command duty, court martial, brownie point spend all in play.",
+        "Muster out: cash and material benefits (passages, weapons, ships, TAS) determined by rank, terms, and rolls."
+      ]
+    },
     "name": "MegaTraveller",
     "displayName": "MegaTraveller",
     "rulebooks": [

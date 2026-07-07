@@ -10,6 +10,16 @@
     "chargenModels": [
       "mongoose"
     ],
+    "defaultChargenModel": "mongoose",
+    "workflowSteps": {
+      "default": [
+        "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
+        "Gain background skills at level 0 from your upbringing (Education DM + 3 skills).",
+        "Choose a career and assignment, then roll Qualification (2D + characteristic DM); fail and you are drafted or become a Drifter.",
+        "Each four-year term: Survival (a natural 2 always fails, sending you to the Mishap table), Events, an optional Commission then Advancement, Skills & Training, and Ageing from term 4.",
+        "Muster out: Cash and Material Benefits (max 3 cash rolls) plus any pension, then the Connections step ties Travellers together."
+      ]
+    },
     "status": "active",
     "supportsInteractive": true,
     "year": 2022,

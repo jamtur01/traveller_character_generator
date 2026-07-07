@@ -8,6 +8,17 @@ import type { Predicate } from "@/lib/traveller/engine/predicate";
 import type { StepRegistry } from "@/lib/traveller/engine/steps/types";
 import type { MongooseData } from "@/lib/traveller/engine/mongoose/types";
 
+/** Player-facing "what happens next" narration for the Start screen, in
+ *  display order. Extracted flow prose (references printed rules), not a game
+ *  value the engine consumes. */
+export interface WorkflowSteps {
+  /** The standard (non-ACG) step list, fully materialized. */
+  default: string[];
+  /** The Advanced Character Generation step list; present only on editions
+   *  that offer ACG, and used when the player opts into it. */
+  acg?: string[];
+}
+
 export interface EditionMeta {
   id: string;
   name: string;
@@ -22,6 +33,18 @@ export interface EditionMeta {
    * Every id must resolve in the chargen-model registry.
    */
   chargenModels: string[];
+  /**
+   * The chargen model the session enters when Advanced Character Generation
+   * is not selected (a registry key drawn from `chargenModels`). startCareer
+   * reads this instead of hardcoding a "mongoose"/"classic" id precedence;
+   * the option-driven ACG path is the only override.
+   */
+  defaultChargenModel: string;
+  /**
+   * Start-screen "what happens next" narration, driven from JSON so adding an
+   * edition needs no edition-id branch in the UI. See WorkflowSteps.
+   */
+  workflowSteps: WorkflowSteps;
   year?: number;
   /**
    * "active" = engine fully supports this edition.

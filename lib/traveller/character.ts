@@ -413,10 +413,13 @@ export class Character implements CharacterState {
    */
   choiceMode: ChoiceMode = "auto";
   /**
-   * Which chargen model drives this character: "classic" (CT / MT-basic),
-   * "acg" (MT Advanced Character Generation), or an edition-specific id
-   * (e.g. "mongoose"). The session dispatches every phase transition through
-   * the model registered under this id. Cloned by cloneCharacter's Object.assign.
+   * Which chargen model drives this character (a chargen-model registry key).
+   * The session dispatches every phase transition through the model registered
+   * under this id. This "classic" initializer is only a pre-startCareer
+   * placeholder: startCareer always overwrites it with the ACG model or the
+   * edition's declared `defaultChargenModel` before any phase runs, so the
+   * literal is never the final value in a real flow. Cloned by cloneCharacter's
+   * Object.assign.
    */
   chargenModelId = "classic";
   /**

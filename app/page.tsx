@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { cloneCharacter } from "@/lib/traveller/character";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { cloneCharacter, type Character } from "@/lib/traveller/character";
 import { DEFAULT_EDITION_ID, listEditions } from "@/lib/traveller/editions";
 import * as session from "@/lib/traveller/chargen/session";
 import type { ServiceKey } from "@/lib/traveller/types";
@@ -24,6 +24,75 @@ import { EndPhase } from "./components/phases/EndPhase";
 import { MongooseCareerPhase, MongooseTermPhase } from "./components/phases/MongoosePhase";
 
 type Phase = session.ChargenPhase;
+
+// UI-side per-model phase renderers. A chargen model with bespoke career /
+// term UI registers its renderers here, keyed by Character.chargenModelId;
+// every other model falls back to the default (classic / acg) renderers.
+// Adding a model with custom phase UI is one map entry, not a new
+// `chargenModelId === "..."` branch in the render tree below.
+interface PhaseRenderContext {
+  character: Character;
+  enlist: () => void;
+  runTerm: () => void;
+  attemptMusterOut: () => void;
+  toggleAnagathics: (next: boolean) => void;
+  preferredService: ServiceKey | "random";
+  setPreferredService: (v: ServiceKey | "random") => void;
+}
+
+const MODEL_PHASE_RENDERERS: Record<
+  string,
+  {
+    career?: (props: PhaseRenderContext) => ReactNode;
+    term?: (props: PhaseRenderContext) => ReactNode;
+  }
+> = {
+  mongoose: {
+    career: (props) => (
+      <MongooseCareerPhase
+        character={props.character}
+        onBeginCareer={props.enlist}
+        onFinish={props.attemptMusterOut}
+      />
+    ),
+    term: (props) => (
+      <MongooseTermPhase
+        character={props.character}
+        onRunTerm={props.runTerm}
+        onMusterOut={props.attemptMusterOut}
+      />
+    ),
+  },
+};
+
+// Rendered as JSX (<CareerPhaseSlot .../>) rather than called as plain
+// functions, so the handler props reach the phase component the same way the
+// old inline conditionals did — without tripping the render-purity lint rules.
+function CareerPhaseSlot(props: PhaseRenderContext): ReactNode {
+  const Custom = MODEL_PHASE_RENDERERS[props.character.chargenModelId]?.career;
+  if (Custom) return <Custom {...props} />;
+  return (
+    <CareerPhase
+      character={props.character}
+      preferredService={props.preferredService}
+      setPreferredService={props.setPreferredService}
+      onEnlist={props.enlist}
+    />
+  );
+}
+
+function TermPhaseSlot(props: PhaseRenderContext): ReactNode {
+  const Custom = MODEL_PHASE_RENDERERS[props.character.chargenModelId]?.term;
+  if (Custom) return <Custom {...props} />;
+  return (
+    <TermPhase
+      character={props.character}
+      onRunTerm={props.runTerm}
+      onMusterOut={props.attemptMusterOut}
+      onToggleAnagathics={props.toggleAnagathics}
+    />
+  );
+}
 
 export default function Home() {
   const [snap, setSnap] = useState<session.ChargenSnapshot | null>(null);
@@ -245,37 +314,27 @@ export default function Home() {
           )}
 
           {phase === "career" && character && (
-            character.chargenModelId === "mongoose" ? (
-              <MongooseCareerPhase
-                character={character}
-                onBeginCareer={enlist}
-                onFinish={attemptMusterOut}
-              />
-            ) : (
-              <CareerPhase
-                character={character}
-                preferredService={preferredService}
-                setPreferredService={setPreferredService}
-                onEnlist={enlist}
-              />
-            )
+            <CareerPhaseSlot
+              character={character}
+              enlist={enlist}
+              runTerm={runTerm}
+              attemptMusterOut={attemptMusterOut}
+              toggleAnagathics={toggleAnagathics}
+              preferredService={preferredService}
+              setPreferredService={setPreferredService}
+            />
           )}
 
           {phase === "term" && character && (
-            character.chargenModelId === "mongoose" ? (
-              <MongooseTermPhase
-                character={character}
-                onRunTerm={runTerm}
-                onMusterOut={attemptMusterOut}
-              />
-            ) : (
-              <TermPhase
-                character={character}
-                onRunTerm={runTerm}
-                onMusterOut={attemptMusterOut}
-                onToggleAnagathics={toggleAnagathics}
-              />
-            )
+            <TermPhaseSlot
+              character={character}
+              enlist={enlist}
+              runTerm={runTerm}
+              attemptMusterOut={attemptMusterOut}
+              toggleAnagathics={toggleAnagathics}
+              preferredService={preferredService}
+              setPreferredService={setPreferredService}
+            />
           )}
 
           {(phase === "skill_basic" || phase === "skill_adv") && character && (

@@ -13,47 +13,19 @@ function editionSummary(meta: EditionMeta): string {
     ?? "Edition data extracted from its rulebook. See data/editions for details.";
 }
 
-function workflowStepsFor(editionId: string, useAcg: boolean): string[] {
-  const ct = editionId === "ct-classic";
-  const mt = editionId === "mt-megatraveller";
-  const mongoose = editionId === "mongoose-2e";
-  const steps: string[] = [
-    "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
-  ];
-  if (mongoose) {
-    steps.push("Gain background skills at level 0 from your upbringing (Education DM + 3 skills).");
-    steps.push("Choose a career and assignment, then roll Qualification (2D + characteristic DM); fail and you are drafted or become a Drifter.");
-    steps.push("Each four-year term: Survival (a natural 2 always fails, sending you to the Mishap table), Events, an optional Commission then Advancement, Skills & Training, and Ageing from term 4.");
-    steps.push("Muster out: Cash and Material Benefits (max 3 cash rolls) plus any pension, then the Connections step ties Travellers together.");
-    return steps;
-  }
-  if (mt) {
-    steps.push("Roll a homeworld (PM p. 12) — its tech / atmosphere / law constrain which careers you may enlist in.");
-  }
-  if (mt && useAcg) {
-    steps.push("Optional pre-career: college, service academy, medical or flight school. Honors graduates earn brownie points and special skills.");
-    steps.push("Pick a pathway (Mercenary / Navy / Scout / Merchant Prince) and roll for enlistment.");
-    steps.push("Each four-year term cycles annually: assignment roll, survival, decoration, promotion, skills. Schools, command duty, court martial, brownie point spend all in play.");
-  } else {
-    steps.push("Choose a service or take random; the enlistment roll determines acceptance vs. draft.");
-    steps.push(
-      ct
-        ? "Each four-year term: survival, commission and promotion, skills, then aging from age 34+. Reenlistment at term end."
-        : "Each four-year term: survival, position/commission, promotion, special duty, skills, aging from age 34+. Reenlistment at term end.",
-    );
-  }
-  steps.push("Muster out: cash and material benefits (passages, weapons, ships, TAS) determined by rank, terms, and rolls.");
-  return steps;
+function workflowStepsFor(meta: EditionMeta, useAcg: boolean): string[] {
+  const { workflowSteps } = meta;
+  return useAcg && workflowSteps.acg ? workflowSteps.acg : workflowSteps.default;
 }
 
 function EditionWorkflow({
-  editionId,
+  meta,
   useAcg,
 }: {
-  editionId: string;
+  meta: EditionMeta;
   useAcg: boolean;
 }) {
-  const steps = workflowStepsFor(editionId, useAcg);
+  const steps = workflowStepsFor(meta, useAcg);
   return (
     <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
       <div className={SECTION_LABEL}>What happens next</div>
@@ -197,7 +169,7 @@ export function StartPhase({
           </p>
         </div>
 
-        <EditionWorkflow editionId={edition} useAcg={useAcg && hasAcg} />
+        {selected && <EditionWorkflow meta={selected} useAcg={useAcg && hasAcg} />}
 
         <div className="space-y-3">
           {selected?.supportsInteractive && (

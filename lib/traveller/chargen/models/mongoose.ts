@@ -298,6 +298,7 @@ export const mongooseModel: ChargenModel = {
   id: "mongoose",
   label: "Mongoose Traveller 2e",
   entryPhase: () => "career",
+  init: (ch) => { ensureState(ch); },
   execute(ch: Character, action: FrontierAction): ChargenResult {
     switch (action.kind) {
       case "enlist":

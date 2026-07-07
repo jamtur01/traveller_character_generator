@@ -528,6 +528,11 @@ const EditionMetaSchema = z.looseObject({
   displayName: z.string(),
   rulebooks: z.array(z.string()),
   chargenModels: z.array(z.string()).min(1),
+  defaultChargenModel: z.string(),
+  workflowSteps: z.looseObject({
+    default: z.array(z.string()).min(1),
+    acg: z.array(z.string()).min(1).optional(),
+  }),
   status: z.enum(["active", "data-only"]).optional(),
   supportsInteractive: z.boolean().optional(),
   year: z.number().optional(),

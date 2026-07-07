@@ -3,6 +3,15 @@
   "edition": {
     "id": "ct-classic",
     "chargenModels": ["classic"],
+    "defaultChargenModel": "classic",
+    "workflowSteps": {
+      "default": [
+        "Roll 2D for each of the six characteristics (Str, Dex, End, Int, Edu, Soc).",
+        "Choose a service or take random; the enlistment roll determines acceptance vs. draft.",
+        "Each four-year term: survival, commission and promotion, skills, then aging from age 34+. Reenlistment at term end.",
+        "Muster out: cash and material benefits (passages, weapons, ships, TAS) determined by rank, terms, and rolls."
+      ]
+    },
     "name": "Classic Traveller",
     "displayName": "Classic Traveller (TTB + CotI)",
     "rulebooks": ["The Traveller Book", "Citizens of the Imperium"],

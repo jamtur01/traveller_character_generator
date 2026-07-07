@@ -34,7 +34,6 @@ import { getChargenModel } from "@/lib/traveller/chargen/modelRegistry";
 import "@/lib/traveller/chargen/models/classic";
 import "@/lib/traveller/chargen/models/acg";
 import "@/lib/traveller/chargen/models/mongoose";
-import { freshMongooseState } from "@/lib/traveller/engine/mongoose/state";
 
 export type ChargenPhase =
   | "start"
@@ -147,11 +146,15 @@ export function startCareer(opts: StartCareerOptions): ChargenSnapshot {
       getEdition(opts.edition).data.advancedCharacterGeneration?.common?.startAge,
       "advancedCharacterGeneration.common.startAge", "PM p. 44",
     );
-  } else if (getEdition(opts.edition).meta.chargenModels.includes("mongoose")) {
-    ch.chargenModelId = "mongoose";
-    ch.mongooseState = freshMongooseState();
+  } else {
+    // Non-ACG: enter the edition's declared default model. No hardcoded
+    // "mongoose"/"classic" precedence — the id comes from edition JSON, and
+    // each model does its own per-character setup in init (below).
+    ch.chargenModelId = getEdition(opts.edition).meta.defaultChargenModel;
   }
-  return { character: ch, phase: getChargenModel(ch.chargenModelId).entryPhase(ch) };
+  const model = getChargenModel(ch.chargenModelId);
+  model.init?.(ch);
+  return { character: ch, phase: model.entryPhase(ch) };
 }
 
 // ---------------------------------------------------------------------------

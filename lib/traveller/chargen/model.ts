@@ -41,6 +41,11 @@ export interface ChargenModel {
   readonly label: string;
   /** Phase to show immediately after the model is selected at startCareer. */
   entryPhase(ch: Character): ChargenPhase;
+  /** Optional one-time per-character setup, run by startCareer right after the
+   *  model id is assigned and before entryPhase. A model allocates its own
+   *  state here (the mongoose flow creates mongooseState); models needing none
+   *  omit it. */
+  init?(ch: Character): void;
   /** Execute one action on the already-cloned, decision-cursor-armed working
    *  character. Mutates `ch` and returns the routing (+ optional UI hints).
    *  May throw ChoicePendingError — caught by the session's runAction
