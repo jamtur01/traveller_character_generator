@@ -29,11 +29,10 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import {
   createPathwaySpecRegistry, runReenlist,
   clearRetention, consumeRetainedAssignment, rollDieRow,
-  EnlistmentValidationError,
+  rollAcgEnlistment, commitStartingRank, resolveDraft,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
-import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "scout";
 
@@ -122,37 +121,31 @@ export function scoutEnlist(ch: Character): void {
 
   // PM p. 56: college graduates auto-enlist; college honors graduates start
   // at IS-10 (not IS-1); college graduates go into the Bureaucracy, others
-  // into the Field. Read pre-career state to honor these rules.
-  const acg = ch.requireAcgState();
+  // into the Field. Non-college scouts roll to enlist; a failed roll routes
+  // through the draft, accepted only when 1D lands on the "Scouts" result.
   if (hasCollege) {
     ch.log(ev.enlistmentAttempt("Imperial Scout Service (college graduate)", 0, 0, 0, true));
-    acg.rankCode = hasCollegeHonors
+    commitStartingRank(ch, hasCollegeHonors
       ? requireRule(
           data.enlistment.collegeHonorsStartingRank,
           "acg.scout.enlistment.collegeHonorsStartingRank", "PM p. 56",
         )
-      : data.enlistment.startingRank;
-    acg.isOfficer = false;
+      : data.enlistment.startingRank);
     ch.requireScoutAcg().division = requireRule(
       data.divisionPlacement?.collegeGraduate,
       "acg.scout.divisionPlacement.collegeGraduate", "PM p. 56",
     );
   } else {
-    const dm = evaluateDM(data.enlistment.dms, { attributes: ch.attributes, terms: ch.terms });
-    const r = ch.rng.roll(2);
-    const succeeded = r + dm >= data.enlistment.target;
-    ch.log(ev.enlistmentAttempt("Imperial Scout Service", r, dm, data.enlistment.target, succeeded));
-    if (succeeded) {
-      acg.rankCode = data.enlistment.startingRank;
-      acg.isOfficer = false;
+    if (rollAcgEnlistment(ch, data.enlistment, "Imperial Scout Service")) {
+      commitStartingRank(ch, data.enlistment.startingRank);
     } else {
-      const dr = ch.rng.roll(1);
-      if (data.enlistment.draft.results[String(dr)] !== "Scouts") {
-        throw new EnlistmentValidationError("Scout draft rejection — choose another path");
-      }
-      ch.drafted = true;
-      acg.rankCode = data.enlistment.startingRank;
-      ch.log(ev.drafted("Scout Service"));
+      resolveDraft(ch, data.enlistment.draft, {
+        rejectionMessage: "Scout draft rejection — choose another path",
+        onResult: () => {
+          ch.log(ev.drafted("Scout Service"));
+          commitStartingRank(ch, data.enlistment.startingRank);
+        },
+      });
     }
     ch.requireScoutAcg().division = requireRule(
       data.divisionPlacement?.default,
