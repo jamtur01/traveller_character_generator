@@ -158,14 +158,39 @@ function addOneServiceTags(
   }
 }
 
-/** Service-model tags (classic / MT basic). Empty for careers-model editions
+/** Service-model tags (classic / MT basic): every service reachable through
+ *  the enlistment/draft flow OR by an enlistment `automaticIf` auto-enrolment
+ *  (CT/MT nobles, Soc 10+ CotI). Enlistable services are a player choice;
+ *  drafted and auto-enrolled ones are not. Empty for careers-model editions
  *  (getEnlistableServices returns []). */
 function addServiceTags(u: Map<string, TagMeta>, editionId: string): void {
   const enlistable = getEnlistableServices(editionId);
+  const covered = new Set<ServiceKey>(enlistable);
   for (const service of enlistable) addOneServiceTags(u, editionId, service, true);
   for (const service of getDraftServices(editionId)) {
-    if (!enlistable.includes(service)) addOneServiceTags(u, editionId, service, false);
+    if (covered.has(service)) continue;
+    addOneServiceTags(u, editionId, service, false);
+    covered.add(service);
   }
+  for (const service of autoEnrolledServices(editionId)) {
+    if (covered.has(service)) continue;
+    addOneServiceTags(u, editionId, service, false);
+    covered.add(service);
+  }
+}
+
+/** Services auto-enrolled by an enlistment `automaticIf` gate (CT/MT nobles,
+ *  Soc 10+ via random enlistment): reachable and served like any service, but
+ *  never voluntarily enlisted, so getEnlistableServices drops them. Sourced
+ *  from the service JSON (checks.enlistment.automaticIf) — like the
+ *  optionDomains auto-enrolled filter — never a literal list. */
+function autoEnrolledServices(editionId: string): ServiceKey[] {
+  const services = getEdition(editionId).data.services;
+  const out: ServiceKey[] = [];
+  for (const key of Object.keys(services) as ServiceKey[]) {
+    if (services[key]?.checks.enlistment.automaticIf) out.push(key);
+  }
+  return out;
 }
 
 /** Cascade-pool tags: every member of every declared cascade pool (a cascade

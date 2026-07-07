@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# coverage ledger report (regenerated each run by tests/coverageLedger.test.ts)
+/coverage-report/
+
 # next.js
 /.next/
 /out/

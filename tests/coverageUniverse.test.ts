@@ -19,7 +19,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { coverageUniverse, type TagMeta } from "@/tests/_coverageUniverse";
 import { touchedTags } from "@/tests/_coverageRecorder";
 import { walkAcg, walkBasic, walkMongoose } from "@/tests/_walker";
-import { getEnlistableServices } from "@/lib/traveller/services";
+import { getDraftServices, getEnlistableServices } from "@/lib/traveller/services";
+import { getEdition } from "@/lib/traveller/editions";
 import { cascadePoolByKey } from "@/lib/traveller/engine/cascadeMap";
 import { Character } from "@/lib/traveller/character";
 import { musterChoice } from "@/lib/traveller/chargen/session";
@@ -39,7 +40,8 @@ describe("coverageUniverse — registry-derived path-element enumeration", () =>
   it("is non-empty with plausible per-edition cardinality", () => {
     // Fail-loud already guarantees non-empty; the ranges catch a whole element
     // kind silently dropping out (they are wide on purpose — presence, not exact
-    // counts). Current build: ct 358, mt 464, mongoose 275, model-wide 9.
+    // counts). Current build: ct 376, mt 492, mongoose 275, model-wide 9 (the
+    // ct/mt totals include the auto-enrolled Nobility service).
     expect(universe.size).toBeGreaterThan(800);
     const perEdition = new Map<string, number>();
     for (const meta of universe.values()) {
@@ -72,14 +74,24 @@ describe("coverageUniverse — registry-derived path-element enumeration", () =>
     expect(tagsOf("outcome", null).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("sources svc tags from getEnlistableServices (not a literal list)", () => {
+  it("sources svc tags from the registry (enlistable ∪ draft ∪ auto-enrolled)", () => {
     for (const ed of ["ct-classic", "mt-megatraveller"]) {
-      const expected = new Set(getEnlistableServices(ed).map((s) => `svc:${ed}:${s}`));
+      const autoEnrolled = Object.entries(getEdition(ed).data.services)
+        .filter(([, svc]) => svc?.checks.enlistment.automaticIf)
+        .map(([key]) => key);
+      const expected = new Set(
+        [...getEnlistableServices(ed), ...getDraftServices(ed), ...autoEnrolled]
+          .map((s) => `svc:${ed}:${s}`),
+      );
       const actual = new Set(tagsOf("svc", ed));
-      // Every enlistable service is enumerated; the universe adds nothing beyond
-      // enlistable ∪ draft (and draft ⊆ enlistable in both editions today).
+      // Every registry-reachable service is enumerated and the universe adds
+      // nothing beyond enlistable ∪ draft ∪ auto-enrolled — proving svc tags are
+      // sourced from the accessors, not a hardcoded list.
       for (const tag of expected) expect(actual.has(tag)).toBe(true);
       expect(actual.size).toBe(expected.size);
+      // nobles carries an enlistment automaticIf (Soc 10+, CotI/PM): auto-enrolled,
+      // never in the enlistable pool, yet a real served career — so it IS enumerated.
+      expect(actual.has(`svc:${ed}:nobles`)).toBe(true);
     }
   });
 

@@ -43,8 +43,11 @@
 //     not career-scoped) and mongoose muster columns/rows (logged as free-text
 //     `raw` events / folded into skill/attr/benefit grants, not a typed
 //     column-carrying event) — not post-hoc derivable without text-scraping.
-//   - nobles auto-enrollment (outside the enlistment/draft flow the svc
-//     universe enumerates).
+//   NOTE: nobles auto-enrollment (automaticIf-gated, Soc 10+, CotI/PM) IS a
+//   real chargen path — a Soc-10+ character auto-enrols and serves in it — so
+//   _coverageUniverse enumerates it as an auto-enrolled (non-player-choice)
+//   service and recordClassic emits its svc/skilltable/muster tags like any
+//   other service.
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
