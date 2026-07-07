@@ -218,8 +218,12 @@ function checkRank(ch: Character): void {
   return checkRankClassic(ch);
 }
 
-/** CT/MT basic: rank is an index into services.<svc>.ranks; it may not exceed
- *  the highest index that carries a title (scouts: all null → rank must be 0). */
+/** CT/MT basic: rank is an index into services.<svc>.ranks; it must lie within
+ *  [0, highest index that carries a title] (scouts: all null → rank must be 0).
+ *  Only the bound is an invariant. An intermediate rank with an EMPTY title is
+ *  legal, not a violation: CT's sparse ladders name only some rungs — barbarians
+ *  are titled only at rank 2 ("Warrior") and rank 5 ("Chief"), so ranks 1/3/4
+ *  are real, untitled promotion levels a character can leave service at. */
 function checkRankClassic(ch: Character): void {
   const svc = serviceData(ch);
   if (!svc) return;
@@ -232,9 +236,6 @@ function checkRankClassic(ch: Character): void {
       `rank ${ch.rank} outside [0,${maxIndex}] for service "${ch.service}" ` +
       `(highest titled index in services.${ch.service}.ranks is ${maxIndex})`,
     );
-  }
-  if (ch.rank > 0 && !ranks[ch.rank]) {
-    fail("rank", `rank ${ch.rank} has no title in services.${ch.service}.ranks`);
   }
 }
 
