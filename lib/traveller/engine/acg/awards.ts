@@ -111,7 +111,28 @@ export function resolveDecorationTier(
   return null;
 }
 
-interface CourtMartialOutcome { roll: number; result: string }
+/** Structured court-martial die-result effect (PM p. 47), the machine source
+ *  of truth that replaced the prose-regex interpreter. Discriminated on
+ *  `kind`; each effect mutates engine state and the terminal chargen
+ *  disposition is resolved once after every effect in a row applies. */
+type CourtMartialEffect =
+  | { kind: "reprimand"; promotionPenalty: number }
+  | { kind: "reduceRank"; by: number }
+  | { kind: "jailMonths"; dice: string }
+  | { kind: "jailYears"; dice: string }
+  | { kind: "dishonorableDischarge" }
+  | {
+      kind: "deathSentence";
+      escape: boolean;
+      bountyKCr: number;
+      guardsKilledDice?: string;
+    };
+
+interface CourtMartialOutcome {
+  roll: number;
+  result: string;
+  effects: CourtMartialEffect[];
+}
 interface CourtMartialDmWhen {
   rankBetween?: { letter: string; min: number; max: number };
   rankAtLeast?: { letter: string; min: number };
@@ -229,7 +250,7 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   const result = outcome.result;
   ch.log(ev.courtMartial(result));
 
-  applyCourtMartialResult(ch, result);
+  applyCourtMartialEffects(ch, outcome.effects);
 }
 
 function resultDmWhenMatches(
@@ -263,149 +284,161 @@ function resultDmWhenMatches(
   return true;
 }
 
-function applyCourtMartialResult(ch: Character, result: string): void {
+/** The single terminal chargen disposition a court-martial row may reach,
+ *  accumulated while its effects apply and settled once at the end. */
+interface CourtMartialDisposition {
+  death?: Extract<CourtMartialEffect, { kind: "deathSentence" }>;
+  dishonorable: boolean;
+  jailYearsReason?: string;
+}
+
+/** Apply a court-martial row's structured effects (PM p. 47), then resolve
+ *  its terminal chargen disposition once. Effects mutate engine state in
+ *  array order so sub-dice (jail term, escape guards) draw from the RNG in
+ *  the golden-locked sequence; a single row may compose several effects
+ *  (e.g. "Jail 2D months; reduce rank -2"), so each applies in turn before
+ *  the disposition (death/escape, dishonorable discharge, jail-years
+ *  muster-out) is settled. */
+function applyCourtMartialEffects(ch: Character, effects: CourtMartialEffect[]): void {
   if (!ch.acgState) return;
-  const lc = result.toLowerCase();
-  if (lc.includes("dismissed")) return;
-  // Death penalty / escape is terminal and mutually exclusive with the
-  // lesser disciplinary outcomes — resolve it on its own.
-  if (lc.includes("death")) {
-    applyDeathPenalty(ch, result, lc);
-    return;
-  }
-  applyDisciplinaryResult(ch, result, lc);
+  const disp: CourtMartialDisposition = { dishonorable: false };
+  for (const eff of effects) applyCourtMartialEffect(ch, eff, disp);
+  resolveCourtMartialDisposition(ch, disp);
 }
 
-/** Apply the composable disciplinary outcomes. A single court-martial
- *  result may combine several effects — result 4 is "Jail 2D months;
- *  reduce rank -2" and results 5-7 are "Jail ND years; dishonorable
- *  discharge" (manual p. 47) — so each named effect is applied in turn,
- *  then the terminal disposition (jail muster-out or discharge) resolves
- *  once. The pre-fix code returned after the first matching branch, so a
- *  combined result dropped either the jail sentence (result 4) or the
- *  jail-years aging (results 5-7). */
-function applyDisciplinaryResult(ch: Character, result: string, lc: string): void {
+function applyCourtMartialEffect(
+  ch: Character, eff: CourtMartialEffect, disp: CourtMartialDisposition,
+): void {
+  switch (eff.kind) {
+    case "reprimand":
+      applyReprimand(ch, eff.promotionPenalty);
+      return;
+    case "reduceRank":
+      reduceRank(ch, eff.by);
+      return;
+    case "jailMonths":
+      applyJailMonths(ch, eff.dice);
+      return;
+    case "jailYears":
+      disp.jailYearsReason = applyJailYears(ch, eff.dice);
+      return;
+    case "dishonorableDischarge":
+      applyDishonorableDischarge(ch);
+      disp.dishonorable = true;
+      return;
+    case "deathSentence":
+      applyDeathSentence(ch, eff);
+      disp.death = eff;
+      return;
+  }
+}
+
+/** Reprimand: -N to the next promotion roll (PM p. 47). */
+function applyReprimand(ch: Character, promotionPenalty: number): void {
   const st = ch.acgState;
   if (!st) return;
-
-  // Reprimand: -N to next promotion. Manual p. 47 lists -1 and -3 variants;
-  // the magnitude is parsed from the JSON result string and must be present.
-  if (lc.includes("reprimand")) {
-    const m = result.match(/-(\d+)/);
-    if (!m) {
-      throw new Error(
-        `Court-martial result "${result}" names a reprimand without a numeric ` +
-        `promotion penalty (PM p. 47) — fix common.courtMartial.dieResults.`,
-      );
-    }
-    st.nextPromotionPenalty =
-      (st.nextPromotionPenalty ?? 0) - parseInt(m[1]!, 10);
-  }
-
-  // Reduce rank by N — magnitude parsed from the JSON result string.
-  if (lc.includes("reduce rank")) {
-    const m = result.match(/reduce rank\s*-?(\d+)/i);
-    if (!m) {
-      throw new Error(
-        `Court-martial result "${result}" names a rank reduction without a ` +
-        `numeric magnitude (PM p. 47) — fix common.courtMartial.dieResults.`,
-      );
-    }
-    reduceRank(ch, parseInt(m[1]!, 10));
-  }
-
-  // Dishonorable discharge — the muster-roll penalty and pension forfeit
-  // are declared in common.courtMartial.dishonorableDischarge (PM p. 47)
-  // and captured as flags consulted at muster.
-  const dishonorable = lc.includes("dishonorable") || /\bdd\b/i.test(result);
-  if (dishonorable) {
-    const dd = requireRule(
-      (commonAcg(ch)?.courtMartial as CourtMartialSpec | undefined)
-        ?.dishonorableDischarge,
-      "common.courtMartial.dishonorableDischarge", "PM p. 47",
-    );
-    st.musterRollPenalty = (st.musterRollPenalty ?? 0) - dd.musterRollPenalty;
-    if (dd.pensionForfeit) st.pensionForfeit = true;
-    ch.log(ev.statusChange(
-      "dishonorablyDischarged",
-      `-${dd.musterRollPenalty} mustering-out rolls, no pension`,
-    ));
-  }
-
-  // Jail. "Jail 2D months" serves as the next year of service (no aging or
-  // muster-out); a 1D/2D-year sentence ages the character and forces
-  // muster-out (manual p. 47). A discharge without a jail sentence still
-  // ends chargen.
-  if (lc.includes("jail")) {
-    applyJailSentence(ch, result, dishonorable);
-  } else if (dishonorable) {
-    ch.endChargenDischarged();
-  }
+  st.nextPromotionPenalty = (st.nextPromotionPenalty ?? 0) - promotionPenalty;
 }
 
-/** Apply a jail sentence. A 2D-month sentence consumes the next year of
- *  service in place of the normal cycle; a 1D/2D-year sentence ages the
- *  character by the rolled term and forces muster-out. `discharged` routes
- *  the terminal state through endChargenDischarged (dishonorable discharge)
- *  rather than a plain forced retirement. */
-function applyJailSentence(ch: Character, result: string, discharged: boolean): void {
-  if (/jail\s+2D\s+months/i.test(result)) {
-    const months = ch.rng.roll(2);
-    ch.log(ev.statusChange(
-      "jailed",
-      `${months} months — consumes this year of service`,
-    ));
-    return;
-  }
-  const yearsMatch = result.match(/jail\s+(\d+)D\s+years/i);
-  let served = "imprisoned";
-  if (yearsMatch) {
-    const dice = parseInt(yearsMatch[1]!, 10);
-    const years = ch.rng.roll(dice);
-    ch.age += years;
-    // Retain the jail-sentence years as an explicit summand so chronological
-    // age stays exactly reconstructable (PM p. 47). st is not in scope here.
-    if (ch.acgState) {
-      ch.acgState.imprisonmentAgeYears = (ch.acgState.imprisonmentAgeYears ?? 0) + years;
-    }
-    served = `imprisoned ${years} years (${dice}D rolled)`;
-  }
-  if (discharged) {
-    ch.log(ev.statusChange("jailed", served));
-    ch.endChargenDischarged();
-  } else {
-    ch.endChargenRetired(served, false);
-  }
+/** Jail-months: a 2D-month sentence serves as the next year of service —
+ *  no aging, no muster-out (PM p. 47). Logs the sentence only. */
+function applyJailMonths(ch: Character, dice: string): void {
+  const months = ch.rng.roll(
+    parseDieCount(dice, "courtMartial.effect.jailMonths.dice"),
+  );
+  ch.log(ev.statusChange(
+    "jailed", `${months} months — consumes this year of service`,
+  ));
 }
 
-/** Death penalty / escape. The character has a price on his head and
- *  receives no mustering-out benefits or pension. Manual p. 47 lists three
- *  forms; we parse the bounty value and any "killing ND guards" suffix. */
-function applyDeathPenalty(ch: Character, result: string, lc: string): void {
+/** Jail-years: ages the character by the rolled term and records it as an
+ *  explicit imprisonment summand so chronological age stays reconstructable
+ *  (PM p. 47). Logs the sentence and returns the muster-out reason for the
+ *  terminal disposition. */
+function applyJailYears(ch: Character, dice: string): string {
+  const years = ch.rng.roll(
+    parseDieCount(dice, "courtMartial.effect.jailYears.dice"),
+  );
+  ch.age += years;
+  const st = ch.acgState;
+  if (st) {
+    st.imprisonmentAgeYears = (st.imprisonmentAgeYears ?? 0) + years;
+  }
+  const reason = `imprisoned ${years} years (${dice} rolled)`;
+  ch.log(ev.statusChange("jailed", reason));
+  return reason;
+}
+
+/** Dishonorable discharge (PM p. 47): the muster-roll penalty and pension
+ *  forfeit are declared in common.courtMartial.dishonorableDischarge and
+ *  captured as flags consulted at muster. */
+function applyDishonorableDischarge(ch: Character): void {
   const st = ch.acgState;
   if (!st) return;
-  st.musterRollPenalty = (st.musterRollPenalty ?? 0) - 99; // zero out benefits
+  const dd = requireRule(
+    (commonAcg(ch)?.courtMartial as CourtMartialSpec | undefined)
+      ?.dishonorableDischarge,
+    "common.courtMartial.dishonorableDischarge", "PM p. 47",
+  );
+  st.musterRollPenalty = (st.musterRollPenalty ?? 0) - dd.musterRollPenalty;
+  if (dd.pensionForfeit) st.pensionForfeit = true;
+  ch.log(ev.statusChange(
+    "dishonorablyDischarged",
+    `-${dd.musterRollPenalty} mustering-out rolls, no pension`,
+  ));
+}
+
+/** Death sentence (PM p. 47): the character draws no mustering-out benefits
+ *  or pension. `musterRollPenalty -= 99` is a documented arithmetic sentinel
+ *  — it pushes every muster roll below the lowest table row so zero benefits
+ *  are drawn. A price (bountyKCr) rides on his head; an escape may kill
+ *  guards. The escape/execution disposition resolves afterwards. */
+function applyDeathSentence(
+  ch: Character, eff: Extract<CourtMartialEffect, { kind: "deathSentence" }>,
+): void {
+  const st = ch.acgState;
+  if (!st) return;
+  st.musterRollPenalty = (st.musterRollPenalty ?? 0) - 99;
   st.pensionForfeit = true;
-  const bountyMatch = result.match(/KCr(\d+)/i);
-  if (bountyMatch) {
-    st.bountyOnHeadKCr = parseInt(bountyMatch[1]!, 10);
+  st.bountyOnHeadKCr = eff.bountyKCr;
+  if (eff.guardsKilledDice) {
+    st.guardsKilledInEscape = ch.rng.roll(
+      parseDieCount(
+        eff.guardsKilledDice, "courtMartial.effect.deathSentence.guardsKilledDice",
+      ),
+    );
   }
-  const guardsMatch = result.match(/killing\s+(\d+)D\s+guards/i);
-  if (guardsMatch) {
-    const dice = parseInt(guardsMatch[1]!, 10);
-    const killed = ch.rng.roll(dice);
-    st.guardsKilledInEscape = killed;
+}
+
+/** Resolve the single terminal chargen disposition once every effect has
+ *  applied (PM p. 47). Death outranks a dishonorable discharge, which
+ *  outranks a plain jail-years muster-out; the lesser disciplinary rows
+ *  (jail-months, reprimand, rank reduction) do not end chargen. */
+function resolveCourtMartialDisposition(
+  ch: Character, disp: CourtMartialDisposition,
+): void {
+  const st = ch.acgState;
+  if (!st) return;
+  if (disp.death) {
+    if (disp.death.escape) {
+      const bountyTxt = st.bountyOnHeadKCr !== undefined
+        ? ` Bounty: KCr${st.bountyOnHeadKCr}.`
+        : "";
+      const killedTxt = st.guardsKilledInEscape
+        ? ` Killed ${st.guardsKilledInEscape} guards in escape.`
+        : "";
+      ch.endChargenRetired(`death sentence; escaped.${bountyTxt}${killedTxt}`, false);
+    } else {
+      ch.endChargenDeceased("executed (death sentence; no benefits or pension)");
+    }
+    return;
   }
-  if (lc.includes("escape")) {
-    const bountyTxt = st.bountyOnHeadKCr !== undefined
-      ? ` Bounty: KCr${st.bountyOnHeadKCr}.`
-      : "";
-    const killedTxt = st.guardsKilledInEscape
-      ? ` Killed ${st.guardsKilledInEscape} guards in escape.`
-      : "";
-    ch.endChargenRetired(`death sentence; escaped.${bountyTxt}${killedTxt}`, false);
-  } else {
-    ch.endChargenDeceased("executed (death sentence; no benefits or pension)");
+  if (disp.dishonorable) {
+    ch.endChargenDischarged();
+    return;
+  }
+  if (disp.jailYearsReason !== undefined) {
+    ch.endChargenRetired(disp.jailYearsReason, false);
   }
 }
 

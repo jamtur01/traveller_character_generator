@@ -3906,54 +3906,93 @@
             { "when": { "currentlyInCommand": true }, "dm": 2 }
           ]
         },
+        "$ruleEffects": "PM p. 47: each dieResults row's effects[] is the machine source of truth applied to engine state; the sibling result prose is the human/PM-cited label. Kinds: reprimand (nextPromotionPenalty), reduceRank, jailMonths (2D — consumes the year, no aging), jailYears (1D/2D — ages + imprisonmentAgeYears summand, forced muster-out), dishonorableDischarge (muster penalty + pension forfeit), deathSentence (zero benefits, bounty, optional escape guards).",
         "dieResults": [
           {
             "roll": -1,
-            "result": "Case dismissed"
+            "result": "Case dismissed",
+            "effects": []
           },
           {
             "roll": 0,
-            "result": "Reprimand; -1 to next promotion"
+            "result": "Reprimand; -1 to next promotion",
+            "effects": [
+              { "kind": "reprimand", "promotionPenalty": 1 }
+            ]
           },
           {
             "roll": 1,
-            "result": "Reprimand; -3 to next promotion"
+            "result": "Reprimand; -3 to next promotion",
+            "effects": [
+              { "kind": "reprimand", "promotionPenalty": 3 }
+            ]
           },
           {
             "roll": 2,
-            "result": "Reduce rank -1"
+            "result": "Reduce rank -1",
+            "effects": [
+              { "kind": "reduceRank", "by": 1 }
+            ]
           },
           {
             "roll": 3,
-            "result": "Reduce rank -2"
+            "result": "Reduce rank -2",
+            "effects": [
+              { "kind": "reduceRank", "by": 2 }
+            ]
           },
           {
             "roll": 4,
-            "result": "Jail 2D months; reduce rank -2"
+            "result": "Jail 2D months; reduce rank -2",
+            "effects": [
+              { "kind": "jailMonths", "dice": "2D" },
+              { "kind": "reduceRank", "by": 2 }
+            ]
           },
           {
             "roll": 5,
-            "result": "Jail 1D years; dishonorable discharge"
+            "result": "Jail 1D years; dishonorable discharge",
+            "effects": [
+              { "kind": "dishonorableDischarge" },
+              { "kind": "jailYears", "dice": "1D" }
+            ]
           },
           {
             "roll": 6,
-            "result": "Jail 2D years; dishonorable discharge"
+            "result": "Jail 2D years; dishonorable discharge",
+            "effects": [
+              { "kind": "dishonorableDischarge" },
+              { "kind": "jailYears", "dice": "2D" }
+            ]
           },
           {
             "roll": 7,
-            "result": "Jail 2D years; dishonorable discharge"
+            "result": "Jail 2D years; dishonorable discharge",
+            "effects": [
+              { "kind": "dishonorableDischarge" },
+              { "kind": "jailYears", "dice": "2D" }
+            ]
           },
           {
             "roll": 8,
-            "result": "Death; escape; KCr10 reward"
+            "result": "Death; escape; KCr10 reward",
+            "effects": [
+              { "kind": "deathSentence", "escape": true, "bountyKCr": 10 }
+            ]
           },
           {
             "roll": 9,
-            "result": "Death; escape; KCr10 reward"
+            "result": "Death; escape; KCr10 reward",
+            "effects": [
+              { "kind": "deathSentence", "escape": true, "bountyKCr": 10 }
+            ]
           },
           {
             "roll": 10,
-            "result": "Death; escape, killing 1D guards; KCr100 reward"
+            "result": "Death; escape, killing 1D guards; KCr100 reward",
+            "effects": [
+              { "kind": "deathSentence", "escape": true, "bountyKCr": 100, "guardsKilledDice": "1D" }
+            ]
           }
         ]
       },

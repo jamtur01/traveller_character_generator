@@ -413,6 +413,31 @@ const PathwayDataSchema = z.looseObject({
   ).optional(),
 });
 
+// PM p. 47 court-martial die-result effects: the machine source of truth (a
+// discriminated union on `kind`) that replaced the former prose-regex
+// interpreter. The sibling `result` string stays as the human/PM-cited label.
+const CourtMartialEffectSchema = z.discriminatedUnion("kind", [
+  z.looseObject({ kind: z.literal("reprimand"), promotionPenalty: z.number() }),
+  z.looseObject({ kind: z.literal("reduceRank"), by: z.number() }),
+  z.looseObject({ kind: z.literal("jailMonths"), dice: z.string() }),
+  z.looseObject({ kind: z.literal("jailYears"), dice: z.string() }),
+  z.looseObject({ kind: z.literal("dishonorableDischarge") }),
+  z.looseObject({
+    kind: z.literal("deathSentence"),
+    escape: z.boolean(),
+    bountyKCr: z.number(),
+    guardsKilledDice: z.string().optional(),
+  }),
+]);
+
+const CourtMartialSchema = z.looseObject({
+  dieResults: z.array(z.looseObject({
+    roll: z.number(),
+    result: z.string(),
+    effects: z.array(CourtMartialEffectSchema),
+  })).optional(),
+});
+
 const AcgCommonSchema = z.looseObject({
   // Record values allow $rule / $comment citation strings alongside the
   // structured objects (the same dual-shape pattern used by RulesSchema
@@ -421,7 +446,7 @@ const AcgCommonSchema = z.looseObject({
     z.string(),
     z.union([z.looseObject({}), z.string()]),
   ).optional(),
-  courtMartial: z.looseObject({}).optional(),
+  courtMartial: CourtMartialSchema.optional(),
   browniePoints: z.looseObject({
     awards: z.array(z.looseObject({
       event: z.string(),
