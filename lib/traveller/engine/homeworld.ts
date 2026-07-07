@@ -41,12 +41,6 @@ export interface HomeworldData {
   columnDms: Array<Predicate & { column?: string; dm: number }>;
   defaultSkills: Array<Predicate & { skill: string; level: number; source?: string }>;
   careerAvailability: Array<{
-    /** Legacy form: deny services if homeworld tech is in this list. */
-    denyIfTechIn?: string[];
-    /** Legacy form: deny services if homeworld tech is NOT in this list. */
-    denyIfTechNotIn?: string[];
-    /** Legacy form. */
-    denyIfSocialBelow?: number;
     /** PM p. 12 form: require homeworld tech ≥ this code. */
     requiresTechAtLeast?: string;
     /** PM p. 12 form: require homeworld tech equals exactly this code
@@ -76,6 +70,37 @@ function meetsOrder(
   const want = order.indexOf(threshold);
   if (have < 0 || want < 0) return false;
   return have >= want;
+}
+
+// The gate keys availableServicesForHomeworld knows how to enforce, plus
+// the `services` target. A careerAvailability rule carrying any other key
+// would be silently ignored, so we reject it loudly instead.
+const KNOWN_GATE_KEYS: Record<string, true> = {
+  requiresTechAtLeast: true, requiresTechExactly: true,
+  requiresPopulationAtLeast: true, requiresLawAtLeast: true,
+  requiresAtmosphereAtLeast: true, requiresHydrosphereAtLeast: true,
+  requiresSocialAtLeast: true, services: true,
+};
+
+const gateKeysChecked = new Set<string>();
+
+/** Fail loud if any careerAvailability rule declares a gate key the engine
+ *  does not handle — a future JSON gate dimension must not be silently
+ *  ignored. Checked once per edition (first use), not per character. */
+function assertKnownGateKeys(editionId: string, data: HomeworldData): void {
+  if (gateKeysChecked.has(editionId)) return;
+  for (const rule of data.careerAvailability) {
+    for (const key of Object.keys(rule)) {
+      if (!(key in KNOWN_GATE_KEYS)) {
+        throw new Error(
+          `Edition "${editionId}": homeworld.careerAvailability rule has ` +
+          `unknown gate key "${key}" (handled keys: ` +
+          `${Object.keys(KNOWN_GATE_KEYS).join(", ")}).`,
+        );
+      }
+    }
+  }
+  gateKeysChecked.add(editionId);
 }
 
 function dataFor(editionId: string): HomeworldData | null {
@@ -171,15 +196,10 @@ export function availableServicesForHomeworld(
 ): ServiceKey[] {
   const data = dataFor(ch.editionId);
   if (!data) return allEnlistable;
+  assertKnownGateKeys(ch.editionId, data);
   const denied = new Set<string>();
   for (const rule of data.careerAvailability) {
     let triggers = false;
-    // Legacy deny-list form.
-    if (rule.denyIfTechIn?.includes(hw.tech)) triggers = true;
-    if (rule.denyIfTechNotIn && !rule.denyIfTechNotIn.includes(hw.tech)) triggers = true;
-    if (rule.denyIfSocialBelow !== undefined && ch.attributes.social < rule.denyIfSocialBelow) {
-      triggers = true;
-    }
     // PM p. 12 requirement form: deny when any "requires" condition fails.
     if (rule.requiresTechAtLeast &&
         !meetsOrder(hw.tech, rule.requiresTechAtLeast, data.techCodeOrder)) {
