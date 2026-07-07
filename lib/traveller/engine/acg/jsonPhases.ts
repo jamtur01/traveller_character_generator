@@ -1,14 +1,15 @@
 // JSON-driven pathway phase configuration. Option D in the architecture
 // roadmap: encode the per-pathway phase ordering and parameters in the
 // edition JSON so game-rule edits don't require TS changes; pathway TS
-// modules shrink to enlistment + a callback registry.
+// modules shrink to enlistment.
 //
 // The loader compiles a ResolveAssignmentConfig (parsed from JSON) into
 // a PathwaySpec for runPhases. Built-in phase semantics handle the
 // standard patterns (survival fail → endChargen, promotion penalty
 // consumption, decoration tier → award + court-martial); pathway-
-// specific side effects (skill roll, promotion, finalize) are dispatched
-// through a per-pathway callback registry.
+// specific side effects (skill roll, promotion, finalize, cash bonus, DM
+// tradeoff) are declarative verbs dispatched by kind through the verb
+// interpreter below — an unknown verb kind fails loud at edition load.
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
