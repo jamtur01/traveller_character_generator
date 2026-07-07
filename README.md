@@ -39,6 +39,8 @@ npm run dev   # http://localhost:3000
 | `npm run test:engine`| Engine-behaviour tests only                    |
 | `npm run test:audit` | Data-correctness audits (JSON vs rulebook)     |
 | `npm run test:watch` | Vitest in watch mode                           |
+| `npm run sample`     | Print sample character sheets (see below)      |
+| `npm run sample:dump`| Dump one sheet per creation path to files      |
 
 ## Architecture
 
@@ -128,8 +130,20 @@ npx vitest run tests/fullCoverage.test.ts
 - **Exhaustive by construction.** `tests/_coverageMatrix.ts` enumerates every path from the edition registries — all Classic and MegaTraveller basic services, every MegaTraveller ACG pathway × fleet × subsector-tech × division × line-type × combat-arm, and every Mongoose career (76 combinations today). The enumerables are read from the JSON, never a hardcoded list, so adding a service / fleet / line-type / career to `data/editions/*.json` automatically mints a new combo the oracle then walks. `tests/coverageMatrix.test.ts` proves the enumeration stays total.
 - **Real characters.** `tests/fullCoverage.test.ts` drives each combo end-to-end through the session API (the same surface the UI uses) to a terminal state — mustered out, retired, deceased, or bounded — never treating early termination as an error.
 - **Rulebook-consistent output.** Each finished character is checked by `assertCharacterConsistent` (`tests/_characterInvariants.ts`) against invariants derived from the JSON: rank within the declared ladder, benefit/muster rolls within declared bounds, an exactly reconstructable age, skill levels within the skill cap, decorations only from declared tiers, characteristics ≥ 1, and more. A failing combo reddens with the exact path and the violated invariant, naming the JSON value it was derived from.
+- **Every outcome, not just the happy path.** `tests/fullCoverageSeeded.test.ts` re-runs all 76 combos across 20 dice seeds each (~1,500 walks), so the same invariants are validated over real failures — deaths, enlistment wash-outs, discharges — not only successful careers. Measured outcome floors (CT deaths, ACG wash-outs) fail the build if a failure branch stops firing.
+- **Unexercised-path ledger.** `tests/coverageLedger.test.ts` enumerates every path *element* — each service, skill-table cell, cascade weapon, pre-career school, ACG assignment, Mongoose career/assignment/event, muster row, and terminal outcome (1,152 tags today) — unions what a broad seeded + fuzzed run actually exercises, and **fails on any unexercised tag not covered by a documented allowlist rule** (dice-gated rarities and by-design-unreachable terminals, each with a written reason). The full report is written to `coverage-report/` (git-ignored); currently ~90% exercised, the remainder allowlisted with reasons.
 
 Run it alongside the cell-level and audit checks with `npm test`.
+
+### Generating sample characters
+
+`npm run sample` prints a few real character sheets (including a death and an enlistment wash-out). To generate a specific one, set the selectors:
+
+```bash
+SAMPLE_EDITION=mt-megatraveller SAMPLE_COMBO=classic__service-navy SAMPLE_SEED=7 npm run sample
+```
+
+`npm run sample:dump` writes one sheet per creation path (76 today) to `coverage-report/sheets/` for offline browsing.
 
 ## CI
 
