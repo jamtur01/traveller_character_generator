@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:engine": "vitest run --exclude 'tests/audit/**'",
-    "test:audit": "vitest run tests/audit"
+    "test:audit": "vitest run tests/audit",
+    "sample": "vitest run tests/sampleCharacters.demo.test.ts"
   },
   "dependencies": {
     "@emnapi/core": "^1.11.2",
