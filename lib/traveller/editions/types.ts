@@ -249,6 +249,14 @@ export interface AcgCommonData {
   /** PM p. 49 survival <-> decoration DM tradeoff option bounds. The book
    *  states no cap; the declared bound is a documented design choice. */
   decorationDmTradeoff?: { min: number; max: number; step: number };
+  /** PM p. 44/48: initial training occupies the first year (year 1) of the
+   *  first term (term 1). The ACG runner reads this instead of hardcoding
+   *  the term/year numbers. */
+  initialTraining?: { when: { term: number; year: number } };
+  /** PM p. 50/53: the assignment-roll sentinel (e.g. "Special Duty") that
+   *  routes to a pathway's Special Assignments table instead of the normal
+   *  survival/decoration/promotion/skills resolution. */
+  specialDutyAssignment?: string;
   /** $soloPolicy: engine auto-play BP-spend caps + interactive picker bound
    *  (PM p. 46 sets no book cap — "any number" of BP on a roll). Not a $rule. */
   bpSpend?: {

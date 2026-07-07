@@ -59,9 +59,11 @@ interface PhasePromotion {
   consequence: string;
   /** Declarative promotion verb (rank ladders + optional cap / skill). */
   onPass: PromoteVerb;
-  /** If true, the phase is skipped when the character is not in the
-   *  Bureaucracy division (scout-specific). */
-  skipIfNotBureaucracy?: boolean;
+  /** When set, the phase is skipped unless the character's ACG division
+   *  equals this value (scout: promotion is Bureaucracy-only, PM p. 56/59).
+   *  The division name lives in JSON so no pathway/division string literal
+   *  remains in the loader. */
+  skipUnlessDivision?: string;
   /** If true, the phase reads & consumes acgState.nextPromotionPenalty. */
   consumeNextPromotionPenalty?: boolean;
   /** If true, append the (negative) penalty to the phase's log note. */
@@ -198,7 +200,8 @@ function buildPromotion(p: PhasePromotion): PhaseDef {
     skip: (ctx) => {
       const acg = ctx.ch.requireAcgState();
       if (ctx.res.promotion === "none") return true;
-      if (p.skipIfNotBureaucracy && (acg.pathway !== "scout" || acg.division !== "bureaucracy")) {
+      const division = "division" in acg ? acg.division : undefined;
+      if (p.skipUnlessDivision !== undefined && division !== p.skipUnlessDivision) {
         return true;
       }
       if (acg.isOfficer && ctx.res.promotionOfficersBarred === true) return true;

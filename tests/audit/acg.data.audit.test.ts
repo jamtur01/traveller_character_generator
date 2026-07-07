@@ -63,3 +63,32 @@ describe("MT ACG: getAcgCommon content", () => {
     expect(common.decorationTiers).toBeDefined();
   });
 });
+
+describe("MT ACG: structural literals promoted to cited JSON", () => {
+  it("common.initialTraining.when carries the first-year/first-term timing + citation", () => {
+    const common = getAcgCommon("mt-megatraveller");
+    const training = common.initialTraining as
+      { $rule?: string; when?: { term?: number; year?: number } } | undefined;
+    expect(training?.when).toEqual({ term: 1, year: 1 });
+    expect(training?.$rule ?? "").toContain("PM p. 44/48");
+  });
+
+  it("common.specialDutyAssignment declares the routing sentinel + citation", () => {
+    const common = getAcgCommon("mt-megatraveller");
+    expect(common.specialDutyAssignment).toBe("Special Duty");
+    expect((common["$specialDutyAssignmentRule"] as string | undefined) ?? "")
+      .toContain("PM p. 50/53");
+  });
+
+  it("scout promotion phase names the required division (no boolean skip flag)", () => {
+    const scout = requireAcgPathway("mt-megatraveller", "scout");
+    const ra = scout.resolveAssignment as
+      { phases?: Array<Record<string, unknown>> } | undefined;
+    const promo = (ra?.phases ?? []).find((ph) => ph.kind === "promotion");
+    expect(promo, "scout has a promotion phase").toBeDefined();
+    expect(promo?.skipUnlessDivision).toBe("bureaucracy");
+    expect(promo?.skipIfNotBureaucracy).toBeUndefined();
+    expect((promo?.["$skipUnlessDivisionRule"] as string | undefined) ?? "")
+      .toContain("PM p. 56/59");
+  });
+});

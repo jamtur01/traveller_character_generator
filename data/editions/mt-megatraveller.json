@@ -4052,6 +4052,12 @@
         "max": 2,
         "step": 1
       },
+      "initialTraining": {
+        "$rule": "PM p. 44/48: initial training occupies the first year (year 1) of the first term (term 1) — it replaces that year's normal one-year assignment cycle for every ACG pathway.",
+        "when": { "term": 1, "year": 1 }
+      },
+      "specialDutyAssignment": "Special Duty",
+      "$specialDutyAssignmentRule": "PM p. 50/53: an assignment-roll result of 'Special Duty' routes to the pathway's Special Assignments table instead of the normal survival/decoration/promotion/skills resolution.",
       "bpSpend": {
         "$soloPolicy": "PM p.46 allows 'any number' of brownie points on a roll — the book sets no cap. These are the generator's auto-play spend policy + interactive picker bound, not book rules.",
         "defaultAutoPolicy": "conservative",
@@ -6242,7 +6248,8 @@
             "kind": "promotion",
             "consequence": "Earn promotion (administrator ladder)",
             "onPass": { "verb": "promote", "ladders": { "officer": "administrator", "enlisted": "ordinary" }, "onPromoteSkill": { "select": "divisionTable", "columnByRank": { "officer": "adminRank", "enlisted": "first" } } },
-            "skipIfNotBureaucracy": true
+            "$skipUnlessDivisionRule": "PM p. 56/59: only scouts in the Bureaucracy division make a promotion throw (the administrator ladder); Field scouts have no rank ladder, so the promotion phase is skipped for them.",
+            "skipUnlessDivision": "bureaucracy"
           },
           {
             "kind": "skills",

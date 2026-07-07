@@ -339,7 +339,7 @@ const PhaseConfigSchema = z.looseObject({
   }).optional(),
   purpleHeartOnExactCombat: z.boolean().optional(),
   onPass: VerbSchema.optional(),
-  skipIfNotBureaucracy: z.boolean().optional(),
+  skipUnlessDivision: z.string().optional(),
   consumeNextPromotionPenalty: z.boolean().optional(),
   logPenaltyInNote: z.boolean().optional(),
   consequenceMild: z.string().optional(),
@@ -471,6 +471,14 @@ const AcgCommonSchema = z.looseObject({
     max: z.number(),
     step: z.number(),
   }).optional(),
+  // PM p. 44/48: initial-training timing — the first year of the first
+  // term, read by the ACG runner in place of a hardcoded term/year.
+  initialTraining: z.looseObject({
+    when: z.looseObject({ term: z.number(), year: z.number() }),
+  }).optional(),
+  // PM p. 50/53: assignment-roll sentinel that routes to a pathway's
+  // Special Assignments table instead of the normal resolution.
+  specialDutyAssignment: z.string().optional(),
   // $soloPolicy: engine auto-play spend caps + picker bound (PM p. 46 sets
   // no book cap — "any number" of BP on a roll). Not a $rule value.
   bpSpend: z.looseObject({

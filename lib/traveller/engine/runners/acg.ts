@@ -56,10 +56,18 @@ export function runAcgYear(ch: Character): void {
   const acg = ch.acgState;
 
   // First year of the first term is initial training (no normal cycle).
-  if (ch.terms === 0 && acg.year === 1 && p.initialTraining) {
-    p.initialTraining(ch);
-    advanceYear(ch, acg);
-    return;
+  // The "when" (first year of the first term) is edition data (PM p. 44/48),
+  // not a runner constant; ch.terms + 1 is the 1-based current term number.
+  if (p.initialTraining) {
+    const when = requireRule(
+      getEdition(ch.editionId).data.advancedCharacterGeneration?.common?.initialTraining?.when,
+      "acg.common.initialTraining.when", "PM p. 44/48",
+    );
+    if (ch.terms + 1 === when.term && acg.year === when.year) {
+      p.initialTraining(ch);
+      advanceYear(ch, acg);
+      return;
+    }
   }
 
   // Roll the year's assignment (PM checklist 6.A.1). Capture retention
@@ -85,8 +93,15 @@ export function runAcgYear(ch: Character): void {
     return;
   }
 
-  // Resolve the assignment (or route through specialAssignment).
-  if (assignment === "Special Duty" || assignment.toLowerCase() === "specialduty") {
+  // Resolve the assignment (or route through specialAssignment). The routing
+  // sentinel is edition data (PM p. 50/53), not a runner constant; match it
+  // exactly or as its space-stripped lowercase form.
+  const specialDuty = requireRule(
+    getEdition(ch.editionId).data.advancedCharacterGeneration?.common?.specialDutyAssignment,
+    "acg.common.specialDutyAssignment", "PM p. 50/53",
+  );
+  if (assignment === specialDuty
+    || assignment.toLowerCase() === specialDuty.toLowerCase().replace(/\s+/g, "")) {
     if (p.specialAssignment) p.specialAssignment(ch);
   } else {
     p.resolveAssignment(ch, assignment);
