@@ -181,7 +181,7 @@ export function applyCell(
     const delta = parseInt(m[1]!, 10);
     const attr = attrKeyFromAbbreviation(ch.editionId, m[2]!);
     if (!attr) throw new Error(`Unknown attribute abbr in cell "${label}"`);
-    ch.improveAttribute(attr, delta);
+    ch.improveAttribute(attr, delta, grantSource);
     return;
   }
 

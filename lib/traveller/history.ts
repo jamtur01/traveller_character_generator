@@ -45,7 +45,7 @@ export type HistoryEvent =
   | {
       kind: "attributeChange";
       level: HistoryLevel;
-      attribute: string; delta: number; reason?: string;
+      attribute: string; delta: number; reason?: string; source?: string;
     }
   // Skill learned at some level.
   | {
@@ -291,9 +291,12 @@ export const event = {
     kind: "skillImproved", level: "simple", skill, skillLevel,
     ...(source !== undefined ? { source } : {}),
   }),
-  attributeChange: (attribute: string, delta: number, reason?: string): HistoryEvent => ({
+  attributeChange: (
+    attribute: string, delta: number, reason?: string, source?: string,
+  ): HistoryEvent => ({
     kind: "attributeChange", level: "simple", attribute, delta,
     ...(reason !== undefined ? { reason } : {}),
+    ...(source !== undefined ? { source } : {}),
   }),
   cascadePick: (cascade: string, chosen: string): HistoryEvent => ({
     kind: "cascadePick", level: "simple", cascade, chosen,

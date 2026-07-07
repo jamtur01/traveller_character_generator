@@ -726,7 +726,7 @@ export class Character implements CharacterState {
     enforceSkillCapImpl(this);
   }
 
-  improveAttribute(attrib: AttributeKey, delta = 1) {
+  improveAttribute(attrib: AttributeKey, delta = 1, source?: string) {
     this.attributes[attrib] += delta;
     // PM/TTB p. 17 caps + per-edition socialMin override — sourced from
     // rules.attributeCaps in the edition JSON.
@@ -751,7 +751,7 @@ export class Character implements CharacterState {
     const now = this.chargenModelId === "mongoose"
       ? String(this.attributes[attrib])
       : extendedHex(this.attributes[attrib]);
-    this.log(ev.attributeChange(attrib, delta, `now ${now}`));
+    this.log(ev.attributeChange(attrib, delta, `now ${now}`, source));
   }
 
   addBenefit(benefit: string) {
