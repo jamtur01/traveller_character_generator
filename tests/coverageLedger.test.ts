@@ -205,10 +205,12 @@ const NS_FLOOR: Record<string, number> = {
 };
 
 describe("coverage ledger — report + fail on any non-allowlisted unexercised path", () => {
+  // buildLedger drives ~23k seeded walks (~5s local, ~20s on a slow CI runner),
+  // so this hook needs a ceiling well above vitest's 10s default hookTimeout.
   beforeAll(() => {
     L = buildLedger();
     writeReport(L);
-  });
+  }, 120_000);
 
   it("drives the full run set with no runaway walks and no inconsistent character", () => {
     expect(L.failures).toEqual([]);
