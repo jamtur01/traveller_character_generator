@@ -54,14 +54,25 @@ export function drainChoices(
   return cur;
 }
 
-/** Walk a basic chargen (CT or MT, useAcg=false) to muster-out. */
+/** Walk a basic chargen (CT or MT, useAcg=false) to a terminal state.
+ *
+ *  Determinism: without `seed`, every Math.random is pinned to a d6 = 6
+ *  (pinD6) — the all-6s happy path that always survives, always reenlists,
+ *  and never musters mid-walk (the existing fullCoverage callers). Pass
+ *  `seed` to run the character's own seeded mulberry32 rng instead (skipping
+ *  pinD6): varied rolls that produce real deaths / short-term musters /
+ *  denied reenlistments, and satisfy the session's re-execution determinism
+ *  invariant for the interactive path. */
 export function walkBasic(opts: {
   edition: "ct-classic" | "mt-megatraveller";
   service: string;
+  seed?: number;
   interactive?: boolean;
   maxTerms?: number;
 }): WalkResult {
-  pinD6(6);
+  // A seeded run draws from the character's own rng (threaded via startCareer
+  // below); only the unseeded all-6s walk pins Math.random.
+  if (opts.seed === undefined) pinD6(6);
   const snap0 = session.startCareer({
     edition: opts.edition,
     verbose: true,
@@ -69,6 +80,7 @@ export function walkBasic(opts: {
     supportsInteractive: opts.interactive ?? false,
     useAcg: false,
     acgPathway: "",
+    ...(opts.seed !== undefined ? { seed: opts.seed } : {}),
   });
   let snap = session.enlist(snap0, {
     verbose: true,
@@ -93,6 +105,11 @@ export function walkBasic(opts: {
     }
     eventCountTrail.push(snap.character.events.length);
     termsTrail.push(snap.character.terms);
+    // A seeded term may muster/die/retire mid-walk; stop serving once the
+    // phase leaves "term" so runTerm is never called on an ended character
+    // (mirrors walkAcg). The all-6s walk always stays "term" here, so this
+    // never fires for the existing callers — behavior unchanged.
+    if (snap.phase !== "term") break;
   }
   // Drain muster.
   while (snap.phase === "muster" || snap.phase === "muster_no_cash") {
@@ -111,7 +128,15 @@ export function walkCtBasic(opts: {
   return walkBasic({ edition: "ct-classic", ...opts });
 }
 
-/** Walk an ACG pathway end-to-end via the session API. */
+/** Walk an ACG pathway end-to-end via the session API to a terminal state.
+ *
+ *  Determinism: without `seed`, Math.random is pinned to a d6 = 6 (pinD6) —
+ *  the all-6s happy path (always enlists, survives, musters at the term
+ *  budget). Pass `seed` to run the character's seeded mulberry32 rng instead
+ *  (skipping pinD6): varied rolls that reach real ACG terminals — an
+ *  enlistment washout (failed enlist + off-table draft → phase "end", terms
+ *  0), a mid-term death, or a denied-reenlistment muster — and satisfy the
+ *  session's re-execution determinism invariant. */
 export function walkAcg(opts: {
   pathway: "mercenary" | "navy" | "scout" | "merchantPrince";
   service?: "army" | "marines";
@@ -121,10 +146,11 @@ export function walkAcg(opts: {
   lineType?: string;
   subsectorTech?: string;
   preCareer?: session.PreCareerOption;
+  seed?: number;
   interactive?: boolean;
   maxTerms?: number;
 }): WalkResult {
-  pinD6(6);
+  if (opts.seed === undefined) pinD6(6);
   const snap0 = session.startCareer({
     edition: "mt-megatraveller",
     verbose: true,
@@ -132,6 +158,7 @@ export function walkAcg(opts: {
     supportsInteractive: true,
     useAcg: true,
     acgPathway: opts.pathway,
+    ...(opts.seed !== undefined ? { seed: opts.seed } : {}),
   });
   // Pre-career: skip by default; a real option (e.g. "college") ages the
   // character, exercising the stored preCareerAgeYears summand.
