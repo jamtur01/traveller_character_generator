@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project conventions
 
-A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI), MegaTraveller, and Mongoose Traveller 2e (2022 Core Rulebook). ~16k lines of TypeScript across `lib/`, `app/`, with ~3650 tests in `tests/`. Character generation runs behind a per-edition **`ChargenModel`** (see "Pluggable chargen models" below), not edition `if`-branches.
+A multi-edition Traveller RPG character generator. Classic Traveller (TTB + CotI), MegaTraveller, and Mongoose Traveller 2e (2022 Core Rulebook). ~16k lines of TypeScript across `lib/`, `app/`, with ~4070 tests in `tests/`. Character generation runs behind a per-edition **`ChargenModel`** (see "Pluggable chargen models" below), not edition `if`-branches.
 
 ## JSON is the source of truth
 
@@ -39,13 +39,13 @@ The legacy `s` global (`lib/traveller/services`) binds to `DEFAULT_EDITION_ID` o
 
 ## Pluggable chargen models
 
-Character generation dispatches through a `ChargenModel` interface (`chargen/model.ts`); there is no `if (useAcg)` / edition branching in the flow. Each edition's `chargenModels` capability list names its available models, `startCareer` selects one, and the choice is recorded on `ch.chargenModelId`. Models self-register on import via `chargen/modelRegistry.ts`:
+Character generation dispatches through a `ChargenModel` interface (`chargen/model.ts`); there is no `if (useAcg)` / edition branching in the flow. Each edition's `meta.chargenModels` capability list names its available models and `meta.defaultChargenModel` names the one `startCareer` enters when ACG isn't selected (the `useAcg` option is the only override, forcing `"acg"`); the choice is recorded on `ch.chargenModelId`, then the model's optional `init?(ch)` setup hook runs. Models self-register on import via `chargen/modelRegistry.ts`:
 
 - `classic` (`chargen/models/classic.ts`) — CT/MT basic service lifecycle (enlist → term → muster).
 - `acg` (`chargen/models/acg.ts`) — MT Advanced Character Generation (per-year assignment resolution; state on `ch.acgState`).
 - `mongoose` (`chargen/models/mongoose.ts`) — Mongoose 2e: 2D+DM task system, per-term qualification → survival(→mishap) → events → advancement/commission → skills → ageing, plus the solo Connections rule and mustering-out. Runtime sub-state on `ch.mongooseState` (`engine/mongoose/state.ts`).
 
-Shared per-term flow helpers live in `chargen/flow.ts`. A model owns its phase set (`entryPhase`, `flowStages`), so the UI (`app/page.tsx` → `MongoosePhase.tsx`, `TermPhase.tsx`, …) renders panels off `ch.chargenModelId`.
+Shared per-term flow helpers live in `chargen/flow.ts`. A model owns its phase set (`entryPhase`, `flowStages`), and `meta.workflowSteps` (`default` / `acg`) drives the JSON-declared "what happens next" start-screen narration. The UI maps a model's phase → panel component through the `MODEL_PHASE_RENDERERS` table in `app/page.tsx` — one map entry per custom model, not a `chargenModelId === "…"` branch in the render tree.
 
 ## State model
 
@@ -130,6 +130,10 @@ vi.spyOn(Math, "random").mockImplementation(() => seq[i++] ?? d6(6));
 
 `tests/data.validation.test.ts` parameterizes over every active edition. It picks every cell of every service's skill tables + muster tables, runs the engine, and asserts the engine output matches the JSON cell. New rules and edge cases should be wired so this auto-discovers them — don't add cell-specific tests when the parameterized sweep already covers them.
 
+### Correctness oracle
+
+`tests/_characterInvariants.ts` `assertCharacterConsistent(ch)` is the JSON-derived whole-character oracle: it re-derives every invariant (ranks, skills, ages, muster arithmetic) from the edition JSON and asserts the generated character agrees, treating any `$soloPolicy`-governed field as an allowed divergence rather than a failure. `tests/fullCoverage.test.ts` drives **every** registry-enumerated edition × model × pathway/career combo (`tests/_coverageMatrix.ts` enumerates them; `_walker.ts`'s `walkAcg` / `walkBasic` / `walkMongoose` run each to its terminal phase) and asserts `assertCharacterConsistent` on every result — `driven === coverageMatrix().length` proves the sweep is exhaustive. New rules should fall out of this sweep; prefer wiring a combo over a bespoke test.
+
 ## Random / determinism
 
 Never `Math.random()` directly in production code — use the wrappers. The bug-fix commit `435b7b1` replaced four such sites with `arnd()`.
@@ -170,6 +174,26 @@ DM rules in JSON are objects, not free-text strings:
 
 Evaluated via `applyStructuredDms` / `evaluateDM`. The latter accepts a narrow `DmContext` interface (`{attributes, terms}`), not a full `Character` — widening the evaluator to read other state is now a compile error.
 
+## Option domains
+
+Every player-choice **domain** — the ordered set of options a decision offers — is read through one accessor: `optionDomain(editionId, decisionId) -> { field?, values }` (`editions/optionDomains.ts`). `decisionId` is a dotted key (`"acg.navy.fleet"`, `"mongoose.career"`, `"classic.service"`); `values` is the order-significant enumerable strict-read from the edition JSON (never a `?? [...]` literal); optional `field` names the `EnlistOptions` property the choice writes into — in-flow `pickOrDefer` domains omit it. The `DOMAINS` table registers the promoted decisionIds (navy fleets / subsector-tech / officer-skill-tables, mercenary services, scout divisions, merchant line-types / departments / skill-tables, the ACG pathway list, classic serviceOrder, Mongoose careers / skill-training / muster-benefit columns, CT weapon-benefit types), each guarded by an independent drift-lock in `tests/audit/optionDomains.audit.test.ts`. **Pure yes/no affordances stay engine-side by design** — Accept/Decline a career, Attempt a commission, Apply/Skip an academy carry no enumerable worth citing (see the `optionDomains.ts` header). Don't "promote" them.
+
+## Declarative resolveAssignment verbs
+
+ACG per-assignment side-effects are **declarative JSON verbs**, not named callbacks. A pathway's `resolveAssignment` config carries verb objects — `{ verb: "promote" | "rollSkill" | "finalize" | "awardCashBonus" | "dmTradeoffPrompt", … }` — interpreted by `engine/acg/jsonPhases.ts` (`requireVerbKind` fails loud on edition ↔ interpreter drift). The former per-pathway named-callback registry (`onPass: "callbackName"` strings) is gone; each verb strategy reuses the shared primitives and runs only when the pathway's JSON declares it.
+
+## Enlistment primitives
+
+Enlistment composes generic, JSON-parameterized primitives in `engine/acg/pathways/shared.ts` — `resolveDraft`, `commitStartingRank`, `checkEnlistmentGate` (an ordered-ladder threshold shared by the navy tech gate and the merchant starport gate), `rerollUntilLegal` — instead of per-pathway enlist game literals. A pathway feeds each primitive its table / threshold / ladder from its own JSON block; no `pathway === "…"` branch lives inside the primitives.
+
+## Court-martial effect DSL
+
+`common.courtMartial.dieResults[]` rows carry a structured `effects[]` array — a `kind`-discriminated union (`reprimand` / `reduceRank` / `jailMonths` / `jailYears` / `dishonorableDischarge` / `deathSentence`, validated by `CourtMartialEffectSchema`) — that replaced the prose-regex interpreter formerly in `awards.ts`. The sibling `result` string is now only the human/PM-cited label; the engine applies the effect objects.
+
+## `$soloPolicy` annotations
+
+`$soloPolicy` is a JSON annotation (sibling to the value it qualifies, naming the book page that leaves the point unspecified) marking an **engine auto-play choice the rulebook does NOT print** — distinct from `$rule`, which cites a printed rule. The value still lives in JSON and is read via `requireRule`; the `$soloPolicy` string itself is doc-only (the engine never reads it). Current users: `advancedCharacterGeneration.common.bpSpend` (PM p. 46) and the Mongoose non-printed heuristics `agingCrisisRestore`, `reductionPolicy`, `connectionsPolicy`, `shipSharesPolicy` (Core pp. 19 / 46 / 49). `tests/_characterInvariants.ts` skips any invariant a `$soloPolicy` governs, so the oracle never flags a solo choice as a rules divergence.
+
 ## Documented conventions (deliberately NOT rules-in-JSON)
 
 Four audit rounds converged on these as OK-structural — they are conventions, not shadows. Do not "migrate" them, and do not use them as precedent for new literals:
@@ -183,6 +207,9 @@ Four audit rounds converged on these as OK-structural — they are conventions, 
 - **Rank-code format strings** (`O${n}`, `E${n}`, `IS-${n}`) — notation; ladder values are JSON.
 - **Natural 2..12 clamps** on 2D arithmetic; table-shape loop bounds that double as validators (missing rows throw).
 - **Display-layer heuristics** with citations (pistol `endsWith` classification, "Middle Passage" alias, presentation ordering).
+- **cellResolver cascade keys.** `cascadeKey === "bladeCombat"` / `"gunCombat"` and the muster `label === "Weapon"` branch in `cellResolver.ts` are cascade **identifiers / notation** that dispatch to the benefit handler — not game values; the pools and tables they name live in JSON.
+- **`edition.hooks.doPromotion`** (`editions/*/hooks.ts`) is the sanctioned per-edition **named-hook escape hatch** for genuinely ad-hoc promotion mechanics no JSON table can express (e.g. CT nobles' social-standing-by-rank). Register a hook; never inline an `if (edition === …)`.
+- **`AcgState` is a typed discriminated union**, not a stringly-typed `roleState` bag (`engine/acg/state.ts`). The pathway-narrowing guards (`ch.requireMercenaryAcg()`, `assertPathway(acg, "navy")`) are **type-narrowing, not game logic** — they let the compiler prove a pathway's role fields are present and carry no rules.
 
 ## Hard limits & style
 
@@ -237,6 +264,7 @@ lib/traveller/
     schema.ts             — Zod validation of the JSON blocks (parseRules/parseCanonData)
     types.ts              — Edition / EditionMeta / CanonData / hook types
     strict.ts             — requireRule / parseDieCount (fail-loud JSON reads)
+    optionDomains.ts      — optionDomain(editionId, decisionId): player-choice domain accessor
     ct-classic/hooks.ts   — CT-only doPromotion overrides (e.g., nobles social-by-rank)
     mt-megatraveller/hooks.ts
   engine/
@@ -285,6 +313,12 @@ tests/
   *.test.ts               — engine behaviour
   audit/*.audit.test.ts   — data citations vs. PM/TTB + schema enforcement
   regressions.test.ts     — locked-in fixes from the code-review pass
+  fullCoverage.test.ts    — exhaustive combo driver → assertCharacterConsistent on each
+  _characterInvariants.ts — assertCharacterConsistent: JSON-derived whole-character oracle
+  _coverageMatrix.ts      — combo enumeration (walkers in _walker.ts: walkAcg/walkBasic/walkMongoose)
+  *.golden.test.ts        — behaviour-lock characterizations (courtMartial, enlist, preCareerSchools, merchantExams, memberName, careerAvailability)
+  optionDomainFieldBinding.test.ts — optionDomain field ↔ keyof EnlistOptions binding
+  audit/optionDomains.audit.test.ts — per-domain drift-locks (+ audit/bpSpend.audit.test.ts)
 ```
 
 ## When in doubt
