@@ -100,7 +100,7 @@ describe("getAcgPathway helper (#4)", () => {
 describe("parseCanonData (#2)", () => {
   const validServices = {
     army: {
-      displayName: "Army", startAge: 18, draft: 2,
+      displayName: "Army", memberName: "Soldier", startAge: 18, draft: 2,
       checks: {
         enlistment: { target: 5 },
         survival: { target: 5 },
