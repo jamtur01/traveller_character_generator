@@ -113,10 +113,14 @@ function runEffect(
   if (!ch.acgState) return;
   switch (effect.type) {
     case "setCombatArm":
+      // Type-narrowing only: `combatArm` exists on MercenaryAcgState alone,
+      // so this narrows the AcgState union to read it — not game logic.
       if (ch.acgState.pathway === "mercenary") ch.acgState.combatArm = String(effect.value);
       return;
     case "crossTrainCombatArm": {
       const acg = ch.acgState;
+      // Type-narrowing only: narrows the AcgState union to reach the
+      // mercenary-specific `combatArm` field below (not game logic).
       if (acg.pathway !== "mercenary") return;
       const excl = Array.isArray(effect.exclude) ? (effect.exclude as string[]) : [];
       const alreadyTrained = acg.crossTrainedArms ?? [];
@@ -142,6 +146,8 @@ function runEffect(
       // next reenlistment (PM p. 53). It does not immediately transfer the
       // character to the new branch — that's the player's reenlist choice.
       const acg = ch.acgState;
+      // Type-narrowing only: narrows the AcgState union to the members that
+      // carry `branch` (mercenary/navy) — not game logic.
       if (acg.pathway !== "mercenary" && acg.pathway !== "navy") return;
       const branches = data.branches ?? [];
       if (branches.length === 0) return;
@@ -194,7 +200,7 @@ function runEffect(
       ocsCommission(ch);
       return;
     case "attacheOrAide":
-      attacheOrAide(ch, pathway, data, effect);
+      attacheOrAide(ch, data, effect);
       return;
     default:
       throw new Error(
@@ -251,6 +257,7 @@ function runSkillBatch(
 function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.mos) return;
   const acg = ch.acgState;
+  // Type-narrowing only: reads mercenary-specific `combatArm` off the union.
   const combatArm = acg.pathway === "mercenary" ? acg.combatArm : null;
   if (!combatArm) {
     throw new Error(
@@ -264,6 +271,7 @@ function rollOnMos(ch: Character, data: PathwayData, schoolName: string): void {
 function rollOnBranchSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.branchSkills) return;
   const acg = ch.acgState;
+  // Type-narrowing only: reads `branch` off the union members that carry it.
   const branch = (acg.pathway === "mercenary" || acg.pathway === "navy") ? acg.branch : "";
   if (!branch) {
     throw new Error(
@@ -354,13 +362,18 @@ function readOcsAdvancement(ch: Character): OcsAdvancement | null {
 
 function attacheOrAide(
   ch: Character,
-  pathway: "mercenary" | "navy",
   data: PathwayData,
   effect: Effect,
 ): void {
   if (!ch.acgState) return;
   const r = ch.rng.roll(1);
-  const label = pathway === "navy" ? "Naval Attache" : "Military Attache";
+  // The promotion event source label (e.g. "Naval Attache" / "Military
+  // Attache") is per-pathway GAME CONTENT sourced from the assignment
+  // effect, not a code constant (PM p. 55/59).
+  const label = requireRule(
+    effect.attacheLabel as string | undefined,
+    "specialAssignmentDetails.<attache>.effects[].attacheLabel", "PM p. 55/59",
+  );
   // Promotion target and the social bonus both come from the assignment
   // effect (PM p. 55/59: attache/aide promotes on 1D <= 4; +1 Social
   // Standing is gained either way).
@@ -417,6 +430,8 @@ function scoutCanAttendSchool(ch: Character, school: string): boolean {
   const meta = scoutSchoolMeta(ch, school);
   if (!meta) return true;
   if (meta.onceOnly && ch.acgState.schoolsAttended.includes(school)) return false;
+  // Type-narrowing only: `division` exists on ScoutAcgState alone; the
+  // pathway check narrows the union to read it (not game logic).
   if (meta.requiresDivision &&
       (ch.acgState.pathway !== "scout" || ch.acgState.division !== meta.requiresDivision)) {
     return false;

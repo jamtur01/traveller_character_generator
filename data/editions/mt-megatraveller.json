@@ -4667,7 +4667,7 @@
         "Attache/Aide": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 55: attache promotes on 1D <= 4 and gains +1 Social Standing either way." }
+            { "type": "attacheOrAide", "attacheLabel": "Military Attache", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 55: attache promotes on 1D <= 4 and gains +1 Social Standing either way; attacheLabel is the promotion event source." }
           ]
         }
       },
@@ -5810,7 +5810,7 @@
         "Naval Attache": {
           "summary": "Roll 1D: 1-4 attache, 5-6 aide. Attache: +1 rank and +1 Social. Aide: +1 Social and select command duty or other special assignment (not Naval Attache/Aide).",
           "effects": [
-            { "type": "attacheOrAide", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 59: aide promotes on 1D <= 4 and gains +1 Social Standing either way." }
+            { "type": "attacheOrAide", "attacheLabel": "Naval Attache", "promoteOnRollAtMost": 4, "socialBonus": { "attribute": "social", "delta": 1 }, "note": "PM p. 59: aide promotes on 1D <= 4 and gains +1 Social Standing either way; attacheLabel is the promotion event source." }
           ]
         },
         "Command College": {
