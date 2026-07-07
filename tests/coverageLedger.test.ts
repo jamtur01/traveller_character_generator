@@ -8,9 +8,10 @@
 //
 // Run set (all cheap knobs on the seeded walkers — never a forced outcome; see
 // tests/_coverageDriver.LEDGER_PARAMS):
-//   - the 76 coverageMatrix() combos x 20 seeds (base, seeded dice → the full
-//     terminal spread: deaths, short musters, denied reenlistments, washouts);
-//   - classic Cash + long-term Benefit muster walks x 30 seeds (the walkers only
+//   - the 76 coverageMatrix() combos x per-model base seeds (60 classic/acg, a
+//     moderate 21 mongoose — seeded dice → the full terminal spread: deaths,
+//     short musters, denied reenlistments, washouts);
+//   - classic Cash + long-term Benefit muster walks x 50 seeds (the walkers only
 //     ever roll Benefit, and rank-5+ characters land the +1 muster-DM row 7);
 //   - choice-index fuzzing: the same seeded streams re-driven with drainChoices
 //     picks 1..6 (non-first cascade members / career assignments the pick-0
@@ -64,9 +65,11 @@ const ALLOWLIST: readonly AllowRule[] = [
     id: "muster-row-dice-gated",
     reason:
       "A muster row is landed only when (1D roll + muster DM) equals it: row 7 needs a +1 DM " +
-      "(Gambling for cash, rank 5+ for benefit) and the remaining rows depend on the exact " +
-      "roll. Pure dice-gated outcomes, engine-reachable, statistically rare under N seeds, " +
-      "not force-driven (the muster.* floors below prove the namespace is broadly hit).",
+      "(Gambling for cash, rank 5+ for benefit) and the rest depend on the exact roll — pure " +
+      "dice-gated, engine-reachable, statistically rare even under the raised Cash+Benefit " +
+      "walks. NOT a coverage hole: every muster cell of every service (rows 1-7, both columns) " +
+      "is exhaustively correctness-checked by tests/data.validation.test.ts's forceD6 cell " +
+      "sweep — here they are simply not all walk-driven (the muster.* floors below have teeth).",
     match: (_tag, meta) => meta.ns === "muster.cash" || meta.ns === "muster.benefit",
   },
   {
@@ -189,12 +192,16 @@ const FULLY_COVERED_NS = [
   "acg.pathway", "acg.fleet", "acg.division", "acg.lineType", "acg.combatArm",
 ] as const;
 
-// Broad-coverage floors for the dice-gated namespaces the class allowlists span
-// — teeth so a class rule can't mask a namespace-wide recording regression.
-// Each is comfortably below the measured touched count (reported in the ledger).
+// Broad-coverage floors for the dice-gated namespaces the residual allowlist
+// rules span — teeth so a class rule can't mask a namespace-wide recording
+// regression. Each sits comfortably below the measured touched count (reported
+// in the ledger). skilltable is absent by design: the recorder now derives a
+// table tag from attribute-only rolls too (attributeChange.source), so every
+// skill table is walk-reached, its allowlist rule is gone, and any gap fails the
+// subset assertion directly — a harder tooth than a floor.
 const NS_FLOOR: Record<string, number> = {
-  "cascade": 130, "muster.cash": 190, "muster.benefit": 185,
-  "mgt.event": 120, "mgt.mishap": 65, "skilltable": 135, "mgt.assignment": 37,
+  "cascade": 150, "muster.cash": 210, "muster.benefit": 200,
+  "mgt.event": 130, "mgt.mishap": 70, "mgt.assignment": 37,
 };
 
 describe("coverage ledger — report + fail on any non-allowlisted unexercised path", () => {

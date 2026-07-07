@@ -247,9 +247,16 @@ export function walkMongooseVaried(opts: {
 export interface LedgerParams {
   /** Base seeds (1..seeds) per classic/acg combo. */
   readonly seeds: number;
-  /** Base + maxCareers=2 seeds per mongoose career (kept <= 20: higher seeds
-   *  can trip a deterministic natural-12 "must remain" chain the walker caps). */
+  /** Base + maxCareers=2 seeds (1..mgtSeeds) per mongoose career, drained at
+   *  pick 0. Kept MODERATE: specific seeds deterministically trip a natural-12
+   *  "must remain" chain the walker caps (a wasteful skip), so this stays in the
+   *  proven-terminating range (walkSkips == 0 is asserted by the ledger). */
   readonly mgtSeeds: number;
+  /** Seeds (1..mgtFuzzSeeds) per fuzz pick for the mongoose assignment fuzz.
+   *  Decoupled from fuzzSeeds and kept lower: a fuzzed (non-0) pick perturbs the
+   *  dice path and trips the "must remain" cap at lower seeds than a pick-0 walk,
+   *  so classic/acg fuzz can go aggressive while mongoose fuzz stays safe. */
+  readonly mgtFuzzSeeds: number;
   /** Seeds per classic combo for the long-term Cash+Benefit muster walks. */
   readonly cashSeeds: number;
   /** Term budget for the muster walks (more terms → higher rank → the +1 DM
@@ -269,13 +276,14 @@ export interface LedgerParams {
 }
 
 export const LEDGER_PARAMS: LedgerParams = {
-  seeds: 20,
-  mgtSeeds: 20,
-  cashSeeds: 30,
+  seeds: 60,
+  mgtSeeds: 21,
+  mgtFuzzSeeds: 16,
+  cashSeeds: 50,
   musterTerms: 6,
   fuzzPicks: [1, 2, 3, 4, 5, 6],
-  fuzzSeeds: 12,
-  precareerSeeds: 2,
+  fuzzSeeds: 36,
+  precareerSeeds: 3,
   barbariansSeeds: [685, 1312, 2040, 2351, 2613, 3284, 4328, 8323, 10959],
 };
 
@@ -341,7 +349,7 @@ function driveMongooseExtra(
     run(`2careers ${label} seed=${seed}`, () =>
       walkMongooseVaried({ career: combo.career, seed, maxCareers: 2 }));
   }
-  for (const pick of p.fuzzPicks) for (const seed of range(p.fuzzSeeds)) {
+  for (const pick of p.fuzzPicks) for (const seed of range(p.mgtFuzzSeeds)) {
     run(`fuzz ${label} pick=${pick} seed=${seed}`, () =>
       walkMongooseVaried({ career: combo.career, seed, pick }));
   }
