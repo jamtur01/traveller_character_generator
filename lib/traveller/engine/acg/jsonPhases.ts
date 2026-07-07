@@ -25,7 +25,7 @@ import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 import {
   rollSkillFromColumn, serviceSkillColumnFor, branchSkillCandidates,
-  branchOf, type SkillColumnPolicy,
+  branchOf, applyPromotion, type SkillColumnPolicy,
 } from "./pathways/shared";
 import { labelToColumnKey, type StructuredDm } from "./tables";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
@@ -57,8 +57,8 @@ interface PhaseSurvival {
 interface PhasePromotion {
   kind: "promotion";
   consequence: string;
-  /** Named callback in the pathway's PathwayCallbacks registry. */
-  onPass: string;
+  /** Declarative promotion verb (rank ladders + optional cap / skill). */
+  onPass: PromoteVerb;
   /** If true, the phase is skipped when the character is not in the
    *  Bureaucracy division (scout-specific). */
   skipIfNotBureaucracy?: boolean;
@@ -166,7 +166,7 @@ function buildPhase(
 ): PhaseDef {
   switch (p.kind) {
     case "survival": return buildSurvival(p, build);
-    case "promotion": return buildPromotion(p, callbacks);
+    case "promotion": return buildPromotion(p);
     case "decoration": return buildDecoration(p);
     case "skills": return buildSkills(p);
     case "bonus": return buildBonus(p, callbacks);
@@ -207,8 +207,7 @@ function buildSurvival(p: PhaseSurvival, build: BuildContext): PhaseDef {
   return base;
 }
 
-function buildPromotion(p: PhasePromotion, callbacks: PathwayCallbacks): PhaseDef {
-  const onPass = lookupCallback(p.onPass, callbacks);
+function buildPromotion(p: PhasePromotion): PhaseDef {
   return {
     phase: "promotion",
     skip: (ctx) => {
@@ -247,7 +246,7 @@ function buildPromotion(p: PhasePromotion, callbacks: PathwayCallbacks): PhaseDe
       margin: r.margin,
       consequence: p.consequence,
     }),
-    onPass: (ctx) => onPass(ctx),
+    onPass: (ctx) => runPromote(ctx, p.onPass),
   };
 }
 
@@ -596,6 +595,54 @@ function merchantColumnAvailable(
   if (rule.exceptDepartments && rule.exceptDepartments.includes(dept)) return false;
   if (rule.minRank && !evaluatePredicate({ rankAtLeast: rule.minRank }, pctx)) return false;
   return true;
+}
+
+// --- Verb interpreter: promote ---------------------------------------
+//
+// Advance the character one step up the pathway's rank ladder (officer or
+// enlisted), reusing the shared applyPromotion. Optional params carry the
+// navy per-fleet officer cap and the scout per-promotion skill grant.
+
+/** One rank-ladder row: [code, title, ...extra]. */
+type LadderRow = readonly [string, string, ...unknown[]];
+
+export interface PromoteVerb {
+  verb: "promote";
+  /** Data keys of the officer / enlisted rank ladders (data.ranks[key]). */
+  ladders: { officer: string; enlisted: string };
+  /** Navy: officers cap at data[capByFleet][fleet] (PM p. 55). */
+  capByFleet?: string;
+  /** Scout: each promotion grants a division-table skill (PM p. 57). */
+  onPromoteSkill?: {
+    select: "divisionTable";
+    columnByRank: { officer: string; enlisted: string };
+  };
+}
+
+function runPromote(ctx: ResolveContext, verb: PromoteVerb): void {
+  const ch = ctx.ch;
+  const acg = ch.requireAcgState();
+  const data = pathwayData(ch) as { ranks: Record<string, LadderRow[]> };
+  const ladder = data.ranks[acg.isOfficer ? verb.ladders.officer : verb.ladders.enlisted]!;
+  const opts: { cap?: number; onPromote?: (ch: Character) => void } = {};
+  if (verb.capByFleet && acg.isOfficer) {
+    const caps = requireRule(
+      (pathwayData(ch) as Record<string, unknown>)[verb.capByFleet] as
+        Record<string, number> | undefined,
+      `acg.navy.${verb.capByFleet}`, "PM p. 55",
+    );
+    opts.cap = requireRule(
+      caps[ch.requireNavyAcg().fleet],
+      `acg.navy.${verb.capByFleet}.${ch.requireNavyAcg().fleet}`, "PM p. 55",
+    );
+  }
+  const skill = verb.onPromoteSkill;
+  if (skill) {
+    opts.onPromote = () => rollDivisionSkill(
+      ctx, acg.isOfficer ? skill.columnByRank.officer : skill.columnByRank.enlisted,
+    );
+  }
+  applyPromotion(ch, ladder, Object.keys(opts).length ? opts : undefined);
 }
 
 // --- Event helpers ---------------------------------------------------

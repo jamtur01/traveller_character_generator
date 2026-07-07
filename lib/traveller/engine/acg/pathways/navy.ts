@@ -23,7 +23,7 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
+  consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
   rollDieRow, resolveCommandDuty, branchSkillCandidates, EnlistmentValidationError,
   type SkillColumnPolicy,
 } from "./shared";
@@ -460,7 +460,6 @@ export function navyRollAssignment(ch: Character): string {
 }
 
 const NAVY_CALLBACKS: PathwayCallbacks = {
-  promoteNavy: (ctx) => promoteNavy(ctx.ch),
   navyFinalize: (ctx) =>
     combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };
@@ -523,27 +522,6 @@ export function navyResolveAssignment(ch: Character, assignment: string): void {
   const res = lookupResolution(resTable, assignment);
   const dms = combatResolutionDms(ch, resTable);
   runPhases(getNavySpec(ch), { ch, assignment, resTable, res, dms });
-}
-
-function promoteNavy(ch: Character): void {
-  const data = dataFor(ch);
-  const acg = ch.requireNavyAcg();
-  // PM p. 55: per-fleet officer rank caps live in JSON (navy.rankCaps).
-  const caps = data.rankCaps;
-  if (!caps) {
-    throw new Error(
-      "Navy pathway requires rankCaps (advancedCharacterGeneration.navy.rankCaps).",
-    );
-  }
-  const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
-  const opts = acg.isOfficer
-    ? {
-        cap: requireRule(
-          caps[acg.fleet], `navy.rankCaps.${acg.fleet}`, "PM p. 55",
-        ),
-      }
-    : undefined;
-  applyPromotion(ch, ladder, opts);
 }
 
 export function navyRetention(ch: Character, assignment: string): void {

@@ -28,7 +28,7 @@ import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
-  createPathwaySpecRegistry, applyPromotion, runReenlist,
+  createPathwaySpecRegistry, runReenlist,
   clearRetention, consumeRetainedAssignment, rollSkillFromColumn, rollDieRow,
   EnlistmentValidationError,
 } from "./shared";
@@ -327,7 +327,6 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
 }
 
 const SCOUT_CALLBACKS: PathwayCallbacks = {
-  promoteScout: (ctx) => promoteScout(ctx.ch),
   scoutFinalize: (ctx) => {
     // PM p. 57: Special/War missions grant an extra skill. The column is
     // JSON-declared per division — the printed Field table has a dedicated
@@ -430,22 +429,6 @@ function applyScoutTransferToBureaucracy(ch: Character): void {
   if (nextAssign !== "Transfer") {
     scoutResolveAssignment(ch, nextAssign);
   }
-}
-
-function promoteScout(ch: Character): void {
-  const data = dataFor(ch);
-  const acg = ch.requireAcgState();
-  // PM p. 57: each promotion grants one skill — the office/scout-life
-  // column for ordinary rank, the administrator column for administrator
-  // rank (a separate ladder). Ordinary caps at IS-9; higher requires
-  // administrator school.
-  const ladder = acg.isOfficer ? data.ranks.administrator : data.ranks.ordinary;
-  applyPromotion(ch, ladder, {
-    onPromote: (ch) => {
-      if (acg.isOfficer) scoutRollSkillFromColumn(ch, "adminRank");
-      else scoutRollSkill(ch);
-    },
-  });
 }
 
 /** Detached Duty benefit at muster (PM p. 57): "Any scout who is serving

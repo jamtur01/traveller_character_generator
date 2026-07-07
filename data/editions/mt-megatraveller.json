@@ -4081,7 +4081,7 @@
           {
             "kind": "promotion",
             "consequence": "Earn promotion",
-            "onPass": "promoteMercenary",
+            "onPass": { "verb": "promote", "ladders": { "officer": "officer", "enlisted": "enlisted" } },
             "consumeNextPromotionPenalty": true,
             "logPenaltyInNote": true
           },
@@ -5073,7 +5073,7 @@
           {
             "kind": "promotion",
             "consequence": "Earn promotion",
-            "onPass": "promoteNavy",
+            "onPass": { "verb": "promote", "ladders": { "officer": "officer", "enlisted": "enlisted" }, "capByFleet": "rankCaps" },
             "consumeNextPromotionPenalty": true
           },
           {
@@ -6241,7 +6241,7 @@
           {
             "kind": "promotion",
             "consequence": "Earn promotion (administrator ladder)",
-            "onPass": "promoteScout",
+            "onPass": { "verb": "promote", "ladders": { "officer": "administrator", "enlisted": "ordinary" }, "onPromoteSkill": { "select": "divisionTable", "columnByRank": { "officer": "adminRank", "enlisted": "first" } } },
             "skipIfNotBureaucracy": true
           },
           {

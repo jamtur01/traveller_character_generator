@@ -36,7 +36,7 @@ import { type PathwayCallbacks } from "@/lib/traveller/engine/acg/jsonPhases";
 import {
   createPathwaySpecRegistry, resetCombatTermFlags, combatFinalize,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  applyPromotion, clearRetention,
+  clearRetention,
   consumeRetainedAssignment, rollDieRowOrThrow,
   resolveCommandDuty, EnlistmentValidationError, type SkillColumnPolicy,
 } from "./shared";
@@ -247,7 +247,6 @@ export function mercenaryRollAssignment(ch: Character): string {
 // (data.advancedCharacterGeneration.mercenary.resolveAssignment). The TS
 // registry below provides the named callbacks the JSON references.
 const MERCENARY_CALLBACKS: PathwayCallbacks = {
-  promoteMercenary: (ctx) => promoteMercenary(ctx.ch),
   mercenaryFinalize: (ctx) =>
     combatFinalize(ctx, dataFor(ctx.ch).combatAssignments ?? []),
 };
@@ -314,14 +313,6 @@ export function mercenaryResolveAssignment(ch: Character, assignment: string): v
 
   const dms = combatResolutionDms(ch, resTable);
   runPhases(getMercenarySpec(ch), { ch, assignment, resTable, res, dms });
-}
-
-/** Advance the rank by one step per the pathway's rank ladder. */
-function promoteMercenary(ch: Character): void {
-  const acg = ch.requireAcgState();
-  const data = dataFor(ch);
-  const ladder = acg.isOfficer ? data.ranks.officer : data.ranks.enlisted;
-  applyPromotion(ch, ladder);
 }
 
 /** Special Assignment table — replaces the normal assignment when the
