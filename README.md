@@ -6,6 +6,7 @@ Supports multiple editions side-by-side, currently:
 
 - **Classic Traveller** (1981 / _The Traveller Book_ + _Citizens of the Imperium_)
 - **MegaTraveller** (1987 / _MegaTraveller Players' Manual_) — including Advanced Character Generation (four career pathways with per-year assignment resolution, brownie points, decorations, court martial, and pre-career schooling)
+- **Mongoose Traveller 2e** (2022 / _Core Rulebook_) — a 2D+DM task system with per-term qualification, survival, events, commission/advancement, and mustering-out
 
 Every rules table, DM, threshold, rank, cascade, and numeric constant is data-driven from the original rulebook pages; each edition's JSON file lives under `data/editions/`. Inspired by [Paul Gorman's 2015 JS generator](https://github.com/pgorman/travellercharactergenerator) for the CT layer.
 
@@ -115,6 +116,20 @@ Fidelity is enforced by two test tiers (`npm test` runs both):
 
 - `test:engine` — engine behaviour with deterministic dice mocks; asserts exact state changes. `tests/data.validation.test.ts` parameterizes over every edition and cross-checks every service skill/muster cell against the engine.
 - `test:audit` (`tests/audit/`) — data-correctness audits verifying the JSON matches the printed tables and the edition schema.
+
+## Validating every character-creation path
+
+The engine ships with an **exhaustive correctness oracle** that generates a real character down every registered creation path and checks each result against the rules:
+
+```bash
+npx vitest run tests/fullCoverage.test.ts
+```
+
+- **Exhaustive by construction.** `tests/_coverageMatrix.ts` enumerates every path from the edition registries — all Classic and MegaTraveller basic services, every MegaTraveller ACG pathway × fleet × subsector-tech × division × line-type × combat-arm, and every Mongoose career (76 combinations today). The enumerables are read from the JSON, never a hardcoded list, so adding a service / fleet / line-type / career to `data/editions/*.json` automatically mints a new combo the oracle then walks. `tests/coverageMatrix.test.ts` proves the enumeration stays total.
+- **Real characters.** `tests/fullCoverage.test.ts` drives each combo end-to-end through the session API (the same surface the UI uses) to a terminal state — mustered out, retired, deceased, or bounded — never treating early termination as an error.
+- **Rulebook-consistent output.** Each finished character is checked by `assertCharacterConsistent` (`tests/_characterInvariants.ts`) against invariants derived from the JSON: rank within the declared ladder, benefit/muster rolls within declared bounds, an exactly reconstructable age, skill levels within the skill cap, decorations only from declared tiers, characteristics ≥ 1, and more. A failing combo reddens with the exact path and the violated invariant, naming the JSON value it was derived from.
+
+Run it alongside the cell-level and audit checks with `npm test`.
 
 ## CI
 
