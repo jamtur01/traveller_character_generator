@@ -103,6 +103,8 @@ function doRepeatWeaponBenefit(ch: Character, kind: "blade" | "gun"): void {
         preferred: known,
         context: { source: "muster", benefit: kind === "blade" ? "Blade" : "Gun" },
         onResolve: (cc, weapon) => {
+          if (kind === "blade") cc.bladeBenefit = weapon;
+          else cc.gunBenefit = weapon;
           cc.addBenefit(weapon);
           cc.log(ev.cascadePick(categorySkill, weapon));
           cc.addSkill(weapon, 0, `Repeat ${kind} benefit (different)`);
