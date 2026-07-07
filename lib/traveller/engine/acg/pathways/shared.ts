@@ -8,7 +8,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
-import { requireRule } from "@/lib/traveller/editions/strict";
+import { parseDieCount, requireRule } from "@/lib/traveller/editions/strict";
 import type { PathwaySpec, ResolveContext } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
   buildPathwaySpecFromConfig,
@@ -413,6 +413,53 @@ export function rollAcgEnlistment(
   const succeeded = r + dm >= spec.target;
   ch.log(ev.enlistmentAttempt(label, r, dm, spec.target, succeeded));
   return succeeded;
+}
+
+/** Commit an enlist/draft-time starting rank: stamp acg.rankCode and derive
+ *  acg.isOfficer from the ACG rank-code notation — a leading "O" marks an
+ *  officer rung (O1, O2, …); any other prefix (E1, …) is enlisted (PM p.
+ *  51/55). The one starting-rank commit shared by every ACG pathway, so the
+ *  officer/enlisted split can never drift from the rank code it is read off. */
+export function commitStartingRank(ch: Character, rankCode: string): void {
+  const acg = ch.requireAcgState();
+  acg.rankCode = rankCode;
+  acg.isOfficer = rankCode.startsWith("O");
+}
+
+/** A pathway's enlist-failure draft table (PM p. 50/52/56): the die to roll
+ *  and the roll → drafted-role map, both JSON. */
+export interface DraftTable {
+  die: string;
+  results: Record<string, string>;
+}
+
+/** Resolve a failed enlistment via the pathway's JSON draft table (PM p.
+ *  50/52/56): roll draftTable.die, look the result up in draftTable.results,
+ *  and on an off-table roll run the optional `onReject` (a pathway's pre-throw
+ *  log) then throw EnlistmentValidationError(rejectionMessage) — the one
+ *  outcome the ACG model routes to a failed-enlistment retirement. On a hit,
+ *  flag ch.drafted and hand the drafted-role string to `onResult`, which maps
+ *  it to the pathway's service/branch/fleet and commits the drafted rank. The
+ *  roll + lookup + reject skeleton is identical across pathways; only the
+ *  role-mapping tail differs, so it stays a caller callback rather than more
+ *  pathway=== branching here. */
+export function resolveDraft(
+  ch: Character,
+  draftTable: DraftTable,
+  opts: {
+    rejectionMessage: string;
+    onResult: (draftedRole: string) => void;
+    onReject?: () => void;
+  },
+): void {
+  const roll = ch.rng.roll(parseDieCount(draftTable.die, "acg enlistment draft.die"));
+  const draftedRole = draftTable.results[String(roll)];
+  if (draftedRole === undefined) {
+    opts.onReject?.();
+    throw new EnlistmentValidationError(opts.rejectionMessage);
+  }
+  ch.drafted = true;
+  opts.onResult(draftedRole);
 }
 
 /** Clear the one-shot retained-assignment flags. Only navy sets them (its

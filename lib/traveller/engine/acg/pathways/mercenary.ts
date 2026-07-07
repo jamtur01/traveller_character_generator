@@ -35,12 +35,11 @@ import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRun
 import {
   createPathwaySpecRegistry, resetCombatTermFlags,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
-  clearRetention,
+  clearRetention, rollAcgEnlistment, commitStartingRank, resolveDraft,
   consumeRetainedAssignment, rollDieRowOrThrow,
   resolveCommandDuty, EnlistmentValidationError, type SkillColumnPolicy,
 } from "./shared";
 import { event as ev } from "@/lib/traveller/history";
-import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 
 const PATHWAY = "mercenary";
 
@@ -96,44 +95,54 @@ function dataFor(ch: Character): MercenaryData {
   return data;
 }
 
-/** Enlistment: pick army or marines, roll vs target with attribute DMs.
- *  Failure → draft (1D, 2=Marines, 3=Army, anything else aborts mercenary).
- *  Successful enlistment commits to a 4-year term and combat arm selection. */
+/** PM p. 50 combat-arm entry gate. Army may pick any arm except Commando;
+ *  Marines only Infantry or Support; Commando is gated to an honors graduate
+ *  of the school named by armGates[arm].honorsGraduateOf. Throws
+ *  EnlistmentValidationError (the outcome the ACG model routes to a failed
+ *  enlistment) on a disallowed arm. All eligibility data is JSON.
+ *
+ *  Shape note for navy/merchant follow-ups: this is a whitelist + honors gate,
+ *  which does NOT match the navy tech-gate / merchant starport-gate shape
+ *  (index-compare a homeworld code against a JSON ordered list + threshold).
+ *  Those two share cleanly with each other and want a separate generic
+ *  checkEnlistmentGate(order, have, minimum) primitive when they are migrated;
+ *  this arm gate stays mercenary-local until a third whitelist gate appears. */
+function checkCombatArmEligibility(
+  ch: Character,
+  elig: MercenaryData["combatArmEligibility"],
+  service: "army" | "marines",
+  combatArm: string,
+): void {
+  if (!elig) return;
+  const armGate = elig.armGates?.[combatArm];
+  if (armGate?.honorsGraduateOf) {
+    const honors = ch.requireAcgState().honorsGraduations ?? [];
+    if (honors.includes(armGate.honorsGraduateOf)) return;
+    throw new EnlistmentValidationError(
+      armGate.errorMessage ?? `Combat arm "${combatArm}" gated by ${armGate.honorsGraduateOf} honors.`,
+    );
+  }
+  const allowedByService = elig[service] ?? null;
+  if (allowedByService && !allowedByService.includes(combatArm)) {
+    throw new EnlistmentValidationError(
+      `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
+      `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
+    );
+  }
+}
+
+/** Enlistment: pick army or marines, roll vs target with attribute DMs
+ *  (rollAcgEnlistment). Failure → the PM p. 50 draft table (2=Marines, 3=Army,
+ *  else abort). Success or draft commits the JSON starting rank via
+ *  commitStartingRank; the combat arm is fixed at selection. Pure orchestration
+ *  of the shared enlist primitives — every game value comes from mercenary JSON. */
 export function mercenaryEnlist(
   ch: Character,
   service: "army" | "marines",
   combatArm: string,
 ): void {
   const data = dataFor(ch);
-  // Combat-arm entry restrictions per manual p. 50:
-  //   - Army characters may select any combat arm except Commando.
-  //   - Marine characters may select only Infantry or Support.
-  //   - Commando entry is gated to Military Academy honors graduates,
-  //     regardless of service.
-  const elig = data.combatArmEligibility as undefined | {
-    army?: string[];
-    marines?: string[];
-    armGates?: Record<string, { honorsGraduateOf?: string; errorMessage?: string }>;
-  };
-  if (elig) {
-    const armGate = elig.armGates?.[combatArm];
-    if (armGate?.honorsGraduateOf) {
-      const honors = ch.requireAcgState().honorsGraduations ?? [];
-      if (!honors.includes(armGate.honorsGraduateOf)) {
-        throw new EnlistmentValidationError(
-          armGate.errorMessage ?? `Combat arm "${combatArm}" gated by ${armGate.honorsGraduateOf} honors.`,
-        );
-      }
-    } else {
-      const allowedByService = elig[service as "army" | "marines"] ?? null;
-      if (allowedByService && !allowedByService.includes(combatArm)) {
-        throw new EnlistmentValidationError(
-          `${service === "army" ? "Army" : "Marines"} cannot enter combat arm "${combatArm}" ` +
-          `(allowed: ${allowedByService.join(", ")}); see PM p. 50.`,
-        );
-      }
-    }
-  }
+  checkCombatArmEligibility(ch, data.combatArmEligibility, service, combatArm);
   ch.requireMercenaryAcg().combatArm = combatArm;
   ch.requireMercenaryAcg().branch = service === "army" ? "Army" : "Marines";
 
@@ -147,33 +156,26 @@ export function mercenaryEnlist(
   }
 
   const enlistSpec = data.enlistment[service];
-  const dm = evaluateDM(enlistSpec.dms, { attributes: ch.attributes, terms: ch.terms });
-  const r = ch.rng.roll(2);
-  const succeeded = r + dm >= enlistSpec.target;
-  ch.log(ev.enlistmentAttempt(svcLabel, r, dm, enlistSpec.target, succeeded));
-  if (succeeded) {
-    acg.rankCode = enlistSpec.startingRank;
-    acg.isOfficer = enlistSpec.startingRank.startsWith("O");
+  if (rollAcgEnlistment(ch, enlistSpec, svcLabel)) {
+    commitStartingRank(ch, enlistSpec.startingRank);
     return;
   }
 
-  // Failed enlistment → attempt draft.
-  const draftRoll = ch.rng.roll(1);
-  const drafted = data.enlistment.draft.results[String(draftRoll)];
-  if (!drafted) {
-    ch.log(ev.enlistmentAttempt(
-      "mercenary", 0, 0, 0, false,
-      "draft did not assign mercenary service",
-    ));
-    throw new EnlistmentValidationError("Mercenary draft rejection — choose another path");
-  }
-  ch.drafted = true;
-  const draftedService = drafted.toLowerCase() as "army" | "marines";
-  const draftSpec = data.enlistment[draftedService];
-  ch.log(ev.drafted(drafted));
-  ch.requireMercenaryAcg().branch = drafted;
-  acg.rankCode = draftSpec.startingRank;
-  acg.isOfficer = false; // drafted = enlisted; no OCS first term
+  // Failed enlistment → PM p. 50 draft. A drafted result OVERRIDES the chosen
+  // service (branch) but keeps the selected combat arm; drafted = enlisted (no
+  // OCS this term), which commitStartingRank derives from the E1 draft rank.
+  resolveDraft(ch, data.enlistment.draft, {
+    rejectionMessage: "Mercenary draft rejection — choose another path",
+    onReject: () => ch.log(ev.enlistmentAttempt(
+      "mercenary", 0, 0, 0, false, "draft did not assign mercenary service",
+    )),
+    onResult: (drafted) => {
+      const draftedService = drafted.toLowerCase() as "army" | "marines";
+      ch.log(ev.drafted(drafted));
+      ch.requireMercenaryAcg().branch = drafted;
+      commitStartingRank(ch, data.enlistment[draftedService].startingRank);
+    },
+  });
 }
 
 /** Initial training: first year of term 1. The first entry in
