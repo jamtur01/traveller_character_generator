@@ -27,13 +27,12 @@
 // is empty today because every combo validates clean.
 
 import { describe, expect, it } from "vitest";
-import { coverageMatrix, type CoverageCombo } from "@/tests/_coverageMatrix";
-import { walkAcg, walkBasic, walkMongoose, type WalkResult } from "@/tests/_walker";
+import { coverageMatrix } from "@/tests/_coverageMatrix";
+import { walkCombo, comboLabel } from "@/tests/_comboWalk";
 import {
   assertCharacterConsistent,
   type SoloDivergence,
 } from "@/tests/_characterInvariants";
-import type { EnlistOptions } from "@/lib/traveller/chargen/session";
 
 const matrix = coverageMatrix();
 
@@ -51,65 +50,11 @@ const divergences: SoloDivergence[] = [];
 // finding) or is skipped never reaches the increment, so the count drops.
 let driven = 0;
 
-// walkBasic / walkAcg take literal-union params; coverage picks arrive as
-// registry-sourced strings (Readonly<Record<string, string>>). The option-domain
-// audit-locks and the coverageMatrix self-check prove those values ARE the
-// declared union members, so narrowing them here is a sound unchecked cast — the
-// compiler simply can't narrow a Record read. The narrowed values are passed
-// straight into the walker (which re-types them via EnlistOptions), never
-// trusted for a member access.
-type WalkBasicOpts = Parameters<typeof walkBasic>[0];
-type WalkAcgOpts = Parameters<typeof walkAcg>[0];
-
-/** Dispatch one combo to its chargen-model walker and return the walk result. */
-function driveCombo(combo: CoverageCombo): WalkResult {
-  switch (combo.model) {
-    case "classic":
-      return walkBasic({
-        edition: combo.edition as WalkBasicOpts["edition"],
-        service: combo.service,
-      });
-    case "acg": {
-      // exactOptionalPropertyTypes forbids passing an explicit `undefined`, and
-      // a pathway's picks only carry the sub-domains it crosses (navy has no
-      // acgService, mercenary has no acgFleet, …). So assign each optional field
-      // only when the pick is present; the walker fills the rest with defaults.
-      const p = combo.picks;
-      const opts: WalkAcgOpts = { pathway: combo.pathway as WalkAcgOpts["pathway"] };
-      if (p.acgService !== undefined) opts.service = p.acgService as EnlistOptions["acgService"];
-      if (p.acgCombatArm !== undefined) opts.combatArm = p.acgCombatArm;
-      if (p.acgFleet !== undefined) opts.fleet = p.acgFleet as EnlistOptions["acgFleet"];
-      if (p.acgDivision !== undefined) opts.division = p.acgDivision as EnlistOptions["acgDivision"];
-      if (p.acgLineType !== undefined) opts.lineType = p.acgLineType;
-      if (p.acgSubsectorTech !== undefined) opts.subsectorTech = p.acgSubsectorTech;
-      return walkAcg(opts);
-    }
-    case "mongoose":
-      return walkMongoose({ career: combo.career });
-  }
-}
-
-/** Human-readable it.each name that names the exact combo a failure came from. */
-function comboLabel(combo: CoverageCombo): string {
-  switch (combo.model) {
-    case "classic":
-      return `${combo.edition} · classic · service=${combo.service}`;
-    case "acg": {
-      const picks = Object.entries(combo.picks)
-        .map(([field, value]) => `${field}=${value}`)
-        .join(", ");
-      return `${combo.edition} · acg · ${combo.pathway}${picks ? ` · ${picks}` : ""}`;
-    }
-    case "mongoose":
-      return `${combo.edition} · mongoose · career=${combo.career}`;
-  }
-}
-
 describe("full coverage — every chargen combo yields a rulebook-consistent character", () => {
   it.each(matrix.map((combo) => ({ label: comboLabel(combo), combo })))(
     "$label",
     ({ combo }) => {
-      const { character } = driveCombo(combo);
+      const { character } = walkCombo(combo);
       // The oracle. Throws naming the violated invariant + JSON path on any
       // inconsistency; $soloPolicy-governed skips accumulate in `divergences`
       // instead. Calling it IS the assertion (rich, descriptive failure).

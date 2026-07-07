@@ -25,12 +25,11 @@
 // floors below are exact measured counts, never statistical guesses.
 
 import { beforeAll, describe, expect, it } from "vitest";
-import { coverageMatrix, type CoverageCombo } from "@/tests/_coverageMatrix";
-import { walkAcg, walkBasic, walkMongoose, type WalkResult } from "@/tests/_walker";
+import { coverageMatrix } from "@/tests/_coverageMatrix";
+import { walkCombo, comboLabel } from "@/tests/_comboWalk";
 import { assertCharacterConsistent } from "@/tests/_characterInvariants";
 import type { Character } from "@/lib/traveller/character";
 import type { HistoryEvent } from "@/lib/traveller/history";
-import type { EnlistOptions } from "@/lib/traveller/chargen/session";
 
 const matrix = coverageMatrix();
 
@@ -42,58 +41,6 @@ const matrix = coverageMatrix();
 // distribution and the floors below are exact.
 const SEED_COUNT = 20;
 const SEEDS = Array.from({ length: SEED_COUNT }, (_, i) => i + 1);
-
-// Registry picks arrive as Readonly<Record<string,string>>; the option-domain
-// audit-locks + coverageMatrix self-check prove those values ARE the declared
-// union members, so narrowing them to the walker's literal-union params is a
-// sound unchecked cast (the compiler cannot narrow a Record read). Mirrors the
-// same casts in fullCoverage.test.ts's driveCombo.
-type WalkBasicOpts = Parameters<typeof walkBasic>[0];
-type WalkAcgOpts = Parameters<typeof walkAcg>[0];
-
-/** Dispatch one combo to its seeded chargen-model walker. */
-function driveComboSeeded(combo: CoverageCombo, seed: number): WalkResult {
-  switch (combo.model) {
-    case "classic":
-      return walkBasic({
-        edition: combo.edition as WalkBasicOpts["edition"],
-        service: combo.service,
-        seed,
-      });
-    case "acg": {
-      // exactOptionalPropertyTypes forbids an explicit `undefined`, and a
-      // pathway's picks only carry the sub-domains it crosses, so assign each
-      // optional field only when present (the walker fills the rest).
-      const p = combo.picks;
-      const opts: WalkAcgOpts = { pathway: combo.pathway as WalkAcgOpts["pathway"], seed };
-      if (p.acgService !== undefined) opts.service = p.acgService as EnlistOptions["acgService"];
-      if (p.acgCombatArm !== undefined) opts.combatArm = p.acgCombatArm;
-      if (p.acgFleet !== undefined) opts.fleet = p.acgFleet as EnlistOptions["acgFleet"];
-      if (p.acgDivision !== undefined) opts.division = p.acgDivision as EnlistOptions["acgDivision"];
-      if (p.acgLineType !== undefined) opts.lineType = p.acgLineType;
-      if (p.acgSubsectorTech !== undefined) opts.subsectorTech = p.acgSubsectorTech;
-      return walkAcg(opts);
-    }
-    case "mongoose":
-      return walkMongoose({ career: combo.career, seed });
-  }
-}
-
-/** Human-readable label naming the exact combo a failure came from. */
-function comboLabel(combo: CoverageCombo): string {
-  switch (combo.model) {
-    case "classic":
-      return `${combo.edition} · classic · service=${combo.service}`;
-    case "acg": {
-      const picks = Object.entries(combo.picks)
-        .map(([field, value]) => `${field}=${value}`)
-        .join(", ");
-      return `${combo.edition} · acg · ${combo.pathway}${picks ? ` · ${picks}` : ""}`;
-    }
-    case "mongoose":
-      return `${combo.edition} · mongoose · career=${combo.career}`;
-  }
-}
 
 const OUTCOMES = [
   "deceased", "mustered-out", "discharged-retired", "enlistment-washout", "bounded",
@@ -166,7 +113,7 @@ function driveAll(): DriveSummary {
     const modelCounts = s.byModel[model]!;
     for (const seed of SEEDS) {
       try {
-        const { character } = driveComboSeeded(combo, seed);
+        const { character } = walkCombo(combo, seed);
         // The oracle: throws naming the violated invariant + JSON path on any
         // inconsistency. Calling it IS the assertion.
         assertCharacterConsistent(character);
