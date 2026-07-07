@@ -6,7 +6,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
-import { currentCareer } from "@/lib/traveller/engine/mongoose/core";
+import { currentCareer, getMongooseData } from "@/lib/traveller/engine/mongoose/core";
 import { applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
 import type { MongooseRank } from "@/lib/traveller/engine/mongoose/types";
 
@@ -68,10 +68,11 @@ export function commission(ch: Character): void {
   // back to rank 1. Only attemptCommission's normal path reaches an un-officer.
   if (state.commissioned) return;
   state.commissioned = true;
-  state.rank = 1;
+  const rank = getMongooseData(ch).commissionRank;
+  state.rank = rank;
   const ladder = currentLadder(ch);
-  applyRankBenefit(ch, ladder, 1);
-  const row = ladder.find((r) => r.rank === 1);
-  ch.log(ev.mongooseRank(1, row?.title ?? null, true));
+  applyRankBenefit(ch, ladder, rank);
+  const row = ladder.find((r) => r.rank === rank);
+  ch.log(ev.mongooseRank(rank, row?.title ?? null, true));
   state.perTerm.commissionedThisTerm = true;
 }

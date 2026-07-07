@@ -610,6 +610,7 @@ const MongooseDataSchema = z.looseObject({
   agingStartTerm: z.number(),
   cashRollCap: z.number(),
   commissionAnyTermSocMin: z.number(),
+  commissionRank: z.number(),
   skillLevelMax: z.number(),
   skillTotalCap: z.looseObject({ multiplier: z.number(), attributes: z.array(z.string()) }),
   connectionSkillCap: z.number(),

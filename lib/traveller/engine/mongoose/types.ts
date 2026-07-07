@@ -242,6 +242,8 @@ export interface MongooseData {
   /** SOC at which a commission may be attempted in any term, not just the
    *  first (Core p.18). */
   readonly commissionAnyTermSocMin: number;
+  /** Officer rank a newly commissioned Traveller attains (Core p.18: rank 1). */
+  readonly commissionRank: number;
   /** Max skill level during creation (Core p.19: 4). */
   readonly skillLevelMax: number;
   /** Total skill-level cap: multiplier x sum of the named attributes (Core

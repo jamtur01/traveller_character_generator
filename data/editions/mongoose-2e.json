@@ -8330,6 +8330,8 @@
     "$lifeEventsUnusual": "Core p.46 Unusual Event sub-table (1D on a Life Event of 12).",
     "commissionAnyTermSocMin": 9,
     "$commissionAnyTermSocMin": "Core p.19: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
+    "commissionRank": 1,
+    "$commissionRank": "Core p.18: gaining a commission makes the Traveller a rank-1 officer (the officer ladder's entry rung).",
     "skillLevelMax": 4,
     "$skillLevelMax": "Core p.18: a skill may never be increased beyond level 4 during creation; further increases are lost.",
     "skillTotalCap": {
