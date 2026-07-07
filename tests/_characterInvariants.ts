@@ -120,13 +120,40 @@ function checkSkills(ch: Character): void {
   const { multiplier, attributes } = m.skillTotalCap;
   const cap = multiplier * attributes.reduce((s, a) => s + ch.attributes[a as AttributeKey], 0);
   const total = ch.skills.reduce((s, [, l]) => s + l, 0);
-  if (total > cap) {
+  // The engine enforces this cap at GRANT time against the character's INT+EDU
+  // AT THAT MOMENT (engine/mongoose/skills.ts remainingTotalCap/atTotalCap), and
+  // MgT2 never strips skills back out. MgT2 ageing (Core p.49) can afterwards
+  // REDUCE a capped characteristic (a mental reduction on the ageing table)
+  // below its value when those skills were legitimately gained, so re-checking
+  // the FINAL (reduced) INT+EDU here is UNSOUND: it false-positives on any
+  // Traveller whose INT/EDU dropped after acquisition (e.g. a long-career
+  // character aged down to INT+EDU 2 still carries the ~22 skills it earned at
+  // a far higher INT+EDU). Enforce the cap only when no capped characteristic
+  // was reduced post-acquisition — then the final cap equals the grant-time cap
+  // and a real engine over-grant still reddens. (Injury reduces only physical
+  // characteristics, so it never lowers this cap; the detector stays general.)
+  if (total > cap && !cappedAttrReduced(ch, attributes)) {
     fail(
       "skillTotalCap",
       `total skill levels ${total} > ${cap} ` +
       `(mongoose.skillTotalCap ${multiplier}×(${attributes.join("+")}))`,
     );
   }
+}
+
+/** True when a capped characteristic (a `skillTotalCap.attributes` entry, i.e.
+ *  INT or EDU) was REDUCED after skills were acquired — a negative-delta
+ *  `attributeChange` on one of those attributes in the event log. Every engine
+ *  characteristic reduction flows through `Character.improveAttribute`, which
+ *  logs an `attributeChange`, so this detects ageing's mental reductions
+ *  completely. Chosen over a coarse `terms >= agingStartTerm` proxy to keep
+ *  maximum teeth: a term-4+ Traveller whose INT/EDU was never actually reduced
+ *  is still held to the cap. */
+function cappedAttrReduced(ch: Character, cappedAttrs: readonly string[]): boolean {
+  return ch.events.some(
+    (e) => e.kind === "attributeChange" && e.delta < 0 &&
+      cappedAttrs.includes(e.attribute),
+  );
 }
 
 // --- age vs terms served ---------------------------------------------------

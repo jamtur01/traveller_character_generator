@@ -24,6 +24,8 @@ import type { NavyAcgState } from "@/lib/traveller/engine/acg/state";
 import * as session from "@/lib/traveller/chargen/session";
 import type { EnlistOptions } from "@/lib/traveller/chargen/session";
 import { getEdition } from "@/lib/traveller/editions";
+import { event as ev } from "@/lib/traveller/history";
+import type { Skill } from "@/lib/traveller/types";
 
 const MONGOOSE_ENLIST: EnlistOptions = {
   verbose: false,
@@ -171,6 +173,39 @@ describe("assertCharacterConsistent throws on the invariant each mutation violat
     const bad = cloneCharacter(mongoose);
     bad.attributes.endurance = 0; // within attributeCaps (min 0) but below the live floor
     expect(() => assertCharacterConsistent(bad)).toThrow(/\[mongooseCharacteristicFloor\]/);
+  });
+});
+
+describe("skillTotalCap soundness: post-acquisition INT/EDU reduction (Core p.18)", () => {
+  // cap = mongoose.skillTotalCap 3×(INT+EDU); with INT/EDU driven to 1 the cap
+  // is 6, and these skills total 10 (each <= skillLevelMax 4).
+  const overCap: Skill[] = [["Gun Combat", 4], ["Athletics", 4], ["Recon", 2]];
+
+  it("accepts an aged Traveller whose skills exceed 3×(reduced INT+EDU)", () => {
+    const aged = cloneCharacter(mongoose);
+    aged.attributes.intelligence = 1;
+    aged.attributes.education = 1;
+    aged.skills = overCap.map(([n, l]) => [n, l] as Skill);
+    // The engine capped skills at grant time against the THEN-current INT+EDU;
+    // MgT2 ageing later reduced EDU (mental) and never strips skills, so the
+    // final-INT+EDU re-check would false-positive without the soundness guard.
+    aged.events = [...aged.events, ev.attributeChange("education", -4, "Ageing")];
+    expect(() => assertCharacterConsistent(aged)).not.toThrow();
+  });
+
+  it("still rejects a never-reduced Traveller that genuinely exceeds the cap (teeth)", () => {
+    const bad = cloneCharacter(mongoose);
+    bad.attributes.intelligence = 1;
+    bad.attributes.education = 1;
+    bad.skills = overCap.map(([n, l]) => [n, l] as Skill);
+    // Exact "capped characteristic never reduced" precondition: drop any INT/EDU
+    // reduction the seed happened to log, so the guard cannot relax and a real
+    // engine over-grant still reddens.
+    bad.events = bad.events.filter(
+      (e) => !(e.kind === "attributeChange" && e.delta < 0 &&
+        (e.attribute === "intelligence" || e.attribute === "education")),
+    );
+    expect(() => assertCharacterConsistent(bad)).toThrow(/skillTotalCap/);
   });
 });
 
