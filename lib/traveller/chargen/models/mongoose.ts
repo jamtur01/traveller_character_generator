@@ -313,7 +313,7 @@ export const mongooseModel: ChargenModel = {
         throw new Error(`mongoose model does not handle the "${action.kind}" action`);
     }
   },
-  pausedPhase(action: FrontierAction): ChargenPhase {
+  pausedPhase(action: FrontierAction, _ch: Character, _base: Character): ChargenPhase {
     switch (action.kind) {
       case "enlist":
         return "career";

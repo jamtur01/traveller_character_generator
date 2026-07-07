@@ -61,8 +61,15 @@ export function rollSkillTraining(ch: Character, current?: number, total?: numbe
       : {}),
     onResolve: (c, chosen) => {
       const table = tables.find((t) => t.label === chosen) ?? tables[0]!;
-      const cell = table.column[c.rng.roll(1)];
-      if (typeof cell === "string") applySkillCell(c, cell, table.label);
+      const roll = c.rng.roll(1);
+      const cell = table.column[roll];
+      if (typeof cell !== "string") {
+        throw new Error(
+          `Mongoose training column "${table.label}" has no skill at rolled index ${roll} ` +
+          "(Core pp.18-19: every 1D cell grants a skill) — fix the edition JSON",
+        );
+      }
+      applySkillCell(c, cell, table.label);
     },
   });
 }

@@ -495,7 +495,10 @@ function rollDivisionSkill(ctx: ResolveContext, column: string): void {
   const ch = ctx.ch;
   const data = pathwayData(ch) as unknown as { skillTables: Record<string, SkillTableShape> };
   const division = ch.requireScoutAcg().division;
-  const table = data.skillTables[division]!;
+  const table = requireRule(
+    data.skillTables[division],
+    `acg.scout.skillTables.${division}`, "PM p. 57",
+  );
   if (column === "first") {
     rollSkillFromColumn(ch, table, "first", (col) => `Scout ${division} ${col}`);
     return;
@@ -516,7 +519,9 @@ function rollAvailableTablesSkill(ctx: ResolveContext, domain: string): void {
   const ch = ctx.ch;
   const data = pathwayData(ch) as unknown as { skillTables: Record<string, MerchantSkillTableShape> };
   const tables = optionDomain(ch.editionId, domain).values
-    .filter((k) => merchantAvailableColumns(ch, data.skillTables[k]!).length > 0);
+    .filter((k) => merchantAvailableColumns(ch, requireRule(
+      data.skillTables[k], `acg.merchantPrince.skillTables.${k}`, "PM p. 63",
+    )).length > 0);
   if (tables.length === 0) return;
   if (ch.choiceMode === "interactive" && tables.length > 1) {
     ch.pickOrDefer({
@@ -613,7 +618,11 @@ function runPromote(ctx: ResolveContext, verb: PromoteVerb): void {
   const ch = ctx.ch;
   const acg = ch.requireAcgState();
   const data = pathwayData(ch) as { ranks: Record<string, LadderRow[]> };
-  const ladder = data.ranks[acg.isOfficer ? verb.ladders.officer : verb.ladders.enlisted]!;
+  const ladderKey = acg.isOfficer ? verb.ladders.officer : verb.ladders.enlisted;
+  const ladder = requireRule(
+    data.ranks[ladderKey],
+    `acg.${acg.pathway}.ranks.${ladderKey}`, "PM p. 44-65 rank ladder",
+  );
   const opts: { cap?: number; onPromote?: (ch: Character) => void } = {};
   if (verb.capByFleet && acg.isOfficer) {
     const caps = requireRule(

@@ -221,8 +221,8 @@ export function buildServiceDef(
       options: tables,
       context: { source: "skillRoll" },
       onResolve: (ch, tableName) => {
-        const idx = tables.indexOf(tableName) + 1;
-        runTablePick(ch, idx);
+        const pickedKey = available[tables.indexOf(tableName)]!;
+        runTablePick(ch, meta.order.indexOf(pickedKey) + 1);
       },
     });
   };
@@ -301,7 +301,12 @@ function applyAutoEntry(
       ),
       source,
     );
+    return;
   }
+  throw new Error(
+    `automaticSkills entry has neither "effect" nor "skill" declared` +
+    `${source ? ` (${source})` : ""} — fix the edition JSON`,
+  );
 }
 
 /** Resolve a service-skill label; cascade if it's a generic cascade label. */

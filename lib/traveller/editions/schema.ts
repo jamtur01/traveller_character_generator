@@ -161,7 +161,6 @@ export const RulesSchema = z.looseObject({
     nobleService: z.string().optional(),
     agingAutoSavesPerTerm: z.number().optional(),
     cashRollCap: z.number().optional(),
-    retry: z.unknown().optional(),
   }).optional(),
   // Homeworld skill restrictions (MT p. 39) — consumed by
   // engine/skillRestrictions.ts. Present only in editions with a homeworld
@@ -406,8 +405,14 @@ const PathwayDataSchema = z.looseObject({
   // its sibling citation (kept by z.looseObject).
   officerSkillTables: z.array(z.string()).optional(),
   ranks: z.looseObject({
-    enlisted: z.array(z.unknown()).optional(),
-    officer: z.array(z.unknown()).optional(),
+    enlisted: z.array(z.array(z.unknown()).refine(
+      (r) => typeof r[0] === "string" && typeof r[1] === "string",
+      "ACG rank row must be [code, title, ...]",
+    )).optional(),
+    officer: z.array(z.array(z.unknown()).refine(
+      (r) => typeof r[0] === "string" && typeof r[1] === "string",
+      "ACG rank row must be [code, title, ...]",
+    )).optional(),
   }).optional(),
   reenlistment: z.looseObject({}).optional(),
   combatAssignments: z.array(z.string()).optional(),
