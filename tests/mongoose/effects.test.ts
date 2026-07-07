@@ -98,4 +98,27 @@ describe("effect interpreter", () => {
     expect(c.attributes.strength).toBe(7);
     expect(c.events.some((e) => e.kind === "raw" && /Injury \(5\)/.test(e.text))).toBe(true);
   });
+
+  it("restores an injury-zeroed physical characteristic to >= 1 (crisis, Core p.49)", () => {
+    // Low physicals so a single injury reduction drives one to <= 0. Injury 3
+    // ("Missing Eye or Limb": reduce the higher of STR/DEX by 2) hits STR 2 -> 0.
+    // Before the shared crisis restore (02f53cb) the injury path left a live
+    // Traveller at 0; only the ageing path restored.
+    const c = new Character({ attributes: {
+      strength: 2, dexterity: 1, endurance: 7, intelligence: 7, education: 7, social: 7,
+    } });
+    c.editionId = "mongoose-2e";
+    c.choiceMode = "auto";
+    c.mongooseState = freshMongooseState();
+    c.mongooseState.career = "agent";
+    c.mongooseState.assignment = "lawEnforcement";
+    const seq = [d6(3)]; // Injury table roll 3 (fixed -2, no further dice)
+    let i = 0;
+    vi.spyOn(Math, "random").mockImplementation(() => seq[i++] ?? d6(3));
+    rollInjury(c, false);
+    expect(c.attributes.strength).toBeGreaterThanOrEqual(1);
+    expect(
+      c.events.some((e) => e.kind === "raw" && /Characteristic crisis/.test(e.text)),
+    ).toBe(true);
+  });
 });
