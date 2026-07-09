@@ -4777,6 +4777,15 @@
           "staffSkills",
           "shipboard"
         ],
+        "columnDisplayNames": {
+          "$rule": "PM p. 51 Service Skills table — printed column headers: Army Life, Marine Life, NCO Skills, Command Skills, Staff Skills, Shipboard.",
+          "armyLife": "Army Life",
+          "marineLife": "Marine Life",
+          "ncoSkills": "NCO Skills",
+          "commandSkills": "Command Skills",
+          "staffSkills": "Staff Skills",
+          "shipboard": "Shipboard"
+        },
         "rows": [
           {
             "die": 1,
@@ -5957,6 +5966,15 @@
           "commandOfficer",
           "staffOfficer"
         ],
+        "columnDisplayNames": {
+          "$rule": "PM p. 55 Service Skills table — printed column headers: Navy Life, Shipboard, Shore Duty, Petty Off (Petty Officer), Cmd Off (Command Officer), Staff Off (Staff Officer).",
+          "navyLife": "Navy Life",
+          "shipboard": "Shipboard",
+          "shoreDuty": "Shore Duty",
+          "pettyOfficer": "Petty Officer",
+          "commandOfficer": "Command Officer",
+          "staffOfficer": "Staff Officer"
+        },
         "rows": [
           {
             "die": 1,
@@ -6073,6 +6091,15 @@
           "medical",
           "technical"
         ],
+        "columnDisplayNames": {
+          "$rule": "PM p. 55 Branch Skills table — printed column headers: Line/Crew, Flight, Gunnery, Engineer, Medical, Technical.",
+          "lineCrew": "Line/Crew",
+          "flight": "Flight",
+          "gunnery": "Gunnery",
+          "engineer": "Engineer",
+          "medical": "Medical",
+          "technical": "Technical"
+        },
         "rows": [
           {
             "die": 1,
@@ -6957,6 +6984,15 @@
             "specialOrWarMission",
             "fieldService"
           ],
+          "columnDisplayNames": {
+            "$rule": "PM p. 59 Scout Skill Table set 1 (Field/general) — printed column headers: Scout Life, Exploration, Comm (Communications), Survey, Special or War Mission, Field Service.",
+            "scoutLife": "Scout Life",
+            "exploration": "Exploration",
+            "communications": "Communications",
+            "survey": "Survey",
+            "specialOrWarMission": "Special or War Mission",
+            "fieldService": "Field Service"
+          },
           "rows": [
             {
               "die": 1,
@@ -7069,6 +7105,15 @@
             "adminRank",
             "bureaucracy"
           ],
+          "columnDisplayNames": {
+            "$rule": "PM p. 59 Scout Skill Table set 2 (Bureaucracy) — printed column headers: Admin, Operation, Technical, Detached Duty, Admin Rank, Bureaucracy.",
+            "admin": "Admin",
+            "operation": "Operation",
+            "technical": "Technical",
+            "detachedDuty": "Detached Duty",
+            "adminRank": "Admin Rank",
+            "bureaucracy": "Bureaucracy"
+          },
           "rows": [
             {
               "die": 1,
@@ -8132,6 +8177,14 @@
             "merchantSkills",
             "masterSkills"
           ],
+          "columnDisplayNames": {
+            "$rule": "PM p. 63 Merchant skill table set 1 — printed column headers: Merchant Life, Shipboard Life, Officer Skills, Merchant Skills, Master Skills.",
+            "merchantLife": "Merchant Life",
+            "shipboardLife": "Shipboard Life",
+            "officerSkills": "Officer Skills",
+            "merchantSkills": "Merchant Skills",
+            "masterSkills": "Master Skills"
+          },
           "rows": [
             {
               "die": 1,
@@ -8202,6 +8255,14 @@
             "medic",
             "admin"
           ],
+          "columnDisplayNames": {
+            "$rule": "PM p. 63 Merchant skill table set 2 — printed column headers: Deck Skills, Engineer Skills, Purser Skills, Medic Skills, Admin Skills.",
+            "deck": "Deck Skills",
+            "engineer": "Engineer Skills",
+            "purser": "Purser Skills",
+            "medic": "Medic Skills",
+            "admin": "Admin Skills"
+          },
           "rows": [
             {
               "die": 1,
@@ -8272,6 +8333,14 @@
             "freeTraderService",
             "freeTraderBusiness"
           ],
+          "columnDisplayNames": {
+            "$rule": "PM p. 63 Merchant skill table set 3 — printed column headers: Sales Life, Planet Life, Free Trader — Life, Free Trader — Service, Free Trader — Business.",
+            "salesLife": "Sales Life",
+            "planetLife": "Planet Life",
+            "freeTraderLife": "Free Trader — Life",
+            "freeTraderService": "Free Trader — Service",
+            "freeTraderBusiness": "Free Trader — Business"
+          },
           "rows": [
             {
               "die": 1,

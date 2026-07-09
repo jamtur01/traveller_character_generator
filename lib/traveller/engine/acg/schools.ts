@@ -14,6 +14,7 @@ import { applyAcgSkillCell } from "./skills";
 import { event as ev } from "@/lib/traveller/history";
 import {
   serviceSkillColumnFor, rollSkillFromColumn, rollDieRow, branchSkillCandidates,
+  skillColumnDisplay,
   type SkillColumnPolicy,
 } from "@/lib/traveller/engine/acg/pathways/shared";
 import {
@@ -23,6 +24,7 @@ import {
   buildPredicateContext, evaluatePredicate, type Predicate,
 } from "@/lib/traveller/engine/predicate";
 import { requireRule } from "@/lib/traveller/editions/strict";
+import { titleize } from "@/lib/traveller/formatting";
 
 type Effect = Record<string, unknown> & { type: string };
 
@@ -42,7 +44,11 @@ interface PathwayData {
     notes?: string[];
     schoolingThreshold?: number;
   };
-  serviceSkills?: { rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
+  serviceSkills?: {
+    rows: Array<Record<string, unknown>>;
+    dms?: StructuredDm[];
+    columnDisplayNames?: Record<string, string>;
+  };
   skillColumnPolicy?: SkillColumnPolicy;
   branchSkills?: { rows: Array<Record<string, unknown>>; dms?: StructuredDm[] };
   ranks?: { officer: Array<unknown[]> };
@@ -299,14 +305,15 @@ function rollOnSpecialistSchool(
   const col = useSchooling ? "schooling" : "training";
   const skill = row[col];
   if (typeof skill === "string") {
-    applyAcgSkillCell(ch, skill, `${schoolName} (${col})`);
+    applyAcgSkillCell(ch, skill, `${schoolName} (${titleize(col)})`);
   }
 }
 
 function rollOnServiceSkills(ch: Character, data: PathwayData, schoolName: string): void {
   if (!ch.acgState || !data.serviceSkills) return;
   const col = serviceSkillColumnFor(ch, data.skillColumnPolicy);
-  rollSkillFromColumn(ch, data.serviceSkills, col, `${schoolName} (${col})`);
+  rollSkillFromColumn(ch, data.serviceSkills, col,
+    `${schoolName} (${skillColumnDisplay(data.serviceSkills, col)})`);
 }
 
 function ocsCommission(ch: Character): void {

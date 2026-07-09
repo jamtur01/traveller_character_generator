@@ -23,7 +23,7 @@ import {
   createPathwaySpecRegistry, resetCombatTermFlags,
   combatResolutionDms, rollSpecialAssignment, runReenlist, offerRoleChange,
   consumeRetainedAssignment, rollDieRowOrThrow, rollSkillFromColumn,
-  rollDieRow, resolveCommandDuty, branchSkillCandidates,
+  rollDieRow, resolveCommandDuty, branchSkillCandidates, skillColumnDisplay,
   rollAcgEnlistment, commitStartingRank, resolveDraft,
   checkEnlistmentGate, rerollUntilLegal,
   type SkillColumnPolicy,
@@ -100,6 +100,7 @@ export interface NavyData {
   skillColumnPolicy?: SkillColumnPolicy;
   serviceSkills?: {
     columns: string[];
+    columnDisplayNames?: Record<string, string>;
     rows: Array<Record<string, unknown>>;
     dms?: StructuredDm[];
   };
@@ -384,7 +385,8 @@ function navyOfficerSkillChoice(ch: Character): void {
 function navyServiceSkillRoll(ch: Character, column: string): void {
   const data = dataFor(ch);
   if (!data.serviceSkills) return;
-  rollSkillFromColumn(ch, data.serviceSkills, column, `Navy ${column}`);
+  rollSkillFromColumn(ch, data.serviceSkills, column,
+    `Navy ${skillColumnDisplay(data.serviceSkills, column)}`);
 }
 
 function navyBranchSkillRoll(ch: Character): void {

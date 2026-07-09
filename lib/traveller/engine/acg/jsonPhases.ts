@@ -24,7 +24,7 @@ import {
 import type { MitigationRequest } from "./awards";
 import { event as ev, type HistoryEvent } from "@/lib/traveller/history";
 import {
-  rollSkillFromColumn, serviceSkillColumnFor, branchSkillCandidates,
+  rollSkillFromColumn, skillColumnDisplay, serviceSkillColumnFor, branchSkillCandidates,
   branchOf, applyPromotion, combatFinalize, clampedRoll,
   type SkillColumnPolicy,
 } from "./pathways/shared";
@@ -350,6 +350,7 @@ function warnBonusMissing(assignment: string): void {
 /** Minimal structural shape of a 1D skill table (rows keyed by die). */
 interface SkillTableShape {
   columns?: string[];
+  columnDisplayNames?: Record<string, string>;
   rows: Array<Record<string, unknown>>;
   dms?: StructuredDm[];
 }
@@ -364,6 +365,7 @@ interface MerchantColumnRule {
 
 interface MerchantSkillTableShape {
   columns: string[];
+  columnDisplayNames?: Record<string, string>;
   rows: Array<Record<string, unknown>>;
   columnAvailability?: Record<string, MerchantColumnRule>;
 }
@@ -411,7 +413,8 @@ function rollServicePolicySkill(ctx: ResolveContext, sourcePrefix: string): void
   const acg = ch.requireAcgState();
   const pathway = acg.pathway;
   const roll = (c: Character, col: string) =>
-    rollSkillFromColumn(c, data.serviceSkills, col, `${sourcePrefix} ${col}`);
+    rollSkillFromColumn(c, data.serviceSkills, col,
+      `${sourcePrefix} ${skillColumnDisplay(data.serviceSkills, col)}`);
   const shipsTroops = requireRule(
     data.assignmentReroutes?.marines?.toAssignment,
     `acg.${pathway}.assignmentReroutes.marines.toAssignment`, "PM p. 48",
@@ -430,6 +433,7 @@ function rollServicePolicySkill(ctx: ResolveContext, sourcePrefix: string): void
         kind: "skillTable",
         label: "Choose a service-skills column to roll on",
         options,
+        optionLabels: options.map((c) => skillColumnDisplay(data.serviceSkills, c)),
         onResolve: (c, col) => roll(c, col),
       });
       return;
@@ -500,7 +504,8 @@ function rollDivisionSkill(ctx: ResolveContext, column: string): void {
     `acg.scout.skillTables.${division}`, "PM p. 57",
   );
   if (column === "first") {
-    rollSkillFromColumn(ch, table, "first", (col) => `Scout ${division} ${col}`);
+    rollSkillFromColumn(ch, table, "first",
+      (col) => `Scout ${titleize(division)} ${skillColumnDisplay(table, col)}`);
     return;
   }
   if (!table.columns?.includes(column)) {
@@ -510,7 +515,7 @@ function rollDivisionSkill(ctx: ResolveContext, column: string): void {
       "than silently substituting the normal column.",
     );
   }
-  rollSkillFromColumn(ch, table, column, `Scout ${column}`);
+  rollSkillFromColumn(ch, table, column, `Scout ${skillColumnDisplay(table, column)}`);
 }
 
 /** Merchant skill tables (PM p. 63): pick an available table (round-robin
@@ -546,9 +551,9 @@ function merchantRollFromTable(ch: Character, tableKey: string): void {
   if (ch.choiceMode === "interactive" && columns.length > 1) {
     ch.pickOrDefer({
       kind: "merchantSkillColumn",
-      label: `Merchant: choose a skill column from the ${tableKey} table.`,
+      label: `Merchant: choose a skill column from the ${titleize(tableKey)} table.`,
       options: columns,
-      optionLabels: columns.map(titleize),
+      optionLabels: columns.map((c) => skillColumnDisplay(table, c)),
       onResolve: (c, col) => rollMerchantColumn(c, tableKey, col),
     });
     return;
@@ -560,7 +565,8 @@ function rollMerchantColumn(ch: Character, tableKey: string, column: string): vo
   const data = pathwayData(ch) as unknown as { skillTables: Record<string, MerchantSkillTableShape> };
   const table = data.skillTables[tableKey];
   if (!table) return;
-  rollSkillFromColumn(ch, table, column, `Merchant ${tableKey} ${column}`);
+  rollSkillFromColumn(ch, table, column,
+    `Merchant ${titleize(tableKey)} ${skillColumnDisplay(table, column)}`);
 }
 
 /** Columns of `table` available to the character (PM p. 63 availability

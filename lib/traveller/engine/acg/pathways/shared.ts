@@ -24,6 +24,7 @@ import { rankNum } from "@/lib/traveller/engine/predicate";
 import type { AcgState } from "@/lib/traveller/engine/acg/state";
 import { evaluateDM } from "@/lib/traveller/engine/dmEvaluator";
 import type { DMRule } from "@/lib/traveller/editions/types";
+import { titleize } from "@/lib/traveller/formatting";
 
 /** Thrown by a pathway enlistment gate when the character cannot enlist on
  *  the chosen path for a rules/config reason the player can act on — a
@@ -384,6 +385,17 @@ export function rollSkillFromColumn(
       return;
     }
   }
+}
+
+/** Human display label for a skill-table column: the table's cited
+ *  columnDisplayNames (the PM's printed column header) when declared, else
+ *  titleize the raw key as a documented fallback. DISPLAY-ONLY — picker
+ *  optionLabels and history source strings render through this while the raw
+ *  column key stays the resolution/replay value. */
+export function skillColumnDisplay(
+  table: { columnDisplayNames?: Record<string, string> }, column: string,
+): string {
+  return table.columnDisplayNames?.[column] ?? titleize(column);
 }
 
 /** Column-candidate list for a branch-skill roll: the branch's own column,
