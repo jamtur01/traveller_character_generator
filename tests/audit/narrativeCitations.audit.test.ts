@@ -18,8 +18,9 @@
 //        — career-level $assignmentDescriptions sibling.
 //
 // Teeth: add a narrative with no citation, or blank a citation, and the
-// matching row reddens. The count guards (>=12 CT services, >=13 mongoose
-// careers) keep the audit from passing vacuously if the described set vanishes.
+// matching row reddens. The count guards (>=18 CT services, >=18 MT services,
+// >=13 mongoose careers) keep the audit from passing vacuously if a described
+// set vanishes.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -83,19 +84,22 @@ describe("assignmentNarratives carry a sibling citation (MT ACG)", () => {
     });
   }
 
-  it("the pathways that describe assignments (scout, merchant) actually ship entries", () => {
-    // Non-vacuous guard: mercenary/navy are documented gaps (citation only),
-    // but scout + merchant DO carry per-assignment narratives — if those
-    // entries disappear this audit must not silently pass.
+  it("every ACG pathway ships per-assignment narrative entries", () => {
+    // Non-vacuous guard: all four pathways now carry per-assignment narratives
+    // — the mercenary/navy gaps were filled from the PM p.50/53 resolution
+    // grids, scout + merchant already described theirs. If any set disappears
+    // this audit must not silently pass.
     const entryCount = (pathway: string): number =>
       Object.keys(acgAssignmentNarratives(pathway)).filter((k) => !k.startsWith("$")).length;
-    expect(entryCount("scout")).toBeGreaterThan(0);
-    expect(entryCount("merchantPrince")).toBeGreaterThan(0);
+    for (const pathway of ACG_PATHWAYS) {
+      expect(entryCount(pathway), `acg.${pathway} must ship narrative entries`)
+        .toBeGreaterThan(0);
+    }
   });
 });
 
 // ---------------------------------------------------------------------------
-// 2. Service descriptions (CT CotI services; MT has none — documented gap).
+// 2. Service descriptions (CT: 6 core TTB + 12 CotI; MT: all 18 — all cited).
 // ---------------------------------------------------------------------------
 
 function describedServices(edition: Record<string, unknown>): Array<[string, Record<string, unknown>]> {
@@ -109,22 +113,25 @@ function describedServices(edition: Record<string, unknown>): Array<[string, Rec
 }
 
 describe("service descriptions carry a sibling $description citation", () => {
-  it("every CT service with a description is cited (CotI blurbs)", () => {
+  it("every CT service with a description is cited (CotI + core TTB blurbs)", () => {
     const described = describedServices(CT);
-    // CotI ships 12 described character types; the six TTB core services carry
-    // none (documented gap). Guard the count so a data wipe can't pass vacuously.
-    expect(described.length).toBeGreaterThanOrEqual(12);
+    // 12 CotI character types + 6 core TTB services (navy, marines, army,
+    // scouts, merchants, other) = 18 described services, all cited. Guard the
+    // count so a data wipe can't pass vacuously.
+    expect(described.length).toBeGreaterThanOrEqual(18);
     for (const [key, svc] of described) {
       expect(isPageCitation(svc.$description), `ct services.${key}.$description`)
         .toBe(true);
     }
   });
 
-  it("MT services ship no per-service description (documented gap, not uncited data)", () => {
-    // The lock is the inverse: MT deliberately carries NO service blurbs, so
-    // there is nothing to leave uncited. If MT ever gains one it MUST be cited,
-    // which the loop below enforces.
-    for (const [key, svc] of describedServices(MT)) {
+  it("every MT service ships a cited per-service description", () => {
+    // MT now carries a cited one-liner for all 18 services (5 MT-internal
+    // basis A, 3 engine-inferred basis B, 10 CotI cross-edition basis C). Guard
+    // the count so a data wipe can't pass vacuously, then enforce the citation.
+    const described = describedServices(MT);
+    expect(described.length).toBeGreaterThanOrEqual(18);
+    for (const [key, svc] of described) {
       expect(isPageCitation(svc.$description), `mt services.${key}.$description`)
         .toBe(true);
     }

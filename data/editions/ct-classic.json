@@ -294,13 +294,15 @@
     "belters", "sailors", "diplomats", "doctors", "flyers", "barbarians",
     "bureaucrats", "rogues", "scientists", "hunters", "nobles"
   ],
-  "$serviceDescriptions": "Per-service `description` blurbs are lifted verbatim from Citizens of the Imperium p. 5 'THE CHARACTER TYPES' for the 12 CotI services (pirates, belters, sailors, diplomats, doctors, flyers, barbarians, bureaucrats, rogues, nobles, scientists, hunters). The 6 core TTB services (navy, marines, army, scouts, merchants, other) carry NO description: The Traveller Book prints no per-service narrative — Book 1 pp. 17-19 describe only the general enlistment procedure ('Any newly-generated character may choose one of these six services … and attempt to enlist', p. 18) and the Prior Service Table (p. 24) is columnar mechanics only.",
+  "$serviceDescriptions": "Per-service `description` blurbs. The 12 CotI services (pirates, belters, sailors, diplomats, doctors, flyers, barbarians, bureaucrats, rogues, nobles, scientists, hunters) are lifted verbatim from Citizens of the Imperium p. 5 'THE CHARACTER TYPES'. The 6 core TTB services (navy, marines, army, scouts, merchants, other) carry engine-inferred (basis B) one-liners synthesized from their Prior Service tables on The Traveller Book pp. 24-25 (ranks, skills, draft slot, mustering-out benefits) — TTB prints no per-service narrative — and 'Other' additionally borrows CotI p. 1's residual 'other pursuits' framing. No wording invented.",
   "services": {
     "navy": {
       "source": "ttb",
       "bookPage": 24,
       "displayName": "Navy",
       "memberName": "Navy",
+      "$description": "TTB pp. 24-25 Prior Service tables (ranks Ensign→Admiral; Ship's Boat/Gunnery/Pilot/Engineering skills; draft 1) (engine-inferred, no printed per-service prose).",
+      "description": "Interstellar naval service — commissioned officers crewing and fighting starships.",
       "startAge": 18,
       "draft": 1,
       "checks": {
@@ -328,6 +330,8 @@
       "bookPage": 24,
       "displayName": "Marines",
       "memberName": "Marine",
+      "$description": "TTB pp. 24-25 Prior Service tables (Cutlass-1 on joining; ranks Lieutenant→Brigadier) (engine-inferred, no printed per-service prose).",
+      "description": "Shipborne assault and boarding troops — the navy's ground-combat arm.",
       "startAge": 18,
       "draft": 2,
       "checks": {
@@ -355,6 +359,8 @@
       "bookPage": 24,
       "displayName": "Army",
       "memberName": "Army",
+      "$description": "TTB pp. 24-25 Prior Service tables (Rifle-1 on joining; ATV/Tactics; ranks Lieutenant→General) (engine-inferred, no printed per-service prose).",
+      "description": "Planetary ground forces — the surface land military.",
       "startAge": 18,
       "draft": 3,
       "checks": {
@@ -382,6 +388,8 @@
       "bookPage": 24,
       "displayName": "Scouts",
       "memberName": "Scout",
+      "$description": "TTB pp. 24-25 Prior Service tables (no ranks; Pilot-1; Scout Ship benefit; 2 skills/term) (engine-inferred, no printed per-service prose).",
+      "description": "The exploratory and courier service — rankless pilots surveying frontiers.",
       "startAge": 18,
       "draft": 4,
       "checks": {
@@ -410,6 +418,8 @@
       "bookPage": 24,
       "displayName": "Merchants",
       "memberName": "Merchant",
+      "$description": "TTB pp. 24-25 Prior Service tables (ranks 4th Officer→Captain; Free Trader benefit; Steward skill) (engine-inferred, no printed per-service prose).",
+      "description": "The merchant marine — crews of commercial starships trading between worlds.",
       "startAge": 18,
       "draft": 5,
       "checks": {
@@ -437,6 +447,8 @@
       "bookPage": 24,
       "displayName": "Other",
       "memberName": "",
+      "$description": "TTB pp. 24-25 Prior Service tables (no ranks; enlist 3+; Streetwise/Gambling/Bribery/Forgery skills) + CotI p. 1 ('no specific set of tables … in other pursuits') (engine-inferred, no printed per-service prose).",
+      "description": "Catch-all for characters outside the formal careers — ordinary and underworld civilians.",
       "startAge": 18,
       "draft": 6,
       "checks": {

@@ -4,13 +4,13 @@
 //   bc21a3e — every ACG assignment (including a transfer reroll's REAL
 //             assignment) logs its cited narrative when rolled.
 //   1f78320 — a service's / career's cited description is logged at
-//             enlistment / career entry; a service with no description logs no
-//             (empty) blurb line.
+//             enlistment / career entry; every CT/MT service now carries a
+//             cited description, so each logs its blurb (never an empty line).
 //
 // Each test names the observable contract it defends. Where a fix commit
 // exists the test is confirmed to redden when that commit is reverted (see the
-// yielded report); the gap-service test is a forward guard against a dropped
-// fail-soft check.
+// yielded report). The CT-core-service test now guards that the gap-fill
+// blurbs (TTB pp.24-25 engine-inferred) actually log at enlistment.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Character } from "@/lib/traveller/character";
@@ -233,7 +233,7 @@ describe("service / career descriptions log at enlistment / entry (1f78320)", ()
     expect(blurb, "Pirates must log its CotI p.5 description at enlistment").toBeDefined();
   });
 
-  it("a documented-gap CT core service (Navy) logs NO blurb line", () => {
+  it("a CT core service (Navy) logs its now-cited blurb at enlistment", () => {
     const c = new Character({ attributes: ATTRS });
     c.editionId = "ct-classic";
     c.showHistory = "none";
@@ -242,10 +242,18 @@ describe("service / career descriptions log at enlistment / entry (1f78320)", ()
 
     const svc = c.doEnlistment("navy");
     expect(svc).toBe("navy");
-    // No description -> logServiceDescription is fail-soft: NO "Navy: ..." raw
-    // line (and never an empty "Navy: undefined" line).
-    const strayBlurb = c.events.filter((e) => e.kind === "raw" && /^Navy:\s/.test(e.text));
-    expect(strayBlurb).toHaveLength(0);
+    // Navy now carries a TTB pp.24-25 engine-inferred description (basis B), so
+    // it logs its "Navy: ..." blurb at enlistment (never an empty/undefined line).
+    const blurb = c.events.find(
+      (e) => e.kind === "raw"
+        && e.text === "Navy: Interstellar naval service — commissioned officers crewing "
+          + "and fighting starships.",
+    );
+    expect(blurb, "Navy must log its cited TTB pp.24-25 description at enlistment").toBeDefined();
+    const strayBlurb = c.events.filter(
+      (e) => e.kind === "raw" && /^Navy:\s/.test(e.text) && /undefined/.test(e.text),
+    );
+    expect(strayBlurb, "Navy must never log an empty 'Navy: undefined' blurb").toHaveLength(0);
   });
 
   it("a Mongoose career (Agent) logs its cited blurb at enterCareer", () => {

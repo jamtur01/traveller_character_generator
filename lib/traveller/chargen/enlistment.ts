@@ -165,7 +165,7 @@ export function applyServiceStartAge(ch: Character, svc: ServiceKey): void {
 
 /** Log the service's cited one-line description (verbose) once the character
  *  has enlisted into or been drafted into it. Fail-soft: emits nothing when the
- *  edition supplies no description (CT core TTB services, all MT services). */
+ *  edition supplies no description for the service. */
 function logServiceDescription(ch: Character, def: ServiceDef): void {
   if (def.description) {
     ch.log(ev.raw(`${def.serviceName}: ${def.description}`, "verbose"));
