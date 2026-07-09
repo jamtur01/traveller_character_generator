@@ -67,6 +67,9 @@ export function enterCareer(
   // Threshold (1D+2, max 12); every other career has no threshold.
   state.paroleThreshold = career.parole ? rollParoleThreshold(ch, career.parole) : null;
   ch.log(ev.section(`${career.displayName} - ${asg.displayName}`));
+  if (career.description) {
+    ch.log(ev.raw(`${career.displayName}: ${career.description}`, "verbose"));
+  }
   if (asg.description) {
     ch.log(ev.raw(`${asg.displayName}: ${asg.description}`, "verbose"));
   }

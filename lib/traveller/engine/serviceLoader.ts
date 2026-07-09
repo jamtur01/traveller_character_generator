@@ -277,6 +277,7 @@ export function buildServiceDef(
   if (commissionThrow !== undefined) def.commissionThrow = commissionThrow;
   if (promotionThrow !== undefined) def.promotionThrow = promotionThrow;
   if (inverseReenlist) def.inverseReenlist = inverseReenlist;
+  if (serviceData.description !== undefined) def.description = serviceData.description;
   if (serviceData.skillsPerTerm !== undefined) {
     def.skillsPerTerm = serviceData.skillsPerTerm;
   }

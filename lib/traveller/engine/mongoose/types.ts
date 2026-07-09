@@ -156,6 +156,9 @@ export interface MongooseMusterRow {
 export interface MongooseCareer {
   readonly id: string;
   readonly displayName: string;
+  /** One-line career-page description (Core career intro), logged verbose when
+   *  the career is entered (before the assignment description). */
+  readonly description?: string;
   readonly qualification: MongooseCheck;
   /** Commission check target — Army / Navy / Marine only. */
   readonly commission?: MongooseCheck;

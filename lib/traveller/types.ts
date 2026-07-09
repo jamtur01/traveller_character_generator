@@ -76,6 +76,9 @@ export interface CheckResult {
 export interface ServiceDef {
   serviceName: string;
   memberName: string;
+  /** One-line cited service description (ServiceData.description), logged
+   *  verbose at enlistment/draft. Absent when the source has none. */
+  description?: string;
   enlistmentThrow: number;
   enlistmentDM: (a: Attributes) => number;
   survivalThrow: number;

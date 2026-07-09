@@ -6,7 +6,7 @@
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { event as ev } from "@/lib/traveller/history";
-import type { ServiceKey, AttributeKey } from "@/lib/traveller/types";
+import type { ServiceKey, AttributeKey, ServiceDef } from "@/lib/traveller/types";
 import type { ServiceData } from "@/lib/traveller/editions/types";
 import {
   getDraftServices, getEnlistableServices,
@@ -163,6 +163,15 @@ export function applyServiceStartAge(ch: Character, svc: ServiceKey): void {
   if (data?.startAge !== undefined) ch.age = data.startAge;
 }
 
+/** Log the service's cited one-line description (verbose) once the character
+ *  has enlisted into or been drafted into it. Fail-soft: emits nothing when the
+ *  edition supplies no description (CT core TTB services, all MT services). */
+function logServiceDescription(ch: Character, def: ServiceDef): void {
+  if (def.description) {
+    ch.log(ev.raw(`${def.serviceName}: ${def.description}`, "verbose"));
+  }
+}
+
 /** Draft the character into a random service from `pool` and apply its service
  *  skills. Used when the enlistment roll fails, or when an unqualified explicit
  *  automatic-only (Nobility) pick is refused. */
@@ -176,6 +185,7 @@ function draftInto(ch: Character, pool: ServiceKey[]): ServiceKey {
   const draftDef = ch.editionService(draftService);
   const skills = draftDef.getServiceSkills(ch);
   for (const sk of skills) ch.addSkill(sk, 1, `${draftDef.serviceName} service skill`);
+  logServiceDescription(ch, draftDef);
   return draftService;
 }
 
@@ -205,8 +215,10 @@ function tryNobilityAutoEnroll(
     applyServiceStartAge(ch, "nobles");
     ch.service = "nobles";
     if (ch.homeworld) applyHomeworldSkills(ch);
-    const skills = ch.editionService("nobles").getServiceSkills(ch);
+    const noblesDef = ch.editionService("nobles");
+    const skills = noblesDef.getServiceSkills(ch);
     for (const sk of skills) ch.addSkill(sk, 1, "Nobility service skill");
+    logServiceDescription(ch, noblesDef);
     return "nobles";
   }
   if (explicitAuto) {
@@ -288,6 +300,7 @@ export function doEnlistment(ch: Character, method: string): ServiceKey {
     if (ch.homeworld) applyHomeworldSkills(ch);
     const skills = pref.getServiceSkills(ch);
     for (const sk of skills) ch.addSkill(sk, 1, `${pref.serviceName} service skill`);
+    logServiceDescription(ch, pref);
     return preferredService;
   }
   return draftInto(ch, effDraftPool);

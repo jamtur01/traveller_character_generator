@@ -294,6 +294,7 @@
     "belters", "sailors", "diplomats", "doctors", "flyers", "barbarians",
     "bureaucrats", "rogues", "scientists", "hunters", "nobles"
   ],
+  "$serviceDescriptions": "Per-service `description` blurbs are lifted verbatim from Citizens of the Imperium p. 5 'THE CHARACTER TYPES' for the 12 CotI services (pirates, belters, sailors, diplomats, doctors, flyers, barbarians, bureaucrats, rogues, nobles, scientists, hunters). The 6 core TTB services (navy, marines, army, scouts, merchants, other) carry NO description: The Traveller Book prints no per-service narrative — Book 1 pp. 17-19 describe only the general enlistment procedure ('Any newly-generated character may choose one of these six services … and attempt to enlist', p. 18) and the Prior Service Table (p. 24) is columnar mechanics only.",
   "services": {
     "navy": {
       "source": "ttb",
@@ -464,6 +465,8 @@
       "bookPage": 6,
       "displayName": "Pirates",
       "memberName": "Pirate",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals crewing interplanetary or interstellar vessels, who make their living by attacking, hijacking, or plundering commerce.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -491,6 +494,8 @@
       "bookPage": 6,
       "displayName": "Belters",
       "memberName": "Belter",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals who prospect and mine asteroid belts in search of mineral deposits, artifacts, or salvage materials.",
       "startAge": 14,
       "draft": null,
       "checks": {
@@ -518,6 +523,8 @@
       "bookPage": 6,
       "displayName": "Sailors",
       "memberName": "Sailor",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Members of the Nautical Force Command (the wet navy) of a world.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -545,6 +552,8 @@
       "bookPage": 6,
       "displayName": "Diplomats",
       "memberName": "Diplomat",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Members of the Foreign Service of a government.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -572,6 +581,8 @@
       "bookPage": 6,
       "displayName": "Doctors",
       "memberName": "Doctor",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Trained individuals conducting medical practice.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -599,6 +610,8 @@
       "bookPage": 6,
       "displayName": "Flyers",
       "memberName": "Flyer",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Members of the Close Orbit and Airspace Control Command (the air force) of a world.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -626,6 +639,8 @@
       "bookPage": 8,
       "displayName": "Barbarians",
       "memberName": "Barbarian",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Rugged individuals from primitive planets accustomed to hardship and well-trained in wilderness and survival situations.",
       "startAge": 14,
       "draft": null,
       "checks": {
@@ -654,6 +669,8 @@
       "bookPage": 8,
       "displayName": "Bureaucrats",
       "memberName": "Bureaucrat",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals serving a government or organization in management or executive capacities.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -681,6 +698,8 @@
       "bookPage": 8,
       "displayName": "Rogues",
       "memberName": "Rogue",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Criminal elements familiar with the rougher or more illegal methods of accomplishing tasks.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -708,6 +727,8 @@
       "bookPage": 8,
       "displayName": "Nobles",
       "memberName": "Noble",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals of the upper classes who perform little consistent function, but often have large amounts of ready money.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -741,6 +762,8 @@
       "bookPage": 8,
       "displayName": "Scientists",
       "memberName": "Scientist",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals trained in technological or research sciences who conduct scientific investigations into materials, situations, and phenomena.",
       "startAge": 18,
       "draft": null,
       "checks": {
@@ -768,6 +791,8 @@
       "bookPage": 8,
       "displayName": "Hunters",
       "memberName": "Hunter",
+      "$description": "CotI p. 5 'THE CHARACTER TYPES'.",
+      "description": "Individuals who track and hunt animals of varying sizes and types for profit or enjoyment.",
       "startAge": 18,
       "draft": null,
       "checks": {

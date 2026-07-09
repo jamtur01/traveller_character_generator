@@ -146,6 +146,8 @@
         "id": "agent",
         "displayName": "Agent",
         "$page": "Core pp.22-23 (career begins p.22)",
+        "$description": "MgT2 Core p.22 career intro.",
+        "description": "Law enforcement agencies, corporate operatives, spies and others who work in the shadows.",
         "qualification": {
           "characteristics": [
             "intelligence"
@@ -684,6 +686,8 @@
         "id": "army",
         "displayName": "Army",
         "$page": "Core p.24",
+        "$description": "MgT2 Core p.24 career intro.",
+        "description": "Members of the planetary armed fighting forces. Such individuals may also be mercenaries for hire.",
         "qualification": {
           "characteristics": [
             "endurance"
@@ -1238,6 +1242,8 @@
         "id": "citizen",
         "displayName": "Citizen",
         "$page": "Core p.26",
+        "$description": "MgT2 Core p.26 career intro.",
+        "description": "Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed planet.",
         "qualification": {
           "characteristics": [
             "education"
@@ -1849,6 +1855,8 @@
         "id": "drifter",
         "displayName": "Drifter",
         "$page": "Core p.28",
+        "$description": "MgT2 Core p.28 career intro.",
+        "description": "Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.",
         "qualification": {
           "characteristics": [],
           "target": 0,
@@ -2432,6 +2440,8 @@
         "id": "entertainer",
         "displayName": "Entertainer",
         "$page": "Core p.30",
+        "$description": "MgT2 Core p.30 career intro.",
+        "description": "Individuals who are involved with the media, whether as reporters, artists or celebrities.",
         "qualification": {
           "characteristics": [
             "dexterity",
@@ -3017,6 +3027,8 @@
         "id": "marine",
         "displayName": "Marine",
         "$page": "Core p.32",
+        "$description": "MgT2 Core p.32 career intro.",
+        "description": "Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.",
         "qualification": {
           "characteristics": [
             "endurance"
@@ -3600,6 +3612,8 @@
         "id": "merchant",
         "displayName": "Merchant",
         "$page": "Core p.34 (printed pp.34-35)",
+        "$description": "MgT2 Core p.34 career intro.",
+        "description": "Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they may work for independent free traders who carry chance cargoes and passengers between worlds.",
         "qualification": {
           "characteristics": [
             "intelligence"
@@ -4177,6 +4191,8 @@
         "id": "navy",
         "displayName": "Navy",
         "$page": "Core p.36",
+        "$description": "MgT2 Core p.36 career intro.",
+        "description": "Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for the protection of society from foreign powers and lawless elements in the interstellar trade channels.",
         "qualification": {
           "characteristics": [
             "intelligence"
@@ -4792,6 +4808,8 @@
         "id": "noble",
         "displayName": "Noble",
         "$page": "Core p.38",
+        "$description": "MgT2 Core p.38 career intro.",
+        "description": "Individuals of the upper class who perform little consistent function but often have large amounts of ready money.",
         "qualification": {
           "characteristics": [
             "social"
@@ -5450,6 +5468,8 @@
         "id": "rogue",
         "displayName": "Rogue",
         "$page": "Core pp.40-41 (career begins p.40)",
+        "$description": "MgT2 Core p.40 career intro.",
+        "description": "Criminal elements familiar with the rougher or more illegal methods of attaining goals.",
         "qualification": {
           "characteristics": [
             "dexterity"
@@ -6112,6 +6132,8 @@
         "id": "prisoner",
         "displayName": "Prisoner",
         "$page": "Core p.52 (special rules), pp.56-57 (tables).",
+        "$description": "MgT2 Core pp.56-57 career intro (special career; entered only when forced).",
+        "description": "Every society has its bad apples and even in the far future punishments usually take place within faceless institutions where criminals can be conveniently forgotten.",
         "forcedOnly": true,
         "$forcedOnly": "Core p.52: the Prisoner career cannot be chosen; it is entered only when a mishap/event forces it. Excluded from the normal career-choice list.",
         "parole": {
@@ -6761,6 +6783,8 @@
         "id": "scholar",
         "displayName": "Scholar",
         "$page": "Core pp.42-43",
+        "$description": "MgT2 Core p.42 career intro.",
+        "description": "Individuals trained in technological or research sciences who conduct scientific investigations into materials, situations and phenomena, or who practise medicine.",
         "qualification": {
           "characteristics": [
             "intelligence"
@@ -7362,6 +7386,8 @@
         "id": "scout",
         "displayName": "Scout",
         "$page": "Core p.44 (career printed pp.44-45)",
+        "$description": "MgT2 Core p.44 career intro.",
+        "description": "Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas and maintain communication ships which carry information and messages between the worlds of the galaxy.",
         "qualification": {
           "characteristics": [
             "intelligence"

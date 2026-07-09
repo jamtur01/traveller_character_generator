@@ -115,6 +115,11 @@ export interface ServiceData {
    *  by the sheet header prefix and CharacterSummary subtitle. Declared per
    *  service in JSON, not derived from displayName in code. */
   memberName: string;
+  /** One-line service description, lifted verbatim from the rulebook and cited
+   *  in-JSON via a sibling `$description`. Logged (verbose) at enlistment/draft.
+   *  Omitted where the source prints no per-service narrative (CT core TTB
+   *  services, all MT basic services). */
+  description?: string;
   startAge: number;
   draft: number | null;
   /** MT declares skills-per-term explicitly (PM p. 60 service tables). When

@@ -767,6 +767,7 @@
     "sailors", "diplomats", "doctors", "flyers", "barbarians", "bureaucrats",
     "rogues", "scientists", "hunters", "lawenforcers", "nobles"
   ],
+  "$serviceDescriptions": "GAP: no MT service carries a `description`. The MegaTraveller Players' Manual basic character generation (printed pp. 14-25) prints no per-service narrative — the lifecycle prose (pp. 14-19) describes only the general enlistment/term procedure, and the service pages (pp. 20-25: Prior Service Table, Table of Ranks, Acquired Skills, Mustering-Out tables) are columnar mechanics only. Left uncovered per the no-invention rule (verified against reference/mt-basic.md and reference/pages/mt_basic/p015-p026).",
   "services": {
     "navy": {
       "source": "mt",
