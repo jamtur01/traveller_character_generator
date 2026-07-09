@@ -19,6 +19,7 @@ import {
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyAcgSkillCell } from "@/lib/traveller/engine/acg/skills";
+import { logDecorationMeaning } from "@/lib/traveller/engine/acg/awards";
 import { event as ev } from "@/lib/traveller/history";
 import { rankNum } from "@/lib/traveller/engine/predicate";
 import type { AcgState } from "@/lib/traveller/engine/acg/state";
@@ -127,9 +128,11 @@ export function combatFinalize(
   if (combatAssignments.includes(ctx.assignment)) {
     acg.combatRibbons += 1;
     ctx.ch.log(ev.decoration("Combat Ribbon", `for ${ctx.assignment}`));
+    logDecorationMeaning(ctx.ch, "Combat Ribbon");
     if (acg.inCommand && acg.isOfficer) {
       acg.commandClusters += 1;
       ctx.ch.log(ev.decoration("Command Cluster", `command of ${ctx.assignment}`));
+      logDecorationMeaning(ctx.ch, "Command Cluster");
     }
   }
   acg.assignmentHistory.push(ctx.assignment);

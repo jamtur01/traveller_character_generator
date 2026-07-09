@@ -103,6 +103,18 @@ export function skillRequiresOverride(
   return null;
 }
 
+/** Surface the cited homeworld skill-restriction rule (MT PM p. 15, prose in
+ *  `rules.homeworldSkillRestrictions.rule`) once per character — the first
+ *  time a tech/law gate forces an override roll. Fail-soft when the edition
+ *  supplies no rule prose. */
+function logHomeworldRestrictionNote(ch: Character): void {
+  if (ch.homeworldRestrictionNoteLogged) return;
+  const rule = dataFor(ch)?.r.rule;
+  if (!rule) return;
+  ch.homeworldRestrictionNoteLogged = true;
+  ch.log(ev.raw(`Homeworld skill limits: ${rule}`, "verbose"));
+}
+
 /** Roll the 2D override for a restricted skill. Returns true on 7+
  *  (skill goes through), false on failure (skill roll forfeited). */
 export function rollSkillOverride(
@@ -110,6 +122,7 @@ export function rollSkillOverride(
   skillName: string,
   target: number,
 ): boolean {
+  logHomeworldRestrictionNote(ch);
   const r = ch.rng.roll(2);
   const passed = r >= target;
   ch.log(ev.roll(

@@ -666,6 +666,25 @@
       "Streetwise"
     ]
   },
+  "$musterBenefitDefinitions": "MT PM p. 19 mustering-out benefit-object glossary (echoed on the service pages pp. 21, 23, 25).",
+  "musterBenefitDefinitions": {
+    "Weapon": "any one weapon; a repeat may raise skill in a weapon-type already taken",
+    "TAS": "Travellers' Aid Society membership: a High Passage every two months, once per character",
+    "High Passage": "a first-class starship ticket (about Cr10,000)",
+    "Mid Passage": "a middle starship ticket (about Cr8,000)",
+    "Low Passage": "a low-berth cold-sleep starship ticket (about Cr1,000)",
+    "Free Trader": "a Type A Free Trader merchant ship (mortgaged)",
+    "Scout Ship": "a scout/courier on loan from the service; cannot be sold",
+    "Corsair": "a corsair raider ship, owned outright with no payments",
+    "Seeker": "a Type J Seeker prospecting and mining ship",
+    "Yacht": "a personal yacht",
+    "Lab Ship": "a laboratory research ship",
+    "Safari Ship": "a safari excursion ship",
+    "Instruments": "a full medical instrument set (about Cr5,000)",
+    "Watch": "a commemorative gold watch",
+    "Forensic Kit": "a forensic field kit (about Cr9,000)",
+    "Letter": "a Letter of Marque, giving a positive DM toward a ship benefit"
+  },
   "benefitDetails": {
     "passages": {
       "High Psg": {
@@ -3324,6 +3343,7 @@
     "atmosphereOrder": ["Vacuum", "Thin", "Standard", "Dense", "Exotic"],
     "hydrosphereOrder": ["Desert", "Dry", "Wet World", "Water World"],
     "starportOrder": ["X", "E", "D", "C", "B", "A"],
+    "$starportTypes": "MT PM p. 13: World Profile Code Equivalents — Starport Codes.",
     "starportTypes": {
       "A": "Excellent quality installation.",
       "B": "Good quality installation.",
@@ -3332,12 +3352,14 @@
       "E": "Frontier installation.",
       "X": "No starport."
     },
+    "$sizeCodes": "MT PM p. 13: World Size Codes.",
     "sizeCodes": {
       "Asteroid":  "Diameter below 200 km.",
       "Small":     "Diameter 200–7199 km.",
       "Medium":    "Diameter 7200–11,999 km.",
       "Large":     "Diameter 12,000–16,800 km."
     },
+    "$atmosphereCodes": "MT PM p. 13: Atmosphere Codes.",
     "atmosphereCodes": {
       "Vacuum":   "Pressure below 0.43.",
       "Thin":     "Thin nitrogen-oxygen, pressure 0.43–0.7.",
@@ -3345,17 +3367,20 @@
       "Dense":    "Dense nitrogen-oxygen, pressure 1.5–2.5.",
       "Exotic":   "Unusual, dangerous."
     },
+    "$hydrosphereCodes": "MT PM p. 13: Hydrosphere Codes.",
     "hydrosphereCodes": {
       "Desert":      "Water covers under 5% of surface.",
       "Dry":         "Water covers 5–24% of surface.",
       "Wet World":   "Water covers 25–94% of surface.",
       "Water World": "Water covers 95–100% of surface."
     },
+    "$populationCodes": "MT PM p. 13: World Population Codes.",
     "populationCodes": {
       "Low Pop":  "Less than 10,000.",
       "Mod Pop":  "10,000 to 1 billion.",
       "High Pop": "1 billion or more."
     },
+    "$lawCodes": "MT PM p. 13: World Law Level Codes.",
     "lawCodes": {
       "No Law":   "No prohibitions.",
       "Low Law":  "Machineguns, autorifles, energy weapons, body pistols prohibited.",
@@ -3949,10 +3974,80 @@
           "award": "Purple Heart"
         }
       },
+      "$decorationDefinitions": "MT PM p. 49 (MCUF/MCG/SEH decoration tiers), pp. 49-50 (Purple Heart combat wound), p. 49/53 (Combat Ribbon and Command Cluster), p. 57 (Scout Permanent Detached Duty).",
+      "decorationDefinitions": {
+        "MCUF": "Meritorious Conduct under Fire, awarded on making the decoration throw",
+        "MCG": "Medal for Conspicuous Gallantry, awarded when the throw is beaten by three to five",
+        "SEH": "Starburst for Extreme Heroism, awarded on beating the throw by six or more; grants a muster-out promotion",
+        "Purple Heart": "awarded for a combat wound taken in a police action, counterinsurgency, ship's troops, or raid",
+        "Combat Ribbon": "awarded once for each combat assignment served",
+        "Command Cluster": "awarded each time the character holds a command assignment in combat",
+        "Permanent Detached Duty": "leaves the service on permanent detached duty with a scout/courier and a yearly stipend"
+      },
+      "$schoolDefinitions": "MT PM pp. 44-47 (pre-career college/academies/medical/flight school), p. 51 (Mercenary special assignments), p. 55 (Navy special assignments), pp. 57-59 (Scout schools), p. 63 (Merchant Prince special duty).",
+      "schoolDefinitions": {
+        "preCareer": {
+          "college": "a pre-career college open to anyone; grants Education and an optional OTC/NOTC commission",
+          "navalAcademy": "commissions the graduate as a Navy ensign (O1) or a Marine second lieutenant",
+          "militaryAcademy": "commissions the graduate as an Army second lieutenant (O1) and grants Combat Rifleman",
+          "merchantAcademy": "attended after enlisting in a large merchant line; commissions the graduate at rank O1",
+          "medicalSchool": "trains an honors graduate as a doctor (Medical-3) with an automatic O3 direct commission",
+          "flightSchool": "trains commissioned graduates as pilots"
+        },
+        "mercenary": {
+          "Cross-Training": "trains the trooper in another combat arm (not Commandos), granting an MOS skill",
+          "Specialist School": "a technical or academic course granting one specialist skill",
+          "Commando School": "cross-training in the Commandos, granting commando combat skills",
+          "Protected Forces": "protected-forces training in Vacc Suit and high- and zero-G environments",
+          "Recruiting Duty": "a recruiting posting that grants the Recruiting skill",
+          "OCS": "Officer Candidate School, commissioning an enlisted trooper as an officer",
+          "Intelligence School": "intelligence training (forgery, bribery, streetwise, interrogation)",
+          "Command College": "a command course granting Tactics, Leader, and Recon",
+          "Staff College": "a staff course granting Admin, Combat Engineering, Computer, Robot Ops",
+          "Attache/Aide": "a posting as a military attache (promotion and +1 Social) or a general's aide"
+        },
+        "navy": {
+          "Cross-Training": "trains the spacer in another branch, granting a branch skill",
+          "Specialist School": "a technical or academic course granting one specialist skill",
+          "Recruiting": "a recruiting posting that grants the Recruiting skill",
+          "Gunnery School": "a gunnery course granting the Gunnery skill",
+          "Engineer School": "an engineering course granting Mechanical, Electronics, Gravitics, Engineering",
+          "OCS": "Officer Candidate School, commissioning an enlisted spacer as an officer",
+          "Intelligence School": "intelligence training (forgery, gun combat, bribery, streetwise, interrogation)",
+          "Naval Attache": "a posting as a naval attache (promotion and +1 Social) or an admiral's aide",
+          "Command College": "a command course granting Ship Tactics, Fleet Tactics, Leader, Admin",
+          "Staff College": "a staff course granting Fleet Tactics, Admin, Liaison, Computer, Robot Ops"
+        },
+        "scout": {
+          "Ship School": "a scout school granting ship-handling skills such as Pilot and Navigation",
+          "Intelligence School": "a scout school granting intelligence skills such as Disguise and Streetwise",
+          "Contact School": "a scout school granting contact and liaison skills",
+          "Technology School": "a scout school granting technical skills such as Computer and Electronics",
+          "Specialist School": "a scout school granting a specialist skill",
+          "Field Training": "a scout field-training course granting field skills",
+          "Admin School": "Administrator School; transfers to the Bureaucracy and promotes to rank IS-10"
+        },
+        "merchantPrince": {
+          "Security Training": "shipboard security training (Zero-G Environ, Vacc Suit, Brawling, Computer)",
+          "Trade Station": "a trade-station course (Broker, Liaison, Trader); transfers to Administration",
+          "Helm Training": "a helm course (Navigation, Pilot, Sensor Op, Ship's Boat); transfers to Deck",
+          "Drive Training": "an engineering course (Electronics, Engineering, Gravitics, Mechanical); transfers to Engineering",
+          "Steward Training": "a steward course (Admin, Liaison, Steward); transfers to Purser",
+          "Commission": "grants rank O0 (O1 in Free Traders); must pass the O1 exam within four years",
+          "Command School": "a command course (Admin, Leader, Legal, Ship Tactics); transfers to Deck",
+          "Deck School": "a deck course (Communication, Computer, Gunnery); transfers to Deck",
+          "Engineering School": "an engineering course (Electronics, Engineering, Gravitics, Mechanical); transfers to Engineering",
+          "Purser School": "a purser course (Admin, Liaison, Steward); transfers to Purser",
+          "Business School": "a business course (Admin, Computer, Legal, Liaison); +1 exam DM for O6+; transfers to Sales",
+          "Department Test": "lets the officer take a department promotion test regardless of skill requirements"
+        }
+      },
       "courtMartial": {
         "trigger": {
           "rule": "Decoration roll fails by 6 or more (e.g., rolls a 4 when 10+ is required)."
         },
+        "$concept": "MT PM p. 47: Court-Martial Table — a decoration roll failed by six or more triggers it; enlisted are automatically guilty, officers throw 10+ to avoid (DM +1 per Admin level).",
+        "concept": "a decoration roll failed by six or more triggers a court-martial; enlisted are automatically guilty, officers may throw to avoid it",
         "dishonorableDischarge": {
           "$rule": "PM p. 47 (court-martial box): a dishonorable discharge costs the character three mustering-out rolls and forfeits any pension.",
           "musterRollPenalty": 3,
@@ -4071,6 +4166,7 @@
       },
       "browniePoints": {
         "rule": "Brownie points are one-use DMs that may be applied to any die roll after it has been rolled.",
+        "$rule": "MT PM p. 46: brownie points are one-use DMs applied to any die roll after it is rolled; any number may be spent and they accumulate until used.",
         "awards": [
           {
             "event": "Finish each 4-year term",

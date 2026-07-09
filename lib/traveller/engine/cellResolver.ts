@@ -28,6 +28,17 @@ import { cascadeKeyForLabel, cascadePoolForLabel, isCascadeLabel } from "./casca
 import { acquireSkillWithRestrictionCheck } from "./skillRestrictions";
 import { event as ev } from "@/lib/traveller/history";
 
+/** Edition-agnostic, fail-soft: log the cited meaning (edition JSON
+ *  `musterBenefitDefinitions`, MT PM p. 19) of a muster-out benefit token as a
+ *  verbose line. `key` is the canonical benefit key (Weapon, TAS, a passage
+ *  display name, a ship label, or an item name). Emits nothing when the
+ *  edition supplies no glossary or no matching key — so CT reuses this hook by
+ *  adding its own `musterBenefitDefinitions` block, no code change. */
+function logMusterBenefitMeaning(ch: Character, key: string): void {
+  const def = getEdition(ch.editionId).data.musterBenefitDefinitions?.[key];
+  if (def) ch.log(ev.raw(`Benefit (${key}): ${def}.`, "verbose"));
+}
+
 /** Map an abbreviated attribute label ("Intel", "Soc") to the engine
  *  attribute key, using the edition's `attributeAbbreviations` JSON. */
 function attrKeyFromAbbreviation(editionId: string, abbr: string): AttributeKey | null {
@@ -205,10 +216,12 @@ export function applyCell(
       const cascadeKey = cascadeKeyForLabel(label, ch.editionId);
       if (cascadeKey === "bladeCombat") {
         ch.doBladeBenefit();
+        logMusterBenefitMeaning(ch, label);
         return;
       }
       if (cascadeKey === "gunCombat") {
         ch.doGunBenefit();
+        logMusterBenefitMeaning(ch, label);
         return;
       }
     }
@@ -250,6 +263,7 @@ export function applyCell(
   if (mode === "muster") {
     if (label === "Weapon") {
       ch.doWeaponBenefit();
+      logMusterBenefitMeaning(ch, "Weapon");
       return;
     }
     if (label === "Travellers'") {
@@ -266,11 +280,13 @@ export function applyCell(
       }
       ch.addBenefit(name);
       ch.TAS = true;
+      logMusterBenefitMeaning(ch, "TAS");
       return;
     }
     const passage = passageDisplayName(ch.editionId, label);
     if (passage) {
       ch.addBenefit(passage);
+      logMusterBenefitMeaning(ch, passage);
       return;
     }
     if (isShipLabel(ch.editionId, label)) {
@@ -286,10 +302,12 @@ export function applyCell(
         return;
       }
       ch.addBenefit(label);
+      logMusterBenefitMeaning(ch, label);
       return;
     }
     // Fallthrough — treat as a literal benefit add.
     ch.addBenefit(label);
+    logMusterBenefitMeaning(ch, label);
     return;
   }
 
@@ -344,6 +362,7 @@ function applyShipBenefit(
     return;
   }
   ch.addBenefit(label);
+  logMusterBenefitMeaning(ch, label);
   ch.ship = true;
   // First receipt: the initial mortgage is sourced from JSON. Mortgaged ships
   // (e.g. Free Trader) declare firstReceiptMortgageYears; owned ships

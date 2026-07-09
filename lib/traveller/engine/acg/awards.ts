@@ -37,10 +37,42 @@ export function bpAwardFor(ch: Character, event: string): number | null {
   return match ? match.points : null;
 }
 
+/** Log the cited meaning (MT PM pp. 46/49/57) of a decoration once per
+ *  character — the first time each decoration is awarded. Fail-soft when the
+ *  edition supplies no matching `decorationDefinitions` entry. */
+export function logDecorationMeaning(ch: Character, award: string): void {
+  if (!ch.acgState) return;
+  const def = commonAcg(ch)?.decorationDefinitions?.[award];
+  if (!def) return;
+  const seen = (ch.acgState.narratedDecorations ??= []);
+  if (seen.includes(award)) return;
+  seen.push(award);
+  ch.log(ev.raw(`${award}: ${def}.`, "verbose"));
+}
+
+/** Log the cited meaning (MT PM pp. 44-63) of a school / special assignment
+ *  when it is assigned. `namespace` selects the pathway sub-glossary
+ *  (preCareer/mercenary/navy/scout/merchantPrince); `label` is the display
+ *  name shown (defaults to the glossary key). Fail-soft when the edition
+ *  supplies no matching entry; dedup is the caller's responsibility. */
+export function logSchoolMeaning(
+  ch: Character, namespace: string, key: string, label = key,
+): void {
+  const def = commonAcg(ch)?.schoolDefinitions?.[namespace]?.[key];
+  if (def) ch.log(ev.raw(`${label}: ${def}.`, "verbose"));
+}
+
 export function awardBrownie(ch: Character, count: number, reason: string): void {
   if (!ch.acgState) return;
   ch.acgState.browniePoints += count;
   ch.log(ev.browniePoint(count, reason, ch.acgState.browniePoints));
+  if (count > 0 && !ch.acgState.browniePointConceptNarrated) {
+    const note = (commonAcg(ch)?.browniePoints as { rule?: string } | undefined)?.rule;
+    if (note) {
+      ch.acgState.browniePointConceptNarrated = true;
+      ch.log(ev.raw(note, "verbose"));
+    }
+  }
 }
 
 export function awardDecoration(
@@ -50,6 +82,7 @@ export function awardDecoration(
   if (!ch.acgState) return;
   ch.acgState.decorations.push(award);
   ch.log(ev.decoration(award));
+  logDecorationMeaning(ch, award);
   const bp = bpAwardFor(ch, `${award} received`) ?? 0;
   if (bp > 0) awardBrownie(ch, bp, `Decoration ${award}`);
   // SEH carries an automatic promotion at muster-out. The spec comes from
@@ -172,6 +205,15 @@ export function runCourtMartial(ch: Character, assignment?: string): void {
   const common = commonAcg(ch);
   const cm = common?.courtMartial as CourtMartialSpec | undefined;
   if (!cm?.dieResults) return;
+
+  // Surface the cited court-martial concept once per character (MT PM p. 47).
+  if (ch.acgState && !ch.acgState.courtMartialConceptNarrated) {
+    const concept = (common?.courtMartial as { concept?: string } | undefined)?.concept;
+    if (concept) {
+      ch.acgState.courtMartialConceptNarrated = true;
+      ch.log(ev.raw(`Court martial: ${concept}.`, "verbose"));
+    }
+  }
 
   // Guilt step.
   if (ch.acgState?.isOfficer && cm.guilt) {

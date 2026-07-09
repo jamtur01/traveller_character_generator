@@ -31,7 +31,7 @@ import {
   parseResolutionTarget,
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
-import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
+import { awardBrownie, bpAwardFor, logSchoolMeaning } from "@/lib/traveller/engine/acg/awards";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
   createPathwaySpecRegistry, runReenlist, offerRoleChange,
@@ -534,8 +534,10 @@ export function merchantSpecialAssignment(ch: Character): void {
   const col = acg.isOfficer ? "officers" : "deckHands";
   const sa = row[col];
   if (typeof sa !== "string") return;
+  const firstDuty = !acg.schoolsAttended.includes(sa);
   acg.schoolsAttended.push(sa);
   ch.log(ev.schoolAssigned(sa, "merchantPrince"));
+  if (firstDuty) logSchoolMeaning(ch, "merchantPrince", sa);
   awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Special Duty: ${sa}`);
   applyMerchantSpecialDutyResult(ch, sa);
 }

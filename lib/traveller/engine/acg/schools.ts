@@ -9,7 +9,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
-import { awardBrownie, bpAwardFor } from "./awards";
+import { awardBrownie, bpAwardFor, logSchoolMeaning } from "./awards";
 import { applyAcgSkillCell } from "./skills";
 import { event as ev } from "@/lib/traveller/history";
 import {
@@ -67,8 +67,10 @@ export function applySpecialAssignment(
   assignment: string,
 ): void {
   if (!ch.acgState) return;
+  const firstAssignment = !ch.acgState.schoolsAttended.includes(assignment);
   ch.acgState.schoolsAttended.push(assignment);
   ch.log(ev.schoolAssigned(assignment, pathway));
+  if (firstAssignment) logSchoolMeaning(ch, pathway, assignment);
   awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Special Assignment: ${assignment}`);
 
   const data = pathwayData(ch, pathway);
@@ -469,8 +471,10 @@ export function applyScoutSchool(ch: Character, school: string): void {
   // School that grants rank/officer status (Admin School): record
   // attendance, award BP, promote.
   if (meta?.promotesToRank) {
+    const firstSchool = !ch.acgState.schoolsAttended.includes(school);
     ch.acgState.schoolsAttended.push(school);
     ch.log(ev.schoolAssigned(school, "scout"));
+    if (firstSchool) logSchoolMeaning(ch, "scout", school);
     awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Scout school: ${school}`);
     if (meta.promotesToOfficer) ch.acgState.isOfficer = true;
     const pattern = meta.adminRankPattern ? new RegExp(meta.adminRankPattern) : null;
@@ -481,8 +485,10 @@ export function applyScoutSchool(ch: Character, school: string): void {
     return;
   }
 
+  const firstScoutSchool = !ch.acgState.schoolsAttended.includes(school);
   ch.acgState.schoolsAttended.push(school);
   ch.log(ev.schoolAssigned(school, "scout"));
+  if (firstScoutSchool) logSchoolMeaning(ch, "scout", school);
   awardBrownie(ch, bpAwardFor(ch, "Special assignment") ?? 0, `Scout school: ${school}`);
 
   const scout = getEdition(ch.editionId).data.advancedCharacterGeneration?.scout;

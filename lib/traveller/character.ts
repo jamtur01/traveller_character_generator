@@ -457,6 +457,12 @@ export class Character implements CharacterState {
   /** Full Mongoose 2e chargen state — lazily created when the mongoose flow
    *  begins (null for CT/MT characters). */
   mongooseState: MongooseState | null = null;
+  /** Set the first time a homeworld tech/law skill gate forces an override
+   *  roll, so the cited homeworld-skill-restriction rule (MT PM p. 15) is
+   *  surfaced once per character rather than on every restricted skill.
+   *  Copied by cloneCharacter via Object.assign; applies to basic MT (no
+   *  acgState) as well as ACG. */
+  homeworldRestrictionNoteLogged = false;
 
   /** Non-null assertion helper for ACG pathway code. Pathway functions
    *  are only called when the character is on an ACG path, so acgState

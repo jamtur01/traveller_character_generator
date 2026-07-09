@@ -203,6 +203,12 @@ export interface CanonData {
    *  services whose `checks.enlistment.automaticIf` gate is set. */
   serviceOrder?: readonly string[];
   benefitDetails: Record<string, BenefitDetail>;
+  /** Mustering-out benefit-object meanings (MT PM p. 19 glossary), keyed by
+   *  the benefit token/label emitted at muster (Weapon, TAS, High Passage,
+   *  ship names, Instruments, ...). Logged verbose at the cellResolver muster
+   *  branch; edition-agnostic + fail-soft so CT can reuse the hook by adding
+   *  its own block. Sibling `$musterBenefitDefinitions` cites it. */
+  musterBenefitDefinitions?: Record<string, string>;
   /** CT/CotI generic "Weapon" mustering-out benefit type list (Blade, Gun).
    *  The two-stage Weapon benefit (weaponBenefits.doWeaponBenefit) and
    *  `optionDomain("ct.weaponType")` read this declared enumerable. */
@@ -278,6 +284,16 @@ export interface AcgCommonData {
   preCareerOptions?: Record<string, unknown>;
   browniePoints?: { awards?: unknown[] };
   decorationTiers?: { tiers?: Array<Record<string, unknown>> };
+  /** Decoration meanings (MT PM pp. 46/49/57), keyed by decoration name
+   *  (MCUF, MCG, SEH, Purple Heart, Combat Ribbon, Command Cluster,
+   *  Permanent Detached Duty). Logged verbose once per decoration at its
+   *  award. Sibling `$decorationDefinitions` cites it. */
+  decorationDefinitions?: Record<string, string>;
+  /** School / special-assignment meanings (MT PM pp. 44-63), namespaced by
+   *  pathway (`preCareer`/`mercenary`/`navy`/`scout`/`merchantPrince`) then
+   *  keyed by school name. Logged verbose when a school is assigned. Sibling
+   *  `$schoolDefinitions` cites it. */
+  schoolDefinitions?: Record<string, Record<string, string>>;
   /** PM p. 49 survival <-> decoration DM tradeoff option bounds. The book
    *  states no cap; the declared bound is a documented design choice. */
   decorationDmTradeoff?: { min: number; max: number; step: number };

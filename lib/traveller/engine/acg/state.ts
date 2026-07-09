@@ -153,6 +153,19 @@ export interface BaseAcgState {
    *  up-or-out). Threaded into the next ev.reenlistment("denied") event;
    *  consumed by character.ts after emission. */
   reenlistDenialReason?: string;
+
+  // Narration bookkeeping — surface each cited glossary entry once (verbose,
+  // display-only). Enumerable so a later audit can diff emitted keys.
+  /** Decoration names whose cited meaning (MT PM pp. 46/49/57) has already
+   *  been logged, so a repeated award (e.g. a second MCUF) does not re-log
+   *  the definition. */
+  narratedDecorations?: string[];
+  /** True once the brownie-point concept note (MT PM p. 46) has been logged
+   *  at the first award. */
+  browniePointConceptNarrated?: boolean;
+  /** True once the court-martial concept note (MT PM p. 47) has been logged
+   *  at the first court-martial. */
+  courtMartialConceptNarrated?: boolean;
 }
 
 /** Mercenary pathway: Army/Marines combat-arms service. */

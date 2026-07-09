@@ -59,6 +59,16 @@ export interface HomeworldData {
     services: string[];
   }>;
   techCodeOrder: string[];
+  /** UWP profile code meanings (MT PM p. 13 World Profile Code Equivalents),
+   *  keyed by the rolled code. Logged verbose after the homeworld event to
+   *  translate the rolled profile; each carries a sibling `$`-citation.
+   *  Edition-agnostic + fail-soft: emission only fires per table supplied. */
+  starportTypes?: Record<string, string>;
+  sizeCodes?: Record<string, string>;
+  atmosphereCodes?: Record<string, string>;
+  hydrosphereCodes?: Record<string, string>;
+  populationCodes?: Record<string, string>;
+  lawCodes?: Record<string, string>;
 }
 
 function meetsOrder(
@@ -235,6 +245,25 @@ export function availableServicesForHomeworld(
   return allEnlistable.filter((s) => !denied.has(s));
 }
 
+/** Translate the rolled UWP profile into verbose history lines using the
+ *  edition's code-meaning tables (MT PM p. 13). Edition-agnostic + fail-soft:
+ *  a line is emitted only when the edition supplies the code table AND it
+ *  holds the rolled code (tech has no table, so it is not translated). */
+function logHomeworldCodes(ch: Character, hw: Homeworld, data: HomeworldData): void {
+  const tables: Array<[string, string, Record<string, string> | undefined]> = [
+    ["Starport", hw.starport, data.starportTypes],
+    ["Size", hw.size, data.sizeCodes],
+    ["Atmosphere", hw.atmosphere, data.atmosphereCodes],
+    ["Hydrosphere", hw.hydrosphere, data.hydrosphereCodes],
+    ["Population", hw.population, data.populationCodes],
+    ["Law", hw.law, data.lawCodes],
+  ];
+  for (const [label, code, table] of tables) {
+    const desc = table?.[code];
+    if (desc) ch.log(ev.raw(`${label} ${code}: ${desc}`, "verbose"));
+  }
+}
+
 /** Generate + apply: roll homeworld, store it, apply default skills.
  *  Called by Character.rollAttributes when the edition has a homeworld
  *  step. */
@@ -246,6 +275,7 @@ export function generateAndApplyHomeworld(ch: Character): Homeworld | null {
     hw.starport, hw.size, hw.atmosphere, hw.hydrosphere,
     hw.population, hw.law, hw.tech,
   ));
+  logHomeworldCodes(ch, hw, dataFor(ch.editionId)!);
   // Default skills depend on the service; here we apply only the
   // tech-based ones since service isn't yet selected. The service-based
   // skills are applied at enlistment time.

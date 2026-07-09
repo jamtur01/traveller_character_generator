@@ -26,6 +26,7 @@ import {
   type StructuredDm,
 } from "@/lib/traveller/engine/acg/tables";
 import { applyScoutSchool } from "@/lib/traveller/engine/acg/schools";
+import { logDecorationMeaning } from "@/lib/traveller/engine/acg/awards";
 import { runPhases, type PathwaySpec } from "@/lib/traveller/engine/acg/phaseRunner";
 import {
   createPathwaySpecRegistry, runReenlist,
@@ -397,6 +398,7 @@ export function scoutFinalizeMuster(ch: Character): void {
   ch.log(ev.roll("Detached Duty", r, dm, musterTarget, succeeded));
   if (!succeeded) return;
   ch.log(ev.decoration("Permanent Detached Duty", "PM p. 57"));
+  logDecorationMeaning(ch, "Permanent Detached Duty");
   const hasScout = ch.benefits.some((b) => /scout|courier/i.test(b));
   if (!hasScout) {
     ch.log(ev.raw("Scout/Courier (Detached Duty)", "simple"));

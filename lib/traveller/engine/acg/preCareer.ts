@@ -27,7 +27,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
 import type { Rng } from "@/lib/traveller/random";
-import { awardBrownie, bpAwardFor } from "./awards";
+import { awardBrownie, bpAwardFor, logSchoolMeaning } from "./awards";
 import { event as ev } from "@/lib/traveller/history";
 import type { AcgPathwayId } from "./state";
 import { rollDieRow } from "@/lib/traveller/engine/acg/pathways/shared";
@@ -812,6 +812,9 @@ export function applyPreCareerResult(ch: Character, opt: PreCareerOption, r: Pre
   }
   if (r.honors) {
     ch.log(ev.preCareer(preCareerLabel(opt, ch.editionId), "honors"));
+  }
+  if (r.graduated) {
+    logSchoolMeaning(ch, "preCareer", opt, preCareerLabel(opt, ch.editionId));
   }
   // Brownie point awards per the manual. Magnitudes read from JSON
   // (common.browniePoints.awards) via bpAwardFor; the event key here

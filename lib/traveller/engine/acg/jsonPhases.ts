@@ -15,7 +15,7 @@ import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import {
-  awardDecoration, resolveDecorationTier, runCourtMartial,
+  awardDecoration, resolveDecorationTier, runCourtMartial, logDecorationMeaning,
 } from "./awards";
 import {
   type PathwaySpec, type PhaseDef, type PhaseFailResult,
@@ -188,6 +188,7 @@ function buildSurvival(p: PhaseSurvival, build: BuildContext): PhaseDef {
       const acg = ctx.ch.requireAcgState();
       acg.decorations.push("Purple Heart");
       ctx.ch.log(decorationEv("Purple Heart", `Wounded in ${ctx.assignment}`));
+      logDecorationMeaning(ctx.ch, "Purple Heart");
       acg.injuredThisYear = true;
     };
   }
