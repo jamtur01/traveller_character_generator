@@ -44,6 +44,18 @@ function ensureState(ch: Character): MongooseState {
   return ch.mongooseState;
 }
 
+/** Log the six characteristics and their meanings once, at the very start of
+ *  Mongoose generation (Core p.9). Verbose intro read from the cited
+ *  `characteristics` glossary; fail-soft when the edition supplies none. */
+function logCharacteristicsIntro(ch: Character): void {
+  const chars = getMongooseData(ch).characteristics;
+  if (!chars || chars.length === 0) return;
+  ch.log(ev.raw("Characteristics (Core p.9):", "verbose"));
+  for (const c of chars) {
+    ch.log(ev.raw(`${c.code} (${c.name}): ${c.meaning}.`, "verbose"));
+  }
+}
+
 /** Adolescent background skills (Core p.10): EDU DM + base, each at level 0,
  *  chosen distinctly from the background list. */
 function applyBackgroundSkills(ch: Character): void {
@@ -298,7 +310,7 @@ export const mongooseModel: ChargenModel = {
   id: "mongoose",
   label: "Mongoose Traveller 2e",
   entryPhase: () => "career",
-  init: (ch) => { ensureState(ch); },
+  init: (ch) => { ensureState(ch); logCharacteristicsIntro(ch); },
   execute(ch: Character, action: FrontierAction): ChargenResult {
     switch (action.kind) {
       case "enlist":

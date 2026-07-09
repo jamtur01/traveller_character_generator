@@ -298,6 +298,35 @@ export interface MongooseData {
   readonly survivalNaturalFail: number;
   /** Natural Advancement roll that forces continuing the career (Core p.18: 12). */
   readonly advancementNaturalContinue: number;
+  /** Six-characteristic meanings (Core p.9), logged once at generation start.
+   *  Cited in-JSON via a sibling `$characteristics`. */
+  readonly characteristics?: readonly {
+    readonly code: string;
+    readonly name: string;
+    readonly meaning: string;
+  }[];
+  /** Connection-relationship meanings (Core pp.20-21), keyed by relation,
+   *  logged when a connection is formed. Sibling `$connections` cites it. */
+  readonly connections?: Record<string, string>;
+  /** Material Benefit meanings (Core pp.47-48), keyed by benefit name, logged
+   *  when the benefit is gained at muster. Sibling `$materialBenefits` cites it. */
+  readonly materialBenefits?: Record<string, string>;
+  /** Ship Shares / Pensions / Ships With Benefits meanings (Core p.49), logged
+   *  at the muster pension resolution. Sibling `$benefitGlossary` cites it. */
+  readonly benefitGlossary?: {
+    readonly shipShares?: string;
+    readonly pension?: string;
+    readonly shipsWithBenefits?: string;
+  };
+  /** Ageing-crisis meaning (Core p.49), logged when a crisis restore fires.
+   *  Sibling `$agingCrisisGlossary` cites it. */
+  readonly agingCrisisGlossary?: string;
+  /** Commission / Rank meanings (Core p.18), logged at commission and at the
+   *  first rank attained. Sibling `$advancementGlossary` cites it. */
+  readonly advancementGlossary?: {
+    readonly commission?: string;
+    readonly rank?: string;
+  };
   /** Fixed Skills-and-Training table set (Core pp.18-19), in pick order:
    *  Personal Development, Service Skills, the assignment specialist table,
    *  Advanced Education (EDU-gated), and, once commissioned, Officer.

@@ -19,6 +19,7 @@ import { characteristicDm, rollCheck } from "@/lib/traveller/core";
 import { getMongooseData, getCareer, currentCareer, findRollRow, rollParoleThreshold, mongooseSkillNames, skillBaseName, ATTR_ABBREV } from "@/lib/traveller/engine/mongoose/core";
 import { grantSkillFloor, grantSkillIncrement, skillLevel } from "@/lib/traveller/engine/mongoose/skills";
 import { promote, commission } from "@/lib/traveller/engine/mongoose/ranks";
+import { logConnection } from "@/lib/traveller/engine/mongoose/connections";
 import type { MongooseEffect, MongooseReduction } from "@/lib/traveller/engine/mongoose/types";
 
 // Full characteristic names — the ATTR_ABBREV forms (core.ts) are the ONLY valid
@@ -140,6 +141,8 @@ export function applyReductions(ch: Character, reductions: readonly MongooseRedu
     ch.log(ev.raw(
       `Characteristic crisis: ${crisis.join(", ")} restored to ${restore} with emergency medical care.`,
     ));
+    const note = getMongooseData(ch).agingCrisisGlossary;
+    if (note) ch.log(ev.raw(`Ageing crisis: ${note}.`, "verbose"));
   }
 }
 
@@ -313,7 +316,7 @@ function applyEffect(ch: Character, e: MongooseEffect, source?: string): void {
     case "gainRelation": {
       const n = rollCount(ch, e.count);
       for (let i = 0; i < n; i++) state.connections.push({ relation: e.relation, note: source ?? "" });
-      ch.log(ev.mongooseConnection(e.relation, n > 1 ? `x${n}` : undefined));
+      logConnection(ch, e.relation, n > 1 ? `x${n}` : undefined);
       return;
     }
     case "rollMishap": resolveMishap(ch, e.ejected); return;

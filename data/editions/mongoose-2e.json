@@ -80,6 +80,15 @@
       }
     ],
     "$characteristicDmBands": "Core p.9 Characteristic Modifiers table: 0 -> -3, 1-2 -> -2, 3-5 -> -1, 6-8 -> +0, 9-11 -> +1, 12-14 -> +2, 15+ -> +3. Top band open-ended (encoded max 99).",
+    "characteristics": [
+      { "code": "STR", "name": "Strength", "meaning": "physical strength, fitness and forcefulness" },
+      { "code": "DEX", "name": "Dexterity", "meaning": "physical co-ordination, agility and reflexes" },
+      { "code": "END", "name": "Endurance", "meaning": "stamina, determination and ability to sustain damage" },
+      { "code": "INT", "name": "Intellect", "meaning": "intelligence and quickness of mind" },
+      { "code": "EDU", "name": "Education", "meaning": "a measure of learning and experience" },
+      { "code": "SOC", "name": "Social Standing", "meaning": "the Traveller's place in society" }
+    ],
+    "$characteristics": "Core p.9: the six characteristics and their meanings.",
     "backgroundSkillBase": 3,
     "$backgroundSkillBase": "Core p.9: background skills = EDU DM + 3 (0-6). Base 3; engine adds the EDU characteristic DM.",
     "backgroundSkills": [
@@ -7990,6 +7999,32 @@
       "perTermPay": 2000,
       "$rule": "Core p.48 Pensions: leaving after 5+ terms (except Scout/Rogue/Prisoner/Drifter) retires on a pension; Cr2000 per term beyond 8."
     },
+    "materialBenefits": {
+      "Armour": "any armour up to Cr10000 and TL12 (or trade up to Cr25000)",
+      "Ally": "gain an Ally",
+      "Blade": "any blade weapon up to Cr1000 and TL12",
+      "Characteristic Increases": "raise the listed characteristic to your maximum; excess SOC becomes Ship Shares",
+      "Cybernetic Implant": "any augmentation up to Cr75000 and TL12",
+      "Contact": "gain a Contact",
+      "Free Trader": "a free trader with 25% of its mortgage paid off",
+      "Gun": "any common or military ranged weapon up to Cr3000 and TL12",
+      "Lab Ship": "a lab ship with 25% of its mortgage paid off",
+      "Personal Vehicle": "an unarmed personal vehicle up to Cr300000 and TL10",
+      "Scientific Equipment": "any one piece of scientific equipment up to Cr2000 and TL12",
+      "Scout Ship": "a scout ship on loan from the Scout Service, recallable for missions",
+      "Ship's Boat": "a ship's boat or small craft up to MCr10 and TL12",
+      "Ship Shares": "one or more Ship Shares, MCr1 each, put toward a ship; not redeemable for cash",
+      "Weapon": "any weapon up to Cr3000 and TL12",
+      "TAS Membership": "lifetime Traveller's Aid Society membership granting Class A/B starport facilities",
+      "Yacht": "a yacht with 25% of its mortgage paid off"
+    },
+    "$materialBenefits": "Core pp.47-48 Material Benefits table entries, condensed to one-line meanings.",
+    "benefitGlossary": {
+      "shipShares": "pooled shares worth ~MCr1 each put toward a ship; never redeemable for cash",
+      "pension": "leaving most careers after five terms retires the Traveller on a yearly pension",
+      "shipsWithBenefits": "only one Traveller keeps a rolled ship; others draw extra pension per ship or unused share"
+    },
+    "$benefitGlossary": "Core p.49: Ship Shares, Pensions and Ships With Benefits.",
     "injury": [
       {
         "roll": 1,
@@ -8420,6 +8455,11 @@
     "$commissionAnyTermSocMin": "Core p.19: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
     "commissionRank": 1,
     "$commissionRank": "Core p.18: gaining a commission makes the Traveller a rank-1 officer (the officer ladder's entry rung).",
+    "advancementGlossary": {
+      "commission": "an optional roll (Army, Navy, Marines) making the Traveller a rank-1 officer",
+      "rank": "each successful advancement raises rank by one; some ranks grant an immediate bonus"
+    },
+    "$advancementGlossary": "Core p.18: Commission and Ranks & Bonuses.",
     "skillLevelMax": 4,
     "$skillLevelMax": "Core p.18: a skill may never be increased beyond level 4 during creation; further increases are lost.",
     "skillTotalCap": {
@@ -8446,6 +8486,13 @@
     "connectionsPolicy": {
       "$soloPolicy": "MgT2 Core p.19 prints Connections as a link between two Travellers who shared an event, granting a free shared skill; this solo generator has no second Traveller, so it reinterprets each connection the Traveller formed (an event-generated Ally/Rival/Contact) as +1 to a chosen skill. The caps stay by-the-book (connectionSkillCap / connectionSkillMaxLevel / connectionSkillExcluded)."
     },
+    "connections": {
+      "contact": "an individual known through friendly dealings, sometimes willing to aid the Traveller",
+      "ally": "like a Contact, but willing to go out of their way to provide aid",
+      "rival": "someone who opposes the Traveller and works to interfere or harass",
+      "enemy": "worse than a Rival: wants the Traveller dead, imprisoned or otherwise doomed"
+    },
+    "$connections": "Core pp.20-21: Contacts, Allies, Rivals and Enemies.",
     "qualificationDmPerPriorCareer": -1,
     "$qualificationDmPerPriorCareer": "Core p.22 (Agent) and every other career page: 'DM-1 for every previous career' is printed on each individual career page, not the p.18 Qualification section.",
     "commissionDmPerTermAfterFirst": -1,
@@ -8456,6 +8503,7 @@
       "$soloPolicy": "MgT2 Core p.49 leaves a Traveller reduced to a 0 characteristic to referee adjudication / anagathics / death; this solo generator instead assumes emergency medical care restores each crisis characteristic to this value.",
       "value": 1
     },
+    "agingCrisisGlossary": "a characteristic reduced to 0 triggers a fatal ageing crisis unless 1D x Cr10000 of care restores it to 1",
     "reductionPolicy": {
       "$soloPolicy": "MgT2 Core p.49: injury/ageing characteristic losses leave the pick of which characteristic to reduce to the player; in auto mode this generator reduces the highest-scoring eligible characteristics first to avoid triggering an ageing crisis.",
       "value": "highestFirst"

@@ -11,6 +11,7 @@ import { event as ev } from "@/lib/traveller/history";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { getMongooseData, currentCareer, findRollRow, mongooseSkillNames, skillBaseName, ATTR_ABBREV, ATTR_CELL } from "@/lib/traveller/engine/mongoose/core";
 import { skillLevel, applySkillCell } from "@/lib/traveller/engine/mongoose/skills";
+import { logConnection } from "@/lib/traveller/engine/mongoose/connections";
 import { consumePendingDm } from "@/lib/traveller/engine/mongoose/state";
 import type { MongooseCareer, MongooseData } from "@/lib/traveller/engine/mongoose/types";
 import { optionDomain } from "@/lib/traveller/editions/optionDomains";
@@ -37,16 +38,30 @@ function applySingleBenefit(ch: Character, benefit: string): void {
   const attr = benefit.match(ATTR_CELL);
   if (attr) {
     ch.improveAttribute(ATTR_ABBREV[attr[1]!]!, Number(attr[2]));
+    logMaterialBenefit(ch, "Characteristic Increases");
     return;
   }
   const lower = benefit.toLowerCase();
   if (lower === "ally" || lower === "contact") {
     ch.mongooseState!.connections.push({ relation: lower, note: "muster benefit" });
-    ch.log(ev.mongooseConnection(lower));
+    logConnection(ch, lower);
     return;
   }
   ch.benefits.push(benefit);
   ch.log(ev.raw(`Benefit: ${benefit}.`));
+  logMaterialBenefit(ch, benefit);
+}
+
+/** Log the cited Material Benefit meaning (Core pp.47-48) for a gained benefit,
+ *  keyed by its name. Ship-share die-strings ("1D Ship Shares") normalize to the
+ *  "Ship Shares" entry. Fail-soft: emits nothing when the edition supplies no
+ *  matching glossary entry. */
+function logMaterialBenefit(ch: Character, benefit: string): void {
+  const gloss = getMongooseData(ch).materialBenefits;
+  if (!gloss) return;
+  const key = gloss[benefit] ? benefit : /ship shares?$/i.test(benefit) ? "Ship Shares" : undefined;
+  const desc = key ? gloss[key] : undefined;
+  if (key && desc) ch.log(ev.raw(`Benefit (${key}): ${desc}.`, "verbose"));
 }
 
 /** Apply a Material Benefit cell. Compound cells split into parts on commas and
@@ -127,6 +142,10 @@ function applyPension(ch: Character, career: MongooseCareer, data: MongooseData)
     : p.table[p.table.length - 1]!.pay + (state.termsInCareer - p.beyondTerm) * p.perTermPay;
   ch.benefits.push(`Pension Cr${pay}/year`);
   ch.log(ev.raw(`Pension: Cr${pay} per year (${state.termsInCareer} terms served).`));
+  const g = data.benefitGlossary;
+  if (g?.pension) ch.log(ev.raw(`Pensions: ${g.pension}.`, "verbose"));
+  if (g?.shipShares) ch.log(ev.raw(`Ship Shares: ${g.shipShares}.`, "verbose"));
+  if (g?.shipsWithBenefits) ch.log(ev.raw(`Ships With Benefits: ${g.shipsWithBenefits}.`, "verbose"));
 }
 
 /** Muster out of the current career (Core pp.46-49). */
