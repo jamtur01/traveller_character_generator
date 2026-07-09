@@ -67,6 +67,9 @@ export function enterCareer(
   // Threshold (1D+2, max 12); every other career has no threshold.
   state.paroleThreshold = career.parole ? rollParoleThreshold(ch, career.parole) : null;
   ch.log(ev.section(`${career.displayName} - ${asg.displayName}`));
+  if (asg.description) {
+    ch.log(ev.raw(`${asg.displayName}: ${asg.description}`, "verbose"));
+  }
   // Rank 0 is attained on entry, so its ladder benefit is granted immediately
   // (Core p.19: "bonuses acquired immediately upon attaining the rank"). Army
   // Gun Combat 1, Marine Gun Combat/Melee choice, Prisoner Melee (unarmed) 1.

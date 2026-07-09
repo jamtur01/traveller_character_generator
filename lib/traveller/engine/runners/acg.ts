@@ -19,7 +19,7 @@ import { getEdition } from "@/lib/traveller/editions";
 import { requireHook } from "@/lib/traveller/engine/registry";
 import { awardBrownie, bpAwardFor } from "@/lib/traveller/engine/acg/awards";
 import { freshPerTerm } from "@/lib/traveller/engine/acg/state";
-import { event as ev } from "@/lib/traveller/history";
+import { logAssignment } from "@/lib/traveller/engine/acg/assignmentLog";
 import type { AcgPathwayImpl } from "@/lib/traveller/editions/types";
 import { requireRule } from "@/lib/traveller/editions/strict";
 
@@ -77,10 +77,7 @@ export function runAcgYear(ch: Character): void {
   const assignment: string | null = p.rollAssignment(ch);
   acg.currentAssignment = assignment;
   if (assignment) {
-    ch.log(ev.assignmentRolled(
-      assignment, ch.terms + 1, acg.year,
-      wasRetained ? true : undefined,
-    ));
+    logAssignment(ch, assignment, wasRetained ? { retained: true } : undefined);
   }
 
   // Command duty (officers only; per PM, after the assignment is known so

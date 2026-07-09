@@ -18,6 +18,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getAcgPathway } from "@/lib/traveller/editions";
+import { logAssignment } from "@/lib/traveller/engine/acg/assignmentLog";
 import { requireRule } from "@/lib/traveller/editions/strict";
 import { numCommaSep } from "@/lib/traveller/formatting";
 import {
@@ -270,6 +271,10 @@ export function scoutResolveAssignment(ch: Character, assignment: string): void 
       applyScoutTransferToBureaucracy(ch);
       return;
     }
+    // A declined transfer rerolls to a real duty (PM p. 56); log + narrate it
+    // so the resolved assignment, not just the routing "Transfer", reaches
+    // history.
+    logAssignment(ch, next);
     scoutResolveAssignment(ch, next);
     return;
   }

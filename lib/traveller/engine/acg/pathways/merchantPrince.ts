@@ -25,6 +25,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition, getAcgPathway } from "@/lib/traveller/editions";
+import { logAssignment } from "@/lib/traveller/engine/acg/assignmentLog";
 import {
   applyDmRules, applyStructuredDms, columnDmFor, labelToColumnKey,
   parseResolutionTarget,
@@ -148,7 +149,6 @@ interface FreeTraderFlags {
    *  table (No Business / Smuggling / Piracy) rather than Trade. */
   other?: boolean;
   skipBonus?: boolean;
-  narrative?: string;
 }
 function freeTraderAssignmentFlags(ch: Character): Record<string, FreeTraderFlags> {
   const flags = getEdition(ch.editionId).data.advancedCharacterGeneration
@@ -362,6 +362,10 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
       next = merchantRollAssignment(ch);
     }
     if (next !== "Transfer Up" && next !== "Transfer Down") {
+      // Log + narrate the real post-transfer assignment: the runner only saw
+      // the routing "Transfer Up/Down" result (PM p. 60 allows one transfer a
+      // year), so without this the resolved assignment never reaches history.
+      logAssignment(ch, next);
       merchantResolveAssignment(ch, next);
     }
     return;
@@ -374,11 +378,9 @@ export function merchantResolveAssignment(ch: Character, assignment: string): vo
   // Available Position check (officers only).
   if (ch.requireAcgState().isOfficer) merchantCheckAvailablePosition(ch);
   const { table, colKey } = selectMerchantResolutionTable(ch, assignment);
-  // F14: Free Trader pursuit narrative + skipBonus override (PM p. 61).
+  // F14: Free Trader pursuit skipBonus override (PM p. 61). The assignment's
+  // narrative is logged generically by logAssignment when it is rolled.
   const flags = freeTraderAssignmentFlags(ch)[assignment];
-  if (flags?.narrative) {
-    ch.log(ev.raw(`${assignment}: ${flags.narrative}`, "verbose"));
-  }
   const { res, dms } =
     buildMerchantResolution(table, colKey, ch, flags?.skipBonus === true);
   runPhases(getMerchantSpec(ch), { ch, assignment, resTable: table, res, dms });

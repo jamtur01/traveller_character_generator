@@ -153,10 +153,12 @@
           "target": 6,
           "$qualification": "Core p.22: INT 6+. DM-1 for every previous career (standard rule; no career-specific extra)."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.22.",
         "assignments": [
           {
             "id": "lawEnforcement",
             "displayName": "Law Enforcement",
+            "description": "You are a police officer or detective.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -182,6 +184,7 @@
           {
             "id": "intelligence",
             "displayName": "Intelligence",
+            "description": "You work as a spy or saboteur.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -207,6 +210,7 @@
           {
             "id": "corporate",
             "displayName": "Corporate",
+            "description": "You work for a corporation, spying on rival organisations.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -699,10 +703,12 @@
           "target": 8,
           "$commission": "SOC 8+ (Core p.24)"
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.24.",
         "assignments": [
           {
             "id": "support",
             "displayName": "Support",
+            "description": "You are an engineer, cook or in some other role behind the front lines.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -728,6 +734,7 @@
           {
             "id": "infantry",
             "displayName": "Infantry",
+            "description": "You are one of the Poor Bloody Infantry on the ground.",
             "survival": {
               "characteristics": [
                 "strength"
@@ -753,6 +760,7 @@
           {
             "id": "cavalry",
             "displayName": "Cavalry",
+            "description": "You are one of the crew of a gunship or tank.",
             "survival": {
               "characteristics": [
                 "dexterity"
@@ -1239,10 +1247,12 @@
         },
         "basicTrainingFromAssignment": true,
         "$basicTrainingFromAssignment": "Core p.18: Citizens and Drifters use their Assignment Skills for basic training.",
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.26.",
         "assignments": [
           {
             "id": "corporate",
             "displayName": "Corporate",
+            "description": "You are an executive or manager in a large corporation.",
             "survival": {
               "characteristics": [
                 "social"
@@ -1268,6 +1278,7 @@
           {
             "id": "worker",
             "displayName": "Worker",
+            "description": "You are a blue collar worker on an industrial world.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -1293,6 +1304,7 @@
           {
             "id": "colonist",
             "displayName": "Colonist",
+            "description": "You are building a new life on a recently settled world that still needs taming.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -1844,10 +1856,12 @@
         },
         "basicTrainingFromAssignment": true,
         "$basicTrainingFromAssignment": "Core p.18: Citizens and Drifters use their Assignment Skills for basic training.",
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.28.",
         "assignments": [
           {
             "id": "barbarian",
             "displayName": "Barbarian",
+            "description": "You live on a primitive world without the benefits of technology.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -1873,6 +1887,7 @@
           {
             "id": "wanderer",
             "displayName": "Wanderer",
+            "description": "You are a space bum, living hand-to-mouth in slums and spaceports across the galaxy.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -1898,6 +1913,7 @@
           {
             "id": "scavenger",
             "displayName": "Scavenger",
+            "description": "You work as a belter (asteroid miner) or on a salvage crew.",
             "survival": {
               "characteristics": [
                 "dexterity"
@@ -2424,10 +2440,12 @@
           "target": 5,
           "$rule": "Core p.30: DEX or INT 5+ (engine takes better DM); DM-1 for every previous career."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.30.",
         "assignments": [
           {
             "id": "artist",
             "displayName": "Artist",
+            "description": "You are a writer, holographer or other creative.",
             "survival": {
               "characteristics": [
                 "social"
@@ -2453,6 +2471,7 @@
           {
             "id": "journalist",
             "displayName": "Journalist",
+            "description": "You report on local or galactic events for a news feed, the TAS or other organisation.",
             "survival": {
               "characteristics": [
                 "education"
@@ -2478,6 +2497,7 @@
           {
             "id": "performer",
             "displayName": "Performer",
+            "description": "You are an actor, dancer, acrobat, professional athlete or other public performer.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -3017,10 +3037,12 @@
           "$commission": "SOC 8+ (Core p.32). Commission optional; first term only unless SOC 9+, DM-1 per term after the first."
         },
         "$assignments": "Core p.32 Survival & Advancement by assignment; assignment skill columns from the Skills and Training tables.",
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.32.",
         "assignments": [
           {
             "id": "support",
             "displayName": "Support",
+            "description": "You are a quartermaster, engineer or battlefield medic in the marines.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -3046,6 +3068,7 @@
           {
             "id": "starMarine",
             "displayName": "Star Marine",
+            "description": "You are trained to fight boarding actions and capture enemy vessels.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -3071,6 +3094,7 @@
           {
             "id": "groundAssault",
             "displayName": "Ground Assault",
+            "description": "You are kicked out of a spacecraft in high orbit and told to 'capture that planet'.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -3583,10 +3607,12 @@
           "target": 4,
           "$rule": "Core p.34; Career Summary Table p.21 - INT 4+; standard DM-1 for every previous career (applied globally by engine); no career-specific extra DM."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.34.",
         "assignments": [
           {
             "id": "merchantMarine",
             "displayName": "Merchant Marine",
+            "description": "You work on one of the massive cargo haulers run by the Imperium or a megacorporation.",
             "survival": {
               "characteristics": [
                 "education"
@@ -3612,6 +3638,7 @@
           {
             "id": "freeTrader",
             "displayName": "Free Trader",
+            "description": "You are part of the crew of a tramp trader.",
             "survival": {
               "characteristics": [
                 "dexterity"
@@ -3637,6 +3664,7 @@
           {
             "id": "broker",
             "displayName": "Broker",
+            "description": "You work in a planetside brokerage or starport.",
             "survival": {
               "characteristics": [
                 "education"
@@ -4168,10 +4196,12 @@
           "target": 8,
           "$commission": "Core p.36 Commission: SOC 8+"
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.36.",
         "assignments": [
           {
             "id": "lineCrew",
             "displayName": "Line/Crew",
+            "description": "You serve as a general crewman or officer on a ship of the line.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -4197,6 +4227,7 @@
           {
             "id": "engineerGunner",
             "displayName": "Engineer/Gunner",
+            "description": "You serve as a specialist technician on a starship.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -4222,6 +4253,7 @@
           {
             "id": "flight",
             "displayName": "Flight",
+            "description": "You are a pilot of a shuttle, fighter or other light craft.",
             "survival": {
               "characteristics": [
                 "dexterity"
@@ -4772,10 +4804,12 @@
           },
           "$qualification": "SOC 10+. Automatic qualification if your SOC is 10 or higher. DM-1 for every previous career (standard rule, applied globally by the engine)."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.38.",
         "assignments": [
           {
             "id": "administrator",
             "displayName": "Administrator",
+            "description": "You serve in the planetary government or even ruled over a fiefdom or other domain.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -4801,6 +4835,7 @@
           {
             "id": "diplomat",
             "displayName": "Diplomat",
+            "description": "You are a diplomat or other state official.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -4826,6 +4861,7 @@
           {
             "id": "dilettante",
             "displayName": "Dilettante",
+            "description": "You are known for being known and have absolutely no useful function in society.",
             "survival": {
               "characteristics": [
                 "social"
@@ -5421,10 +5457,12 @@
           "target": 6,
           "$qualification": "Core p.40: DEX 6+. DM-1 for every previous career (standard rule; no career-specific extra)."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.40.",
         "assignments": [
           {
             "id": "thief",
             "displayName": "Thief",
+            "description": "You steal from the rich and give to… well, yourself, actually.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -5450,6 +5488,7 @@
           {
             "id": "enforcer",
             "displayName": "Enforcer",
+            "description": "You are a leg breaker, thug or assassin for a criminal group.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -5475,6 +5514,7 @@
           {
             "id": "pirate",
             "displayName": "Pirate",
+            "description": "You are a space-going corsair.",
             "survival": {
               "characteristics": [
                 "dexterity"
@@ -6085,10 +6125,12 @@
           "target": 0,
           "$qualification": "Core p.52: Special. No qualification roll - the Prisoner career is only ever entered when forced into it by another career's mishap/event."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.56.",
         "assignments": [
           {
             "id": "inmate",
             "displayName": "Inmate",
+            "description": "You just try to get through your time in prison without getting into trouble.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -6114,6 +6156,7 @@
           {
             "id": "thug",
             "displayName": "Thug",
+            "description": "You are part of a gang in prison, terrorising the other inmates.",
             "survival": {
               "characteristics": [
                 "strength"
@@ -6139,6 +6182,7 @@
           {
             "id": "fixer",
             "displayName": "Fixer",
+            "description": "You can arrange anything – for the right price.",
             "survival": {
               "characteristics": [
                 "intelligence"
@@ -6725,10 +6769,12 @@
           "$qualification": "Core p.42 - INT 6+; DM-1 for every previous career"
         },
         "$assignments": "Core p.42 Assignments; Survival & Advancement table (cross-checked Career Summary Table Core p.21)",
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.42.",
         "assignments": [
           {
             "id": "fieldResearcher",
             "displayName": "Field Researcher",
+            "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -6754,6 +6800,7 @@
           {
             "id": "scientist",
             "displayName": "Scientist",
+            "description": "You are a researcher in some corporation or research institution or a mad scientist in an orbiting laboratory.",
             "survival": {
               "characteristics": [
                 "education"
@@ -6779,6 +6826,7 @@
           {
             "id": "physician",
             "displayName": "Physician",
+            "description": "You are a doctor, healer or medical researcher.",
             "survival": {
               "characteristics": [
                 "education"
@@ -7321,10 +7369,12 @@
           "target": 5,
           "$rule": "Core p.44 Qualification: INT 5+, DM-1 for every previous career (standard global rule; no career-specific extra). Cross-checked vs Career Summary Table Core p.21."
         },
+        "$assignmentDescriptions": "Assignment descriptions lifted verbatim from the career's 'Assignments' list, MgT2 Core p.44.",
         "assignments": [
           {
             "id": "courier",
             "displayName": "Courier",
+            "description": "You are responsible for shuttling messages and high value packages around the galaxy.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -7350,6 +7400,7 @@
           {
             "id": "surveyor",
             "displayName": "Surveyor",
+            "description": "You visit border worlds and assess their worth.",
             "survival": {
               "characteristics": [
                 "endurance"
@@ -7375,6 +7426,7 @@
           {
             "id": "explorer",
             "displayName": "Explorer",
+            "description": "You go wherever the map is blank, exploring unknown worlds and uncharted space.",
             "survival": {
               "characteristics": [
                 "endurance"

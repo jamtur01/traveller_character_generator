@@ -67,6 +67,9 @@ export interface MongooseRanks {
 export interface MongooseAssignment {
   readonly id: string;
   readonly displayName: string;
+  /** One-line career-page description (Core "Assignments" list), logged when
+   *  the assignment is entered. */
+  readonly description?: string;
   readonly survival: MongooseCheck;
   readonly advancement: MongooseCheck;
   /** The assignment's specialist skill table (1D). */

@@ -4135,6 +4135,10 @@
         ],
         "finalize": { "verb": "finalize", "combatRibbon": true }
       },
+      "assignmentNarratives": {
+        "$comment": "GAP: PM pp. 48-51 name the mercenary duty assignments (training, internal security, police action, counterinsurgency, raid, ship's troops, garrison, special duty) but give no per-assignment descriptions — only the mechanical Garrison Duty resolution note (p. 50) and the generic Special Assignments note (p. 49). No narratives are invented, so this pathway logs the bare assignment line only. Documented gap.",
+        "$rule": "PM pp. 48-51 (no Duty Assignment Definitions section)."
+      },
       "sourcePrintedPages": [
         48,
         49,
@@ -5134,6 +5138,10 @@
           }
         ],
         "finalize": { "verb": "finalize", "combatRibbon": true }
+      },
+      "assignmentNarratives": {
+        "$comment": "GAP: PM pp. 52-53 name the navy duty assignments (shore duty, training, battle, siege, strike, patrol, special duty) but describe none of them. Frozen Watch is the sole assignment carrying a PM description (p. 53) and already narrates itself once via specialAssignmentRules['Frozen Watch'].historyLine, so it is not duplicated here. No narratives invented; documented gap for the rest.",
+        "$rule": "PM pp. 52-53 (no Duty Assignment Definitions section; Frozen Watch flavor at p. 53 emitted via specialAssignmentRules)."
       },
       "sourcePrintedPages": [
         52,
@@ -6324,6 +6332,14 @@
         ],
         "finalize": { "verb": "finalize", "extraSkill": { "onAssignments": ["Special Mission", "Wartime Mission"], "columnRule": "specialWarMissionSkill" } }
       },
+      "assignmentNarratives": {
+        "$comment": "Scout duty-assignment descriptions lifted from PM pp. 56-57; logged when the assignment is rolled. GAP: Base, Routine and Mission are only named in the PM assignment list (p. 56) with no descriptive text, so they carry no narrative (documented gap; not invented).",
+        "$rule": "PM p. 56 'Transfers'; PM p. 57 'Schools' and 'Special or War Missions'.",
+        "Training": "the character is sent to a service school; consult the School Assignment table to determine the school attended.",
+        "Special Mission": "the Scout has been sent on a dangerous and important mission; the extra training and preparation grant an additional skill from the special/war mission column.",
+        "Wartime Mission": "the Scout has been sent on a dangerous and important mission; the extra training and preparation grant an additional skill from the special/war mission column.",
+        "Transfer": "a Field Scout permanently transferred to the Bureaucracy; the transfer may be declined and re-rolled once."
+      },
       "sourcePrintedPages": [
         56,
         57,
@@ -7395,10 +7411,21 @@
         "Piracy": "speculative"
       },
       "freeTraderAssignmentFlags": {
-        "$comment": "Per-assignment mechanical overrides for Free Trader columns. PM p. 61 'Free Trader Other' row groups No Business / Smuggling / Piracy under a distinct resolution table (`other: true`); the remaining assignments use the Free Trader Trade table.",
-        "No Business": { "other": true, "skipBonus": true, "narrative": "no available merchant activity; character remains on-planet looking for work" },
-        "Smuggling":   { "other": true, "narrative": "transports goods illegally for large profits" },
-        "Piracy":      { "other": true, "narrative": "actively attacks and raids other shipping" }
+        "$comment": "Per-assignment mechanical overrides for Free Trader columns. PM p. 61 'Free Trader Other' row groups No Business / Smuggling / Piracy under a distinct resolution table (`other: true`); the remaining assignments use the Free Trader Trade table. Narrative text now lives in `assignmentNarratives`.",
+        "No Business": { "other": true, "skipBonus": true },
+        "Smuggling": { "other": true },
+        "Piracy": { "other": true }
+      },
+      "assignmentNarratives": {
+        "$comment": "Duty-assignment descriptions lifted from the PM p. 60 'Duty Assignment Definitions' list; logged when the assignment is rolled. Consolidates the former freeTraderAssignmentFlags narratives (No Business / Smuggling / Piracy). Routing results (Transfer Up, Transfer Down, Special) are intentionally omitted — they reroll to a real assignment, which is narrated in its place.",
+        "$rule": "PM p. 60 'Duty Assignment Definitions'.",
+        "Route": "duty on a merchant ship serving an established trade route consistent with the size of the merchant line.",
+        "Charter": "duty on a merchant ship which has been chartered to a specific company or individual.",
+        "Speculative Trade": "duty on a merchant ship buying goods in cheap markets and transporting them on speculation to markets where they can be sold at large profits.",
+        "Exploratory Trade": "duty on a merchant ship opening new markets, within known or unknown territory.",
+        "Smuggling": "a Free Trader pursuit in which the ship captain transports goods illegally in order to make large profits.",
+        "Piracy": "a Free Trader pursuit in which the ship captain actively attacks and raids other shipping.",
+        "No Business": "a Free Trader situation in which there is no available merchant activity; the lack of funds forces the character to remain on the planet looking for work."
       },
       "sourcePrintedPages": [
         60,

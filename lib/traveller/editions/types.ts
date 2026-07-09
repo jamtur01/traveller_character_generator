@@ -310,6 +310,10 @@ export interface AcgPathwayData {
   combatAssignments?: string[];
   assignmentColumnMap?: Record<string, string>;
   freeTraderAssignmentFlags?: Record<string, unknown>;
+  /** PM per-pathway duty-assignment descriptions (display-name -> narrative),
+   *  logged once when the assignment is rolled. Cited in-JSON via a sibling
+   *  `$rule`/`$comment`. Assignments the source never describes are omitted. */
+  assignmentNarratives?: Record<string, string>;
   skillTables?: Record<string, unknown>;
   skillColumnPolicy?: unknown;
   decorationTiers?: { tiers?: Array<Record<string, unknown>> };
