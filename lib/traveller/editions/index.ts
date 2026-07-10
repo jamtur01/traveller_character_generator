@@ -77,6 +77,21 @@ export function listEditions(): EditionMeta[] {
   return Object.values(REGISTRY).map((e) => e.meta);
 }
 
+/** Cited one-line skill meaning for `editionId`, or undefined. Reads the
+ *  top-level `skillDefinitions` block (CT/MT PM glossaries) and falls back to
+ *  the mongoose sub-block (Core pp.64-72), then to a speciality-stripped base
+ *  name ("Electronics (comms)" -> "Electronics"). Fail-soft: a missing glossary
+ *  or key returns undefined. Lives in the editions layer (pure data access, no
+ *  engine import) so character.ts can hook it at addSkill without a runtime
+ *  import cycle; every edition routes through this one accessor. */
+export function skillDefinitionFor(editionId: string, name: string): string | undefined {
+  const data = getEdition(editionId).data;
+  const defs = data.skillDefinitions ?? data.mongoose?.skillDefinitions;
+  if (!defs) return undefined;
+  const base = name.replace(/\s*\([^)]*\)$/, "").trim();
+  return defs[name] ?? defs[base];
+}
+
 /** Typed dynamic-key access to a pathway's ACG data. The four
  *  string-literal overloads narrow the return type to the pathway's
  *  typed data shape; the generic overload preserves back-compat for

@@ -65,7 +65,7 @@ import type {
 } from "./types";
 import type { ChargenStatus } from "./types";
 import { getEditionServices } from "./services";
-import { DEFAULT_EDITION_ID, getEdition } from "./editions";
+import { DEFAULT_EDITION_ID, getEdition, skillDefinitionFor } from "./editions";
 import { requireRule } from "./editions/strict";
 import { formatCharacterSheet } from "./sheet";
 import { AnagathicsState, MusterState } from "./characterState";
@@ -706,6 +706,13 @@ export class Character implements CharacterState {
     } else {
       this.skills.push([skill, skillLevel]);
       this.log(ev.skillLearned(skill, skillLevel, source));
+      // First acquisition only (skill was untrained): log the edition's cited
+      // one-line meaning once. Uniform, edition-agnostic, fail-soft accessor —
+      // catches every grant site (tables, automatic/rank skills, schools, ACG,
+      // cascades, muster). Verbose/display-only. Mongoose keeps its glossary in
+      // the mongoose sub-block; the accessor resolves both shapes.
+      const def = skillDefinitionFor(this.editionId, skill);
+      if (def) this.log(ev.raw(`${skill}: ${def}`, "verbose"));
     }
   }
 

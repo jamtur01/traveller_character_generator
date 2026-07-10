@@ -327,9 +327,11 @@ export interface MongooseData {
     readonly commission?: string;
     readonly rank?: string;
   };
-  /** Skill meanings (Core pp.64-72), keyed by base skill name, logged once the
-   *  first time a skill is learned. A granted speciality ("Electronics (comms)")
-   *  resolves to its base entry. Sibling `$skillDefinitions` cites it. */
+  /** Skill meanings (Core pp.64-72), keyed by base skill name. Logged once,
+   *  verbose, at first acquisition by the central `Character.addSkill` hook via
+   *  the editions `skillDefinitionFor` accessor (which resolves this sub-block
+   *  for Mongoose). A granted speciality ("Electronics (comms)") resolves to
+   *  its base entry. Sibling `$skillDefinitions` cites it. */
   readonly skillDefinitions?: Record<string, string>;
   /** Fixed Skills-and-Training table set (Core pp.18-19), in pick order:
    *  Personal Development, Service Skills, the assignment specialist table,

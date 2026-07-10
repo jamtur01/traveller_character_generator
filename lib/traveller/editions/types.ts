@@ -249,6 +249,22 @@ export interface CanonData {
    *  equipment-operation skills listed individually in "Equipment
    *  Qualified On" (the vehicle cascade is unioned in by the renderer). */
   sheet?: { equipmentSkills: string[] };
+  /** Cited one-line skill meanings for the CLASSIC engine (CT/MT), keyed by
+   *  the engine skill name emitted at a grant (a speciality "Gunnery (turret)"
+   *  resolves to its base "Gunnery"). Logged once, verbose, at first
+   *  acquisition via the central `Character.addSkill` hook (editions
+   *  `skillDefinitionFor`); fail-soft so CT reuses it by adding its own block.
+   *  Sibling `$skillDefinitions` cites it (MT: PM pp. 30-38). */
+  skillDefinitions?: Record<string, string>;
+  /** Cited one-line characteristic meanings for the CLASSIC engine (CT/MT),
+   *  one per attribute (Strength/Dexterity/Endurance/Intelligence/Education/
+   *  Social), logged once at generation start by the classic model's init.
+   *  Fail-soft. Sibling `$characteristicDefinitions` cites it (MT: PM p. 15). */
+  characteristicDefinitions?: readonly {
+    readonly code: string;
+    readonly name: string;
+    readonly meaning: string;
+  }[];
   /** Mongoose Traveller 2e chargen data. Editions without the mongoose
    *  model omit this block; the engine (engine/mongoose/*) reads it when a
    *  character's chargenModelId is "mongoose". */

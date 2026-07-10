@@ -8,7 +8,6 @@
 import type { Character } from "@/lib/traveller/character";
 import type { AttributeKey } from "@/lib/traveller/types";
 import { getMongooseData, splitTopLevelOr, ATTR_ABBREV, ATTR_CELL } from "@/lib/traveller/engine/mongoose/core";
-import { event as ev } from "@/lib/traveller/history";
 
 /** Current level of a skill, or -1 if untrained (distinct from a trained 0). */
 export function skillLevel(ch: Character, name: string): number {
@@ -32,37 +31,13 @@ function atTotalCap(ch: Character): boolean {
   return remainingTotalCap(ch) <= 0;
 }
 
-/** Emit the cited one-line skill meaning (Core pp.64-72) the first time a skill
- *  is learned. Fail-soft: only when the edition supplies a definition, keyed by
- *  the full name or its speciality-stripped base ("Electronics (comms)" ->
- *  "Electronics", "Gun Combat (any)" -> "Gun Combat"). Display-only. */
-function logSkillDefinition(ch: Character, name: string): void {
-  const defs = getMongooseData(ch).skillDefinitions;
-  if (!defs) return;
-  const base = name.replace(/\s*\([^)]*\)$/, "").trim();
-  const def = defs[name] ?? defs[base];
-  if (def) ch.log(ev.raw(`${name}: ${def}`, "verbose"));
-}
-
-/** Add levels to a skill and, on first acquisition only (the skill was
- *  untrained), log its cited definition once (Core pp.64-72). Improvements
- *  never re-log, so a skill's meaning appears once no matter how often it is
- *  raised. */
-function addSkillWithDefinition(
-  ch: Character, name: string, levels: number, source?: string,
-): void {
-  const firstLearn = skillLevel(ch, name) < 0;
-  ch.addSkill(name, levels, source);
-  if (firstLearn) logSkillDefinition(ch, name);
-}
-
 /** "No level listed" cell: gain the skill at 1, or increase it by 1 if trained.
  *  Blocked at the level-4 cap or the total-skill cap (increases are lost). */
 export function grantSkillIncrement(ch: Character, name: string, source?: string): void {
   const cur = skillLevel(ch, name);
   if (cur >= getMongooseData(ch).skillLevelMax) return;
   if (atTotalCap(ch)) return;
-  addSkillWithDefinition(ch, name, 1, source);
+  ch.addSkill(name, 1, source);
 }
 
 /** "Level listed" cell: gain/raise the skill to `level` (clamped to the level-4
@@ -76,14 +51,14 @@ export function grantSkillFloor(
   const cur = skillLevel(ch, name);
   if (cur < 0) {
     if (target <= 0) {
-      addSkillWithDefinition(ch, name, 0, source);
+      ch.addSkill(name, 0, source);
       return;
     }
     const add = Math.min(target, remainingTotalCap(ch));
-    if (add > 0) addSkillWithDefinition(ch, name, add, source);
+    if (add > 0) ch.addSkill(name, add, source);
   } else if (target > cur) {
     const add = Math.min(target - cur, remainingTotalCap(ch));
-    if (add > 0) addSkillWithDefinition(ch, name, add, source);
+    if (add > 0) ch.addSkill(name, add, source);
   }
 }
 
