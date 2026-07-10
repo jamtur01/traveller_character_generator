@@ -55,10 +55,6 @@ export function promote(ch: Character): void {
     applyRankBenefit(ch, ladder, state.rank);
     const row = ladder.find((r) => r.rank === state.rank);
     ch.log(ev.mongooseRank(state.rank, row?.title ?? null, false));
-    if (state.rank === 1) {
-      const g = getMongooseData(ch).advancementGlossary?.rank;
-      if (g) ch.log(ev.raw(`Rank: ${g}.`, "verbose"));
-    }
   }
   state.perTerm.advancedThisTerm = true;
 }
@@ -78,7 +74,5 @@ export function commission(ch: Character): void {
   applyRankBenefit(ch, ladder, rank);
   const row = ladder.find((r) => r.rank === rank);
   ch.log(ev.mongooseRank(rank, row?.title ?? null, true));
-  const g = getMongooseData(ch).advancementGlossary?.commission;
-  if (g) ch.log(ev.raw(`Commission: ${g}.`, "verbose"));
   state.perTerm.commissionedThisTerm = true;
 }

@@ -209,11 +209,6 @@ export interface CanonData {
    *  branch; edition-agnostic + fail-soft so CT can reuse the hook by adding
    *  its own block. Sibling `$musterBenefitDefinitions` cites it. */
   musterBenefitDefinitions?: Record<string, string>;
-  /** Position/commission meanings (CT: TTB p. 18 "Commission"; CotI p. 3
-   *  "Position"), keyed by the service's `checks.position.label`. Logged
-   *  verbose once at the classic commission step; edition-agnostic +
-   *  fail-soft. Sibling `$positionDefinitions` cites it. */
-  positionDefinitions?: Record<string, string>;
   /** CT/CotI generic "Weapon" mustering-out benefit type list (Blade, Gun).
    *  The two-stage Weapon benefit (weaponBenefits.doWeaponBenefit) and
    *  `optionDomain("ct.weaponType")` read this declared enumerable. */

@@ -314,12 +314,6 @@ export interface MongooseData {
   /** Ageing-crisis meaning (Core p.49), logged when a crisis restore fires.
    *  Sibling `$agingCrisisGlossary` cites it. */
   readonly agingCrisisGlossary?: string;
-  /** Commission / Rank meanings (Core p.18), logged at commission and at the
-   *  first rank attained. Sibling `$advancementGlossary` cites it. */
-  readonly advancementGlossary?: {
-    readonly commission?: string;
-    readonly rank?: string;
-  };
   /** Skill meanings (Core pp.64-72), keyed by base skill name. Logged once,
    *  verbose, at first acquisition by the central `Character.addSkill` hook via
    *  the editions `skillDefinitionFor` accessor (which resolves this sub-block

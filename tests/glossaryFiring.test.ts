@@ -168,25 +168,6 @@ describe("Mongoose glossary lines fire at their emission points (fa7c7d4, 61e729
     applyReductions(c, [{ count: 1, amount: 1, pool: ["strength"] }]);
     expect(count(c, `Ageing crisis: ${String(MG.agingCrisisGlossary)}.`)).toBe(1);
   });
-
-  it("reaching rank 1 narrates the rank glossary (Core p.18)", () => {
-    const c = mkMongoose();
-    c.mongooseState!.career = "agent";
-    c.mongooseState!.assignment = "lawEnforcement";
-    c.mongooseState!.rank = 0;
-    promote(c);
-    expect(c.mongooseState!.rank).toBe(1);
-    expect(count(c, `Rank: ${String((MG.advancementGlossary as Json).rank)}.`)).toBe(1);
-  });
-
-  it("gaining a commission narrates the commission glossary (Core p.18)", () => {
-    const c = mkMongoose();
-    c.mongooseState!.career = "army";
-    c.mongooseState!.assignment = "support";
-    commission(c);
-    expect(c.mongooseState!.commissioned).toBe(true);
-    expect(count(c, `Commission: ${String((MG.advancementGlossary as Json).commission)}.`)).toBe(1);
-  });
 });
 
 // ===========================================================================
@@ -263,22 +244,6 @@ describe("CT glossary lines fire at their emission points (83da80e, 933a185)", (
     const def = String((CT.musterBenefitDefinitions as Json).Instruments);
     expect(count(c, `Benefit (Instruments): ${def}.`)).toBe(1);
   });
-
-  it("a commission narrates the position glossary keyed by the service label (TTB p.18)", () => {
-    const c = mkChar("ct-classic");
-    c.service = "navy";
-    c.rank = 0;
-    c.terms = 1;
-    c.commissioned = false;
-    c.drafted = false;
-    const edition = getEdition("ct-classic");
-    const service = getEditionServices("ct-classic").navy!;
-    vi.spyOn(Math, "random").mockReturnValue(0.999); // 2D = 12 >= 10 -> commission succeeds
-    commissionStep({ ch: c, edition, service, config: {} });
-    expect(c.commissioned).toBe(true);
-    const note = String((CT.positionDefinitions as Json).Commission);
-    expect(count(c, `Commission: ${note}.`)).toBe(1);
-  });
 });
 
 // ===========================================================================
@@ -304,4 +269,66 @@ describe("removed characteristics-intro glossary never re-fires at generation st
       }
     });
   }
+});
+
+// ===========================================================================
+// Negative lock — the Rank/Commission (Mongoose) and Position/Commission (CT)
+// advancement glossaries were removed as filler. Their emission points still
+// run the rank/commission MECHANIC, but must emit no `Rank: `/`Commission: `/
+// `Position: ` verbose glossary line. Teeth: restore any removed ev.raw block
+// (and its JSON) and the matching prefix reappears.
+// ===========================================================================
+
+describe("removed advancement/position glossaries never re-fire at their emission points", () => {
+  const rawWithPrefix = (c: Character, prefix: string): number =>
+    c.events.filter((e) => e.kind === "raw" && e.text.startsWith(prefix)).length;
+
+  it("Mongoose promotion to rank 1 runs the mechanic but emits no `Rank: ` line", () => {
+    const c = mkMongoose();
+    c.mongooseState!.career = "agent";
+    c.mongooseState!.assignment = "lawEnforcement";
+    c.mongooseState!.rank = 0;
+    promote(c);
+    expect(c.mongooseState!.rank, "rank mechanic intact").toBe(1);
+    expect(rawWithPrefix(c, "Rank: "), "no Rank: glossary line").toBe(0);
+  });
+
+  it("Mongoose commission runs the mechanic but emits no `Commission: ` line", () => {
+    const c = mkMongoose();
+    c.mongooseState!.career = "army";
+    c.mongooseState!.assignment = "support";
+    commission(c);
+    expect(c.mongooseState!.commissioned, "commission mechanic intact").toBe(true);
+    expect(rawWithPrefix(c, "Commission: "), "no Commission: glossary line").toBe(0);
+  });
+
+  it("CT commission (Commission-label service) emits no `Commission: ` line", () => {
+    const c = mkChar("ct-classic");
+    c.service = "navy";
+    c.rank = 0;
+    c.terms = 1;
+    c.commissioned = false;
+    c.drafted = false;
+    const edition = getEdition("ct-classic");
+    const service = getEditionServices("ct-classic").navy!;
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    commissionStep({ ch: c, edition, service, config: {} });
+    expect(c.commissioned, "commission mechanic intact").toBe(true);
+    expect(rawWithPrefix(c, "Commission: "), "no Commission: glossary line").toBe(0);
+  });
+
+  it("CT commission (Position-label service) emits no `Position: ` line", () => {
+    const c = mkChar("ct-classic");
+    c.service = "pirates";
+    c.rank = 0;
+    c.terms = 1;
+    c.commissioned = false;
+    c.drafted = false;
+    const edition = getEdition("ct-classic");
+    const service = getEditionServices("ct-classic").pirates!;
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    commissionStep({ ch: c, edition, service, config: {} });
+    expect(c.commissioned, "commission mechanic intact").toBe(true);
+    expect(rawWithPrefix(c, "Position: "), "no Position: glossary line").toBe(0);
+  });
 });

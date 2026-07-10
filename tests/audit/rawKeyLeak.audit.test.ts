@@ -104,10 +104,10 @@ function glossaryIdentifierKeys(): string[] {
   const ct = readEditionJson("ct-classic");
   const mt = readEditionJson("mt-megatraveller");
   const mg = (readEditionJson("mongoose-2e").mongoose ?? {}) as Record<string, unknown>;
-  for (const b of ["materialBenefits", "benefitGlossary", "connections", "advancementGlossary", "skillDefinitions"]) {
+  for (const b of ["materialBenefits", "benefitGlossary", "connections", "skillDefinitions"]) {
     addKeys(mg[b]);
   }
-  for (const b of ["musterBenefitDefinitions", "skillDefinitions", "positionDefinitions"]) {
+  for (const b of ["musterBenefitDefinitions", "skillDefinitions"]) {
     addKeys(ct[b]);
     addKeys(mt[b]);
   }

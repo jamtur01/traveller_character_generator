@@ -74,10 +74,6 @@ describe("Mongoose glossary blocks are cited (fa7c7d4, 61e7292)", () => {
     assertObjectGlossary(M.benefitGlossary, M.$benefitGlossary, "mongoose.benefitGlossary");
   });
 
-  it("advancementGlossary — commission / rank (Core p.18) is cited", () => {
-    assertObjectGlossary(M.advancementGlossary, M.$advancementGlossary, "mongoose.advancementGlossary");
-  });
-
   it("connections — contact/ally/rival/enemy (Core pp.20-21) is cited", () => {
     assertObjectGlossary(M.connections, M.$connections, "mongoose.connections");
   });
@@ -172,10 +168,6 @@ describe("MT glossary blocks are cited (2480589, ab0ae1a, fb22216)", () => {
 describe("CT glossary blocks are cited (83da80e, 8d705f9, 933a185)", () => {
   it("musterBenefitDefinitions (TTB pp.29-30 / CotI pp.13-15) is cited", () => {
     assertObjectGlossary(CT.musterBenefitDefinitions, CT.$musterBenefitDefinitions, "ct.musterBenefitDefinitions");
-  });
-
-  it("positionDefinitions — Commission/Position (TTB p.18 / CotI p.3) is cited", () => {
-    assertObjectGlossary(CT.positionDefinitions, CT.$positionDefinitions, "ct.positionDefinitions");
   });
 
   it("skillDefinitions (TTB pp.21-28 / CotI pp.10-18) is cited", () => {

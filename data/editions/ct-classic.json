@@ -307,11 +307,6 @@
     "Instruments": "a complete medical instrument set — surgeon's tools, diagnostics and drugs (about Cr5,000)",
     "Watch": "a presentation watch from fellow bureaucrats; about Cr50, occasionally worth Cr200-1200"
   },
-  "$positionDefinitions": "Position/commission meanings, keyed by the service's checks.position.label: 'Commission' from The Traveller Book p. 18 (Commissions and Promotions), 'Position' from Citizens of the Imperium p. 3 (Positions and Promotions).",
-  "positionDefinitions": {
-    "Commission": "an officer's commission; a successful throw grants rank 1, attempted once per term until achieved",
-    "Position": "the rank-entry roll — a commission in military careers, other meanings elsewhere; success grants rank 1"
-  },
   "$skillDefinitions": "Skill meanings, one clause each, condensed from The Traveller Book pp. 21-28 (Available Skills descriptions, incl. the Blades/Polearms and Guns tables p. 25) and Citizens of the Imperium pp. 10-11, 15-18 (weapon expertise, bow weapons, Air Craft, Hunting, Prospecting, Vehicle, Water Craft). Keyed to the post-rename name Character.addSkill receives; cascade picks are glossed individually. Skills whose only Traveller definition lives in Book 4 (Mercenary) or Book 5 (High Guard) — Battle Dress, Carousing, Commo, Demolition, Gravitics, Instruction, Interrogation, Liaison, Recon, Recruiting, Ship Tactic, Ship Tactics, Survival, Zero-G Cbt — carry no TTB/CotI definition and are omitted (fail-soft).",
   "skillDefinitions": {
     "Admin": "experience dealing with and managing bureaucratic agencies and their officials",

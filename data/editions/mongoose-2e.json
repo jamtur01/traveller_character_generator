@@ -8446,11 +8446,6 @@
     "$commissionAnyTermSocMin": "Core p.19: a commission may only be attempted in the first term unless SOC 9+ (then any term).",
     "commissionRank": 1,
     "$commissionRank": "Core p.18: gaining a commission makes the Traveller a rank-1 officer (the officer ladder's entry rung).",
-    "advancementGlossary": {
-      "commission": "an optional roll (Army, Navy, Marines) making the Traveller a rank-1 officer",
-      "rank": "each successful advancement raises rank by one; some ranks grant an immediate bonus"
-    },
-    "$advancementGlossary": "Core p.18: Commission and Ranks & Bonuses.",
     "skillDefinitions": {
       "Admin": "handling bureaucracy and administration; navigating officialdom and tracking inventories, manifests and records",
       "Advocate": "knowledge of legal codes and interstellar law, plus oratory, debate and public speaking",
