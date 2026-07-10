@@ -288,6 +288,30 @@
   },
   "$ruleWeaponBenefitTypes": "CT/CotI Weapon benefit: the generic 'Weapon' mustering-out benefit is resolved as a two-stage pick — first the weapon type (Blade or Gun), then a specific weapon from that type's cascade.",
   "weaponBenefitTypes": ["Blade", "Gun"],
+  "$musterBenefitDefinitions": "Mustering-out benefit meanings, one clause each, condensed from The Traveller Book pp. 29-30 (passages, Travellers' Aid, weapons, starships) and Citizens of the Imperium pp. 13-15 (Weapon, Instruments, Watch, ship descriptions). Keyed to the benefit token reaching cellResolver's logMusterBenefitMeaning.",
+  "musterBenefitDefinitions": {
+    "Weapon": "any one personal weapon (blade or gun) from Book 1; a repeat may instead raise skill in it",
+    "Blade": "any blade weapon of choice; a repeat gives another blade or raises blade skill",
+    "Gun": "any gun weapon of choice; a repeat gives another gun or raises gun skill",
+    "TAS": "Travellers' Aid Society membership; hostels at class A/B starports and a High Passage every two months, once per character",
+    "High Passage": "a first-class starship ticket; excellent cuisine and one ton of baggage (about Cr10,000)",
+    "Mid Passage": "a second-class starship ticket; passable fare, 100 kg baggage, bumpable if a high passenger appears (about Cr8,000)",
+    "Low Passage": "a cryogenic cold-sleep starship ticket; the traveller is frozen and risks death on revival (about Cr1,000)",
+    "Free Trader": "a Type A free trader, a 200-ton cargo ship carrying a forty-year mortgage",
+    "Scout Ship": "a Type S scout/courier on loan from the Scout Service; cannot be sold or mortgaged",
+    "Corsair": "a Type P corsair, an armed pirate raiding ship held outright",
+    "Seeker": "a Type J seeker, a small asteroid mining and prospecting ship",
+    "Yacht": "a yacht received as a benefit; the starship is detailed in Book 1",
+    "Lab Ship": "a Type L laboratory ship supplied by a scientific foundation; cannot be sold",
+    "Safari Ship": "a Type K safari ship with animal caging areas and a trophy lounge",
+    "Instruments": "a complete medical instrument set — surgeon's tools, diagnostics and drugs (about Cr5,000)",
+    "Watch": "a presentation watch from fellow bureaucrats; about Cr50, occasionally worth Cr200-1200"
+  },
+  "$positionDefinitions": "Position/commission meanings, keyed by the service's checks.position.label: 'Commission' from The Traveller Book p. 18 (Commissions and Promotions), 'Position' from Citizens of the Imperium p. 3 (Positions and Promotions).",
+  "positionDefinitions": {
+    "Commission": "an officer's commission; a successful throw grants rank 1, attempted once per term until achieved",
+    "Position": "the rank-entry roll — a commission in military careers, other meanings elsewhere; success grants rank 1"
+  },
   "$ruleServiceOrder": "TTB p. 18 enlistment/draft order: the service-selection table lists Navy, Marines, Army, Scouts, Merchants, Other before the Advanced Character Generation services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
   "serviceOrder": [
     "navy", "marines", "army", "scouts", "merchants", "pirates", "other",

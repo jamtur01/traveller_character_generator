@@ -45,4 +45,12 @@ export const commissionStep: StepFn = ({ ch, service, config, edition }) => {
     service.ranks[ch.rank] ?? `rank ${ch.rank}`,
     `commissioned in ${intToOrdinal(ch.terms)} term`,
   ));
+
+  // Cited position/commission meaning (CT: TTB p. 18 / CotI p. 3), keyed by
+  // the service's position label ("Commission" vs "Position"). Fires once —
+  // the step returns early on an already-commissioned character. Fail-soft:
+  // editions without the glossary or key emit nothing.
+  const positionLabel = service.positionLabel!;
+  const positionNote = edition.data.positionDefinitions?.[positionLabel];
+  if (positionNote) ch.log(ev.raw(`${positionLabel}: ${positionNote}.`, "verbose"));
 };
