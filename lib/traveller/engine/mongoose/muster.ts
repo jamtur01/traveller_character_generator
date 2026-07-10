@@ -168,5 +168,6 @@ export function musterOut(ch: Character): void {
     terms: state.termsInCareer, finalRank: state.rank, commissioned: state.commissioned,
   });
   state.careerCount += 1;
+  state.lastLeftCareer = careerId;
   state.benefitRolls = 0;
 }

@@ -29,7 +29,7 @@ import {
   type MongooseState,
 } from "@/lib/traveller/engine/mongoose/state";
 import { getMongooseData, getCareer } from "@/lib/traveller/engine/mongoose/core";
-import { qualifyForCareer, enterCareer } from "@/lib/traveller/engine/mongoose/enlist";
+import { qualifyForCareer, enterCareer, availableCareerIds } from "@/lib/traveller/engine/mongoose/enlist";
 import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { rollSurvival } from "@/lib/traveller/engine/mongoose/survival";
 import { rollEvent } from "@/lib/traveller/engine/mongoose/events";
@@ -128,7 +128,9 @@ function enterViaDraftOrDrifter(ch: Character): void {
  *  (or draft/drift on failure). */
 function pickCareerNormally(ch: Character): void {
   const data = getMongooseData(ch);
-  const careerIds = optionDomain(ch.editionId, "mongoose.career").values;
+  const state = ensureState(ch);
+  const allCareerIds = optionDomain(ch.editionId, "mongoose.career").values;
+  const careerIds = availableCareerIds(allCareerIds, data.careers, state.lastLeftCareer);
   ch.pickOrDefer({
     kind: "mongooseCareer",
     label: "Choose a career to attempt",

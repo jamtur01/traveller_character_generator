@@ -97,6 +97,11 @@ export interface MongooseState {
    *  benefitRolls (event bonuses only), this zeroes the term/rank rolls at
    *  muster. Career-scoped: reset on entering the next career. */
   benefitsForfeited: boolean;
+  /** The career left at the end of the previous term. Core p.18 bars returning
+   *  to it in the immediate next term via the normal picker; the Drifter career
+   *  (always open) and the draft (may re-enter an ejected career) are exempt.
+   *  Overwritten on each muster-out; consulted once at the next career choice. */
+  lastLeftCareer: string | null;
 }
 
 /** A blank set of pending-DM buckets. Reset on entering a new career so a
@@ -139,6 +144,7 @@ export function freshMongooseState(): MongooseState {
     mustDraft: false,
     paroleThreshold: null,
     benefitsForfeited: false,
+    lastLeftCareer: null,
   };
 }
 

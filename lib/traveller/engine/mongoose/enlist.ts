@@ -14,6 +14,23 @@ import { grantSkillFloor } from "@/lib/traveller/engine/mongoose/skills";
 import { applyRankBenefit, currentLadder } from "@/lib/traveller/engine/mongoose/ranks";
 import type { MongooseCareer } from "@/lib/traveller/engine/mongoose/types";
 
+/** Careers offerable via the NORMAL picker this term (Core p.18): every career
+ *  except the one just left — it cannot be re-entered in the immediate next
+ *  term. The Drifter career (auto-qualify: empty qualification characteristics)
+ *  is always open and never filtered; the draft is a separate path that may
+ *  still re-enter an ejected career. Pure (no Character / RNG). */
+export function availableCareerIds(
+  allIds: readonly string[],
+  careers: Record<string, MongooseCareer>,
+  lastLeftCareer: string | null,
+): string[] {
+  const barredCareer = lastLeftCareer != null ? careers[lastLeftCareer] : undefined;
+  if (lastLeftCareer == null || barredCareer == null) return [...allIds];
+  // Drifter (empty qualification characteristics) is always open.
+  if (barredCareer.qualification.characteristics.length === 0) return [...allIds];
+  return allIds.filter((id) => id !== lastLeftCareer);
+}
+
 /** Attempt to qualify for a career (Core p.18): roll 2D + best-characteristic
  *  DM - 1 per previous career + pending qualification DMs, vs the target.
  *  Drifter (empty characteristics) qualifies automatically with no roll, as
