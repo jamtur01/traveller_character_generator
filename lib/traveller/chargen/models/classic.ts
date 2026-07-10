@@ -6,6 +6,7 @@
 
 import type { Character } from "@/lib/traveller/character";
 import { getEdition } from "@/lib/traveller/editions";
+import { event as ev } from "@/lib/traveller/history";
 import { getEditionServices } from "@/lib/traveller/services";
 import { maxCashRolls } from "@/lib/traveller/core";
 import type { ChargenModel, FlowStage } from "@/lib/traveller/chargen/model";
@@ -70,10 +71,25 @@ function doPickSkill(ch: Character, table: number): ChargenSnapshot {
   return finishTerm(ch);
 }
 
+/** Log the six characteristics and their cited meanings once, at the very
+ *  start of CLASSIC-model generation (CT/MT). Edition-agnostic: reads the
+ *  edition's `characteristicDefinitions` (MT: PM p. 27) and is fail-soft when
+ *  the edition supplies none (CT's block lands later). Verbose/display-only —
+ *  mirrors the mongoose model's characteristics intro. */
+function logCharacteristicsIntro(ch: Character): void {
+  const chars = getEdition(ch.editionId).data.characteristicDefinitions;
+  if (!chars || chars.length === 0) return;
+  ch.log(ev.raw("Characteristics:", "verbose"));
+  for (const c of chars) {
+    ch.log(ev.raw(`${c.code} (${c.name}): ${c.meaning}.`, "verbose"));
+  }
+}
+
 export const classicModel: ChargenModel = {
   id: "classic",
   label: "Classic (per-term careers)",
   entryPhase: () => "career",
+  init: (ch) => { logCharacteristicsIntro(ch); },
   execute(ch: Character, action: FrontierAction): ChargenResult {
     switch (action.kind) {
       case "enlist":

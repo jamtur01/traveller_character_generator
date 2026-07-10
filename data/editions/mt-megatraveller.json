@@ -841,6 +841,15 @@
     "Wheeled Vehicle": "operating wheeled vehicles",
     "Zero-G Environ": "working in a zero-gravity environment"
   },
+  "$characteristicDefinitions": "MT PM p. 27 (Skills chapter, Personal Characteristics), condensed to one clause each.",
+  "characteristicDefinitions": [
+    { "code": "STR", "name": "Strength", "meaning": "the ability to apply physical force" },
+    { "code": "DEX", "name": "Dexterity", "meaning": "physical coordination and agility, as in repairs, shooting or balance" },
+    { "code": "END", "name": "Endurance", "meaning": "physical stamina" },
+    { "code": "INT", "name": "Intelligence", "meaning": "roughly IQ; 10+ is genius, 5- indicates learning difficulties" },
+    { "code": "EDU", "name": "Education", "meaning": "accumulated knowledge; highly technical tasks depend on it, not intelligence" },
+    { "code": "SOC", "name": "Social Standing", "meaning": "social class; 11+ carries a patent of nobility" }
+  ],
   "benefitDetails": {
     "passages": {
       "High Psg": {

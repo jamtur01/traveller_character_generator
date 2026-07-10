@@ -259,7 +259,7 @@ export interface CanonData {
   /** Cited one-line characteristic meanings for the CLASSIC engine (CT/MT),
    *  one per attribute (Strength/Dexterity/Endurance/Intelligence/Education/
    *  Social), logged once at generation start by the classic model's init.
-   *  Fail-soft. Sibling `$characteristicDefinitions` cites it (MT: PM p. 15). */
+   *  Fail-soft. Sibling `$characteristicDefinitions` cites it (MT: PM p. 27). */
   characteristicDefinitions?: readonly {
     readonly code: string;
     readonly name: string;
