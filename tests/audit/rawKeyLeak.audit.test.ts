@@ -79,6 +79,49 @@ function leakedKeysIn(text: string): string[] {
   return RAW_KEYS.filter((k) => text.includes(k));
 }
 
+/** camelCase identifier KEYS from the nine-commit narrative glossaries
+ *  (fa7c7d4..933a185): schoolDefinitions.<ns>.navalAcademy, benefitGlossary
+ *  .shipShares, etc. These are RESOLUTION ids, never display text — a verbose
+ *  glossary line must show the spaced label ("Ship Shares"), never the key
+ *  ("shipShares"). Harvested from the shipped JSON so the scan tracks the data
+ *  rather than a hand-copied list. */
+function readEditionJson(id: string): Record<string, unknown> {
+  const raw: unknown = JSON.parse(
+    readFileSync(resolve(__dirname, `../../data/editions/${id}.json`), "utf8"),
+  );
+  if (!isRecord(raw)) throw new Error(`edition ${id} JSON is not an object`);
+  return raw;
+}
+
+function glossaryIdentifierKeys(): string[] {
+  const out = new Set<string>();
+  const addKeys = (node: unknown): void => {
+    if (!isRecord(node)) return;
+    for (const k of Object.keys(node)) {
+      if (!k.startsWith("$") && /[a-z][A-Z]/.test(k)) out.add(k);
+    }
+  };
+  const ct = readEditionJson("ct-classic");
+  const mt = readEditionJson("mt-megatraveller");
+  const mg = (readEditionJson("mongoose-2e").mongoose ?? {}) as Record<string, unknown>;
+  for (const b of ["materialBenefits", "benefitGlossary", "connections", "advancementGlossary", "skillDefinitions"]) {
+    addKeys(mg[b]);
+  }
+  for (const b of ["musterBenefitDefinitions", "skillDefinitions", "positionDefinitions"]) {
+    addKeys(ct[b]);
+    addKeys(mt[b]);
+  }
+  const common = ((mt.advancedCharacterGeneration as Record<string, unknown>)?.common ?? {}) as Record<string, unknown>;
+  addKeys(common.decorationDefinitions);
+  const schools = common.schoolDefinitions;
+  if (isRecord(schools)) {
+    for (const [ns, entries] of Object.entries(schools)) if (!ns.startsWith("$")) addKeys(entries);
+  }
+  return [...out];
+}
+
+const GLOSSARY_KEYS = glossaryIdentifierKeys();
+
 // ---------------------------------------------------------------------------
 // Drive the walkers and harvest both channels.
 // ---------------------------------------------------------------------------
@@ -192,5 +235,31 @@ describe("raw camelCase column keys never reach player-facing text", () => {
           .not.toMatch(/[a-z][A-Z]/);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Extension: the nine-commit narrative glossaries (fa7c7d4..933a185) added new
+// verbose lines (skill/characteristic/connection/muster/rank/decoration/school
+// meanings). A display line must render the spaced label, never the camelCase
+// resolution key. The same harvested history lines are re-scanned for those
+// glossary keys, so a hook that logs a raw id (e.g. "navalAcademy" instead of
+// "Naval Academy") reddens here too.
+// ---------------------------------------------------------------------------
+
+describe("raw glossary identifier keys never reach a verbose line (fa7c7d4..933a185)", () => {
+  it("the glossary-key set is derived and non-empty (guards against a vacuous scan)", () => {
+    // preCareer school + ship-share keys are the camelCase offenders in scope.
+    expect(GLOSSARY_KEYS).toEqual(expect.arrayContaining(["navalAcademy", "shipShares"]));
+  });
+
+  it("no rendered history line contains a raw glossary key", () => {
+    expect(historyLines.length).toBeGreaterThan(0);
+    const offenders: string[] = [];
+    for (const line of historyLines) {
+      const leaks = GLOSSARY_KEYS.filter((k) => line.includes(k));
+      if (leaks.length > 0) offenders.push(`${leaks.join(",")} :: ${line}`);
+    }
+    expect(offenders, "history lines leaked a raw glossary key").toEqual([]);
   });
 });
