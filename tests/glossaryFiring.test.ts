@@ -332,3 +332,30 @@ describe("removed advancement/position glossaries never re-fire at their emissio
     expect(rawWithPrefix(c, "Position: "), "no Position: glossary line").toBe(0);
   });
 });
+
+// ===========================================================================
+// Streetwise reword lock — the Streetwise skill definition was reworded to one
+// agreed wording across all three editions. Each edition's skillDefinitions
+// must carry EXACTLY that text, and its cited history line must render it
+// verbatim at first learn. Teeth: drift the wording in any edition JSON and
+// that row reddens on both the data value and the logged line.
+// ===========================================================================
+
+describe("Streetwise skill definition reads the agreed reworded text (all editions)", () => {
+  const STREETWISE =
+    "understanding urban society and power structures; knowing criminal contacts and underworld fixers";
+  const cases = [
+    { id: "ct-classic", defs: CT.skillDefinitions as Json },
+    { id: "mt-megatraveller", defs: MT.skillDefinitions as Json },
+    { id: "mongoose-2e", defs: MG.skillDefinitions as Json },
+  ];
+  for (const { id, defs } of cases) {
+    it(`${id}: Streetwise glosses the reworded text and logs it verbatim at first learn`, () => {
+      expect(defs.Streetwise, `${id} Streetwise data text`).toBe(STREETWISE);
+      const c = mkChar(id);
+      if (id === "mongoose-2e") c.mongooseState = freshMongooseState();
+      c.addSkill("Streetwise", 1, "table");
+      expect(count(c, `Streetwise: ${STREETWISE}`), `${id} logs reworded Streetwise once`).toBe(1);
+    });
+  }
+});
