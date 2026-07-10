@@ -55,28 +55,6 @@ function assertObjectGlossary(
   expect(isPageCitation(citation), `${name} needs a $-citation naming a page`).toBe(true);
 }
 
-/** Assert `block` is a [{code,name,meaning}] characteristic glossary covering
- *  the six standard codes, and that `citation` names a page. */
-function assertCharacteristicGlossary(
-  block: unknown, citation: unknown, name: string,
-): void {
-  expect(Array.isArray(block), `${name} must be an array`).toBe(true);
-  const rows = block as Array<Record<string, unknown>>;
-  const codes = new Set<string>();
-  for (const row of rows) {
-    expect(isRecord(row), `${name} rows must be objects`).toBe(true);
-    for (const field of ["code", "name", "meaning"] as const) {
-      expect(typeof row[field], `${name} row.${field} must be a string`).toBe("string");
-      expect(String(row[field]).trim().length).toBeGreaterThan(0);
-    }
-    codes.add(String(row.code));
-  }
-  for (const code of ["STR", "DEX", "END", "INT", "EDU", "SOC"]) {
-    expect(codes.has(code), `${name} must gloss characteristic ${code}`).toBe(true);
-  }
-  expect(isPageCitation(citation), `${name} needs a $-citation naming a page`).toBe(true);
-}
-
 // ---------------------------------------------------------------------------
 // Mongoose (fa7c7d4 non-skill glossaries, 61e7292 skill definitions).
 // ---------------------------------------------------------------------------
@@ -86,10 +64,6 @@ describe("Mongoose glossary blocks are cited (fa7c7d4, 61e7292)", () => {
 
   it("mongoose block is present", () => {
     expect(isRecord(M), "mongoose sub-block missing").toBe(true);
-  });
-
-  it("characteristics (Core p.9) — each of the six is cited", () => {
-    assertCharacteristicGlossary(M.characteristics, M.$characteristics, "mongoose.characteristics");
   });
 
   it("materialBenefits (Core pp.47-48) is cited", () => {
@@ -138,10 +112,6 @@ describe("MT glossary blocks are cited (2480589, ab0ae1a, fb22216)", () => {
 
   it("skillDefinitions (PM pp.30-40) is cited", () => {
     assertObjectGlossary(MT.skillDefinitions, MT.$skillDefinitions, "mt.skillDefinitions");
-  });
-
-  it("characteristicDefinitions (PM p.27) — each of the six is cited", () => {
-    assertCharacteristicGlossary(MT.characteristicDefinitions, MT.$characteristicDefinitions, "mt.characteristicDefinitions");
   });
 
   it("every UWP profile-code table (PM p.13) is cited", () => {
@@ -210,9 +180,5 @@ describe("CT glossary blocks are cited (83da80e, 8d705f9, 933a185)", () => {
 
   it("skillDefinitions (TTB pp.21-28 / CotI pp.10-18) is cited", () => {
     assertObjectGlossary(CT.skillDefinitions, CT.$skillDefinitions, "ct.skillDefinitions");
-  });
-
-  it("characteristicDefinitions (TTB p.17) — each of the six is cited", () => {
-    assertCharacteristicGlossary(CT.characteristicDefinitions, CT.$characteristicDefinitions, "ct.characteristicDefinitions");
   });
 });

@@ -86,13 +86,6 @@ function mkAcg(pathway: AcgPathwayId): Character {
   return c;
 }
 
-function charMeaning(block: unknown, code: string): { name: string; meaning: string } {
-  const rows = Array.isArray(block) ? block : [];
-  const row = rows.find((r) => (r as Json).code === code) as Json | undefined;
-  if (!row) throw new Error(`no characteristic row for ${code}`);
-  return { name: String(row.name), meaning: String(row.meaning) };
-}
-
 // ===========================================================================
 // Skills — central Character.addSkill: log once at first learn, never on bump.
 // ===========================================================================
@@ -194,14 +187,6 @@ describe("Mongoose glossary lines fire at their emission points (fa7c7d4, 61e729
     expect(c.mongooseState!.commissioned).toBe(true);
     expect(count(c, `Commission: ${String((MG.advancementGlossary as Json).commission)}.`)).toBe(1);
   });
-
-  it("generation start narrates the six characteristics (Core p.9)", () => {
-    const c = mkMongoose();
-    mongooseModel.init!(c);
-    expect(count(c, "Characteristics (Core p.9):")).toBe(1);
-    const str = charMeaning(MG.characteristics, "STR");
-    expect(count(c, `STR (${str.name}): ${str.meaning}.`)).toBe(1);
-  });
 });
 
 // ===========================================================================
@@ -264,14 +249,6 @@ describe("MT glossary lines fire at their emission points (2480589, ab0ae1a, fb2
     const def = String((MT.musterBenefitDefinitions as Json).Instruments);
     expect(count(c, `Benefit (Instruments): ${def}.`)).toBe(1);
   });
-
-  it("generation start narrates the six characteristics (PM p.27)", () => {
-    const c = mkChar("mt-megatraveller");
-    classicModel.init!(c);
-    expect(count(c, "Characteristics:")).toBe(1);
-    const str = charMeaning(MT.characteristicDefinitions, "STR");
-    expect(count(c, `STR (${str.name}): ${str.meaning}.`)).toBe(1);
-  });
 });
 
 // ===========================================================================
@@ -302,12 +279,29 @@ describe("CT glossary lines fire at their emission points (83da80e, 933a185)", (
     const note = String((CT.positionDefinitions as Json).Commission);
     expect(count(c, `Commission: ${note}.`)).toBe(1);
   });
+});
 
-  it("generation start narrates the six characteristics (TTB p.17)", () => {
-    const c = mkChar("ct-classic");
-    classicModel.init!(c);
-    expect(count(c, "Characteristics:")).toBe(1);
-    const str = charMeaning(CT.characteristicDefinitions, "STR");
-    expect(count(c, `STR (${str.name}): ${str.meaning}.`)).toBe(1);
-  });
+// ===========================================================================
+// Negative lock — the characteristics-intro glossary (all editions) was removed
+// as filler. No model's init may re-emit the intro header at generation start.
+// Teeth: restore logCharacteristicsIntro to either model init and the matching
+// header line reappears, reddening the row.
+// ===========================================================================
+
+describe("removed characteristics-intro glossary never re-fires at generation start", () => {
+  const INTRO_HEADERS = ["Characteristics:", "Characteristics (Core p.9):"];
+  const cases = [
+    { id: "mongoose-2e", model: mongooseModel },
+    { id: "ct-classic", model: classicModel },
+    { id: "mt-megatraveller", model: classicModel },
+  ];
+  for (const { id, model } of cases) {
+    it(`${id}: model init emits no characteristics-intro header`, () => {
+      const c = id === "mongoose-2e" ? mkMongoose() : mkChar(id);
+      model.init?.(c);
+      for (const header of INTRO_HEADERS) {
+        expect(count(c, header), `${id} init must not emit "${header}"`).toBe(0);
+      }
+    });
+  }
 });

@@ -320,34 +320,3 @@ describe("CT muster-benefit coverage (83da80e)", () => {
 describe("MT muster-benefit coverage (2480589)", () => {
   runMusterCoverage("mt-megatraveller");
 });
-
-// ---------------------------------------------------------------------------
-// Characteristic coverage: each of the six engine characteristics is glossed.
-// ---------------------------------------------------------------------------
-
-const ENGINE_CHAR_CODES = ["STR", "DEX", "END", "INT", "EDU", "SOC"] as const;
-
-function glossedCharCodes(block: unknown): Set<string> {
-  const codes = new Set<string>();
-  if (!Array.isArray(block)) return codes;
-  for (const row of block) if (isRecord(row) && typeof row.code === "string") codes.add(row.code);
-  return codes;
-}
-
-describe("characteristic coverage — the six engine characteristics are glossed", () => {
-  it("CT (933a185) glosses all six", () => {
-    const codes = glossedCharCodes(loadEdition("ct-classic").characteristicDefinitions);
-    for (const c of ENGINE_CHAR_CODES) expect(codes.has(c), `CT missing ${c}`).toBe(true);
-  });
-
-  it("MT (fb22216) glosses all six", () => {
-    const codes = glossedCharCodes(loadEdition("mt-megatraveller").characteristicDefinitions);
-    for (const c of ENGINE_CHAR_CODES) expect(codes.has(c), `MT missing ${c}`).toBe(true);
-  });
-
-  it("Mongoose (fa7c7d4) glosses all six", () => {
-    const M = loadEdition("mongoose-2e").mongoose as Record<string, unknown>;
-    const codes = glossedCharCodes(M.characteristics);
-    for (const c of ENGINE_CHAR_CODES) expect(codes.has(c), `Mongoose missing ${c}`).toBe(true);
-  });
-});

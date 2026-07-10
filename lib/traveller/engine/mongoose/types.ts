@@ -298,13 +298,6 @@ export interface MongooseData {
   readonly survivalNaturalFail: number;
   /** Natural Advancement roll that forces continuing the career (Core p.18: 12). */
   readonly advancementNaturalContinue: number;
-  /** Six-characteristic meanings (Core p.9), logged once at generation start.
-   *  Cited in-JSON via a sibling `$characteristics`. */
-  readonly characteristics?: readonly {
-    readonly code: string;
-    readonly name: string;
-    readonly meaning: string;
-  }[];
   /** Connection-relationship meanings (Core pp.20-21), keyed by relation,
    *  logged when a connection is formed. Sibling `$connections` cites it. */
   readonly connections?: Record<string, string>;

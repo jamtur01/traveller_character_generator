@@ -261,15 +261,6 @@ export interface CanonData {
    *  `skillDefinitionFor`); fail-soft so CT reuses it by adding its own block.
    *  Sibling `$skillDefinitions` cites it (MT: PM pp. 30-38). */
   skillDefinitions?: Record<string, string>;
-  /** Cited one-line characteristic meanings for the CLASSIC engine (CT/MT),
-   *  one per attribute (Strength/Dexterity/Endurance/Intelligence/Education/
-   *  Social), logged once at generation start by the classic model's init.
-   *  Fail-soft. Sibling `$characteristicDefinitions` cites it (MT: PM p. 27). */
-  characteristicDefinitions?: readonly {
-    readonly code: string;
-    readonly name: string;
-    readonly meaning: string;
-  }[];
   /** Mongoose Traveller 2e chargen data. Editions without the mongoose
    *  model omit this block; the engine (engine/mongoose/*) reads it when a
    *  character's chargenModelId is "mongoose". */

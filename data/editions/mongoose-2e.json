@@ -80,15 +80,6 @@
       }
     ],
     "$characteristicDmBands": "Core p.9 Characteristic Modifiers table: 0 -> -3, 1-2 -> -2, 3-5 -> -1, 6-8 -> +0, 9-11 -> +1, 12-14 -> +2, 15+ -> +3. Top band open-ended (encoded max 99).",
-    "characteristics": [
-      { "code": "STR", "name": "Strength", "meaning": "physical strength, fitness and forcefulness" },
-      { "code": "DEX", "name": "Dexterity", "meaning": "physical co-ordination, agility and reflexes" },
-      { "code": "END", "name": "Endurance", "meaning": "stamina, determination and ability to sustain damage" },
-      { "code": "INT", "name": "Intellect", "meaning": "intelligence and quickness of mind" },
-      { "code": "EDU", "name": "Education", "meaning": "a measure of learning and experience" },
-      { "code": "SOC", "name": "Social Standing", "meaning": "the Traveller's place in society" }
-    ],
-    "$characteristics": "Core p.9: the six characteristics and their meanings.",
     "backgroundSkillBase": 3,
     "$backgroundSkillBase": "Core p.9: background skills = EDU DM + 3 (0-6). Base 3; engine adds the EDU characteristic DM.",
     "backgroundSkills": [

@@ -377,15 +377,6 @@
     "Hovercraft": "Vehicle skill operating hovercraft (air-cushion craft)",
     "Submersible": "Vehicle skill operating submersibles"
   },
-  "$characteristicDefinitions": "The Traveller Book p. 17 (Characters — Characteristics), condensed to one clause each.",
-  "characteristicDefinitions": [
-    { "code": "STR", "name": "Strength", "meaning": "a general measure of physical power, and the force applicable in combat" },
-    { "code": "DEX", "name": "Dexterity", "meaning": "physical coordination" },
-    { "code": "END", "name": "Endurance", "meaning": "personal determination and stamina" },
-    { "code": "INT", "name": "Intelligence", "meaning": "corresponds to IQ" },
-    { "code": "EDU", "name": "Education", "meaning": "the highest level of schooling the individual has attained" },
-    { "code": "SOC", "name": "Social Standing", "meaning": "the social class and level of society the character's family comes from" }
-  ],
   "$ruleServiceOrder": "TTB p. 18 enlistment/draft order: the service-selection table lists Navy, Marines, Army, Scouts, Merchants, Other before the Advanced Character Generation services; nobles are auto-enrolled (Soc 10+, CotI) and never voluntarily enlisted.",
   "serviceOrder": [
     "navy", "marines", "army", "scouts", "merchants", "pirates", "other",
