@@ -21,16 +21,11 @@
     "@emnapi/core": "^1.11.2",
     "@emnapi/runtime": "^1.11.2",
     "jspdf": "4.2.1",
-    "next": "16.2.10",
+    "next": "16.4.2",
     "pdf-lib": "^1.17.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "zod": "4.4.3"
-  },
-  "overrides": {
-    "next": {
-      "postcss": "8.5.14"
-    }
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.2",
@@ -38,9 +33,9 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.4.2",
     "tailwindcss": "4.3.2",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.11"
   }
 }

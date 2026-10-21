@@ -10,7 +10,7 @@
 // This renders the *real* component with the *real* props and asserts on
 // its output — a faithful reproduction of the bug — without adding jsdom
 // or @testing-library (react-dom/server is already a dependency). The only
-// infra added is the `@/` path alias in vitest.config.ts, which the
+// infra added is the `@/` path alias in vitest.config.mts, which the
 // component's imports require.
 //
 // Teeth: each render passes a character carrying the pathway but NO separate
