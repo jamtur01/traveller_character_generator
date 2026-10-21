@@ -20,7 +20,7 @@ Every rules table, DM, threshold, rank, cascade, and numeric constant is data-dr
 
 ## Setup
 
-Requires Node 24 (pinned in `mise.toml`).
+Requires Node 24.22.1 or a newer Node 24 patch (pinned in `mise.toml`).
 
 ```bash
 npm install
